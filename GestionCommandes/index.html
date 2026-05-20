@@ -187,6 +187,10 @@ const EJS_SERVICE  = "service_i09ljga";
 const EJS_TEMPLATE = "template_xz4on7w";
 
 // Settings: localStorage comme cache + Supabase comme source principale
+const SB_URL  = 'https://yvlcmdcnjeoiffrlawti.supabase.co';
+const SB_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl2bGNtZGNuamVvaWZmcmxhd3RpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYyODYwNjEsImV4cCI6MjA5MTg2MjA2MX0.-ePViMbJVA0UhC4WY3fYciUcw0gP6yJWau_P1AspdlI';
+const SB_HDR  = { 'Content-Type':'application/json', 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_KEY}` };
+const SB_TABLE = `${SB_URL}/rest/v1/commandes`;
 const SB_PARAMS = `${SB_URL}/rest/v1/parametres`;
 
 function loadSettingsLocal() {
@@ -323,10 +327,6 @@ const isMobile = () => window.innerWidth < 768;
 /* ══════════════════════════════════════
    SUPABASE CONFIG
 ══════════════════════════════════════ */
-const SB_URL  = 'https://yvlcmdcnjeoiffrlawti.supabase.co';
-const SB_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl2bGNtZGNuamVvaWZmcmxhd3RpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYyODYwNjEsImV4cCI6MjA5MTg2MjA2MX0.-ePViMbJVA0UhC4WY3fYciUcw0gP6yJWau_P1AspdlI';
-const SB_HDR  = { 'Content-Type':'application/json', 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_KEY}` };
-const SB_TABLE = `${SB_URL}/rest/v1/commandes`;
 let _saveTimer = null;
 
 // Convert DB row → app object
