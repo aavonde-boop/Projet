@@ -1084,7 +1084,7 @@ function attachEvents(){
 
     // Form submit
     const sb=document.getElementById('formSubmit');
-    if(sb)sb.onclick=()=>{
+    if(sb)sb.onclick=async()=>{
         const f=state.form;
         const pourQuiLabel=f.pourQui.includes('__autre__')?(f.pourQuiAutre||'Autre'):f.pourQui.join(', ');
         const descFinal=f.type==='taxi'?`Taxi ${(f.de||'?').split(',')[0]} → ${(f.vers||'?').split(',')[0]}`:(f.desc||'Commande repas');
@@ -1099,7 +1099,7 @@ function attachEvents(){
 
     // Saisie save
     const ss=document.getElementById('saveSaisie');
-    if(ss)ss.onclick=()=>{
+    if(ss)ss.onclick=async()=>{
         const t=state.saisieType;
         const dem=document.getElementById('saisieDem')?.value||'';
         const pourQui=document.getElementById('saisiePourQui')?.value||'';
