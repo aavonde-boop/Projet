@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Gestion des commandes — 2026</title>
     <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&display=swap" rel="stylesheet">
-    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyC3_7jm3ikzlsPg0OiJ6TBrfRLTJa2gvsM&libraries=places&language=fr" async defer></script>
     <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
     <script>emailjs.init("n04JbAxmU3mf9UuXz");</script>
     <style>
@@ -150,7 +149,7 @@
         /* ─── RESPONSIVE STATS ─── */
         @media(max-width:767px){ .stats-3col{grid-template-columns:1fr 1fr !important;} .stats-3col>*:first-child{grid-column:1/-1;} }
 
-        /* ─── GOOGLE PLACES ─── */
+
         .pac-container { z-index:9999 !important;border-radius:14px !important;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,0.12) !important;border:1px solid var(--border) !important;margin-top:4px; }
         .pac-item { padding:10px 14px !important;font-size:14px !important;font-family:'DM Sans',sans-serif !important;cursor:pointer; }
         .pac-item:hover{background:#f5f4f0 !important;}
@@ -972,25 +971,46 @@ function renderSaisieModal(){
    GOOGLE MAPS AUTOCOMPLETE
 ══════════════════════════════════════ */
 function initAutocomplete(){
-    if(typeof google==='undefined'||!google?.maps?.places)return;
     ['formDe','formVers','saisieDe','saisieVers'].forEach(id=>{
         const el=document.getElementById(id);
         if(!el||el.dataset.acInit)return;
         el.dataset.acInit='1';
-        const ac=new google.maps.places.Autocomplete(el,{
-            types:['geocode','establishment'],
-            componentRestrictions:{country:'fr'},
-            fields:['formatted_address','geometry','name']
+
+        // Créer le dropdown
+        const wrap=document.createElement('div');
+        wrap.style.cssText='position:relative;';
+        el.parentNode.insertBefore(wrap,el);
+        wrap.appendChild(el);
+        const dd=document.createElement('div');
+        dd.style.cssText='position:absolute;top:100%;left:0;right:0;background:#fff;border:1px solid #e8e5df;border-radius:14px;box-shadow:0 8px 24px rgba(0,0,0,0.12);z-index:9999;margin-top:4px;overflow:hidden;display:none;max-height:220px;overflow-y:auto;';
+        wrap.appendChild(dd);
+
+        let timer;
+        el.addEventListener('input',()=>{
+            clearTimeout(timer);
+            const q=el.value.trim();
+            if(q.length<3){dd.style.display='none';return;}
+            timer=setTimeout(async()=>{
+                try{
+                    const res=await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}&countrycodes=fr&limit=5&addressdetails=1`,{headers:{'Accept-Language':'fr'}});
+                    const items=await res.json();
+                    if(!items.length){dd.style.display='none';return;}
+                    dd.innerHTML=items.map((it,i)=>`<div data-idx="${i}" style="padding:10px 14px;font-size:14px;cursor:pointer;border-bottom:1px solid #f0eeea;font-family:'DM Sans',sans-serif;" onmouseover="this.style.background='#f5f4f0'" onmouseout="this.style.background=''">${it.display_name}</div>`).join('');
+                    dd.style.display='block';
+                    dd.querySelectorAll('[data-idx]').forEach((div,i)=>{
+                        div.onclick=()=>{
+                            const addr=items[i].display_name;
+                            el.value=addr;
+                            if(id==='formDe')  state.form.de=addr;
+                            if(id==='formVers')state.form.vers=addr;
+                            if(id==='saisieDe'||id==='saisieVers'){}
+                            dd.style.display='none';
+                        };
+                    });
+                }catch(e){dd.style.display='none';}
+            },400);
         });
-        ac.addListener('place_changed',()=>{
-            const place=ac.getPlace();
-            if(place.geometry){
-                const addr=place.formatted_address||place.name||el.value;
-                el.value=addr;
-                if(id==='formDe')  state.form.de=addr;
-                if(id==='formVers')state.form.vers=addr;
-            }
-        });
+        document.addEventListener('click',e=>{if(!wrap.contains(e.target))dd.style.display='none';});
     });
 }
 
