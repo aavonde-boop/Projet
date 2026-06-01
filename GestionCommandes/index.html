@@ -42,10 +42,10 @@
 
         /* ─── LAYOUT ─── */
         .desktop-app { max-width:1400px;margin:0 auto;background:var(--surface);min-height:100vh; }
-        .admin-grid { display:grid;grid-template-columns:240px 1fr;gap:24px;padding:24px; }
+        .admin-grid { display:flex;flex-direction:column;gap:0;padding:20px; }
         .admin-sidebar { background:var(--white);border-radius:24px;padding:20px;height:fit-content;border:1px solid var(--border);position:sticky;top:20px; }
         .admin-main { background:var(--white);border-radius:24px;padding:24px;border:1px solid var(--border);min-height:400px; }
-        @media(max-width:767px){ .admin-grid{grid-template-columns:1fr;padding:0;gap:0;} .admin-sidebar{display:none;} .admin-main{border-radius:0;border:none;border-top:1px solid var(--border);padding:16px;} }
+        @media(max-width:767px){ .admin-grid{flex-direction:column;padding:0;gap:0;} .admin-main{border-radius:0;border:none;border-top:1px solid var(--border);padding:16px;} }
 
         /* ─── BUTTONS ─── */
         .btn-primary { background:var(--ink);color:#fff;border:none;border-radius:14px;padding:13px 20px;font-weight:600;cursor:pointer;transition:opacity 0.15s,transform 0.1s;font-size:15px; }
@@ -156,6 +156,7 @@
         .pac-item-query{font-weight:600;}
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
 </head>
 <body>
 <div id="app"></div>
@@ -185,6 +186,15 @@ const DEFAULT_EMAILS = {
 // EmailJS config
 const EJS_SERVICE  = "service_i09ljga";
 const EJS_TEMPLATE = "template_xz4on7w";
+const YOOZ_MAP = {
+    "Bruneau":   "AAF-PO-26-042993",
+    "Nespresso": "AAF-PO-26-043080",
+    "Uber eat":  "AAF-PO-26-043011",
+    "Ups":       "AAF-PO-26-043014",
+    "Lavazza":   "AAF-PO-26-046102",
+    "La Boite":  "AAF-PO-26-051558",
+};
+
 const EJS_TEMPLATE_COPIE = "template_xz4on7w"; // ← Remplace par l'ID de ton template "copie" dans EmailJS
 
 // Settings: localStorage comme cache + Supabase comme source principale
@@ -678,7 +688,7 @@ function renderInlineForm(m){
         </div>
 
         ${isRepas?`
-        <div class="form-group"><label class="form-label">Description</label><input id="formDesc" type="text" value="${f.desc}" placeholder="Ex: Dej Codir, Petit dej assemblée..." class="form-input"></div>
+        <div class="form-group"><label class="form-label">Type de repas</label><select id="formDesc" class="form-select"><option value="">— Choisir —</option>${["Petit-déjeuner","Déjeuner","Goûter","Dîner","Cocktail","Plateau repas"].map(o=>`<option ${f.desc===o?'selected':''}>${o}</option>`).join('')}</select></div>
         <div class="form-group"><label class="form-label">Lieu de livraison</label><input id="formLieu" type="text" value="${f.lieu}" placeholder="Bureau, Salle France, adresse..." class="form-input"></div>
         <div class="form-row-2">
             <div class="form-group"><label class="form-label">Nb personnes</label><select id="formNb" class="form-select">${NBS.map(n=>`<option ${f.nb===n?'selected':''}>${n}</option>`).join('')}</select></div>
@@ -765,25 +775,28 @@ function renderAdminView(m){
     const attente=state.data.filter(c=>c.pris==="En attente");
     if(state.detail) return renderDetail(state.detail,m);
 
-    const sidebar=!m?`<div class="admin-sidebar">
-        <div style="text-align:center;margin-bottom:18px;">
-            <div style="font-size:36px;margin-bottom:6px;">👑</div>
-            <div style="font-family:'DM Serif Display',serif;font-size:17px;">Administration</div>
+    const sidebar=!m?`<div style="background:var(--white);border:1px solid var(--border);padding:12px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:20px;border-radius:20px;box-shadow:0 1px 3px rgba(0,0,0,0.04);">
+        <div style="display:flex;align-items:center;gap:8px;">
+            <span style="font-size:20px;">👑</span>
+            <span style="font-family:'DM Serif Display',serif;font-size:16px;">Administration</span>
         </div>
-        <nav style="display:flex;flex-direction:column;gap:5px;">
-            ${[["dashboard","📊","Dashboard"],["reservations","🍽","Réservations"],["commandes","📦","Commandes"],["historique","🗂","Historique"],["settings","⚙️","Réglages"]].map(([tab,icon,label])=>`
-                <button data-admin-tab="${tab}" style="text-align:left;display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:12px;border:none;cursor:pointer;font-size:14px;font-weight:500;background:${state.adminTab===tab?'var(--ink)':'transparent'};color:${state.adminTab===tab?'#fff':'#5a5550'};transition:all 0.15s;">
-                    ${icon} ${label} ${(tab==='commandes'||tab==='reservations')&&attente.length?`<span class="pending-badge" style="margin-left:auto;">${attente.length}</span>`:''}
+        <nav style="display:flex;gap:4px;flex-wrap:wrap;">
+            ${[["dashboard","📊","Dashboard"],["reservations","🍽","Réservations"],["commandes","📦","Commandes"],["calendrier","📅","Calendrier"],["historique","🗂","Historique"],["settings","⚙️","Réglages"]].map(([tab,icon,label])=>`
+                <button data-admin-tab="${tab}" style="display:flex;align-items:center;gap:6px;padding:7px 14px;border-radius:30px;border:none;cursor:pointer;font-size:13px;font-weight:500;background:${state.adminTab===tab?'var(--ink)':'transparent'};color:${state.adminTab===tab?'#fff':'#5a5550'};transition:all 0.15s;white-space:nowrap;">
+                    ${icon} ${label}${(tab==='commandes'||tab==='reservations')&&attente.length?` <span style="background:#f59e0b;color:#fff;border-radius:50%;width:16px;height:16px;font-size:10px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;margin-left:2px;">${attente.length}</span>`:''}
                 </button>`).join('')}
         </nav>
-        <hr style="margin:14px 0;border:none;border-top:1px solid var(--border);">
-        <button data-admin-logout style="width:100%;background:#fef2f2;border:1px solid #fecaca;border-radius:12px;padding:10px;color:#b91c1c;cursor:pointer;font-size:14px;font-weight:600;">🔓 Déconnexion</button>
+        <div style="display:flex;gap:8px;">
+            <button data-back-home style="padding:7px 14px;border-radius:30px;border:1px solid var(--border);cursor:pointer;font-size:13px;color:#9e9a93;background:transparent;">← Accueil</button>
+            <button data-admin-logout style="background:#fef2f2;border:1px solid #fecaca;border-radius:30px;padding:7px 14px;color:#b91c1c;cursor:pointer;font-size:13px;font-weight:600;">🔓 Déco</button>
+        </div>
     </div>`:'';
 
     let main='';
     if(state.adminTab==='settings')        main=renderSettings();
     else if(state.adminTab==='reservations') main=renderReservations(m);
     else if(state.adminTab==='commandes')    main=renderCommandes(m);
+    else if(state.adminTab==='calendrier')   main=renderCalendrier(m);
     else if(state.adminTab==='historique')   main=renderHistorique(m);
     else main=renderDashboard(total,attente,m);
 
@@ -792,7 +805,7 @@ function renderAdminView(m){
         <div style="display:flex;align-items:center;justify-content:space-between;">
             <div>
                 <div style="font-size:10px;font-weight:600;letter-spacing:2px;color:rgba(255,255,255,.35);margin-bottom:4px;">ADMIN</div>
-                <div style="font-family:'DM Serif Display',serif;font-size:19px;color:#fff;">${{dashboard:"📊 Dashboard",reservations:"🍽 Réservations",commandes:"📦 Commandes",historique:"🗂 Historique",settings:"⚙️ Réglages"}[state.adminTab]}</div>
+                <div style="font-family:'DM Serif Display',serif;font-size:19px;color:#fff;">${{dashboard:"📊 Dashboard",reservations:"🍽 Réservations",commandes:"📦 Commandes",calendrier:"📅 Calendrier",historique:"🗂 Historique",settings:"⚙️ Réglages"}[state.adminTab]}</div>
             </div>
             <button data-admin-logout style="background:rgba(255,255,255,.1);border:none;border-radius:10px;padding:8px 13px;color:rgba(255,255,255,.7);cursor:pointer;font-size:13px;font-weight:600;">🔓</button>
         </div>
@@ -808,7 +821,7 @@ function renderAdminView(m){
     </div>
     <nav class="mobile-nav"><div class="mobile-nav-items">
         <button class="mobile-nav-btn" data-back-home><span class="nav-icon">🏠</span><span>Accueil</span></button>
-        ${[["dashboard","📊","Dash"],["reservations","🍽","Résas"],["commandes","📦","Cmdes"],["historique","🗂","Hist."],["settings","⚙️","Régl."]].map(([tab,icon,label])=>`
+        ${[["dashboard","📊","Dash"],["reservations","🍽","Résas"],["commandes","📦","Cmdes"],["calendrier","📅","Cal."],["historique","🗂","Hist."],["settings","⚙️","Régl."]].map(([tab,icon,label])=>`
             <button class="mobile-nav-btn ${state.adminTab===tab?'active':''}" data-admin-tab="${tab}">
                 <span class="nav-icon">${icon}</span><span>${label}</span><span class="nav-dot"></span>
             </button>`).join('')}
@@ -842,12 +855,12 @@ function renderDetail(d,m){
     <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px;">${avatar(d.demandeur,48)}<div><div style="font-family:'DM Serif Display',serif;font-size:19px;">${d.desc}</div><div style="color:#9e9a93;font-size:12px;">${d.demandeur}${d.pourQui?' · Pour '+d.pourQui:''}</div></div></div>`}
     <div style="display:flex;gap:8px;margin-bottom:16px;">${chip(d.pris)} ${typeTag(d.type)}</div>
     <div style="background:#fafaf8;border-radius:16px;padding:14px;margin-bottom:14px;">
-        ${[["Date",$d(d.date)],["Heure",d.heure||"—"],["Pour",d.pourQui||"—"],["Lieu",d.lieu||"—"],["Prestataire",d.presta||"—"]].map(([k,v])=>`
+        ${[["Date",$d(d.date)],["Heure",d.heure||"—"],["Pour",d.pourQui||"—"],["Lieu",d.lieu||"—"],["Prestataire",d.presta||"—"],["N° Yooz",(d.yooz||YOOZ_MAP[d.presta])||null]].filter(r=>r[1]).map(([k,v])=>`
             <div style="display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid #e8e5df;"><span style="color:#9e9a93;font-size:13px;">${k}</span><span style="font-weight:600;font-size:13px;">${v}</span></div>`).join('')}
         <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;">
             <span style="color:#9e9a93;font-size:13px;">Montant</span>
             <div style="display:flex;align-items:center;gap:8px;">
-                <input id="detailPrix" type="number" step="0.01" inputmode="decimal" value="${d.prix||''}" placeholder="0,00" style="width:100px;border:1.5px solid var(--border);border-radius:10px;padding:6px 10px;font-size:14px;font-weight:600;text-align:right;font-family:'DM Sans',sans-serif;">
+                <input id="detailPrix" type="text" inputmode="decimal" value="${d.prix?d.prix.toLocaleString('fr-FR',{minimumFractionDigits:2,maximumFractionDigits:2}):''}" placeholder="0,00" style="width:110px;border:1.5px solid var(--border);border-radius:10px;padding:6px 10px;font-size:14px;font-weight:600;text-align:right;font-family:'DM Sans',sans-serif;">
                 <span style="font-size:13px;color:var(--ink-soft);">€</span>
                 <button id="savePrix" style="background:var(--ink);color:#fff;border:none;border-radius:10px;padding:6px 12px;font-size:13px;font-weight:600;cursor:pointer;">✓</button>
             </div>
@@ -862,7 +875,7 @@ function renderDetail(d,m){
     <button data-delete-item="${d.id}" class="btn-danger" style="width:100%;padding:12px;border-radius:14px;">🗑 Supprimer la commande</button>
     ${m?'</div>':''}`;
 
-    if(m) return `<div class="detail-view">${inner}</div>${state.toast?`<div class="toast">${state.toast}</div>`:''}<nav class="mobile-nav"><div class="mobile-nav-items"><button class="mobile-nav-btn" data-back-home><span class="nav-icon">🏠</span><span>Accueil</span></button>${[["dashboard","📊","Dash"],["reservations","🍽","Résas"],["commandes","📦","Cmdes"],["historique","🗂","Hist."],["settings","⚙️","Régl."]].map(([tab,icon,label])=>`<button class="mobile-nav-btn ${state.adminTab===tab?'active':''}" data-admin-tab="${tab}"><span class="nav-icon">${icon}</span><span>${label}</span><span class="nav-dot"></span></button>`).join('')}</div></nav>`;
+    if(m) return `<div class="detail-view">${inner}</div>${state.toast?`<div class="toast">${state.toast}</div>`:''}<nav class="mobile-nav"><div class="mobile-nav-items"><button class="mobile-nav-btn" data-back-home><span class="nav-icon">🏠</span><span>Accueil</span></button>${[["dashboard","📊","Dash"],["reservations","🍽","Résas"],["commandes","📦","Cmdes"],["calendrier","📅","Cal."],["historique","🗂","Hist."],["settings","⚙️","Régl."]].map(([tab,icon,label])=>`<button class="mobile-nav-btn ${state.adminTab===tab?'active':''}" data-admin-tab="${tab}"><span class="nav-icon">${icon}</span><span>${label}</span><span class="nav-dot"></span></button>`).join('')}</div></nav>`;
     return inner;
 }
 
@@ -1096,13 +1109,145 @@ function renderAnnuaire(m){
 /* ══════════════════════════════════════
    SETTINGS
 ══════════════════════════════════════ */
+function renderCalendrier(m){
+    const now = new Date();
+    const calDate = state.calMonth ? new Date(state.calMonth) : new Date(now.getFullYear(), now.getMonth(), 1);
+    const year = calDate.getFullYear();
+    const month = calDate.getMonth();
+    const MONTHS_FULL = ["Janvier","Février","Mars","Avril","Mai","Juin","Juillet","Août","Septembre","Octobre","Novembre","Décembre"];
+    const DAYS = ["Lun","Mar","Mer","Jeu","Ven"]; // Sam/Dim retirés
+
+    const firstDay = new Date(year, month, 1);
+    // startDow : 0=lun, 4=ven, sam(5) et dim(6) ignorés
+    const rawDow = (firstDay.getDay()+6)%7; // lundi=0, sam=5, dim=6
+    const startDow = Math.min(rawDow, 5); // si commence sam/dim → col 0
+    const daysInMonth = new Date(year, month+1, 0).getDate();
+
+    // Indexer les commandes par jour
+    const byDay = {};
+    state.data.forEach(c => {
+        if(!c.date) return;
+        let p;
+        if(c.date.includes('-')) { const x=c.date.split('-'); p=[parseInt(x[2]),parseInt(x[1])-1,parseInt(x[0])]; }
+        else { const x=c.date.split('/'); p=[parseInt(x[0]),parseInt(x[1])-1,parseInt(x[2])]; }
+        if(p[1]===month && p[2]===year) {
+            if(!byDay[p[0]]) byDay[p[0]]=[];
+            byDay[p[0]].push(c);
+        }
+    });
+
+    const typeColor = t => t==='taxi'?'#3b82f6':t==='repas'?'#f97316':'#8b5cf6';
+    const typeIcon  = t => t==='taxi'?'🚕':t==='repas'?'🍽':'📦';
+
+    // Construire les cellules (sem lun→ven uniquement)
+    const colW = '20%'; // 5 colonnes égales
+    let rows = '';
+    let col = rawDow > 4 ? 0 : rawDow; // si commence week-end, on démarre lundi
+    let row = [];
+
+    // Remplir les cases vides avant le 1er
+    for(let i=0; i<col; i++) row.push(`<td style="width:${colW};border:1px solid #e4e7ec;background:#f8fafc;"></td>`);
+
+    for(let day=1; day<=daysInMonth; day++) {
+        const dow = (new Date(year,month,day).getDay()+6)%7;
+        if(dow>=5) continue; // sauter sam/dim
+
+        const isToday = day===now.getDate()&&month===now.getMonth()&&year===now.getFullYear();
+        const events = byDay[day]||[];
+        const hasUrgent = events.some(c=>c.pris==='En attente');
+
+        row.push(`<td style="width:${colW};border:1px solid #e4e7ec;vertical-align:top;padding:6px;min-height:${m?'60px':'90px'};background:${isToday?'#eff6ff':'#fff'};${hasUrgent?'border-left:3px solid #f59e0b;':''}">
+            <div style="font-size:12px;font-weight:${isToday?'700':'500'};color:${isToday?'#fff':'#1a1f36'};margin-bottom:4px;${isToday?'background:#3b82f6;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;':''}">${day}</div>
+            ${events.slice(0,m?1:3).map(c=>`<div data-open-detail='${JSON.stringify(c).replace(/'/g,"&apos;")}' style="font-size:10px;padding:2px 5px;border-radius:4px;margin-bottom:2px;background:${typeColor(c.type)}18;color:${typeColor(c.type)};font-weight:600;cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;border-left:2px solid ${typeColor(c.type)};" title="${c.desc||''}">${typeIcon(c.type)} ${c.desc||'—'}</div>`).join('')}
+            ${events.length>(m?1:3)?`<div style="font-size:9px;color:#94a3b8;padding-left:4px;">+${events.length-(m?1:3)}</div>`:''}
+        </td>`);
+
+        col++;
+        if(col>=5) { // fin de semaine → nouvelle ligne
+            rows += `<tr>${row.join('')}</tr>`;
+            row = [];
+            col = 0;
+        }
+    }
+    // Compléter la dernière ligne
+    if(row.length>0) {
+        while(row.length<5) row.push(`<td style="width:${colW};border:1px solid #e4e7ec;background:#f8fafc;"></td>`);
+        rows += `<tr>${row.join('')}</tr>`;
+    }
+
+    // Générer les événements ICS pour export Outlook (sans doublons par id)
+    const icsEvents = [...new Map(state.data.map(c=>[c.id,c])).values()].map(c=>{
+        if(!c.date) return '';
+        let yr,mo,dy;
+        if(c.date.includes('-')){ [yr,mo,dy]=c.date.split('-').map(Number); }
+        else { const p=c.date.split('/'); dy=+p[0];mo=+p[1];yr=+p[2]; }
+        const pad=n=>String(n).padStart(2,'0');
+        const dt=`${yr}${pad(mo)}${pad(dy)}`;
+        const uid=`${c.id}@gestioncommandes`;
+        const desc=(c.desc||'').replace(/,/g,'').replace(/[\r\n]+/g,' ');
+        const loc=(c.lieu||c.depart||'').replace(/,/g,'');
+        return [
+            'BEGIN:VEVENT',
+            `UID:${uid}`,
+            `DTSTART;VALUE=DATE:${dt}`,
+            `DTEND;VALUE=DATE:${dt}`,
+            `SUMMARY:${c.type==='taxi'?'🚕':c.type==='repas'?'🍽':'📦'} ${desc}`,
+            `DESCRIPTION:${c.demandeur||''} — ${c.pourQui||''} — ${c.presta||''}`,
+            loc?`LOCATION:${loc}`:'',
+            'END:VEVENT'
+        ].filter(Boolean).join('\r\n');
+    }).filter(Boolean).join('\r\n');
+
+    const icsContent = ['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//GestionCommandes//FR','CALSCALE:GREGORIAN','METHOD:PUBLISH',icsEvents,'END:VCALENDAR'].join('\r\n');
+
+    return `<div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:10px;">
+        <div style="font-family:'DM Serif Display',serif;font-size:${m?'18px':'22px'};">📅 Calendrier</div>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+            <button data-cal-prev style="background:#f1f5f9;border:none;border-radius:30px;padding:7px 14px;cursor:pointer;font-size:13px;font-weight:600;">←</button>
+            <span style="font-weight:700;font-size:${m?'13px':'15px'};min-width:140px;text-align:center;">${MONTHS_FULL[month]} ${year}</span>
+            <button data-cal-next style="background:#f1f5f9;border:none;border-radius:30px;padding:7px 14px;cursor:pointer;font-size:13px;font-weight:600;">→</button>
+            <button data-cal-today style="background:var(--ink);color:#fff;border:none;border-radius:30px;padding:7px 14px;cursor:pointer;font-size:13px;font-weight:600;">Aujourd'hui</button>
+            <button id="exportICS" style="background:#0078d4;color:#fff;border:none;border-radius:30px;padding:7px 14px;cursor:pointer;font-size:13px;font-weight:600;" data-ics="${encodeURIComponent(icsContent)}">📆 Export Outlook</button>
+        </div>
+    </div>
+
+    <div style="background:#fff;border-radius:20px;border:1px solid #e4e7ec;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.04);">
+        <table style="width:100%;border-collapse:collapse;table-layout:fixed;">
+            <thead>
+                <tr style="background:#f8fafc;">
+                    ${DAYS.map(d=>`<th style="width:${colW};padding:12px 6px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:#64748b;border-bottom:2px solid #e4e7ec;text-align:center;">${d}</th>`).join('')}
+                </tr>
+            </thead>
+            <tbody>${rows}</tbody>
+        </table>
+    </div>
+
+    <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:14px;">
+        ${[['🍽','Repas','#f97316'],['🚕','Taxi','#3b82f6'],['📦','Commande','#8b5cf6']].map(([ic,l,c])=>`<div style="display:flex;align-items:center;gap:5px;font-size:12px;color:#64748b;"><div style="width:12px;height:12px;border-radius:3px;background:${c};"></div>${ic} ${l}</div>`).join('')}
+        <div style="display:flex;align-items:center;gap:5px;font-size:12px;color:#64748b;"><div style="width:3px;height:12px;border-radius:1px;background:#f59e0b;"></div>En attente</div>
+    </div>
+    </div>`;
+}
+
+
 function renderHistorique(m){
     const typeIcon=t=>t==='taxi'?'🚕':t==='repas'?'🍽':'📦';
     const typeLabel=t=>t==='taxi'?'Taxi':t==='repas'?'Repas':'Commande';
-    const statusLabel=s=>s==='OUI'?'Validé':s==='En attente'?'En attente':s==='Annulé'?'Annulé':s||'—';
-    const statusColor=s=>s==='OUI'?'#22c55e':s==='En attente'?'#f59e0b':s==='Annulé'?'#ef4444':'#3b82f6';
+    const typeBadge=t=>{
+        const map={repas:{bg:'linear-gradient(135deg,#fff7ed,#fed7aa)',color:'#c2410c',border:'#fdba74'},taxi:{bg:'linear-gradient(135deg,#dbeafe,#bfdbfe)',color:'#1e40af',border:'#93c5fd'},commande:{bg:'linear-gradient(135deg,#f3e8ff,#e9d5ff)',color:'#6b21a5',border:'#d8b4fe'}};
+        const s=map[t]||{bg:'#f1f5f9',color:'#5a6a85',border:'#e4e7ec'};
+        return `<span style="display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:30px;font-size:11px;font-weight:600;background:${s.bg};color:${s.color};border:1px solid ${s.border};">${typeIcon(t)} ${typeLabel(t)}</span>`;
+    };
+    const statusBadge=s=>{
+        const map={'OUI':{bg:'#f0fdf4',color:'#15803d',border:'#86efac',label:'Validé'},'En attente':{bg:'#fffbeb',color:'#b45309',border:'#fde68a',label:'En attente'},'Annulé':{bg:'#fef2f2',color:'#b91c1c',border:'#fecaca',label:'Annulé'},'En cours':{bg:'#eff6ff',color:'#1e40af',border:'#93c5fd',label:'En cours'},'Reçu':{bg:'#f0f9ff',color:'#0369a1',border:'#7dd3fc',label:'Reçu'}};
+        const st=map[s]||{bg:'#f1f5f9',color:'#5a6a85',border:'#e4e7ec',label:s||'—'};
+        return `<span style="display:inline-flex;align-items:center;padding:3px 10px;border-radius:30px;font-size:11px;font-weight:700;background:${st.bg};color:${st.color};border:1px solid ${st.border};">${st.label}</span>`;
+    };
 
-    const sorted=[...state.data].sort((a,b)=>{
+    const PAGE=30;
+    const page=state.histPage||0;
+    const allSorted=[...state.data].sort((a,b)=>{
         const k=state.histSort||'date';
         if(k==='date'){
             const pa=(a.date||'').split('/');const pb=(b.date||'').split('/');
@@ -1113,60 +1258,80 @@ function renderHistorique(m){
         if(k==='prix') return (b.prix||0)-(a.prix||0);
         return (a[k]||'').localeCompare(b[k]||'');
     });
+    const sorted=allSorted.slice(page*PAGE,(page+1)*PAGE);
+    const totalPages=Math.ceil(allSorted.length/PAGE);
 
     return `<div>
-    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:6px;">
-        <div style="font-family:'DM Serif Display',serif;font-size:${m?'18px':'22px'};">🗂 Historique</div>
-        <button id="exportExcel" style="background:#1d6f42;color:#fff;border:none;border-radius:12px;padding:9px 18px;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:7px;">
+    <!-- Header -->
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:20px;">
+        <div>
+            <div style="font-family:'DM Serif Display',serif;font-size:${m?'18px':'22px'};">🗂 Historique</div>
+            <div style="font-size:12px;color:#7f8c9b;margin-top:3px;">${allSorted.length} entrée${allSorted.length>1?'s':''} au total</div>
+        </div>
+        <button id="exportExcel" style="background:#1d6f42;color:#fff;border:none;border-radius:30px;padding:9px 20px;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:7px;box-shadow:0 2px 8px rgba(29,111,66,0.2);">
             📥 Exporter Excel
         </button>
     </div>
-    <div style="font-size:12px;color:#9e9a93;margin-bottom:16px;">${state.data.length} entrée${state.data.length>1?'s':''} au total</div>
 
     <!-- Filtres tri -->
-    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;">
-        ${[['date','📅 Date'],['demandeur','👤 Demandeur'],['desc','📝 Titre'],['prix','💶 Prix'],['type','🏷 Type']].map(([k,l])=>`
-        <button data-hist-sort="${k}" style="background:${(state.histSort||'date')===k?'var(--ink)':'#f0eeea'};color:${(state.histSort||'date')===k?'#fff':'#7a7570'};border:none;border-radius:20px;padding:6px 14px;font-size:12px;font-weight:600;cursor:pointer;transition:all 0.15s;">${l}${(state.histSort||'date')===k?' ↓':''}</button>`).join('')}
+    <div style="background:#fff;border-radius:16px;padding:14px 18px;margin-bottom:20px;border:1px solid #e4e7ec;box-shadow:0 1px 2px rgba(0,0,0,0.04);">
+        <div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;">
+            <span style="font-size:12px;color:#7f8c9b;font-weight:500;margin-right:4px;">Trier par</span>
+            ${[['date','📅 Date'],['demandeur','👤 Demandeur'],['desc','📝 Titre'],['prix','💶 Prix'],['type','🏷 Type']].map(([k,l])=>`
+            <button data-hist-sort="${k}" style="display:inline-flex;align-items:center;gap:5px;padding:6px 14px;background:${(state.histSort||'date')===k?'#1a1f36':'#f1f5f9'};color:${(state.histSort||'date')===k?'#fff':'#5a6a85'};border:1px solid ${(state.histSort||'date')===k?'transparent':'transparent'};border-radius:30px;font-size:12px;font-weight:500;cursor:pointer;transition:all 0.15s;">${l}${(state.histSort||'date')===k?' ↓':''}</button>`).join('')}
+        </div>
     </div>
 
-    <!-- Tableau style Excel amélioré -->
-    <div style="border:1.5px solid #d1d5db;border-radius:16px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.06);">
+    <!-- Tableau moderne -->
+    <div style="background:#fff;border-radius:20px;border:1px solid #e4e7ec;overflow:hidden;box-shadow:0 1px 2px rgba(0,0,0,0.04);">
         <div style="overflow-x:auto;">
-            <table style="width:100%;border-collapse:collapse;font-size:13px;font-family:'DM Sans',sans-serif;">
-                <thead>
-                    <tr style="background:linear-gradient(135deg,#1e293b,#334155);">
-                        <th style="text-align:left;padding:12px 16px;font-size:11px;color:#94a3b8;font-weight:700;text-transform:uppercase;letter-spacing:.08em;white-space:nowrap;">📅 Date</th>
-                        <th style="text-align:left;padding:12px 16px;font-size:11px;color:#94a3b8;font-weight:700;text-transform:uppercase;letter-spacing:.08em;">👤 Demandeur</th>
-                        <th style="text-align:left;padding:12px 16px;font-size:11px;color:#94a3b8;font-weight:700;text-transform:uppercase;letter-spacing:.08em;">📝 Titre</th>
-                        <th style="text-align:left;padding:12px 16px;font-size:11px;color:#94a3b8;font-weight:700;text-transform:uppercase;letter-spacing:.08em;">👥 Pour qui</th>
-                        <th style="text-align:center;padding:12px 10px;font-size:11px;color:#94a3b8;font-weight:700;text-transform:uppercase;letter-spacing:.08em;">🏷 Type</th>
-                        <th style="text-align:center;padding:12px 10px;font-size:11px;color:#94a3b8;font-weight:700;text-transform:uppercase;letter-spacing:.08em;">Statut</th>
-                        <th style="text-align:right;padding:12px 16px;font-size:11px;color:#94a3b8;font-weight:700;text-transform:uppercase;letter-spacing:.08em;">💶 Prix</th>
+            <table style="width:100%;border-collapse:collapse;font-size:13px;min-width:700px;">
+                <thead id="histTableHead">
+                    <tr style="background:#f8fafc;">
+                        ${(state.colOrder||["date","type","desc","demandeur","pourQui","statut","prix"]).map(col=>{
+                            const labels={date:'📅 Date',type:'🏷 Type',desc:'📝 Description',demandeur:'👤 Demandeur',pourQui:'👥 Pour qui',statut:'Statut',prix:'💶 Montant'};
+                            const align=col==='prix'?'right':col==='statut'?'center':'left';
+                            return `<th data-col="${col}" style="text-align:${align};padding:14px 16px;font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#64748b;border-bottom:2px solid #e2e8f0;cursor:grab;user-select:none;" title="Glisser pour réorganiser">${labels[col]||col}</th>`;
+                        }).join('')}
                     </tr>
                 </thead>
                 <tbody>
-                    ${sorted.map((c,i)=>`
-                    <tr data-open-detail='${JSON.stringify(c).replace(/'/g,"&apos;")}' style="border-bottom:1px solid #f0f0f0;cursor:pointer;background:${i%2===0?'#fff':'#fafafa'};" onmouseover="this.style.background='#eff6ff'" onmouseout="this.style.background='${i%2===0?'#fff':'#fafafa'}'">
-                        <td style="padding:11px 16px;color:#64748b;white-space:nowrap;font-size:12px;font-weight:500;">${$d(c.date)}</td>
-                        <td style="padding:11px 16px;font-weight:700;white-space:nowrap;color:#1e293b;">${c.demandeur||'—'}</td>
-                        <td style="padding:11px 16px;color:#374151;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${c.desc||'—'}</td>
-                        <td style="padding:11px 16px;color:#6b7280;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${c.pourQui||'—'}</td>
-                        <td style="padding:11px 10px;text-align:center;"><span style="background:#f1f5f9;border-radius:8px;padding:3px 8px;font-size:12px;">${typeIcon(c.type)} ${typeLabel(c.type)}</span></td>
-                        <td style="padding:11px 10px;text-align:center;"><span style="color:${statusColor(c.pris)};font-weight:700;font-size:12px;background:${statusColor(c.pris)}18;border-radius:8px;padding:3px 10px;">${statusLabel(c.pris)}</span></td>
-                        <td style="padding:11px 16px;text-align:right;font-weight:800;color:${c.prix?'#15803d':'#9e9a93'};font-size:13px;">${c.prix?$m(c.prix):'—'}</td>
-                    </tr>`).join('')}
+                    ${sorted.map((c,i)=>{
+                        const j=daysLeft(c.date);
+                        const urgent=j!==null&&j>=0&&j<=1&&c.pris==='OUI';
+                        const cellMap={
+                            date:`<td style="padding:14px 16px;color:#64748b;white-space:nowrap;font-size:12px;">${$d(c.date)}</td>`,
+                            type:`<td style="padding:14px 16px;">${typeBadge(c.type)}</td>`,
+                            desc:`<td style="padding:14px 16px;color:#1a1f36;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:500;">${c.desc||'—'}</td>`,
+                            demandeur:`<td style="padding:14px 16px;font-weight:600;white-space:nowrap;color:#1a1f36;">${c.demandeur||'—'}</td>`,
+                            pourQui:`<td style="padding:14px 16px;color:#5a6a85;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${c.pourQui||'—'}</td>`,
+                            statut:`<td style="padding:14px 16px;text-align:center;">${statusBadge(c.pris)}</td>`,
+                            prix:`<td style="padding:14px 16px;text-align:right;font-weight:700;font-family:monospace;font-size:13px;color:${c.prix?'#16a34a':'#94a3b8'};">${c.prix?$m(c.prix):'—'}</td>`,
+                        };
+                        return `<tr data-open-detail='${JSON.stringify(c).replace(/'/g,"&apos;")}' style="border-bottom:1px solid #f1f5f9;cursor:pointer;transition:background 0.15s;${urgent?'background:#fffbeb;border-left:3px solid #f59e0b;':''}" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='${urgent?'#fffbeb':''}'">
+                            ${(state.colOrder||["date","type","desc","demandeur","pourQui","statut","prix"]).map(col=>cellMap[col]||'').join('')}
+                        </tr>`;
+                    }).join('')}
                 </tbody>
                 <tfoot>
                     <tr style="background:#f8fafc;border-top:2px solid #e2e8f0;">
-                        <td colspan="6" style="padding:12px 16px;font-weight:700;font-size:13px;color:#374151;">Total validé</td>
-                        <td style="padding:12px 16px;text-align:right;font-weight:800;font-size:14px;color:#15803d;font-family:'DM Serif Display',serif;">
-                            ${$ms(state.data.filter(c=>c.pris==='OUI').reduce((a,b)=>a+(b.prix||0),0))}
+                        <td colspan="6" style="padding:14px 16px;font-weight:700;font-size:13px;color:#1a1f36;">Total validé</td>
+                        <td style="padding:14px 16px;text-align:right;font-weight:800;font-size:15px;color:#16a34a;font-family:monospace;">
+                            ${$ms(allSorted.filter(c=>c.pris==='OUI').reduce((a,b)=>a+(b.prix||0),0))}
                         </td>
                     </tr>
                 </tfoot>
             </table>
         </div>
-        ${state.data.length===0?'<div style="text-align:center;color:#9e9a93;padding:48px;">Aucune entrée</div>':''}
+
+        ${totalPages>1?`
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-top:2px solid #e2e8f0;background:#f8fafc;">
+            <button data-hist-prev style="background:${page===0?'#e2e8f0':'#1a1f36'};color:${page===0?'#9e9a93':'#fff'};border:none;border-radius:30px;padding:7px 18px;font-size:13px;font-weight:600;cursor:${page===0?'default':'pointer'};">← Précédent</button>
+            <span style="font-size:13px;color:#64748b;font-weight:500;">Page ${page+1} / ${totalPages}</span>
+            <button data-hist-next style="background:${page>=totalPages-1?'#e2e8f0':'#1a1f36'};color:${page>=totalPages-1?'#9e9a93':'#fff'};border:none;border-radius:30px;padding:7px 18px;font-size:13px;font-weight:600;cursor:${page>=totalPages-1?'default':'pointer'};">Suivant →</button>
+        </div>`:''}
+
+        ${allSorted.length===0?'<div style="text-align:center;color:#94a3b8;padding:48px;font-size:14px;">Aucune entrée</div>':''}
     </div>
     </div>`;
 }
@@ -1284,6 +1449,7 @@ function renderSaisieModal(){
         <div class="form-group"><label class="form-label">Prestataire</label><select id="afPresta" class="form-select"><option value="">—</option>${P_TAXI.map(p=>`<option ${af.presta===p?'selected':''}>${p}</option>`).join('')}</select></div>
         `:`
         <div class="form-group"><label class="form-label">Fournisseur</label><select id="afPresta" class="form-select"><option value="">—</option>${P_CMD.map(p=>`<option ${af.presta===p?'selected':''}>${p}</option>`).join('')}</select></div>
+        <div class="form-group"><label class="form-label">N° Yooz <span style="font-size:11px;color:var(--ink-soft);">(auto)</span></label><input id="afYooz" type="text" value="${af.yooz||YOOZ_MAP[af.presta]||''}" placeholder="AAF-PO-26-XXXXXX" class="form-input"></div>
         <div class="form-group"><label class="form-label">Lieu livraison</label><input id="afLieu" type="text" value="${af.lieu}" class="form-input"></div>
         
         `}
@@ -1375,7 +1541,7 @@ function attachEvents(){
     // Save prix dans le détail
     const savePrixBtn=document.getElementById('savePrix');
     if(savePrixBtn)savePrixBtn.onclick=async()=>{
-        const val=parseFloat(document.getElementById('detailPrix')?.value)||0;
+        const raw=(document.getElementById('detailPrix')?.value||'').replace(/\s/g,'').replace(',','.');const val=parseFloat(raw)||0;
         const id=state.detail?.id;
         if(!id)return;
         state.data=state.data.map(c=>c.id===id?{...c,prix:val}:c);
@@ -1384,6 +1550,18 @@ function attachEvents(){
         render();
         await dbUpdate({...state.detail,prix:val});
     };
+    const prixInput=document.getElementById('detailPrix');
+    if(prixInput){
+        prixInput.addEventListener('blur',()=>{
+            const raw=prixInput.value.replace(/\s/g,'').replace(',','.');
+            const val=parseFloat(raw);
+            if(!isNaN(val))prixInput.value=val.toLocaleString('fr-FR',{minimumFractionDigits:2,maximumFractionDigits:2});
+        });
+        prixInput.addEventListener('focus',()=>{
+            const raw=prixInput.value.replace(/[\s€]/g,'').replace(',','.');
+            prixInput.value=raw||'';
+        });
+    }
 
         document.querySelectorAll('[data-back-detail]').forEach(el=>el.onclick=()=>setState({detail:null}));
     document.querySelectorAll('[data-admin-logout]').forEach(el=>el.onclick=()=>setState({vue:"select",authed:false,adminTab:"dashboard",fabOpen:false}));
@@ -1407,6 +1585,7 @@ function attachEvents(){
             'Nb personnes':c.nb||'',
             'Prix (€)':c.prix||0,
             'Paiement':c.paie||'',
+            'N° Yooz':c.yooz||YOOZ_MAP[c.presta]||'',
             'Commentaire':c.comment||''
         }));
         const ws=XLSX.utils.json_to_sheet(rows);
@@ -1420,8 +1599,32 @@ function attachEvents(){
         showToast('✓ Export Excel téléchargé !');
     });
 
-        document.querySelectorAll('[data-hist-sort]').forEach(btn=>{
-        btn.onclick=()=>{state.histSort=btn.getAttribute('data-hist-sort');render();};
+        // Pagination historique
+    document.querySelector('[data-hist-prev]')?.addEventListener('click',()=>{
+        if((state.histPage||0)>0) setState({histPage:(state.histPage||0)-1});
+    });
+    document.querySelector('[data-hist-next]')?.addEventListener('click',()=>{
+        const total=Math.ceil(state.data.length/30);
+        if((state.histPage||0)<total-1) setState({histPage:(state.histPage||0)+1});
+    });
+
+        // Drag & drop colonnes historique
+    const histHead = document.getElementById('histTableHead');
+    if(histHead && typeof Sortable !== 'undefined'){
+        Sortable.create(histHead.querySelector('tr'), {
+            animation: 150,
+            ghostClass: 'sortable-ghost',
+            handle: 'th',
+            onEnd: (evt) => {
+                const ths = [...histHead.querySelectorAll('th')];
+                state.colOrder = ths.map(th => th.getAttribute('data-col'));
+                render();
+            }
+        });
+    }
+
+    document.querySelectorAll('[data-hist-sort]').forEach(btn=>{
+        btn.onclick=()=>setState({histSort:btn.getAttribute('data-hist-sort'),histPage:0});
     });
         document.querySelectorAll('[data-filtre]').forEach(el=>el.onclick=()=>setState({filtre:el.getAttribute('data-filtre')}));
 
@@ -1560,6 +1763,16 @@ function attachEvents(){
         };
     });
 
+    // Auto-fill Yooz quand prestataire change
+    const afPrestaEl=document.getElementById('afPresta');
+    if(afPrestaEl) afPrestaEl.onchange=()=>{
+        const yoozEl=document.getElementById('afYooz');
+        if(yoozEl && YOOZ_MAP[afPrestaEl.value]) yoozEl.value=YOOZ_MAP[afPrestaEl.value];
+        if(!state.adminForm) state.adminForm={};
+        state.adminForm.presta=afPrestaEl.value;
+        state.adminForm.yooz=yoozEl?.value||'';
+    };
+
     // Save admin form
     const saveAF=document.getElementById('saveAdminForm');
     if(saveAF)saveAF.onclick=async()=>{
@@ -1574,6 +1787,7 @@ function attachEvents(){
         const com=document.getElementById('afCom')?.value||'';
         const prix=parseFloat(document.getElementById('afPrix')?.value)||0;
         const paie=document.getElementById('afPaie')?.value||'CB';
+        const yooz=document.getElementById('afYooz')?.value||YOOZ_MAP[presta]||'';
         let desc='',lieu='',nb=1,presta='',depart='',arrivee='',vol='';
         if(t==='repas'){
             desc=document.getElementById('afDesc')?.value||'';
@@ -1593,7 +1807,7 @@ function attachEvents(){
             desc=document.getElementById('afDesc')?.value||'';
         }
         if(!dem){showToast('⚠️ Choisir une assistante');return;}
-        const newCmd={id:Date.now(),pris:"OUI",demandeur:dem,pourQui:pourQuiLabel,date,desc,lieu,heure,presta,prix,paie,nb,comment:com,type:t,depart,arrivee,vol};
+        const newCmd={id:Date.now(),pris:"OUI",demandeur:dem,pourQui:pourQuiLabel,date,desc,lieu,heure,presta,prix,paie,nb,comment:com,type:t,depart,arrivee,vol,yooz};
         state.data=[newCmd,...state.data];
         state.saisieType=null;
         state.adminForm=null;
@@ -1615,6 +1829,7 @@ function attachEvents(){
     });
     document.querySelectorAll('[data-rm-admin]').forEach(btn=>{
         btn.addEventListener('click',()=>{
+            if(!confirm('Supprimer cet email ?'))return;
             const i=parseInt(btn.getAttribute('data-rm-admin'));
             settings.adminEmails=(settings.adminEmails||[]).filter((_,idx)=>idx!==i);
             render();
@@ -1649,7 +1864,7 @@ function attachEvents(){
     const addMap=[['addAssistante','newAssistante','assistantes'],['addDirecteur','newDirecteur','directeurs'],['addPrepas','newPrepas','prestatairesRepas'],['addTaxi','newTaxi','prestatairesTaxi'],['addCmd','newCmd','prestatairesCommande']];
     addMap.forEach(([btnId,inputId,key])=>document.getElementById(btnId)?.addEventListener('click',()=>{const i=document.getElementById(inputId);const v=i?.value.trim();if(v&&!settings[key].includes(v))updS({...settings,[key]:[...settings[key],v]});if(i)i.value='';}));
     const rmMap=[['remove-assistante','assistantes'],['remove-directeur','directeurs'],['remove-prepas','prestatairesRepas'],['remove-taxi','prestatairesTaxi'],['remove-cmd','prestatairesCommande']];
-    rmMap.forEach(([attr,key])=>document.querySelectorAll(`[data-${attr}]`).forEach(btn=>btn.onclick=()=>{const idx=parseInt(btn.getAttribute(`data-${attr}`));updS({...settings,[key]:settings[key].filter((_,i)=>i!==idx)});}));
+    rmMap.forEach(([attr,key])=>document.querySelectorAll(`[data-${attr}]`).forEach(btn=>btn.onclick=()=>{if(!confirm('Supprimer cet élément ?'))return;const idx=parseInt(btn.getAttribute(`data-${attr}`));updS({...settings,[key]:settings[key].filter((_,i)=>i!==idx)});}));
 }
 
 let _rt;
@@ -1666,6 +1881,32 @@ window.addEventListener('resize',()=>{clearTimeout(_rt);_rt=setTimeout(render,12
     state.data = data;
     state.loading = false;
     render();
+
+    // Polling temps réel toutes les 30 secondes
+    setInterval(async()=>{
+        try{
+            const prevAttente=state.data.filter(c=>c.pris==='En attente').length;
+            const fresh=await dbLoad();
+            const newAttente=fresh.filter(c=>c.pris==='En attente').length;
+            state.data=fresh;
+            render();
+            if(state.vue==='admin' && state.authed && newAttente>prevAttente){
+                const diff=newAttente-prevAttente;
+                showToast(`🔔 ${diff} nouvelle${diff>1?'s':''} demande${diff>1?'s':''} !`);
+                if(Notification.permission==='granted'){
+                    new Notification('Nouvelle demande',{
+                        body:`${diff} nouvelle${diff>1?'s':''} demande${diff>1?'s':''} en attente`,
+                        icon:'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">🔔</text></svg>'
+                    });
+                }
+            }
+        } catch(e){}
+    }, 30000);
+
+    // Demander permission notifications navigateur
+    if('Notification' in window && Notification.permission==='default'){
+        setTimeout(()=>Notification.requestPermission(),2000);
+    }
 })();
 </script>
 </body>
