@@ -1608,7 +1608,37 @@ function attachEvents(){
         if((state.histPage||0)<total-1) setState({histPage:(state.histPage||0)+1});
     });
 
-        // Drag & drop colonnes historique
+        // Export ICS Outlook
+    document.getElementById('exportICS')?.addEventListener('click', function(){
+        const ics = decodeURIComponent(this.getAttribute('data-ics'));
+        const blob = new Blob([ics], {type:'text/calendar;charset=utf-8'});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'GestionCommandes.ics';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        showToast('✓ Fichier .ics téléchargé');
+    });
+
+    // Calendrier navigation
+    document.querySelector('[data-cal-prev]')?.addEventListener('click',()=>{
+        const cur = state.calMonth ? new Date(state.calMonth) : new Date();
+        const d = new Date(cur.getFullYear(), cur.getMonth()-1, 1);
+        setState({calMonth: d.toISOString()});
+    });
+    document.querySelector('[data-cal-next]')?.addEventListener('click',()=>{
+        const cur = state.calMonth ? new Date(state.calMonth) : new Date();
+        const d = new Date(cur.getFullYear(), cur.getMonth()+1, 1);
+        setState({calMonth: d.toISOString()});
+    });
+    document.querySelector('[data-cal-today]')?.addEventListener('click',()=>{
+        setState({calMonth: null});
+    });
+
+    // Drag & drop colonnes historique
     const histHead = document.getElementById('histTableHead');
     if(histHead && typeof Sortable !== 'undefined'){
         Sortable.create(histHead.querySelector('tr'), {
