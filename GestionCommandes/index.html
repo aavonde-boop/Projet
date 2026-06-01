@@ -692,7 +692,7 @@ function renderInlineForm(m){
         <div class="form-group"><label class="form-label">Lieu de livraison</label><input id="formLieu" type="text" value="${f.lieu}" placeholder="Bureau, Salle France, adresse..." class="form-input"></div>
         <div class="form-row-2">
             <div class="form-group"><label class="form-label">Nb personnes</label><select id="formNb" class="form-select">${NBS.map(n=>`<option ${f.nb===n?'selected':''}>${n}</option>`).join('')}</select></div>
-            <div class="form-group"><label class="form-label">Prestataire</label><select id="formPresta" class="form-select"><option value="">— Choisir —</option>${P_REPAS.map(p=>`<option ${f.presta===p?'selected':''}>${p}</option>`).join('')}</select></div>
+            <div class="form-group"><label class="form-label">Type de repas souhaité</label><select id="formPresta" class="form-select"><option value="">— Choisir —</option>${["Sandwich/Salade","Bento","Sushi","Cuisine française","Cuisine italienne","Cuisine asiatique","Cuisine libanaise","Burger","Plateau de fromages","Desserts","Autre"].map(p=>`<option ${f.presta===p?'selected':''}>${p}</option>`).join('')}</select></div>
         </div>
         `:`
         <div class="form-group">
@@ -1439,7 +1439,7 @@ function renderSaisieModal(){
         <div class="form-group"><label class="form-label">Lieu</label><input id="afLieu" type="text" value="${af.lieu}" class="form-input"></div>
         <div class="form-row-2">
             <div class="form-group"><label class="form-label">Nb personnes</label><select id="afNb" class="form-select">${['1','2','3','4','5','6','7','8','9','10+'].map(n=>`<option ${af.nb===n?'selected':''}>${n}</option>`).join('')}</select></div>
-            <div class="form-group"><label class="form-label">Prestataire</label><select id="afPresta" class="form-select"><option value="">—</option>${P_REPAS.map(p=>`<option ${af.presta===p?'selected':''}>${p}</option>`).join('')}</select></div>
+            <div class="form-group"><label class="form-label">Type de repas souhaité</label><select id="afPresta" class="form-select"><option value="">—</option>${["Sandwich/Salade","Bento","Sushi","Cuisine française","Cuisine italienne","Cuisine asiatique","Cuisine libanaise","Burger","Plateau de fromages","Desserts","Autre"].map(p=>`<option ${af.presta===p?'selected':''}>${p}</option>`).join('')}</select></div>
         </div>
         `:t==='taxi'?`
         <div class="form-group"><label class="form-label">Voyageur</label><input id="afDesc" type="text" value="${af.desc}" class="form-input"></div>
@@ -1714,7 +1714,14 @@ function attachEvents(){
     const pqToggle=document.getElementById('pqToggle');
     const pqDropdown=document.getElementById('pqDropdown');
     if(pqToggle&&pqDropdown){
-        pqToggle.onclick=e=>{e.stopPropagation();pqDropdown.style.display=pqDropdown.style.display==='none'?'block':'none';};
+        pqToggle.onclick=e=>{
+            e.stopPropagation();
+            // Sauvegarder les champs avant d'ouvrir le dropdown
+            state.form.dem=document.getElementById('formDem')?.value||state.form.dem;
+            state.form.desc=document.getElementById('formDesc')?.value||state.form.desc;
+            state.form.lieu=document.getElementById('formLieu')?.value||state.form.lieu;
+            pqDropdown.style.display=pqDropdown.style.display==='none'?'block':'none';
+        };
         document.addEventListener('click',e=>{if(!document.getElementById('pqWrapper')?.contains(e.target))pqDropdown.style.display='none';},{once:false});
     }
     document.querySelectorAll('.pq-check').forEach(cb=>{
@@ -1723,6 +1730,15 @@ function attachEvents(){
             state.form.dem=document.getElementById('formDem')?.value||state.form.dem;
             state.form.pourQui=[...document.querySelectorAll('.pq-check:checked')].map(c=>c.value);
             state.form.pourQuiAutre=document.getElementById('pourQuiAutreInput')?.value||state.form.pourQuiAutre;
+            state.form.desc=document.getElementById('formDesc')?.value||state.form.desc;
+            state.form.lieu=document.getElementById('formLieu')?.value||state.form.lieu;
+            state.form.nb=document.getElementById('formNb')?.value||state.form.nb;
+            state.form.presta=document.getElementById('formPresta')?.value||state.form.presta;
+            state.form.de=document.getElementById('formDe')?.value||state.form.de;
+            state.form.vers=document.getElementById('formVers')?.value||state.form.vers;
+            state.form.com=document.getElementById('formCom')?.value||state.form.com;
+            state.form.date=document.getElementById('formDate')?.value||state.form.date;
+            state.form.heure=document.getElementById('formHeure')?.value||state.form.heure;
             const lbl=document.getElementById('pqLabel');
             if(lbl){const names=state.form.pourQui.filter(v=>v!=='__autre__');const hasAutre=state.form.pourQui.includes('__autre__');lbl.textContent=names.join(', ')+(hasAutre?(names.length?', Autre':'Autre'):'') || '— Choisir —';}
             render();
@@ -1915,6 +1931,12 @@ window.addEventListener('resize',()=>{clearTimeout(_rt);_rt=setTimeout(render,12
     // Polling temps réel toutes les 30 secondes
     setInterval(async()=>{
         try{
+            // Ne pas interrompre si l'utilisateur est en train de remplir un formulaire
+            const activeEl = document.activeElement;
+            const isTyping = activeEl && (activeEl.tagName==='INPUT'||activeEl.tagName==='TEXTAREA'||activeEl.tagName==='SELECT');
+            const isInForm = state.form && state.form.step >= 1 && state.form.type && !state.form.sent;
+            if(isTyping || isInForm) return;
+
             const prevAttente=state.data.filter(c=>c.pris==='En attente').length;
             const fresh=await dbLoad();
             const newAttente=fresh.filter(c=>c.pris==='En attente').length;
@@ -1931,7 +1953,7 @@ window.addEventListener('resize',()=>{clearTimeout(_rt);_rt=setTimeout(render,12
                 }
             }
         } catch(e){}
-    }, 30000);
+    }, 300000);
 
     // Demander permission notifications navigateur
     if('Notification' in window && Notification.permission==='default'){
