@@ -786,7 +786,7 @@ function renderAdminView(m){
             <span style="font-family:'DM Serif Display',serif;font-size:16px;">Administration</span>
         </div>
         <nav style="display:flex;gap:4px;flex-wrap:wrap;">
-            ${[["dashboard","📊","Dashboard"],["reservations","🍽","Réservations"],["commandes","📦","Commandes"],["calendrier","📅","Calendrier"],["historique","🗂","Historique"],["settings","⚙️","Réglages"]].map(([tab,icon,label])=>`
+            ${[["dashboard","📊","Dashboard"],["reservations","🍽","Réservations"],["commandes","📦","Commandes"],["calendrier","📅","Calendrier"],["historique","🗂","Historique"],["corbeille","🗑","Corbeille"],["settings","⚙️","Réglages"]].map(([tab,icon,label])=>`
                 <button data-admin-tab="${tab}" style="display:flex;align-items:center;gap:6px;padding:7px 14px;border-radius:30px;border:none;cursor:pointer;font-size:13px;font-weight:500;background:${state.adminTab===tab?'var(--ink)':'transparent'};color:${state.adminTab===tab?'#fff':'#5a5550'};transition:all 0.15s;white-space:nowrap;">
                     ${icon} ${label}${(tab==='commandes'||tab==='reservations')&&attente.length?` <span style="background:#f59e0b;color:#fff;border-radius:50%;width:16px;height:16px;font-size:10px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;margin-left:2px;">${attente.length}</span>`:''}
                 </button>`).join('')}
@@ -803,6 +803,7 @@ function renderAdminView(m){
     else if(state.adminTab==='commandes')    main=renderCommandes(m);
     else if(state.adminTab==='calendrier')   main=renderCalendrier(m);
     else if(state.adminTab==='historique')   main=renderHistorique(m);
+    else if(state.adminTab==='corbeille')    main=renderCorbeille(m);
     else main=renderDashboard(total,attente,m);
 
     if(m) return `
@@ -810,7 +811,7 @@ function renderAdminView(m){
         <div style="display:flex;align-items:center;justify-content:space-between;">
             <div>
                 <div style="font-size:10px;font-weight:600;letter-spacing:2px;color:rgba(255,255,255,.35);margin-bottom:4px;">ADMIN</div>
-                <div style="font-family:'DM Serif Display',serif;font-size:19px;color:#fff;">${{dashboard:"📊 Dashboard",reservations:"🍽 Réservations",commandes:"📦 Commandes",calendrier:"📅 Calendrier",historique:"🗂 Historique",settings:"⚙️ Réglages"}[state.adminTab]}</div>
+                <div style="font-family:'DM Serif Display',serif;font-size:19px;color:#fff;">${{dashboard:"📊 Dashboard",reservations:"🍽 Réservations",commandes:"📦 Commandes",calendrier:"📅 Calendrier",historique:"🗂 Historique",corbeille:"🗑 Corbeille",settings:"⚙️ Réglages"}[state.adminTab]}</div>
             </div>
             <button data-admin-logout style="background:rgba(255,255,255,.1);border:none;border-radius:10px;padding:8px 13px;color:rgba(255,255,255,.7);cursor:pointer;font-size:13px;font-weight:600;">🔓</button>
         </div>
@@ -826,7 +827,7 @@ function renderAdminView(m){
     </div>
     <nav class="mobile-nav"><div class="mobile-nav-items">
         <button class="mobile-nav-btn" data-back-home><span class="nav-icon">🏠</span><span>Accueil</span></button>
-        ${[["dashboard","📊","Dash"],["reservations","🍽","Résas"],["commandes","📦","Cmdes"],["calendrier","📅","Cal."],["historique","🗂","Hist."],["settings","⚙️","Régl."]].map(([tab,icon,label])=>`
+        ${[["dashboard","📊","Dash"],["reservations","🍽","Résas"],["commandes","📦","Cmdes"],["historique","🗂","Hist."],["corbeille","🗑","🗑"],["settings","⚙️","Régl."]].map(([tab,icon,label])=>`
             <button class="mobile-nav-btn ${state.adminTab===tab?'active':''}" data-admin-tab="${tab}">
                 <span class="nav-icon">${icon}</span><span>${label}</span><span class="nav-dot"></span>
             </button>`).join('')}
@@ -850,39 +851,89 @@ function renderAdminView(m){
    DETAIL
 ══════════════════════════════════════ */
 function renderDetail(d,m){
+    const typeIcon=d.type==='taxi'?'🚕':d.type==='repas'?'🍽':'📦';
+    const isRepas=d.type==='repas';
+    const isTaxi=d.type==='taxi';
+    const isCmd=d.type==='commande';
+
+    const editForm=`
+    <div style="background:#fafaf8;border-radius:16px;padding:16px;margin-bottom:14px;">
+        <div style="font-weight:700;font-size:13px;margin-bottom:14px;color:var(--ink-soft);">✏️ Modifier la commande</div>
+
+        <div class="form-group"><label class="form-label">Description / Titre</label>
+            ${isRepas
+                ? `<select id="editDesc" class="form-select"><option value="">— Choisir —</option>${P_REPAS.map(p=>`<option ${d.desc===p?'selected':''}>${p}</option>`).join('')}</select>`
+                : `<input id="editDesc" type="text" value="${d.desc||''}" class="form-input">`
+            }
+        </div>
+
+        ${isRepas?`
+        <div class="form-group"><label class="form-label">Lieu</label><input id="editLieu" type="text" value="${d.lieu||''}" class="form-input"></div>
+        <div class="form-group"><label class="form-label">Nb personnes</label><select id="editNb" class="form-select">${['1','2','3','4','5','6','7','8','9','10+'].map(n=>`<option ${String(d.nb)===n?'selected':''}>${n}</option>`).join('')}</select></div>
+        `:''}
+
+        ${isTaxi?`
+        <div class="form-group"><label class="form-label">📍 Départ</label><input id="editDe" type="text" value="${d.depart||''}" class="form-input"></div>
+        <div class="form-group"><label class="form-label">🏁 Arrivée</label><input id="editVers" type="text" value="${d.arrivee||''}" class="form-input"></div>
+        <div class="form-group"><label class="form-label">Prestataire</label><select id="editPresta" class="form-select"><option value="">—</option>${P_TAXI.map(p=>`<option ${d.presta===p?'selected':''}>${p}</option>`).join('')}</select></div>
+        `:''}
+
+        ${isCmd?`
+        <div class="form-group"><label class="form-label">Fournisseur</label><select id="editPresta" class="form-select"><option value="">—</option>${P_CMD.map(p=>`<option ${d.presta===p?'selected':''}>${p}</option>`).join('')}</select></div>
+        <div class="form-group"><label class="form-label">Lieu livraison</label><input id="editLieu" type="text" value="${d.lieu||''}" class="form-input"></div>
+        `:''}
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+            <div class="form-group"><label class="form-label">Date</label><input id="editDate" type="date" value="${d.date&&d.date.includes('-')?d.date:d.date?d.date.split('/').reverse().join('-'):''}" class="form-input"></div>
+            <div class="form-group"><label class="form-label">Heure</label><select id="editHeure" class="form-select">${['7h00','7h30','8h00','8h30','9h00','9h30','10h00','10h30','11h00','11h30','12h00','12h30','13h00','13h30','14h00','14h30','15h00','15h30','16h00','16h30','17h00','17h30','18h00','18h30','19h00','19h30','20h00'].map(h=>`<option ${d.heure===h?'selected':''}>${h}</option>`).join('')}</select></div>
+        </div>
+
+        <div class="form-group"><label class="form-label">Pour qui</label><input id="editPourQui" type="text" value="${d.pourQui||''}" class="form-input"></div>
+        <div class="form-group"><label class="form-label">Commentaire</label><textarea id="editComment" class="form-input" style="min-height:60px;resize:vertical;">${d.comment||''}</textarea></div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+            <div class="form-group"><label class="form-label">Prix (€)</label><input id="detailPrix" type="text" inputmode="decimal" value="${d.prix?d.prix.toLocaleString('fr-FR',{minimumFractionDigits:2,maximumFractionDigits:2}):''}" placeholder="0,00" class="form-input" style="text-align:right;font-weight:600;"></div>
+            <div class="form-group"><label class="form-label">Paiement</label><select id="editPaie" class="form-select"><option ${d.paie==='CB'?'selected':''}>CB</option><option ${d.paie==='Facturation'?'selected':''}>Facturation</option></select></div>
+        </div>
+
+        <button id="saveEdit" class="btn-primary" style="width:100%;padding:12px;margin-top:4px;">💾 Sauvegarder les modifications</button>
+    </div>`;
+
     const inner=`
     ${m?`<div style="background:var(--ink);padding:calc(16px + env(safe-area-inset-top,0px)) 20px 20px;">
         <button data-back-detail class="back-btn">← Retour</button>
-        <div style="font-family:'DM Serif Display',serif;font-size:19px;color:#fff;margin-top:8px;">${d.desc}</div>
+        <div style="font-family:'DM Serif Display',serif;font-size:19px;color:#fff;margin-top:8px;">${typeIcon} ${d.desc}</div>
         <div style="color:rgba(255,255,255,.5);font-size:13px;margin-top:3px;">${d.demandeur}${d.pourQui?' · Pour '+d.pourQui:''}</div>
-    </div><div style="padding:16px;padding-bottom:calc(80px + env(safe-area-inset-bottom,0px));">`:
-    `<button data-back-detail class="back-btn-dark" style="margin-bottom:18px;">← Retour à la liste</button>
-    <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px;">${avatar(d.demandeur,48)}<div><div style="font-family:'DM Serif Display',serif;font-size:19px;">${d.desc}</div><div style="color:#9e9a93;font-size:12px;">${d.demandeur}${d.pourQui?' · Pour '+d.pourQui:''}</div></div></div>`}
+    </div><div style="padding:16px;padding-bottom:calc(80px + env(safe-area-inset-bottom,0px));">`:`
+    <button data-back-detail class="back-btn-dark" style="margin-bottom:18px;">← Retour à la liste</button>
+    <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px;">${avatar(d.demandeur,48)}<div><div style="font-family:'DM Serif Display',serif;font-size:19px;">${typeIcon} ${d.desc}</div><div style="color:#9e9a93;font-size:12px;">${d.demandeur}${d.pourQui?' · Pour '+d.pourQui:''}</div></div></div>`}
+
     <div style="display:flex;gap:8px;margin-bottom:16px;">${chip(d.pris)} ${typeTag(d.type)}</div>
-    <div style="background:#fafaf8;border-radius:16px;padding:14px;margin-bottom:14px;">
-        ${[["Date",$d(d.date)],["Heure",d.heure||"—"],["Pour",d.pourQui||"—"],["Lieu",d.lieu||"—"],["Prestataire",d.presta||"—"],["N° Yooz",(d.yooz||YOOZ_MAP[d.presta])||null],["Commentaire",d.comment||null]].filter(r=>r[1]).map(([k,v])=>`
-            <div style="display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid #e8e5df;"><span style="color:#9e9a93;font-size:13px;">${k}</span><span style="font-weight:600;font-size:13px;">${v}</span></div>`).join('')}
-        <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;">
-            <span style="color:#9e9a93;font-size:13px;">Montant</span>
-            <div style="display:flex;align-items:center;gap:8px;">
-                <input id="detailPrix" type="text" inputmode="decimal" value="${d.prix?d.prix.toLocaleString('fr-FR',{minimumFractionDigits:2,maximumFractionDigits:2}):''}" placeholder="0,00" style="width:110px;border:1.5px solid var(--border);border-radius:10px;padding:6px 10px;font-size:14px;font-weight:600;text-align:right;font-family:'DM Sans',sans-serif;">
-                <span style="font-size:13px;color:var(--ink-soft);">€</span>
-                <button id="savePrix" style="background:var(--ink);color:#fff;border:none;border-radius:10px;padding:6px 12px;font-size:13px;font-weight:600;cursor:pointer;">✓</button>
-            </div>
-        </div>
-    </div>
+
+    ${editForm}
+
     <div style="margin-bottom:14px;">
         <div class="form-label" style="margin-bottom:10px;">Changer le statut</div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;">
             ${["OUI","Reçu","En cours","En attente","Annulé"].map(s=>`<button data-set-status='${JSON.stringify({id:d.id,status:s})}' style="padding:8px 16px;border-radius:20px;font-size:13px;border:1.5px solid ${d.pris===s?'var(--ink)':'var(--border)'};background:${d.pris===s?'var(--ink)':'#fff'};color:${d.pris===s?'#fff':'#5a5550'};cursor:pointer;">${ST[s]?.label||s}</button>`).join('')}
         </div>
     </div>
-    <button data-delete-item="${d.id}" class="btn-danger" style="width:100%;padding:12px;border-radius:14px;">🗑 Supprimer la commande</button>
+    ${state.confirmDelete===d.id?`
+    <div style="background:#fef2f2;border:1.5px solid #fecaca;border-radius:14px;padding:14px 16px;margin-bottom:10px;">
+        <div style="font-weight:700;font-size:14px;color:#b91c1c;margin-bottom:10px;">⚠️ Confirmer la suppression ?</div>
+        <div style="font-size:13px;color:#5a5550;margin-bottom:12px;">Cette commande sera déplacée dans la corbeille.</div>
+        <div style="display:flex;gap:8px;">
+            <button id="confirmDeleteYes" style="flex:1;background:#b91c1c;color:#fff;border:none;border-radius:10px;padding:10px;font-weight:700;font-size:14px;cursor:pointer;">🗑 Oui, supprimer</button>
+            <button id="confirmDeleteNo" style="flex:1;background:#f1f5f9;color:#5a5550;border:none;border-radius:10px;padding:10px;font-weight:600;font-size:14px;cursor:pointer;">Annuler</button>
+        </div>
+    </div>`:`
+    <button data-delete-item="${d.id}" class="btn-danger" style="width:100%;padding:12px;border-radius:14px;">🗑 Supprimer la commande</button>`}
     ${m?'</div>':''}`;
 
-    if(m) return `<div class="detail-view">${inner}</div>${state.toast?`<div class="toast">${state.toast}</div>`:''}<nav class="mobile-nav"><div class="mobile-nav-items"><button class="mobile-nav-btn" data-back-home><span class="nav-icon">🏠</span><span>Accueil</span></button>${[["dashboard","📊","Dash"],["reservations","🍽","Résas"],["commandes","📦","Cmdes"],["calendrier","📅","Cal."],["historique","🗂","Hist."],["settings","⚙️","Régl."]].map(([tab,icon,label])=>`<button class="mobile-nav-btn ${state.adminTab===tab?'active':''}" data-admin-tab="${tab}"><span class="nav-icon">${icon}</span><span>${label}</span><span class="nav-dot"></span></button>`).join('')}</div></nav>`;
+    if(m) return `<div class="detail-view">${inner}</div>${state.toast?`<div class="toast">${state.toast}</div>`:''}<nav class="mobile-nav"><div class="mobile-nav-items"><button class="mobile-nav-btn" data-back-home><span class="nav-icon">🏠</span><span>Accueil</span></button>${[["dashboard","📊","Dash"],["reservations","🍽","Résas"],["commandes","📦","Cmdes"],["historique","🗂","Hist."],["corbeille","🗑","🗑"],["settings","⚙️","Régl."]].map(([tab,icon,label])=>`<button class="mobile-nav-btn ${state.adminTab===tab?'active':''}" data-admin-tab="${tab}"><span class="nav-icon">${icon}</span><span>${label}</span><span class="nav-dot"></span></button>`).join('')}</div></nav>`;
     return inner;
 }
+
 
 /* ══════════════════════════════════════
    DASHBOARD
@@ -1237,6 +1288,38 @@ function renderCalendrier(m){
 }
 
 
+function renderCorbeille(m){
+    const deleted = state.deletedData||[];
+    const typeIcon=t=>t==='taxi'?'🚕':t==='repas'?'🍽':'📦';
+
+    return `<div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:10px;">
+        <div>
+            <div style="font-family:'DM Serif Display',serif;font-size:${m?'18px':'22px'};">🗑 Corbeille</div>
+            <div style="font-size:12px;color:#9e9a93;margin-top:3px;">${deleted.length} élément${deleted.length>1?'s':''} supprimé${deleted.length>1?'s':''}</div>
+        </div>
+        ${deleted.length?`<button id="emptyTrash" style="background:#fef2f2;border:1px solid #fecaca;border-radius:30px;padding:7px 16px;color:#b91c1c;cursor:pointer;font-size:13px;font-weight:600;">🗑 Vider la corbeille</button>`:''}
+    </div>
+
+    ${deleted.length===0?`
+    <div style="text-align:center;padding:48px;color:#9e9a93;">
+        <div style="font-size:48px;margin-bottom:12px;">🗑</div>
+        <div style="font-size:15px;">La corbeille est vide</div>
+    </div>`:`
+    <div style="background:#fff;border-radius:20px;border:1px solid #e4e7ec;overflow:hidden;">
+        ${deleted.map((c,i)=>`
+        <div style="display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid #f1f5f9;${i===deleted.length-1?'border-bottom:none;':''}">
+            <div style="font-size:24px;">${typeIcon(c.type)}</div>
+            <div style="flex:1;min-width:0;">
+                <div style="font-weight:600;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${c.desc||'—'}</div>
+                <div style="font-size:11px;color:#9e9a93;margin-top:2px;">${c.demandeur||'—'} · ${$d(c.date)}</div>
+            </div>
+            <button data-restore="${i}" style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:6px 12px;font-size:12px;font-weight:600;color:#15803d;cursor:pointer;white-space:nowrap;">↩ Restaurer</button>
+        </div>`).join('')}
+    </div>`}
+    </div>`;
+}
+
 function renderHistorique(m){
     const typeIcon=t=>t==='taxi'?'🚕':t==='repas'?'🍽':'📦';
     const typeLabel=t=>t==='taxi'?'Taxi':t==='repas'?'Repas':'Commande';
@@ -1381,7 +1464,12 @@ function renderSettings(){
                     ${s.badge?`<span class="badge-${s.badge}">${s.badge==='assistant'?'Assistante':'Directeur'}</span>`:''}
                     <span style="font-size:14px;">${item}</span>
                 </div>
-                <button data-rm="${s.rm}" data-idx="${i}" style="background:none;border:none;font-size:18px;cursor:pointer;color:#ccc;flex-shrink:0;width:24px;text-align:center;">✕</button>
+                ${state.confirmRm&&state.confirmRm.attr===s.rm&&state.confirmRm.idx===i?`
+                <div style="display:flex;gap:4px;align-items:center;">
+                    <button data-confirm-rm-yes style="background:#b91c1c;color:#fff;border:none;border-radius:8px;padding:4px 8px;font-size:11px;font-weight:700;cursor:pointer;">Oui</button>
+                    <button data-confirm-rm-no style="background:#f1f5f9;color:#5a5550;border:none;border-radius:8px;padding:4px 8px;font-size:11px;cursor:pointer;">Non</button>
+                </div>`:`
+                <button data-rm="${s.rm}" data-idx="${i}" style="background:none;border:none;font-size:18px;cursor:pointer;color:#ccc;flex-shrink:0;width:24px;text-align:center;">✕</button>`}
             </div>`).join('')}
         </div>
         <div style="margin-top:12px;display:flex;gap:10px;"><input type="text" id="${s.inputId}" placeholder="${s.ph}" class="form-input" style="flex:1;"><button id="${s.btnId}" class="btn-primary">+ Ajouter</button></div>
@@ -1545,6 +1633,34 @@ function attachEvents(){
     // Nav
     document.querySelectorAll('[data-back-home]').forEach(el=>el.onclick=()=>setState({vue:"select",detail:null,authed:false,fabOpen:false,adminTab:"dashboard"}));
     // Save prix dans le détail
+    // Sauvegarder modifications complètes
+    document.getElementById('saveEdit')?.addEventListener('click', async()=>{
+        const d=state.detail;
+        if(!d) return;
+        const raw=(document.getElementById('detailPrix')?.value||'').replace(/\s/g,'').replace(',','.');
+        const prix=parseFloat(raw)||0;
+        const updates={
+            desc:  document.getElementById('editDesc')?.value||d.desc,
+            date:  document.getElementById('editDate')?.value||d.date,
+            heure: document.getElementById('editHeure')?.value||d.heure,
+            pourQui: document.getElementById('editPourQui')?.value||d.pourQui,
+            comment: document.getElementById('editComment')?.value||'',
+            prix,
+            paie:  document.getElementById('editPaie')?.value||d.paie,
+            lieu:  document.getElementById('editLieu')?.value||d.lieu||'',
+            presta:document.getElementById('editPresta')?.value||d.presta||'',
+            depart:document.getElementById('editDe')?.value||d.depart||'',
+            arrivee:document.getElementById('editVers')?.value||d.arrivee||'',
+            nb:    document.getElementById('editNb')?.value||d.nb||1,
+        };
+        const updated={...d,...updates};
+        state.data=state.data.map(c=>c.id===d.id?updated:c);
+        state.detail=updated;
+        showToast('✓ Modifications sauvegardées');
+        render();
+        await dbUpdate(d.id, updates);
+    });
+
     const savePrixBtn=document.getElementById('savePrix');
     if(savePrixBtn)savePrixBtn.onclick=async()=>{
         const raw=(document.getElementById('detailPrix')?.value||'').replace(/\s/g,'').replace(',','.');const val=parseFloat(raw)||0;
@@ -1614,7 +1730,25 @@ function attachEvents(){
         if((state.histPage||0)<total-1) setState({histPage:(state.histPage||0)+1});
     });
 
-        // Export ICS Outlook
+        // Corbeille
+    document.getElementById('emptyTrash')?.addEventListener('click',()=>{
+        state.deletedData=[];
+        render();
+        showToast('🗑 Corbeille vidée');
+    });
+    document.querySelectorAll('[data-restore]').forEach(btn=>{
+        btn.onclick=()=>{
+            const idx=parseInt(btn.getAttribute('data-restore'));
+            const item=state.deletedData[idx];
+            if(!item) return;
+            state.data=[item,...state.data];
+            state.deletedData=state.deletedData.filter((_,i)=>i!==idx);
+            showToast('✅ Commande restaurée');
+            render();
+        };
+    });
+
+    // Export ICS Outlook
     document.getElementById('exportICS')?.addEventListener('click', function(){
         const ics = decodeURIComponent(this.getAttribute('data-ics'));
         const blob = new Blob([ics], {type:'text/calendar;charset=utf-8'});
@@ -1698,14 +1832,26 @@ function attachEvents(){
         }
         render();
     });
-    document.querySelectorAll('[data-delete-item]').forEach(el=>el.onclick=async e=>{
+    document.querySelectorAll('[data-delete-item]').forEach(el=>el.onclick=e=>{
         e.stopPropagation();
         const id=parseInt(el.getAttribute('data-delete-item'));
-        state.data=state.data.filter(c=>c.id!==id);
-        if(state.detail?.id===id)state.detail=null;
+        state.confirmDelete=id;
         render();
-        await dbDelete(id);
-        showToast("🗑 Commande supprimée");
+    });
+    document.getElementById('confirmDeleteYes')?.addEventListener('click', async()=>{
+        const id=state.confirmDelete;
+        const item=state.data.find(c=>c.id===id);
+        if(item) state.deletedData=[item,...(state.deletedData||[])];
+        state.data=state.data.filter(c=>c.id!==id);
+        state.detail=null;
+        state.confirmDelete=null;
+        showToast('🗑 Déplacée dans la corbeille');
+        render();
+        try{ await dbDelete(id); }catch(e){}
+    });
+    document.getElementById('confirmDeleteNo')?.addEventListener('click',()=>{
+        state.confirmDelete=null;
+        render();
     });
 
     // Login
@@ -1919,7 +2065,40 @@ function attachEvents(){
     const addMap=[['addAssistante','newAssistante','assistantes'],['addDirecteur','newDirecteur','directeurs'],['addPrepas','newPrepas','prestatairesRepas'],['addTaxi','newTaxi','prestatairesTaxi'],['addCmd','newCmd','prestatairesCommande']];
     addMap.forEach(([btnId,inputId,key])=>document.getElementById(btnId)?.addEventListener('click',()=>{const i=document.getElementById(inputId);const v=i?.value.trim();if(v&&!settings[key].includes(v))updS({...settings,[key]:[...settings[key],v]});if(i)i.value='';}));
     const rmMap=[['remove-assistante','assistantes'],['remove-directeur','directeurs'],['remove-prepas','prestatairesRepas'],['remove-taxi','prestatairesTaxi'],['remove-cmd','prestatairesCommande']];
-    rmMap.forEach(([attr,key])=>document.querySelectorAll(`[data-${attr}]`).forEach(btn=>btn.onclick=()=>{if(!confirm('Supprimer cet élément ?'))return;const idx=parseInt(btn.getAttribute(`data-${attr}`));updS({...settings,[key]:settings[key].filter((_,i)=>i!==idx)});}));
+    // Handler suppression réglages via délégation
+    if(!window._rmHandlerSet){
+        window._rmHandlerSet = true;
+        const keyMap={'remove-assistante':'assistantes','remove-directeur':'directeurs','remove-prepas':'prestatairesRepas','remove-taxi':'prestatairesTaxi','remove-cmd':'prestatairesCommande'};
+        document.addEventListener('click', e=>{
+            // Confirmation suppression réglages
+            if(e.target.closest('[data-confirm-rm-yes]')){
+                const {attr,idx}=state.confirmRm||{};
+                const key=keyMap[attr];
+                if(key&&!isNaN(idx)){
+                    settings[key]=settings[key].filter((_,i)=>i!==idx);
+                    updS({...settings});
+                }
+                state.confirmRm=null;
+                render();
+                return;
+            }
+            if(e.target.closest('[data-confirm-rm-no]')){
+                state.confirmRm=null;
+                render();
+                return;
+            }
+            const btn = e.target.closest('[data-rm][data-idx]');
+            if(!btn) return;
+            e.stopPropagation();
+            const attr = btn.getAttribute('data-rm');
+            const key = keyMap[attr];
+            if(!key) return;
+            const idx = parseInt(btn.getAttribute('data-idx'));
+            if(isNaN(idx)) return;
+            state.confirmRm={attr,idx};
+            render();
+        });
+    }
 }
 
 let _rt;
