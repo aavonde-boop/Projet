@@ -291,6 +291,7 @@ async function sendConfirmationEmail(commande, opts={}) {
     // opts.isCopie = true → mail copie à l'assistante
     // opts.to = email admin override
     const isCopie = opts.isCopie || false;
+    const isAnnulation = opts.isAnnulation || false;
     const toOverride = opts.to || null;
 
     const email = toOverride || settings.emails?.[commande.demandeur];
@@ -317,7 +318,9 @@ async function sendConfirmationEmail(commande, opts={}) {
 
     // Sujet avec nom, type et date
     let subject;
-    if(isCopie){
+    if(isAnnulation){
+        subject = `❌ Annulation — ${typeEmoji} ${typeLabel} du ${dateLong}`;
+    } else if(isCopie){
         subject = `✅ Copie de votre demande — ${typeEmoji} ${typeLabel} du ${dateLong}`;
     } else {
         subject = `${typeEmoji} ${typeLabel} — ${commande.demandeur} — ${dateLong}`;
@@ -339,7 +342,9 @@ async function sendConfirmationEmail(commande, opts={}) {
         demandeur:    commande.demandeur,
         commentaire:  commande.comment || "—",
         is_copie:     isCopie ? "Ceci est une copie de votre demande." : "",
-        message_bas:  isCopie
+        message_bas:  isAnnulation
+            ? "Votre demande a été annulée. N'hésitez pas à nous contacter pour plus d'informations."
+            : isCopie
             ? "Votre demande a bien été transmise et sera traitée prochainement."
             : "Votre demande a été validée ✅ Merci !",
     };
@@ -692,7 +697,7 @@ function renderInlineForm(m){
         <div class="form-group"><label class="form-label">Lieu de livraison</label><input id="formLieu" type="text" value="${f.lieu}" placeholder="Bureau, Salle France, adresse..." class="form-input"></div>
         <div class="form-row-2">
             <div class="form-group"><label class="form-label">Nb personnes</label><select id="formNb" class="form-select">${NBS.map(n=>`<option ${f.nb===n?'selected':''}>${n}</option>`).join('')}</select></div>
-            <div class="form-group"><label class="form-label">Type de repas souhaité</label><select id="formPresta" class="form-select"><option value="">— Choisir —</option>${["Sandwich/Salade","Bento","Sushi","Cuisine française","Cuisine italienne","Cuisine asiatique","Cuisine libanaise","Burger","Plateau de fromages","Desserts","Autre"].map(p=>`<option ${f.presta===p?'selected':''}>${p}</option>`).join('')}</select></div>
+            <div class="form-group"><label class="form-label">Type de repas souhaité</label><select id="formPresta" class="form-select"><option value="">— Choisir —</option>${P_REPAS.map(p=>`<option ${f.presta===p?"selected":""}>${p}</option>`).join("")}</select></div>
         </div>
         `:`
         <div class="form-group">
@@ -855,7 +860,7 @@ function renderDetail(d,m){
     <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px;">${avatar(d.demandeur,48)}<div><div style="font-family:'DM Serif Display',serif;font-size:19px;">${d.desc}</div><div style="color:#9e9a93;font-size:12px;">${d.demandeur}${d.pourQui?' · Pour '+d.pourQui:''}</div></div></div>`}
     <div style="display:flex;gap:8px;margin-bottom:16px;">${chip(d.pris)} ${typeTag(d.type)}</div>
     <div style="background:#fafaf8;border-radius:16px;padding:14px;margin-bottom:14px;">
-        ${[["Date",$d(d.date)],["Heure",d.heure||"—"],["Pour",d.pourQui||"—"],["Lieu",d.lieu||"—"],["Prestataire",d.presta||"—"],["N° Yooz",(d.yooz||YOOZ_MAP[d.presta])||null]].filter(r=>r[1]).map(([k,v])=>`
+        ${[["Date",$d(d.date)],["Heure",d.heure||"—"],["Pour",d.pourQui||"—"],["Lieu",d.lieu||"—"],["Prestataire",d.presta||"—"],["N° Yooz",(d.yooz||YOOZ_MAP[d.presta])||null],["Commentaire",d.comment||null]].filter(r=>r[1]).map(([k,v])=>`
             <div style="display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid #e8e5df;"><span style="color:#9e9a93;font-size:13px;">${k}</span><span style="font-weight:600;font-size:13px;">${v}</span></div>`).join('')}
         <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;">
             <span style="color:#9e9a93;font-size:13px;">Montant</span>
@@ -1003,6 +1008,7 @@ function renderReservations(m){
             <div style="flex:1;min-width:0;">
                 <div style="font-weight:600;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${typeIcon} ${c.desc||'—'}</div>
                 <div style="font-size:11px;color:#9e9a93;margin-top:2px;">${c.pourQui||c.demandeur} · ${$d(c.date)} · ${c.presta||'—'}</div>
+                ${c.comment?`<div style="font-size:11px;color:#94a3b8;margin-top:2px;font-style:italic;">💬 ${c.comment}</div>`:''}
             </div>
             <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0;">
                 ${badge?`<span style="background:${badge.bg};border:1px solid ${badge.border};color:${badge.color};border-radius:20px;padding:3px 8px;font-size:11px;font-weight:700;">${badge.label}</span>`:''}
@@ -1339,7 +1345,7 @@ function renderSettings(){
     const secs=[
         {title:"Assistantes",      key:"assistantes",           icon:"👩‍💼",badge:"assistant",inputId:"newAssistante",btnId:"addAssistante",rm:"remove-assistante",ph:"Prénom NOM"},
         {title:"Directeurs",       key:"directeurs",            icon:"👨‍💼",badge:"director", inputId:"newDirecteur", btnId:"addDirecteur", rm:"remove-directeur", ph:"Prénom NOM"},
-        {title:"Prestataires Repas",   key:"prestatairesRepas",   icon:"🍽",badge:null,inputId:"newPrepas",btnId:"addPrepas",rm:"remove-prepas",ph:"Nouveau prestataire"},
+        {title:"Types de repas",       key:"prestatairesRepas",   icon:"🍽",badge:null,inputId:"newPrepas",btnId:"addPrepas",rm:"remove-prepas",ph:"Ex: Sushi, Burger..."},
         {title:"Prestataires Taxi",    key:"prestatairesTaxi",    icon:"🚕",badge:null,inputId:"newPtaxi", btnId:"addPtaxi", rm:"remove-ptaxi", ph:"Nouveau prestataire"},
         {title:"Prestataires Commande",key:"prestatairesCommande",icon:"📦",badge:null,inputId:"newPcmd",  btnId:"addPcmd",  rm:"remove-pcmd",  ph:"Nouveau prestataire"},
     ];
@@ -1375,7 +1381,7 @@ function renderSettings(){
                     ${s.badge?`<span class="badge-${s.badge}">${s.badge==='assistant'?'Assistante':'Directeur'}</span>`:''}
                     <span style="font-size:14px;">${item}</span>
                 </div>
-                <button data-rm="${s.rm}" data-idx="${i}" style="background:none;border:none;font-size:18px;cursor:pointer;color:var(--ink-soft);flex-shrink:0;width:24px;text-align:center;"></button>
+                <button data-rm="${s.rm}" data-idx="${i}" style="background:none;border:none;font-size:18px;cursor:pointer;color:#ccc;flex-shrink:0;width:24px;text-align:center;">✕</button>
             </div>`).join('')}
         </div>
         <div style="margin-top:12px;display:flex;gap:10px;"><input type="text" id="${s.inputId}" placeholder="${s.ph}" class="form-input" style="flex:1;"><button id="${s.btnId}" class="btn-primary">+ Ajouter</button></div>
@@ -1439,7 +1445,7 @@ function renderSaisieModal(){
         <div class="form-group"><label class="form-label">Lieu</label><input id="afLieu" type="text" value="${af.lieu}" class="form-input"></div>
         <div class="form-row-2">
             <div class="form-group"><label class="form-label">Nb personnes</label><select id="afNb" class="form-select">${['1','2','3','4','5','6','7','8','9','10+'].map(n=>`<option ${af.nb===n?'selected':''}>${n}</option>`).join('')}</select></div>
-            <div class="form-group"><label class="form-label">Type de repas souhaité</label><select id="afPresta" class="form-select"><option value="">—</option>${["Sandwich/Salade","Bento","Sushi","Cuisine française","Cuisine italienne","Cuisine asiatique","Cuisine libanaise","Burger","Plateau de fromages","Desserts","Autre"].map(p=>`<option ${af.presta===p?'selected':''}>${p}</option>`).join('')}</select></div>
+            <div class="form-group"><label class="form-label">Type de repas souhaité</label><select id="afPresta" class="form-select"><option value="">—</option>${P_REPAS.map(p=>`<option ${af.presta===p?"selected":""}>${p}</option>`).join("")}</select></div>
         </div>
         `:t==='taxi'?`
         <div class="form-group"><label class="form-label">Voyageur</label><input id="afDesc" type="text" value="${af.desc}" class="form-input"></div>
@@ -1684,6 +1690,9 @@ function attachEvents(){
         if(status==="OUI" && wasNotOUI){
             const commande=state.data.find(c=>c.id===id);
             if(commande) sendConfirmationEmail(commande);
+        } else if(status==="Annulé"){
+            const commande=state.data.find(c=>c.id===id);
+            if(commande) sendConfirmationEmail(commande, {isAnnulation:true});
         } else {
             showToast(`Statut : ${ST[status]?.label||status}`);
         }
