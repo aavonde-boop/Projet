@@ -436,6 +436,7 @@ function rowToApp(r) {
         arrivee:   r.arrivee   || '',
         code:      r.code      || '',
         vol:       r.vol       || '',
+        tel:       r.tel       || '',
     };
 }
 
@@ -460,6 +461,7 @@ function appToRow(c) {
         arrivee:   c.arrivee   || '',
         code:      c.code      || null,
         vol:       c.vol       || null,
+        tel:       c.tel       || null,
     };
 }
 
@@ -556,7 +558,7 @@ let state = {
     activiteTab:"reservations", histSort:"date", histPage:0, calMonth:null, colOrder:["date","code","type","desc","demandeur","pourQui","statut","prix"],
     deletedData:[], confirmRm:null, confirmDelete:null, yoozMap:null, settingsTab:null,
     form:{ type:null, step:1, sent:false, code:null,
-        dem:"", pourQui:[], pourQuiAutre:"", vol:"", copyMail:false,
+        dem:"", pourQui:[], pourQuiAutre:"", vol:"", tel:"", copyMail:false,
         date:today(), heure:"12h00",
         lieu:"", de:"", vers:"",
         presta:"", desc:"", nb:"1", com:"" }
@@ -781,6 +783,7 @@ function renderInlineForm(m){
         </div>
         <div class="form-group"><label class="form-label">Prestataire</label><select id="formPresta" class="form-select"><option value="">— Choisir —</option>${P_TAXI.map(p=>`<option ${f.presta===p?'selected':''}>${p}</option>`).join('')}</select></div>
         ${(()=>{ const dest=(f.vers||'').toLowerCase(); const isAero=dest.includes('aéroport')||dest.includes('aeroport')||dest.includes('cdg')||dest.includes('orly')||dest.includes('roissy')||dest.includes('beauvais'); const isGare=dest.includes('gare')||dest.includes('saint-lazare')||dest.includes('montparnasse')||dest.includes('lyon')||dest.includes('nord')||dest.includes('bercy'); const dep=(f.de||'').toLowerCase(); const isAeroDep=dep.includes('aéroport')||dep.includes('aeroport')||dep.includes('cdg')||dep.includes('orly')||dep.includes('roissy'); const isGareDep=dep.includes('gare'); return (isAero||isGare||isAeroDep||isGareDep)?`<div class="form-group"><label class="form-label" style="color:#b45309;">✈️ N° de vol / train *<span style="font-size:10px;font-weight:400;margin-left:6px;">(obligatoire pour gare/aéroport)</span></label><input id="formVol" type="text" value="${f.vol||''}" placeholder="Ex: AF1234, TGV 6201…" class="form-input" style="border-color:#f59e0b;"></div>`:''})()}
+        <div class="form-group"><label class="form-label">📱 Téléphone du passager * <span style="font-size:10px;font-weight:400;color:var(--ink-soft);">(pour le chauffeur)</span></label><input id="formTel" type="tel" value="${f.tel||''}" placeholder="Ex: 06 12 34 56 78" class="form-input"></div>
         `}
 
         <div class="form-group"><label class="form-label">Commentaire (optionnel)</label><textarea id="formCom" class="form-input" style="min-height:72px;resize:vertical;" placeholder="Informations complémentaires...">${f.com}</textarea></div>
@@ -863,6 +866,14 @@ function renderAdminView(m){
         <div style="display:flex;gap:8px;">
             <button data-back-home style="padding:7px 14px;border-radius:30px;border:1px solid var(--border);cursor:pointer;font-size:13px;color:#9e9a93;background:transparent;">← Accueil</button>
             <button data-admin-logout style="background:#fef2f2;border:1px solid #fecaca;border-radius:30px;padding:7px 14px;color:#b91c1c;cursor:pointer;font-size:13px;font-weight:600;">🔓 Déco</button>
+            <div style="position:relative;display:inline-block;">
+                <button id="fabAdminMain" style="width:36px;height:36px;border-radius:50%;background:var(--ink);color:#fff;border:none;font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;">+</button>
+                <div id="fabAdminMenu" style="display:none;position:absolute;top:44px;right:0;background:#fff;border:1.5px solid #e8e5df;border-radius:14px;box-shadow:0 8px 24px rgba(0,0,0,.12);padding:8px;z-index:9999;min-width:160px;flex-direction:column;gap:4px;">
+                    <button data-saisie-type="repas" style="background:none;border:none;border-radius:10px;padding:10px 14px;font-size:13px;cursor:pointer;text-align:left;width:100%;">🍽 Repas</button>
+                    <button data-saisie-type="taxi" style="background:none;border:none;border-radius:10px;padding:10px 14px;font-size:13px;cursor:pointer;text-align:left;width:100%;">🚕 Taxi</button>
+                    <button data-saisie-type="commande" style="background:none;border:none;border-radius:10px;padding:10px 14px;font-size:13px;cursor:pointer;text-align:left;width:100%;">📦 Commande</button>
+                </div>
+            </div>
         </div>
     </div>`:'';
 
@@ -956,6 +967,7 @@ function renderDetail(d,m){
         </div>
 
         <div class="form-group"><label class="form-label">Pour qui</label><input id="editPourQui" type="text" value="${d.pourQui||''}" class="form-input"></div>
+        ${d.type==='taxi'?`<div class="form-group"><label class="form-label">📱 Téléphone passager</label><input id="editTel" type="tel" value="${d.tel||''}" class="form-input"></div>`:''}
         <div class="form-group"><label class="form-label">Commentaire</label><textarea id="editComment" class="form-input" style="min-height:60px;resize:vertical;">${d.comment||''}</textarea></div>
 
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
@@ -1154,9 +1166,10 @@ function renderActivite(m){
                     ${all.length?all.map((c,i)=>`
                     <tr data-open-detail='${JSON.stringify(c).replace(/'/g,"&apos;")}' style="border-bottom:1px solid #f1f5f9;cursor:pointer;background:${i%2===0?'#fff':'#fafafa'};" onmouseover="this.style.background='#eff6ff'" onmouseout="this.style.background='${i%2===0?'#fff':'#fafafa'}'">
                         <td style="padding:11px 14px;color:#64748b;white-space:nowrap;font-size:12px;">${$d(c.date)}</td>
-                        <td style="padding:11px 14px;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+                        <td style="padding:11px 14px;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
                             <span style="margin-right:5px;">${typeIcon(c.type)}</span>
                             <span style="font-weight:600;color:#1a1f36;">${c.desc||'—'}</span>
+                            ${c.vol?`<span style="font-size:10px;color:#6366f1;margin-left:5px;font-weight:600;" title="N° vol/train: ${c.vol}">✈️ ${c.vol}</span>`:''}
                             ${c.comment?`<span style="font-size:10px;color:#94a3b8;margin-left:4px;" title="${c.comment}">💬</span>`:''}
                         </td>
                         <td style="padding:11px 14px;color:#1a1f36;font-weight:500;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${c.pourQui||'—'}</td>
@@ -1773,6 +1786,7 @@ function renderSaisieModal(){
         <div class="form-group"><label class="form-label">📍 Départ</label><input id="afDe" type="text" value="${af.de}" class="form-input" autocomplete="off" placeholder="Adresse de départ…"></div>
         <div class="form-group"><label class="form-label">🏁 Arrivée</label><input id="afVers" type="text" value="${af.vers}" class="form-input" autocomplete="off" placeholder="Destination…"></div>
         ${(()=>{const dest=(af.vers||'').toLowerCase();const dep=(af.de||'').toLowerCase();const need=dest.includes('aéroport')||dest.includes('aeroport')||dest.includes('cdg')||dest.includes('orly')||dest.includes('gare')||dep.includes('aéroport')||dep.includes('aeroport')||dep.includes('gare');return need?`<div class="form-group"><label class="form-label" style="color:#b45309;">✈️ N° de vol / train *</label><input id="afVol" type="text" value="${af.vol||''}" placeholder="Ex: AF1234…" class="form-input" style="border-color:#f59e0b;"></div>`:'';})()}
+        <div class="form-group"><label class="form-label">📱 Téléphone du passager *</label><input id="afTel" type="tel" value="${af.tel||''}" placeholder="Ex: 06 12 34 56 78" class="form-input"></div>
         <div class="form-group"><label class="form-label">Prestataire</label><select id="afPresta" class="form-select"><option value="">—</option>${P_TAXI.map(p=>`<option ${af.presta===p?'selected':''}>${p}</option>`).join('')}</select></div>
         `:`
         <div class="form-group"><label class="form-label">Fournisseur</label><select id="afPresta" class="form-select"><option value="">—</option>${P_CMD.map(p=>`<option ${af.presta===p?'selected':''}>${p}</option>`).join('')}</select></div>
@@ -2035,8 +2049,16 @@ function attachEvents(){
     });
 
     // FAB admin
-    document.getElementById('fabAdminMain')?.addEventListener('click',()=>{
-        setState({fabAdminOpen:!state.fabAdminOpen});
+    document.getElementById('fabAdminMain')?.addEventListener('click',(e)=>{
+        e.stopPropagation();
+        const menu=document.getElementById('fabAdminMenu');
+        if(menu){menu.style.display=menu.style.display==='flex'?'none':'flex';}
+    });
+    document.addEventListener('click',(e)=>{
+        if(!e.target.closest('#fabAdminMain')&&!e.target.closest('#fabAdminMenu')){
+            const menu=document.getElementById('fabAdminMenu');
+            if(menu) menu.style.display='none';
+        }
     });
 
     // Track mode handlers
@@ -2259,12 +2281,24 @@ function attachEvents(){
         f.pourQui=[...document.querySelectorAll('.pq-check:checked')].map(c=>c.value);
         f.pourQuiAutre=document.getElementById('pourQuiAutreInput')?.value||'';
         f.vol=document.getElementById('formVol')?.value||'';
+        f.tel=document.getElementById('formTel')?.value||'';
         f.copyMail=document.getElementById('formCopyMail')?.checked||false;
         if(f.type==='repas'){f.desc=document.getElementById('formDesc')?.value||'';f.lieu=document.getElementById('formLieu')?.value||'';f.nb=document.getElementById('formNb')?.value||'1';f.presta=document.getElementById('formPresta')?.value||'';}
         else{f.de=document.getElementById('formDe')?.value||'';f.vers=document.getElementById('formVers')?.value||'';f.presta=document.getElementById('formPresta')?.value||'';}
         f.com=document.getElementById('formCom')?.value||'';
-        // Validation vol obligatoire
+        // Validation champs obligatoires
+        if(!f.dem){showToast('⚠️ Votre nom est obligatoire');return;}
+        if(!f.pourQui.length){showToast('⚠️ Veuillez indiquer pour qui');return;}
+        if(!f.date){showToast('⚠️ La date est obligatoire');return;}
+        if(!f.heure){showToast('⚠️ L\'heure est obligatoire');return;}
+        if(f.type==='repas'){
+            if(!f.presta){showToast('⚠️ Le type de repas est obligatoire');return;}
+            if(!f.lieu){showToast('⚠️ Le lieu est obligatoire');return;}
+        }
         if(f.type==='taxi'){
+            if(!f.de){showToast('⚠️ L\'adresse de départ est obligatoire');return;}
+            if(!f.vers){showToast('⚠️ L\'adresse d\'arrivée est obligatoire');return;}
+            if(!f.tel){showToast('⚠️ Le téléphone du passager est obligatoire');return;}
             const dest=(f.vers||'').toLowerCase();
             const dep=(f.de||'').toLowerCase();
             const needsVol=dest.includes('aéroport')||dest.includes('aeroport')||dest.includes('cdg')||dest.includes('orly')||dest.includes('roissy')||dest.includes('beauvais')||dest.includes('gare')||dep.includes('aéroport')||dep.includes('aeroport')||dep.includes('gare');
@@ -2280,7 +2314,7 @@ function attachEvents(){
         const pourQuiLabel=f.pourQui.includes('__autre__')?(f.pourQuiAutre||'Autre'):f.pourQui.join(', ');
         const descFinal=f.type==='taxi'?`Taxi ${(f.de||'?').split(',')[0]} → ${(f.vers||'?').split(',')[0]}`:(f.desc||'Commande repas');
         const code=genCode(f.type);
-        const newItem={id:Date.now(),code,pris:"En attente",demandeur:f.dem,pourQui:pourQuiLabel,date:f.date,desc:descFinal,lieu:f.type==='taxi'?f.de:f.lieu,heure:f.heure,presta:f.presta,prix:0,paie:"",nb:parseInt(f.nb)||1,comment:f.com,type:f.type,depart:f.de,arrivee:f.vers,vol:f.vol||''};
+        const newItem={id:Date.now(),code,pris:"En attente",demandeur:f.dem,pourQui:pourQuiLabel,date:f.date,desc:descFinal,lieu:f.type==='taxi'?f.de:f.lieu,heure:f.heure,presta:f.presta,prix:0,paie:"",nb:parseInt(f.nb)||1,comment:f.com,type:f.type,depart:f.de,arrivee:f.vers,vol:f.vol||'',tel:f.tel||''};
         state.data=[newItem,...state.data];
         state.form.sent=true;state.form.code=code;render();
         console.log('newItem code:', newItem.code, 'appToRow:', JSON.stringify(appToRow(newItem)));
@@ -2340,6 +2374,7 @@ function attachEvents(){
         const prix=parseFloat(document.getElementById('afPrix')?.value)||0;
         const paie=document.getElementById('afPaie')?.value||'CB';
         const yooz=document.getElementById('afYooz')?.value||YOOZ_MAP[presta]||'';
+        const tel=document.getElementById('afTel')?.value||'';
         let desc='',lieu='',nb=1,presta='',depart='',arrivee='',vol='';
         if(t==='repas'){
             desc=document.getElementById('afDesc')?.value||'';
@@ -2359,7 +2394,7 @@ function attachEvents(){
             desc=document.getElementById('afDesc')?.value||'';
         }
         if(!dem){showToast('⚠️ Choisir une assistante');return;}
-        const newCmd={id:Date.now(),pris:"OUI",demandeur:dem,pourQui:pourQuiLabel,date,desc,lieu,heure,presta,prix,paie,nb,comment:com,type:t,depart,arrivee,vol,yooz};
+        const newCmd={id:Date.now(),pris:"OUI",demandeur:dem,pourQui:pourQuiLabel,date,desc,lieu,heure,presta,prix,paie,nb,comment:com,type:t,depart,arrivee,vol,yooz,tel};
         state.data=[newCmd,...state.data];
         state.saisieType=null;
         state.adminForm=null;
