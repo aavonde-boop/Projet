@@ -186,6 +186,13 @@ const DEFAULT_EMAILS = {
 // EmailJS config
 const EJS_SERVICE  = "service_i09ljga";
 const EJS_TEMPLATE = "template_xz4on7w";
+// Génération code unique REP/TAX/CMD-XXXX
+function genCode(type){
+    const suffix=type==='repas'?'R':type==='taxi'?'T':'C';
+    const num=Math.floor(1000+Math.random()*9000);
+    return `AAG-${suffix}${num}`;
+}
+
 const YOOZ_MAP = {
     "Bruneau":   "AAF-PO-26-042993",
     "Nespresso": "AAF-PO-26-043080",
@@ -213,6 +220,7 @@ function loadSettingsLocal() {
         prestatairesCommande: JSON.parse(localStorage.getItem('settings_prestataires_commande')||JSON.stringify(DEFAULT_PCMD)),
         emails:               JSON.parse(localStorage.getItem('settings_emails')               ||JSON.stringify(DEFAULT_EMAILS)),
         adminEmails:          JSON.parse(localStorage.getItem('settings_admin_emails')          ||JSON.stringify([])),
+        yoozMap:              JSON.parse(localStorage.getItem('settings_yooz_map')              ||JSON.stringify({})),
     };
 }
 
@@ -224,6 +232,7 @@ function saveSettingsLocal(s) {
     localStorage.setItem('settings_prestataires_commande',JSON.stringify(s.prestatairesCommande));
     localStorage.setItem('settings_emails',               JSON.stringify(s.emails));
     localStorage.setItem('settings_admin_emails',         JSON.stringify(s.adminEmails||[]));
+    localStorage.setItem('settings_yooz_map',              JSON.stringify(s.yoozMap||{}));
 }
 
 async function loadSettingsFromDB() {
@@ -245,6 +254,7 @@ async function loadSettingsFromDB() {
         if (map.prestatairesCommande) settings.prestatairesCommande = map.prestatairesCommande;
         if (map.emails)               settings.emails               = map.emails;
         if (map.adminEmails)          settings.adminEmails          = map.adminEmails;
+        if (map.yoozMap)              { settings.yoozMap = map.yoozMap; Object.assign(YOOZ_MAP, map.yoozMap); state.yoozMap = map.yoozMap; }
         saveSettingsLocal(settings);
         refreshGlobals();
     } catch(e) {
@@ -254,7 +264,7 @@ async function loadSettingsFromDB() {
 
 async function saveSettingsToDB(s) {
     saveSettingsLocal(s);
-    const keys = ['assistantes','directeurs','prestatairesRepas','prestatairesTaxi','prestatairesCommande','emails'];
+    const keys = ['assistantes','directeurs','prestatairesRepas','prestatairesTaxi','prestatairesCommande','emails','adminEmails','yoozMap'];
     for (const cle of keys) {
         try {
             await fetch(`${SB_PARAMS}?cle=eq.${cle}`, {
@@ -321,9 +331,9 @@ async function sendConfirmationEmail(commande, opts={}) {
     if(isAnnulation){
         subject = `❌ Annulation — ${typeEmoji} ${typeLabel} du ${dateLong}`;
     } else if(isCopie){
-        subject = `✅ Copie de votre demande — ${typeEmoji} ${typeLabel} du ${dateLong}`;
+        subject = `✅ Copie — ${commande.code||''} — ${typeEmoji} ${typeLabel} du ${dateLong}`;
     } else {
-        subject = `${typeEmoji} ${typeLabel} — ${commande.demandeur} — ${dateLong}`;
+        subject = `${typeEmoji} ${typeLabel} — ${commande.code||''} — ${commande.demandeur} — ${dateLong}`;
     }
 
     const template = isCopie ? EJS_TEMPLATE_COPIE || EJS_TEMPLATE : EJS_TEMPLATE;
@@ -331,6 +341,8 @@ async function sendConfirmationEmail(commande, opts={}) {
     const params = {
         to_email:     email,
         to_name:      prenom,
+        code:         commande.code||'',
+        subject:      subject,
         subject:      subject,
         desc:         commande.desc || "—",
         date:         dateLong,
@@ -535,8 +547,11 @@ let state = {
     data:[], loading:true,
     detail:null, adminTab:"dashboard",
     search:"", filtre:"all", toast:"",
-    saisieType:null, fabOpen:false,
-    form:{ type:null, step:1, sent:false,
+    saisieType:null, fabOpen:false, fabAdminOpen:false, trackMode:false, trackResult:null, trackCode:"" ,
+    resaFilter:"all", cmdFilter:"all", resaSort:"date", resaSortAsc:true, cmdSort:"date", cmdSortAsc:true,
+    activiteTab:"reservations", histSort:"date", histPage:0, calMonth:null, colOrder:["date","code","type","desc","demandeur","pourQui","statut","prix"],
+    deletedData:[], confirmRm:null, confirmDelete:null, yoozMap:null, settingsTab:null,
+    form:{ type:null, step:1, sent:false, code:null,
         dem:"", pourQui:[], pourQuiAutre:"", vol:"", copyMail:false,
         date:today(), heure:"12h00",
         lieu:"", de:"", vers:"",
@@ -570,6 +585,7 @@ function render(){
     const m=isMobile();
     let html='';
     if(state.vue==="admin") html=state.authed?renderAdminView(m):renderAdminLogin();
+    else if(state.trackMode) html=renderTrackCode(m);
     else html=renderHome(m);
     app.innerHTML=`<div class="desktop-app">${html}</div>`;
     attachEvents();
@@ -579,6 +595,43 @@ function render(){
 /* ══════════════════════════════════════
    HOME (select + inline form)
 ══════════════════════════════════════ */
+function renderTrackCode(m){
+    const result = state.trackResult;
+    const ST_LABEL={'OUI':'✅ Validée','En attente':'⏳ En attente','En cours':'🔄 En cours','Annulé':'❌ Annulée','Reçu':'✓ Reçue'};
+    const typeIcon=t=>t==='taxi'?'🚕':t==='repas'?'🍽':'📦';
+
+    let resultHtml='';
+    if(result===false){
+        resultHtml='<div style="text-align:center;color:#94a3b8;padding:20px;font-size:14px;">Aucune demande trouvée avec ce code</div>';
+    } else if(result){
+        let cancelHtml='';
+        if(result.pris==='En attente'){
+            cancelHtml='<button id="cancelTrackBtn" style="width:100%;margin-top:16px;background:#fef2f2;border:1px solid #fecaca;border-radius:12px;padding:10px;color:#b91c1c;cursor:pointer;font-size:13px;font-weight:600;">❌ Annuler cette demande</button>';
+        }
+        resultHtml='<div style="background:#f8fafc;border-radius:16px;padding:20px;border:1px solid #e2e8f0;margin-top:16px;">'
+            +'<div style="font-size:20px;margin-bottom:8px;">'+typeIcon(result.type)+' <strong>'+(result.desc||'—')+'</strong></div>'
+            +'<div style="font-size:12px;color:#94a3b8;margin-bottom:14px;">'+result.code+'</div>'
+            +'<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #f0eeea;font-size:13px;"><span style="color:#94a3b8;">Statut</span><span style="font-weight:600;">'+(ST_LABEL[result.pris]||result.pris)+'</span></div>'
+            +'<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #f0eeea;font-size:13px;"><span style="color:#94a3b8;">Date</span><span>'+$d(result.date)+'</span></div>'
+            +'<div style="display:flex;justify-content:space-between;padding:6px 0;font-size:13px;"><span style="color:#94a3b8;">Pour qui</span><span>'+(result.pourQui||'—')+'</span></div>'
+            +cancelHtml+'</div>';
+    }
+
+    const code=state.trackCode||'';
+    return '<div style="min-height:100vh;background:var(--bg);padding:'+(m?'20px 16px':'40px')+';display:flex;align-items:center;justify-content:center;">'
+        +'<div style="background:var(--white);border-radius:24px;padding:'+(m?'28px 20px':'40px')+';border:1px solid var(--border);width:100%;max-width:400px;">'
+        +'<button id="closeTrackBtn" style="background:none;border:none;color:#94a3b8;cursor:pointer;font-size:13px;margin-bottom:16px;">← Retour</button>'
+        +'<div style="font-family:DM Serif Display,serif;font-size:22px;margin-bottom:6px;">🔍 Suivre ma demande</div>'
+        +'<div style="color:#9e9a93;font-size:13px;margin-bottom:20px;">Entrez votre code AAG-XXXXX</div>'
+        +'<div style="display:flex;gap:8px;margin-bottom:4px;">'
+        +'<input id="trackInput" type="text" value="'+code+'" placeholder="AAG-R2847" style="flex:1;border:1.5px solid var(--border);border-radius:12px;padding:12px;font-family:monospace;font-size:16px;letter-spacing:2px;">'
+        +'<button id="trackSearchBtn" style="background:var(--ink);color:#fff;border:none;border-radius:12px;padding:12px 16px;font-size:13px;font-weight:600;cursor:pointer;">OK</button>'
+        +'</div>'
+        +resultHtml
+        +'</div></div>';
+}
+
+
 function renderHome(m){
     const total=state.data.filter(c=>c.pris==="OUI").reduce((a,b)=>a+(b.prix||0),0);
     const att=state.data.filter(c=>c.pris==="En attente").length;
@@ -604,6 +657,7 @@ function renderHome(m){
             ${renderInlineForm(m)}
         </div>
     </div>
+
     ${state.toast?`<div class="toast">${state.toast}</div>`:''}`;
 }
 
@@ -618,8 +672,18 @@ function renderInlineForm(m){
     <div style="background:var(--white);border-radius:${m?'20px':'28px'};padding:${m?'32px 20px':'48px'};border:1px solid var(--border);text-align:center;box-shadow:0 8px 32px rgba(0,0,0,0.06);">
         <div style="width:70px;height:70px;border-radius:50%;background:#f0fdf4;border:2px solid #22c55e;display:flex;align-items:center;justify-content:center;font-size:38px;margin:0 auto 18px;">✓</div>
         <div style="font-family:'DM Serif Display',serif;font-size:24px;margin-bottom:8px;">Demande envoyée !</div>
-        <div style="color:#9e9a93;font-size:14px;margin-bottom:28px;">En attente de validation par l'admin.</div>
-        <button data-reset-form class="btn-primary" style="width:100%;max-width:280px;padding:14px;">+ Nouvelle demande</button>
+        <div style="color:#9e9a93;font-size:14px;margin-bottom:24px;">En attente de validation par l'admin.</div>
+
+        <div style="background:#f8fafc;border:2px dashed #e2e8f0;border-radius:16px;padding:20px;margin-bottom:24px;display:inline-block;min-width:200px;">
+            <div style="font-size:11px;color:#94a3b8;margin-bottom:8px;text-transform:uppercase;letter-spacing:.08em;">Code de suivi</div>
+            <div style="font-family:monospace;font-size:30px;font-weight:800;color:#1a1f36;letter-spacing:6px;">${f.code||'—'}</div>
+            <div style="font-size:11px;color:#94a3b8;margin-top:8px;">Notez ce code pour suivre ou modifier votre demande</div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:10px;max-width:280px;margin:0 auto;">
+            <button data-reset-form class="btn-primary" style="width:100%;padding:14px;">+ Nouvelle demande</button>
+            <button id="goTrack" class="btn-secondary" style="width:100%;padding:12px;">🔍 Suivre ma demande</button>
+        </div>
     </div>`;
 
     /* ─ STEP 1 : TYPE ─ */
@@ -639,6 +703,7 @@ function renderInlineForm(m){
                 <div style="color:var(--ink-soft);font-size:12px;">Véhicule avec chauffeur</div>
             </div>
         </div>
+    <button id="goTrackHome" style="width:100%;margin-top:14px;background:none;border:1.5px solid var(--border);border-radius:16px;padding:12px;font-size:13px;color:var(--ink-soft);cursor:pointer;">🔍 Suivre ou modifier ma demande</button>
     </div>`;
 
     const card = (inner) => `<div style="background:var(--white);border-radius:${m?'20px':'28px'};padding:${m?'20px 16px':'28px 32px'};border:1px solid var(--border);box-shadow:0 8px 32px rgba(0,0,0,0.05);">${inner}</div>`;
@@ -777,7 +842,7 @@ function renderAdminLogin(){
 ══════════════════════════════════════ */
 function renderAdminView(m){
     const total=state.data.filter(c=>c.pris==="OUI").reduce((a,b)=>a+(b.prix||0),0);
-    const attente=state.data.filter(c=>c.pris==="En attente");
+    const attente=state.data.filter(c=>c.pris==="En attente"||c.pris==="En cours");
     if(state.detail) return renderDetail(state.detail,m);
 
     const sidebar=!m?`<div style="background:var(--white);border:1px solid var(--border);padding:12px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:20px;border-radius:20px;box-shadow:0 1px 3px rgba(0,0,0,0.04);">
@@ -786,9 +851,9 @@ function renderAdminView(m){
             <span style="font-family:'DM Serif Display',serif;font-size:16px;">Administration</span>
         </div>
         <nav style="display:flex;gap:4px;flex-wrap:wrap;">
-            ${[["dashboard","📊","Dashboard"],["reservations","🍽","Réservations"],["commandes","📦","Commandes"],["calendrier","📅","Calendrier"],["historique","🗂","Historique"],["corbeille","🗑","Corbeille"],["settings","⚙️","Réglages"]].map(([tab,icon,label])=>`
+            ${[["dashboard","📊","Dashboard"],["activite","📋","Activité"],["calendrier","📅","Calendrier"],["settings","⚙️","Réglages"]].map(([tab,icon,label])=>`
                 <button data-admin-tab="${tab}" style="display:flex;align-items:center;gap:6px;padding:7px 14px;border-radius:30px;border:none;cursor:pointer;font-size:13px;font-weight:500;background:${state.adminTab===tab?'var(--ink)':'transparent'};color:${state.adminTab===tab?'#fff':'#5a5550'};transition:all 0.15s;white-space:nowrap;">
-                    ${icon} ${label}${(tab==='commandes'||tab==='reservations')&&attente.length?` <span style="background:#f59e0b;color:#fff;border-radius:50%;width:16px;height:16px;font-size:10px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;margin-left:2px;">${attente.length}</span>`:''}
+                    ${icon} ${label}${tab==='activite'&&attente.length?` <span style="background:#f59e0b;color:#fff;border-radius:50%;width:16px;height:16px;font-size:10px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;margin-left:2px;">${attente.length}</span>`:''}
                 </button>`).join('')}
         </nav>
         <div style="display:flex;gap:8px;">
@@ -799,11 +864,8 @@ function renderAdminView(m){
 
     let main='';
     if(state.adminTab==='settings')        main=renderSettings();
-    else if(state.adminTab==='reservations') main=renderReservations(m);
-    else if(state.adminTab==='commandes')    main=renderCommandes(m);
+    else if(state.adminTab==='activite')     main=renderActivite(m);
     else if(state.adminTab==='calendrier')   main=renderCalendrier(m);
-    else if(state.adminTab==='historique')   main=renderHistorique(m);
-    else if(state.adminTab==='corbeille')    main=renderCorbeille(m);
     else main=renderDashboard(total,attente,m);
 
     if(m) return `
@@ -811,7 +873,7 @@ function renderAdminView(m){
         <div style="display:flex;align-items:center;justify-content:space-between;">
             <div>
                 <div style="font-size:10px;font-weight:600;letter-spacing:2px;color:rgba(255,255,255,.35);margin-bottom:4px;">ADMIN</div>
-                <div style="font-family:'DM Serif Display',serif;font-size:19px;color:#fff;">${{dashboard:"📊 Dashboard",reservations:"🍽 Réservations",commandes:"📦 Commandes",calendrier:"📅 Calendrier",historique:"🗂 Historique",corbeille:"🗑 Corbeille",settings:"⚙️ Réglages"}[state.adminTab]}</div>
+                <div style="font-family:'DM Serif Display',serif;font-size:19px;color:#fff;">${{dashboard:"📊 Dashboard",activite:"📋 Activité",calendrier:"📅 Calendrier",settings:"⚙️ Réglages"}[state.adminTab]}</div>
             </div>
             <button data-admin-logout style="background:rgba(255,255,255,.1);border:none;border-radius:10px;padding:8px 13px;color:rgba(255,255,255,.7);cursor:pointer;font-size:13px;font-weight:600;">🔓</button>
         </div>
@@ -827,7 +889,7 @@ function renderAdminView(m){
     </div>
     <nav class="mobile-nav"><div class="mobile-nav-items">
         <button class="mobile-nav-btn" data-back-home><span class="nav-icon">🏠</span><span>Accueil</span></button>
-        ${[["dashboard","📊","Dash"],["reservations","🍽","Résas"],["commandes","📦","Cmdes"],["historique","🗂","Hist."],["corbeille","🗑","🗑"],["settings","⚙️","Régl."]].map(([tab,icon,label])=>`
+        ${[["dashboard","📊","Dash"],["activite","📋","Activité"],["calendrier","📅","Cal."],["settings","⚙️","Régl."]].map(([tab,icon,label])=>`
             <button class="mobile-nav-btn ${state.adminTab===tab?'active':''}" data-admin-tab="${tab}">
                 <span class="nav-icon">${icon}</span><span>${label}</span><span class="nav-dot"></span>
             </button>`).join('')}
@@ -844,6 +906,7 @@ function renderAdminView(m){
         </div>
     </div>
     <div class="admin-grid">${sidebar}<div class="admin-main">${main}${state.saisieType?renderSaisieModal():''}</div></div>
+
     ${state.toast?`<div class="toast">${state.toast}</div>`:''}`;
 }
 
@@ -930,7 +993,7 @@ function renderDetail(d,m){
     <button data-delete-item="${d.id}" class="btn-danger" style="width:100%;padding:12px;border-radius:14px;">🗑 Supprimer la commande</button>`}
     ${m?'</div>':''}`;
 
-    if(m) return `<div class="detail-view">${inner}</div>${state.toast?`<div class="toast">${state.toast}</div>`:''}<nav class="mobile-nav"><div class="mobile-nav-items"><button class="mobile-nav-btn" data-back-home><span class="nav-icon">🏠</span><span>Accueil</span></button>${[["dashboard","📊","Dash"],["reservations","🍽","Résas"],["commandes","📦","Cmdes"],["historique","🗂","Hist."],["corbeille","🗑","🗑"],["settings","⚙️","Régl."]].map(([tab,icon,label])=>`<button class="mobile-nav-btn ${state.adminTab===tab?'active':''}" data-admin-tab="${tab}"><span class="nav-icon">${icon}</span><span>${label}</span><span class="nav-dot"></span></button>`).join('')}</div></nav>`;
+    if(m) return `<div class="detail-view">${inner}</div>${state.toast?`<div class="toast">${state.toast}</div>`:''}<nav class="mobile-nav"><div class="mobile-nav-items"><button class="mobile-nav-btn" data-back-home><span class="nav-icon">🏠</span><span>Accueil</span></button>${[["dashboard","📊","Dash"],["activite","📋","Activité"],["calendrier","📅","Cal."],["settings","⚙️","Régl."]].map(([tab,icon,label])=>`<button class="mobile-nav-btn ${state.adminTab===tab?'active':''}" data-admin-tab="${tab}"><span class="nav-icon">${icon}</span><span>${label}</span><span class="nav-dot"></span></button>`).join('')}</div></nav>`;
     return inner;
 }
 
@@ -941,22 +1004,23 @@ function renderDetail(d,m){
 function renderDashboard(total,attente,m){
     const today2=new Date(); today2.setHours(0,0,0,0);
 
-
-    // Urgences = en attente + validées aujourd'hui ou demain
+    const today3=new Date(); today3.setHours(0,0,0,0);
     const urgentesResa = [
-        ...state.data.filter(c=>c.pris==='En attente'&&c.type!=='commande'),
+        ...state.data.filter(c=>(c.pris==='En attente'||c.pris==='En cours')&&c.type!=='commande'),
         ...state.data.filter(c=>c.pris==='OUI'&&c.type!=='commande'&&[0,1].includes(daysLeft(c.date)))
-    ];
+    ].sort((a,b)=>(parseDate(a.date)||new Date(0))-(parseDate(b.date)||new Date(0)));
     const urgentesCmd = [
-        ...state.data.filter(c=>c.pris==='En attente'&&c.type==='commande'),
+        ...state.data.filter(c=>(c.pris==='En attente'||c.pris==='En cours')&&c.type==='commande'),
         ...state.data.filter(c=>c.pris==='OUI'&&c.type==='commande'&&[0,1].includes(daysLeft(c.date)))
-    ];
+    ].sort((a,b)=>(parseDate(a.date)||new Date(0))-(parseDate(b.date)||new Date(0)));
 
-    // KPIs
-    const totalResa=state.data.filter(c=>c.pris==='OUI'&&c.type!=='commande').reduce((a,b)=>a+(b.prix||0),0);
-    const totalCmd=state.data.filter(c=>c.pris==='OUI'&&c.type==='commande').reduce((a,b)=>a+(b.prix||0),0);
-    const nbAttenteResa=state.data.filter(c=>c.pris==='En attente'&&c.type!=='commande').length;
-    const nbAttenteCmd=state.data.filter(c=>c.pris==='En attente'&&c.type==='commande').length;
+    const totalMois = state.data.filter(c=>{
+        if(c.pris!=='OUI') return false;
+        const d=parseDate(c.date);
+        return d && d.getMonth()===today2.getMonth() && d.getFullYear()===today2.getFullYear();
+    }).reduce((a,b)=>a+(b.prix||0),0);
+
+    const nbAttente = state.data.filter(c=>c.pris==="En attente"||c.pris==="En cours").length;
 
     function urgCard(c){
         const j=daysLeft(c.date); const badge=j!==null?badgeColor(j):null;
@@ -975,197 +1039,322 @@ function renderDashboard(total,attente,m){
         </div>`;
     }
 
-    function urgBlock(icon, label, color, bg, items, tab){
-        return `<div style="flex:1;min-width:280px;">
-            <div style="font-weight:700;font-size:14px;margin-bottom:12px;color:${color};">${icon} ${label}</div>
-            <!-- KPIs -->
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;">
-                <div class="stat-card" style="padding:10px 14px;">
-                    <div style="font-size:11px;color:#9e9a93;margin-bottom:2px;">En attente</div>
-                    <div style="font-family:'DM Serif Display',serif;font-size:20px;color:#f59e0b;">${label==='Réservations'?nbAttenteResa:nbAttenteCmd}</div>
-                </div>
-                <div class="stat-card" style="padding:10px 14px;">
-                    <div style="font-size:11px;color:#9e9a93;margin-bottom:2px;">Budget validé</div>
-                    <div style="font-family:'DM Serif Display',serif;font-size:16px;color:#15803d;">${$ms(label==='Réservations'?totalResa:totalCmd)}</div>
-                </div>
-            </div>
-            <!-- Urgences -->
-            <div style="background:${bg};border:1.5px solid ${color}22;border-radius:14px;padding:12px 14px;">
-                <div style="font-size:11px;font-weight:700;color:${color};text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;">🔔 Urgent — En attente &amp; Aujourd'hui/Demain</div>
-                ${items.length?items.map(urgCard).join(''):`<div style="text-align:center;color:#9e9a93;padding:16px;font-size:13px;">✓ Rien d'urgent</div>`}
-                ${items.length?`<button data-admin-tab="${tab}" style="display:block;width:100%;text-align:center;background:none;border:none;color:#9e9a93;cursor:pointer;font-size:12px;padding-top:8px;margin-top:4px;">Voir tout →</button>`:''}
-            </div>
-        </div>`;
-    }
+    const urgentes = [...urgentesResa, ...urgentesCmd];
 
     return `<div>
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:10px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
         <div style="font-family:'DM Serif Display',serif;font-size:${m?'18px':'22px'};">📊 Dashboard</div>
-
     </div>
 
-    <div style="display:flex;gap:${m?'16px':'24px'};flex-wrap:wrap;align-items:flex-start;">
-        ${urgBlock('🍽','Réservations','#f59e0b','#fffbeb',urgentesResa,'reservations')}
-        ${!m?'<div style="width:1px;background:#e8e5df;align-self:stretch;min-height:200px;"></div>':''}
-        ${urgBlock('📦','Commandes','#6366f1','#f5f3ff',urgentesCmd,'commandes')}
+    <!-- 2 chiffres clés -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px;">
+        <div class="stat-card" style="text-align:center;">
+            <div style="font-size:11px;color:#9e9a93;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">En attente</div>
+            <div style="font-family:'DM Serif Display',serif;font-size:32px;color:${nbAttente>0?'#f59e0b':'#22c55e'};">${nbAttente}</div>
+            <div style="font-size:11px;color:#9e9a93;margin-top:4px;">demande${nbAttente>1?'s':''}</div>
+        </div>
+        <div class="stat-card" style="text-align:center;">
+            <div style="font-size:11px;color:#9e9a93;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">Ce mois</div>
+            <div style="font-family:'DM Serif Display',serif;font-size:${totalMois>=10000?'22px':'28px'};color:#15803d;">${$ms(totalMois)}</div>
+            <div style="font-size:11px;color:#9e9a93;margin-top:4px;">validé</div>
+        </div>
     </div>
 
-    <!-- À venir avec bouton Reçu -->
-    ${(()=>{
-        const aVenir=[...state.data].filter(c=>{
-            if(c.pris!=='OUI') return false;
-            const d=parseDate(c.date);
-            return d && d>=today2;
-        }).sort((a,b)=>parseDate(a.date)-parseDate(b.date));
-        if(!aVenir.length) return '';
-        const typeIcon=t=>t==='taxi'?'🚕':t==='repas'?'🍽':'📦';
-        return `<div class="stat-card" style="margin-top:20px;">
-            <div style="font-weight:700;font-size:14px;margin-bottom:14px;">📅 À venir — Validées (${aVenir.length})</div>
-            ${aVenir.map(c=>{
-                const j=daysLeft(c.date); const badge=j!==null?badgeColor(j):null;
-                return `<div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #f0eeea;">
-                    <div style="font-size:18px;">${typeIcon(c.type)}</div>
-                    <div style="flex:1;min-width:0;">
-                        <div style="font-weight:600;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${c.desc||'—'}</div>
-                        <div style="font-size:11px;color:#9e9a93;">${c.pourQui||c.demandeur} · ${$d(c.date)}</div>
-                    </div>
-                    <div style="display:flex;gap:6px;align-items:center;flex-shrink:0;">
-                        ${badge?`<span style="background:${badge.bg};border:1px solid ${badge.border};color:${badge.color};border-radius:20px;padding:3px 8px;font-size:11px;font-weight:700;">${badge.label}</span>`:''}
-                        <button data-set-status='${JSON.stringify({id:c.id,status:"Reçu"})}' style="background:#e0f2fe;border:1px solid #7dd3fc;border-radius:10px;padding:4px 10px;font-size:12px;cursor:pointer;color:#0369a1;font-weight:700;">✓ Reçu</button>
-                    </div>
-                </div>`;
-            }).join('')}
-        </div>`;
-    })()}
-
+    <!-- Urgences -->
+    ${urgentes.length?`<div class="stat-card">
+        <div style="font-weight:700;font-size:14px;color:#f59e0b;margin-bottom:14px;">🔔 Urgent — À traiter & Aujourd'hui/Demain <span style="background:#f59e0b;color:#fff;border-radius:20px;padding:1px 8px;font-size:11px;margin-left:4px;">${urgentes.length}</span></div>
+        ${urgentes.map(urgCard).join('')}
+        <button data-admin-tab="activite" style="display:block;width:100%;text-align:center;background:none;border:none;color:#9e9a93;cursor:pointer;font-size:12px;padding-top:10px;margin-top:4px;">Voir tout →</button>
+    </div>`:`<div class="stat-card" style="text-align:center;padding:32px;color:#9e9a93;">
+        <div style="font-size:36px;margin-bottom:8px;">✓</div>
+        <div style="font-size:14px;">Tout est à jour !</div>
+    </div>`}
     </div>`;
 }
+
+
+function renderActivite(m){
+    const search=(state.search||'').toLowerCase();
+    const today2=new Date(); today2.setHours(0,0,0,0);
+    const filter=state.resaFilter||'all';
+    const sortCol=state.resaSort||'date';
+    const sortAsc=state.resaSortAsc!==false;
+
+    const all=state.data.filter(c=>{
+        if(search&&!`${c.desc} ${c.presta} ${c.demandeur} ${c.pourQui}`.toLowerCase().includes(search)) return false;
+        if(filter==='attente') return c.pris==='En attente'||c.pris==='En cours';
+        if(filter==='avenir'){const d=parseDate(c.date);return c.pris==='OUI'&&d&&d>=today2;}
+        if(filter==='passees'){const d=parseDate(c.date);return c.pris==='Annulé'||c.pris==='Reçu'||(c.pris==='OUI'&&(!d||d<today2));}
+        if(filter==='repas') return c.type==='repas';
+        if(filter==='taxi') return c.type==='taxi';
+        if(filter==='commande') return c.type==='commande';
+        return true;
+    }).sort((a,b)=>{
+        let va,vb;
+        if(sortCol==='date'){va=parseDate(a.date)||new Date(0);vb=parseDate(b.date)||new Date(0);}
+        else if(sortCol==='prix'){va=a.prix||0;vb=b.prix||0;}
+        else{va=(a[sortCol]||'');vb=(b[sortCol]||'');}
+        if(va<vb) return sortAsc?-1:1;
+        if(va>vb) return sortAsc?1:-1;
+        return 0;
+    });
+
+    const statusBadge=s=>{
+        const map={'OUI':{bg:'#f0fdf4',color:'#15803d',label:'✅ Validé'},'En attente':{bg:'#fffbeb',color:'#b45309',label:'⏳ En attente'},'En cours':{bg:'#eff6ff',color:'#1e40af',label:'🔄 En cours'},'Annulé':{bg:'#fef2f2',color:'#b91c1c',label:'❌ Annulé'},'Reçu':{bg:'#f0f9ff',color:'#0369a1',label:'✓ Reçu'}};
+        const st=map[s]||{bg:'#f1f5f9',color:'#5a6a85',label:s};
+        return `<span style="padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;background:${st.bg};color:${st.color};">${st.label}</span>`;
+    };
+
+    const typeIcon=t=>t==='taxi'?'🚕':t==='repas'?'🍽':'📦';
+
+    const nbAttente=state.data.filter(c=>c.pris==='En attente'||c.pris==='En cours').length;
+    const nbAvenir=state.data.filter(c=>{const d=parseDate(c.date);return c.pris==='OUI'&&d&&d>=today2;}).length;
+
+    const FILTERS=[
+        ['all','Tout',0],
+        ['attente','⏳ En attente',nbAttente],
+        ['avenir','📅 À venir',nbAvenir],
+        ['passees','🗂 Passées',0],
+        ['repas','🍽 Repas',0],
+        ['taxi','🚕 Taxi',0],
+        ['commande','📦 Commande',0],
+    ];
+
+    const filterBtns = FILTERS.filter(([k,,n])=>k==='all'||k==='passees'||(k==='attente'&&nbAttente>0)||(k==='avenir'&&nbAvenir>0)||['repas','taxi','commande'].includes(k))
+        .map(([k,l,n])=>`<button id="f-${k}" style="display:flex;align-items:center;gap:5px;padding:5px 12px;border:none;border-radius:24px;font-size:12px;font-weight:500;cursor:pointer;background:${filter===k?'var(--ink)':'#f0eeea'};color:${filter===k?'#fff':'#7a7570'};">${l}${n?`<span style="background:#f59e0b;color:#fff;border-radius:50%;min-width:16px;height:16px;font-size:10px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;">${n}</span>`:''}</button>`).join('');
+
+    return `<div>
+    <div style="font-family:'DM Serif Display',serif;font-size:${m?'18px':'22px'};margin-bottom:14px;">📋 Activité <span style="font-size:13px;color:#94a3b8;font-weight:400;">${all.length} entrée${all.length>1?'s':''}</span></div>
+
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;">
+        <input id="adminSearch" type="text" placeholder="🔍 Rechercher..." value="${state.search||''}" class="search-input" style="flex:1;min-width:140px;margin-bottom:0;">
+    </div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px;" id="filterBtns">
+        ${filterBtns}
+    </div>
+
+    <div style="background:#fff;border-radius:16px;border:1px solid #e4e7ec;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.04);">
+        <div style="overflow-x:auto;">
+            <table style="width:100%;border-collapse:collapse;font-size:13px;min-width:${m?'480px':'560px'};">
+                <thead>
+                    <tr style="background:#f8fafc;border-bottom:2px solid #e2e8f0;">
+                        <th style="text-align:left;padding:10px 14px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:#64748b;">Date</th>
+                        <th style="text-align:left;padding:10px 14px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:#64748b;">Type / Description</th>
+                        <th style="text-align:left;padding:10px 14px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:#64748b;">Pour qui</th>
+                        <th style="text-align:left;padding:10px 14px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:#64748b;">Demandeur</th>
+                        <th style="text-align:center;padding:10px 14px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:#64748b;">Statut</th>
+                        <th style="text-align:right;padding:10px 14px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:#64748b;">Prix</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${all.length?all.map((c,i)=>`
+                    <tr data-open-detail='${JSON.stringify(c).replace(/'/g,"&apos;")}' style="border-bottom:1px solid #f1f5f9;cursor:pointer;background:${i%2===0?'#fff':'#fafafa'};" onmouseover="this.style.background='#eff6ff'" onmouseout="this.style.background='${i%2===0?'#fff':'#fafafa'}'">
+                        <td style="padding:11px 14px;color:#64748b;white-space:nowrap;font-size:12px;">${$d(c.date)}</td>
+                        <td style="padding:11px 14px;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+                            <span style="margin-right:5px;">${typeIcon(c.type)}</span>
+                            <span style="font-weight:600;color:#1a1f36;">${c.desc||'—'}</span>
+                            ${c.comment?`<span style="font-size:10px;color:#94a3b8;margin-left:4px;" title="${c.comment}">💬</span>`:''}
+                        </td>
+                        <td style="padding:11px 14px;color:#1a1f36;font-weight:500;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${c.pourQui||'—'}</td>
+                        <td style="padding:11px 14px;color:#64748b;white-space:nowrap;">${c.demandeur||'—'}</td>
+                        <td style="padding:11px 14px;text-align:center;">${statusBadge(c.pris)}</td>
+                        <td style="padding:11px 14px;text-align:right;font-weight:700;color:${c.prix?'#16a34a':'#94a3b8'};">${c.prix?$m(c.prix):'—'}</td>
+                    </tr>`).join(''):`<tr><td colspan="6" style="text-align:center;padding:40px;color:#94a3b8;">Aucune entrée</td></tr>`}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    </div>`;
+}
+
+
 function renderReservations(m){
     const search=(state.search||'').toLowerCase();
     const today2=new Date(); today2.setHours(0,0,0,0);
+    const filter=state.resaFilter||'all';
+    const sortCol=state.resaSort||'date';
+    const sortAsc=state.resaSortAsc!==false;
 
-
-    const all=state.data.filter(c=>{
+    let all=state.data.filter(c=>{
         if(c.type==='commande') return false;
-        if(!search) return true;
-        return `${c.desc} ${c.presta} ${c.demandeur} ${c.pourQui}`.toLowerCase().includes(search);
+        if(search && !`${c.desc} ${c.presta} ${c.demandeur} ${c.pourQui}`.toLowerCase().includes(search)) return false;
+        if(filter==='attente') return c.pris==='En attente'||c.pris==='En cours';
+        if(filter==='avenir') return c.pris==='OUI'&&parseDate(c.date)>=today2;
+        if(filter==='passees') return c.pris==='Annulé'||c.pris==='Reçu'||(c.pris==='OUI'&&parseDate(c.date)<today2);
+        return true;
+    }).sort((a,b)=>{
+        let va,vb;
+        if(sortCol==='date'){va=parseDate(a.date)||new Date(0);vb=parseDate(b.date)||new Date(0);}
+        else if(sortCol==='prix'){va=a.prix||0;vb=b.prix||0;}
+        else if(sortCol==='statut'){va=a.pris||'';vb=b.pris||'';}
+        else if(sortCol==='pourQui'){va=a.pourQui||'';vb=b.pourQui||'';}
+        else if(sortCol==='desc'){va=a.desc||'';vb=b.desc||'';}
+        else{va=a.demandeur||'';vb=b.demandeur||'';}
+        if(va<vb) return sortAsc?-1:1;
+        if(va>vb) return sortAsc?1:-1;
+        return 0;
     });
 
-    function cmdCard(c, showBadge=false){
-        const j=daysLeft(c.date); const badge=showBadge&&j!==null?badgeColor(j):null;
-        const typeIcon=c.type==='taxi'?'🚕':'🍽';
-        return `<div data-open-detail='${JSON.stringify(c).replace(/'/g,"&apos;")}' class="command-item" style="display:flex;align-items:center;gap:12px;cursor:pointer;">
-            ${avatar(c.demandeur,36)}
-            <div style="flex:1;min-width:0;">
-                <div style="font-weight:600;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${typeIcon} ${c.desc||'—'}</div>
-                <div style="font-size:11px;color:#9e9a93;margin-top:2px;">${c.pourQui||c.demandeur} · ${$d(c.date)} · ${c.presta||'—'}</div>
-                ${c.comment?`<div style="font-size:11px;color:#94a3b8;margin-top:2px;font-style:italic;">💬 ${c.comment}</div>`:''}
-            </div>
-            <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0;">
-                ${badge?`<span style="background:${badge.bg};border:1px solid ${badge.border};color:${badge.color};border-radius:20px;padding:3px 8px;font-size:11px;font-weight:700;">${badge.label}</span>`:''}
-                ${c.prix?`<span style="font-weight:700;font-size:12px;color:#15803d;">${$m(c.prix)}</span>`:''}
-            </div>
-        </div>`;
+    const statusBadge=s=>{
+        const map={'OUI':{bg:'#f0fdf4',color:'#15803d',label:'✅ Validé'},'En attente':{bg:'#fffbeb',color:'#b45309',label:'⏳ En attente'},'En cours':{bg:'#eff6ff',color:'#1e40af',label:'🔄 En cours'},'Annulé':{bg:'#fef2f2',color:'#b91c1c',label:'❌ Annulé'},'Reçu':{bg:'#f0f9ff',color:'#0369a1',label:'✓ Reçu'}};
+        const st=map[s]||{bg:'#f1f5f9',color:'#5a6a85',label:s};
+        return `<span style="padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;background:${st.bg};color:${st.color};">${st.label}</span>`;
+    };
+
+    function th(col, label){
+        const active=sortCol===col;
+        const arrow=active?(sortAsc?'↑':'↓'):'';
+        return `<th data-resa-sort="${col}" style="text-align:${col==='prix'?'right':'left'};padding:10px 14px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:${active?'#1a1f36':'#64748b'};white-space:nowrap;cursor:pointer;user-select:none;" onmouseover="this.style.color='#1a1f36'" onmouseout="this.style.color='${active?'#1a1f36':'#64748b'}'">
+            ${label} ${arrow}
+        </th>`;
     }
 
-    const attente = all.filter(c=>c.pris==='En attente'||c.pris==='En cours');
-    const aVenir  = all.filter(c=>c.pris==='OUI'&&parseDate(c.date)&&parseDate(c.date)>=today2).sort((a,b)=>parseDate(a.date)-parseDate(b.date));
-    const passees = all.filter(c=>c.pris==='OUI'&&(!parseDate(c.date)||parseDate(c.date)<today2)||c.pris==='Annulé').sort((a,b)=>parseDate(b.date)-parseDate(a.date));
-
-    function section(icon,label,color,bg,items,badge=false){
-        if(!items.length) return `<div style="background:${bg};border:1.5px solid ${color}22;border-radius:18px;padding:14px 16px;margin-bottom:14px;">
-            <div style="font-weight:700;font-size:14px;color:${color};margin-bottom:6px;">${icon} ${label} <span style="background:${color};color:#fff;border-radius:20px;padding:2px 8px;font-size:11px;margin-left:4px;">0</span></div>
-            <div style="text-align:center;color:#9e9a93;padding:12px;font-size:13px;">Aucune</div>
-        </div>`;
-        return `<div style="background:${bg};border:1.5px solid ${color}22;border-radius:18px;padding:14px 16px;margin-bottom:14px;">
-            <div style="font-weight:700;font-size:14px;color:${color};margin-bottom:12px;">${icon} ${label} <span style="background:${color};color:#fff;border-radius:20px;padding:2px 8px;font-size:11px;margin-left:4px;">${items.length}</span></div>
-            ${items.map(c=>cmdCard(c,badge)).join('')}
-        </div>`;
-    }
+    const today3=new Date(); today3.setHours(0,0,0,0);
+    const nbAttente=state.data.filter(c=>c.type!=='commande'&&(c.pris==='En attente'||c.pris==='En cours')).length;
+    const nbAvenir=state.data.filter(c=>c.type!=='commande'&&c.pris==='OUI'&&parseDate(c.date)&&parseDate(c.date)>=today3).length;
+    const FILTERS=[['all','Tout',0],['attente','⏳ En attente',nbAttente],['avenir','📅 À venir',nbAvenir],['passees','🗂 Passées',0]];
 
     return `<div>
-    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:14px;">
-        <div style="font-family:'DM Serif Display',serif;font-size:${m?'18px':'22px'};">🍽 Réservations</div>
-        <div style="display:flex;gap:8px;">
-            <button data-saisie-type="repas" class="btn-secondary" style="display:flex;align-items:center;gap:6px;">🍽 Repas</button>
-            <button data-saisie-type="taxi" class="btn-secondary" style="display:flex;align-items:center;gap:6px;">🚕 Taxi</button>
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:16px;">
+        <div style="font-family:'DM Serif Display',serif;font-size:${m?'18px':'22px'};">🍽 Réservations <span style="font-size:13px;color:#94a3b8;font-weight:400;">${all.length} entrée${all.length>1?'s':''}</span></div>
+
+    </div>
+
+    <!-- Barre filtres + recherche -->
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:16px;">
+        <input type="text" id="adminSearch" placeholder="🔍 Rechercher..." value="${search}" class="search-input" style="flex:1;min-width:160px;margin-bottom:0;">
+        <div style="display:flex;gap:4px;background:#f1f5f9;border-radius:30px;padding:3px;">
+            ${FILTERS.filter(([k])=>k==='all'||k==='passees'||(k==='attente'&&nbAttente>0)||(k==='avenir'&&nbAvenir>0)).map(([k,l,count])=>`<button data-resa-filter="${k}" style="display:flex;align-items:center;gap:5px;padding:5px 12px;border:none;border-radius:24px;font-size:12px;font-weight:500;cursor:pointer;background:${filter===k?'#fff':'transparent'};color:${filter===k?'#1a1f36':'#64748b'};box-shadow:${filter===k?'0 1px 3px rgba(0,0,0,0.1)':'none'};white-space:nowrap;transition:all 0.15s;">${l}${count?`<span style="background:${k==='attente'?'#f59e0b':'#22c55e'};color:#fff;border-radius:50%;min-width:16px;height:16px;font-size:10px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;padding:0 3px;">${count}</span>`:''}</button>`).join('')}
         </div>
     </div>
-    <input type="text" id="adminSearch" placeholder="🔍 Rechercher..." value="${state.search||''}" class="search-input" style="margin-bottom:16px;">
-    ${section('⏳','En attente','#f59e0b','#fffbeb',attente)}
-    ${section('📅','À venir','#22c55e','#f0fdf4',aVenir,true)}
-    ${section('🗂','Passées &amp; Annulées','#9e9a93','#fafaf8',passees)}
+
+    <!-- Tableau unique -->
+    <div style="background:#fff;border-radius:16px;border:1px solid #e4e7ec;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.04);">
+        <div style="overflow-x:auto;">
+            <table style="width:100%;border-collapse:collapse;font-size:13px;min-width:${m?'480px':'560px'};">
+                <thead>
+                    <tr style="background:#f8fafc;border-bottom:2px solid #e2e8f0;">
+                        ${th('date','Date')}
+                        ${th('desc','Type / Description')}
+                        ${th('pourQui','Pour qui')}
+                        ${th('demandeur','Demandeur')}
+                        ${th('statut','Statut')}
+                        ${th('prix','Prix')}
+                    </tr>
+                </thead>
+                <tbody>
+                    ${all.length?all.map((c,i)=>`
+                    <tr data-open-detail='${JSON.stringify(c).replace(/'/g,"&apos;")}' style="border-bottom:1px solid #f1f5f9;cursor:pointer;background:${i%2===0?'#fff':'#fafafa'};" onmouseover="this.style.background='#eff6ff'" onmouseout="this.style.background='${i%2===0?'#fff':'#fafafa'}'">
+                        <td style="padding:11px 14px;color:#64748b;white-space:nowrap;font-size:12px;">${$d(c.date)}</td>
+                        <td style="padding:11px 14px;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+                            <span style="margin-right:6px;">${c.type==='taxi'?'🚕':'🍽'}</span>
+                            <span style="font-weight:600;color:#1a1f36;">${c.desc||'—'}</span>
+                        </td>
+                        <td style="padding:11px 14px;color:#1a1f36;font-weight:500;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${c.pourQui||'—'}</td>
+                        <td style="padding:11px 14px;color:#64748b;white-space:nowrap;">${c.demandeur||'—'}</td>
+                        <td style="padding:11px 14px;text-align:center;">${statusBadge(c.pris)}</td>
+                        <td style="padding:11px 14px;text-align:right;font-weight:700;color:${c.prix?'#16a34a':'#94a3b8'};">${c.prix?$m(c.prix):'—'}</td>
+                    </tr>`).join(''):`<tr><td colspan="6" style="text-align:center;padding:40px;color:#94a3b8;">Aucune réservation</td></tr>`}
+                </tbody>
+            </table>
+        </div>
+    </div>
     </div>`;
 }
+
+
 function renderCommandes(m){
     const search=(state.search||'').toLowerCase();
     const today2=new Date(); today2.setHours(0,0,0,0);
+    const filter=state.cmdFilter||'all';
+    const sortCol=state.cmdSort||'date';
+    const sortAsc=state.cmdSortAsc!==false;
 
-
-    const all=state.data.filter(c=>{
+    let all=state.data.filter(c=>{
         if(c.type!=='commande') return false;
-        if(!search) return true;
-        return `${c.desc} ${c.presta} ${c.demandeur} ${c.pourQui}`.toLowerCase().includes(search);
+        if(search && !`${c.desc} ${c.presta} ${c.demandeur}`.toLowerCase().includes(search)) return false;
+        if(filter==='attente') return c.pris==='En attente'||c.pris==='En cours';
+        if(filter==='avenir') return c.pris==='OUI'&&parseDate(c.date)>=today2;
+        if(filter==='passees') return c.pris==='Annulé'||c.pris==='Reçu'||(c.pris==='OUI'&&parseDate(c.date)<today2);
+        return true;
+    }).sort((a,b)=>{
+        let va,vb;
+        if(sortCol==='date'){va=parseDate(a.date)||new Date(0);vb=parseDate(b.date)||new Date(0);}
+        else if(sortCol==='prix'){va=a.prix||0;vb=b.prix||0;}
+        else if(sortCol==='statut'){va=a.pris||'';vb=b.pris||'';}
+        else if(sortCol==='presta'){va=a.presta||'';vb=b.presta||'';}
+        else if(sortCol==='desc'){va=a.desc||'';vb=b.desc||'';}
+        else{va=a.demandeur||'';vb=b.demandeur||'';}
+        if(va<vb) return sortAsc?-1:1;
+        if(va>vb) return sortAsc?1:-1;
+        return 0;
     });
 
-    function cmdCard(c,showBadge=false){
-        const j=daysLeft(c.date); const badge=showBadge&&j!==null?badgeColor(j):null;
-        return `<div data-open-detail='${JSON.stringify(c).replace(/'/g,"&apos;")}' class="command-item" style="display:flex;align-items:center;gap:12px;cursor:pointer;">
-            ${avatar(c.demandeur,36)}
-            <div style="flex:1;min-width:0;">
-                <div style="font-weight:600;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">📦 ${c.desc||'—'}</div>
-                <div style="font-size:11px;color:#9e9a93;margin-top:2px;">${c.demandeur} · ${$d(c.date)} · ${c.presta||'—'}</div>
-            </div>
-            <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0;">
-                ${badge?`<span style="background:${badge.bg};border:1px solid ${badge.border};color:${badge.color};border-radius:20px;padding:3px 8px;font-size:11px;font-weight:700;">${badge.label}</span>`:''}
-                ${c.prix?`<span style="font-weight:700;font-size:12px;color:#15803d;">${$m(c.prix)}</span>`:''}
-            </div>
-        </div>`;
+    const statusBadge=s=>{
+        const map={'OUI':{bg:'#f0fdf4',color:'#15803d',label:'✅ Validé'},'En attente':{bg:'#fffbeb',color:'#b45309',label:'⏳ En attente'},'En cours':{bg:'#eff6ff',color:'#1e40af',label:'🔄 En cours'},'Annulé':{bg:'#fef2f2',color:'#b91c1c',label:'❌ Annulé'},'Reçu':{bg:'#f0f9ff',color:'#0369a1',label:'✓ Reçu'}};
+        const st=map[s]||{bg:'#f1f5f9',color:'#5a6a85',label:s};
+        return `<span style="padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;background:${st.bg};color:${st.color};">${st.label}</span>`;
+    };
+
+    function th(col,label){
+        const active=sortCol===col;
+        const arrow=active?(sortAsc?'↑':'↓'):'';
+        return `<th data-cmd-sort="${col}" style="text-align:${col==='prix'?'right':'left'};padding:10px 14px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:${active?'#1a1f36':'#64748b'};white-space:nowrap;cursor:pointer;user-select:none;">
+            ${label} ${arrow}
+        </th>`;
     }
 
-    const attente = all.filter(c=>c.pris==='En attente'||c.pris==='En cours');
-    const aVenir  = all.filter(c=>c.pris==='OUI'&&parseDate(c.date)&&parseDate(c.date)>=today2).sort((a,b)=>parseDate(a.date)-parseDate(b.date));
-    const passees = all.filter(c=>(c.pris==='OUI'&&(!parseDate(c.date)||parseDate(c.date)<today2))||c.pris==='Annulé').sort((a,b)=>parseDate(b.date)-parseDate(a.date));
-
-    function section(icon,label,color,bg,items,badge=false){
-        if(!items.length) return `<div style="background:${bg};border:1.5px solid ${color}22;border-radius:18px;padding:14px 16px;margin-bottom:14px;">
-            <div style="font-weight:700;font-size:14px;color:${color};margin-bottom:6px;">${icon} ${label} <span style="background:${color};color:#fff;border-radius:20px;padding:2px 8px;font-size:11px;margin-left:4px;">0</span></div>
-            <div style="text-align:center;color:#9e9a93;padding:12px;font-size:13px;">Aucune</div>
-        </div>`;
-        return `<div style="background:${bg};border:1.5px solid ${color}22;border-radius:18px;padding:14px 16px;margin-bottom:14px;">
-            <div style="font-weight:700;font-size:14px;color:${color};margin-bottom:12px;">${icon} ${label} <span style="background:${color};color:#fff;border-radius:20px;padding:2px 8px;font-size:11px;margin-left:4px;">${items.length}</span></div>
-            ${items.map(c=>cmdCard(c,badge)).join('')}
-        </div>`;
-    }
+    const today3=new Date(); today3.setHours(0,0,0,0);
+    const nbAttente=state.data.filter(c=>c.type!=='commande'&&(c.pris==='En attente'||c.pris==='En cours')).length;
+    const nbAvenir=state.data.filter(c=>c.type!=='commande'&&c.pris==='OUI'&&parseDate(c.date)&&parseDate(c.date)>=today3).length;
+    const FILTERS=[['all','Tout',0],['attente','⏳ En attente',nbAttente],['avenir','📅 À venir',nbAvenir],['passees','🗂 Passées',0]];
 
     return `<div>
-    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:14px;">
-        <div style="font-family:'DM Serif Display',serif;font-size:${m?'18px':'22px'};">📦 Commandes</div>
-        <button data-saisie-type="commande" class="btn-secondary" style="display:flex;align-items:center;gap:6px;">📦 Ajouter</button>
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:16px;">
+        <div style="font-family:'DM Serif Display',serif;font-size:${m?'18px':'22px'};">📦 Commandes <span style="font-size:13px;color:#94a3b8;font-weight:400;">${all.length} entrée${all.length>1?'s':''}</span></div>
+
     </div>
-    <input type="text" id="adminSearch" placeholder="🔍 Rechercher..." value="${state.search||''}" class="search-input" style="margin-bottom:16px;">
-    ${section('⏳','En attente','#6366f1','#f5f3ff',attente)}
-    ${section('📅','À venir','#22c55e','#f0fdf4',aVenir,true)}
-    ${section('🗂','Passées &amp; Annulées','#9e9a93','#fafaf8',passees)}
-    </div>`;
-}
-function renderAnnuaire(m){
-    return `<div>
-    <div style="font-family:'DM Serif Display',serif;font-size:${m?'18px':'22px'};margin-bottom:16px;">📞 Annuaire</div>
-    ${ANNUAIRE.map(a=>`
-        <div style="display:flex;align-items:center;justify-content:space-between;padding:13px 0;border-bottom:1px solid var(--border);gap:12px;">
-            <div style="display:flex;align-items:center;gap:12px;">
-                <div style="width:40px;height:40px;background:#f0eeea;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">🏢</div>
-                <div><div style="font-weight:600;font-size:14px;">${a.nom}</div>${a.contact?`<div style="font-size:12px;color:#9e9a93;">${a.contact}</div>`:''}</div>
-            </div>
-            <a href="tel:${a.tel}" style="background:var(--ink);color:#fff;padding:8px 14px;border-radius:30px;text-decoration:none;font-size:13px;font-weight:600;white-space:nowrap;">📞 ${m?'Appeler':a.tel}</a>
-        </div>`).join('')}
+
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:16px;">
+        <input type="text" id="adminSearch" placeholder="🔍 Rechercher..." value="${search}" class="search-input" style="flex:1;min-width:160px;margin-bottom:0;">
+        <div style="display:flex;gap:4px;background:#f1f5f9;border-radius:30px;padding:3px;">
+            ${FILTERS.filter(([k])=>k==='all'||k==='passees'||(k==='attente'&&nbAttenteCmd>0)||(k==='avenir'&&nbAvenirCmd>0)).map(([k,l,count])=>`<button data-cmd-filter="${k}" style="display:flex;align-items:center;gap:5px;padding:5px 12px;border:none;border-radius:24px;font-size:12px;font-weight:500;cursor:pointer;background:${filter===k?'#fff':'transparent'};color:${filter===k?'#1a1f36':'#64748b'};box-shadow:${filter===k?'0 1px 3px rgba(0,0,0,0.1)':'none'};white-space:nowrap;transition:all 0.15s;">${l}${count?`<span style="background:${k==='attente'?'#f59e0b':'#22c55e'};color:#fff;border-radius:50%;min-width:16px;height:16px;font-size:10px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;padding:0 3px;">${count}</span>`:''}</button>`).join('')}
+        </div>
+    </div>
+
+    <div style="background:#fff;border-radius:16px;border:1px solid #e4e7ec;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.04);">
+        <div style="overflow-x:auto;">
+            <table style="width:100%;border-collapse:collapse;font-size:13px;min-width:${m?'480px':'560px'};">
+                <thead>
+                    <tr style="background:#f8fafc;border-bottom:2px solid #e2e8f0;">
+                        ${th('date','Date')}
+                        ${th('desc','Description')}
+                        ${th('presta','Fournisseur')}
+                        ${th('demandeur','Demandeur')}
+                        ${th('statut','Statut')}
+                        ${th('prix','Prix')}
+                    </tr>
+                </thead>
+                <tbody>
+                    ${all.length?all.map((c,i)=>`
+                    <tr data-open-detail='${JSON.stringify(c).replace(/'/g,"&apos;")}' style="border-bottom:1px solid #f1f5f9;cursor:pointer;background:${i%2===0?'#fff':'#fafafa'};" onmouseover="this.style.background='#eff6ff'" onmouseout="this.style.background='${i%2===0?'#fff':'#fafafa'}'">
+                        <td style="padding:11px 14px;color:#64748b;white-space:nowrap;font-size:12px;">${$d(c.date)}</td>
+                        <td style="padding:11px 14px;font-weight:600;color:#1a1f36;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+                                📦 ${c.desc||'—'}${c.comment?` <span style="font-size:10px;color:#94a3b8;" title="${c.comment}">💬</span>`:''}
+                            </td>
+                        <td style="padding:11px 14px;color:#5a6a85;white-space:nowrap;">${c.presta||'—'}</td>
+                        <td style="padding:11px 14px;color:#64748b;white-space:nowrap;">${c.demandeur||'—'}</td>
+                        <td style="padding:11px 14px;text-align:center;">${statusBadge(c.pris)}</td>
+                        <td style="padding:11px 14px;text-align:right;font-weight:700;color:${c.prix?'#16a34a':'#94a3b8'};">${c.prix?$m(c.prix):'—'}</td>
+                    </tr>`).join(''):`<tr><td colspan="6" style="text-align:center;padding:40px;color:#94a3b8;">Aucune commande</td></tr>`}
+                </tbody>
+            </table>
+        </div>
+    </div>
     </div>`;
 }
 
-/* ══════════════════════════════════════
-   SETTINGS
-══════════════════════════════════════ */
+
 function renderCalendrier(m){
     const now = new Date();
     const calDate = state.calMonth ? new Date(state.calMonth) : new Date(now.getFullYear(), now.getMonth(), 1);
@@ -1215,7 +1404,14 @@ function renderCalendrier(m){
 
         row.push(`<td style="width:${colW};border:1px solid #e4e7ec;vertical-align:top;padding:6px;min-height:${m?'60px':'90px'};background:${isToday?'#eff6ff':'#fff'};${hasUrgent?'border-left:3px solid #f59e0b;':''}">
             <div style="font-size:12px;font-weight:${isToday?'700':'500'};color:${isToday?'#fff':'#1a1f36'};margin-bottom:4px;${isToday?'background:#3b82f6;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;':''}">${day}</div>
-            ${events.slice(0,m?1:3).map(c=>`<div data-open-detail='${JSON.stringify(c).replace(/'/g,"&apos;")}' style="font-size:10px;padding:2px 5px;border-radius:4px;margin-bottom:2px;background:${typeColor(c.type)}18;color:${typeColor(c.type)};font-weight:600;cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;border-left:2px solid ${typeColor(c.type)};" title="${c.desc||''}">${typeIcon(c.type)} ${c.desc||'—'}</div>`).join('')}
+            ${events.slice(0,m?1:3).map(c=>{
+                const isAttente=c.pris==='En attente'||c.pris==='En cours';
+                const bg=isAttente?'#fffbeb':`${typeColor(c.type)}18`;
+                const border=isAttente?'#f59e0b':typeColor(c.type);
+                const col=isAttente?'#b45309':typeColor(c.type);
+                const prefix=isAttente?'⏳ ':'';
+                return `<div data-open-detail='${JSON.stringify(c).replace(/'/g,"&apos;")}' style="font-size:10px;padding:2px 5px;border-radius:4px;margin-bottom:2px;background:${bg};color:${col};font-weight:600;cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;border-left:2px solid ${border};" title="${c.pris} — ${c.desc||''}">${prefix}${typeIcon(c.type)} ${c.desc||'—'}</div>`;
+            }).join('')}
             ${events.length>(m?1:3)?`<div style="font-size:9px;color:#94a3b8;padding-left:4px;">+${events.length-(m?1:3)}</div>`:''}
         </td>`);
 
@@ -1377,8 +1573,8 @@ function renderHistorique(m){
             <table style="width:100%;border-collapse:collapse;font-size:13px;min-width:700px;">
                 <thead id="histTableHead">
                     <tr style="background:#f8fafc;">
-                        ${(state.colOrder||["date","type","desc","demandeur","pourQui","statut","prix"]).map(col=>{
-                            const labels={date:'📅 Date',type:'🏷 Type',desc:'📝 Description',demandeur:'👤 Demandeur',pourQui:'👥 Pour qui',statut:'Statut',prix:'💶 Montant'};
+                        ${(state.colOrder||["date","code","type","desc","demandeur","pourQui","statut","prix"]).map(col=>{
+                            const labels={date:'📅 Date',code:'🔖 Code',type:'🏷 Type',desc:'📝 Description',demandeur:'👤 Demandeur',pourQui:'👥 Pour qui',statut:'Statut',prix:'💶 Montant'};
                             const align=col==='prix'?'right':col==='statut'?'center':'left';
                             return `<th data-col="${col}" style="text-align:${align};padding:14px 16px;font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#64748b;border-bottom:2px solid #e2e8f0;cursor:grab;user-select:none;" title="Glisser pour réorganiser">${labels[col]||col}</th>`;
                         }).join('')}
@@ -1390,6 +1586,7 @@ function renderHistorique(m){
                         const urgent=j!==null&&j>=0&&j<=1&&c.pris==='OUI';
                         const cellMap={
                             date:`<td style="padding:14px 16px;color:#64748b;white-space:nowrap;font-size:12px;">${$d(c.date)}</td>`,
+                            code:`<td style="padding:14px 16px;font-family:monospace;font-size:11px;font-weight:700;color:#6366f1;white-space:nowrap;">${c.code||'—'}</td>`,
                             type:`<td style="padding:14px 16px;">${typeBadge(c.type)}</td>`,
                             desc:`<td style="padding:14px 16px;color:#1a1f36;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:500;">${c.desc||'—'}</td>`,
                             demandeur:`<td style="padding:14px 16px;font-weight:600;white-space:nowrap;color:#1a1f36;">${c.demandeur||'—'}</td>`,
@@ -1398,7 +1595,7 @@ function renderHistorique(m){
                             prix:`<td style="padding:14px 16px;text-align:right;font-weight:700;font-family:monospace;font-size:13px;color:${c.prix?'#16a34a':'#94a3b8'};">${c.prix?$m(c.prix):'—'}</td>`,
                         };
                         return `<tr data-open-detail='${JSON.stringify(c).replace(/'/g,"&apos;")}' style="border-bottom:1px solid #f1f5f9;cursor:pointer;transition:background 0.15s;${urgent?'background:#fffbeb;border-left:3px solid #f59e0b;':''}" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='${urgent?'#fffbeb':''}'">
-                            ${(state.colOrder||["date","type","desc","demandeur","pourQui","statut","prix"]).map(col=>cellMap[col]||'').join('')}
+                            ${(state.colOrder||["date","code","type","desc","demandeur","pourQui","statut","prix"]).map(col=>cellMap[col]||'').join('')}
                         </tr>`;
                     }).join('')}
                 </tbody>
@@ -1438,8 +1635,9 @@ function renderSettings(){
         <div style="font-weight:700;margin-bottom:14px;font-size:14px;">📧 Emails assistantes</div>
         ${Object.entries(settings.emails||{}).map(([nom,email])=>`
         <div class="settings-item">
-            <span style="font-size:13px;font-weight:500;">${nom}</span>
-            <input class="email-input form-input" data-nom="${nom}" value="${email}" placeholder="email@example.com" style="width:200px;padding:6px 10px;font-size:13px;">
+            <span style="font-size:13px;font-weight:500;min-width:120px;">${nom}</span>
+            <input class="email-input form-input" data-nom="${nom}" value="${email}" placeholder="email@example.com" style="flex:1;padding:6px 10px;font-size:13px;">
+            <button data-rm-email="${nom}" style="background:none;border:none;font-size:16px;cursor:pointer;color:#ccc;padding:4px 8px;flex-shrink:0;">✕</button>
         </div>`).join('')}
         <button id="saveAllEmails" class="btn-primary" style="width:100%;margin-top:14px;padding:12px;">💾 Sauvegarder les emails</button>
     </div>
@@ -1474,7 +1672,38 @@ function renderSettings(){
         </div>
         <div style="margin-top:12px;display:flex;gap:10px;"><input type="text" id="${s.inputId}" placeholder="${s.ph}" class="form-input" style="flex:1;"><button id="${s.btnId}" class="btn-primary">+ Ajouter</button></div>
     </div>`).join('')}
-    <div style="background:#f0fdf4;border-radius:14px;padding:13px;text-align:center;color:#15803d;font-size:13px;">✓ Sauvegarde automatique</div>
+    <!-- N° Yooz par prestataire -->
+    <div class="settings-section" style="margin-top:18px;">
+        <div style="font-weight:700;margin-bottom:14px;font-size:14px;">🔖 N° Yooz par fournisseur</div>
+        <div style="font-size:12px;color:#9e9a93;margin-bottom:12px;">Associez un N° Yooz à chaque fournisseur. Il sera rempli automatiquement dans les commandes.</div>
+        <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:12px;">
+            ${Object.entries(state.yoozMap||YOOZ_MAP).map(([presta,num])=>`
+            <div style="display:flex;align-items:center;gap:8px;">
+                <span style="font-size:13px;font-weight:500;min-width:140px;color:var(--ink-soft);">${presta}</span>
+                <input class="yooz-input form-input" data-presta="${presta}" value="${num}" placeholder="AAF-PO-26-XXXXXX" style="flex:1;padding:8px 12px;font-size:13px;font-family:monospace;">
+            </div>`).join('')}
+        </div>
+        <button id="addYoozPresta" style="background:none;border:1.5px dashed var(--border);border-radius:12px;width:100%;padding:9px;font-size:13px;color:var(--ink-soft);cursor:pointer;margin-bottom:8px;">+ Ajouter un fournisseur</button>
+        <button id="saveYooz" class="btn-primary" style="width:100%;padding:11px;">💾 Sauvegarder les N° Yooz</button>
+    </div>
+
+    <!-- Corbeille -->
+    <div class="settings-section" style="margin-top:18px;border:1.5px solid #fecaca;background:#fef2f2;">
+        <div style="font-weight:700;margin-bottom:4px;font-size:14px;">🗑 Corbeille <span style="background:#ef4444;color:#fff;border-radius:20px;padding:1px 7px;font-size:11px;margin-left:6px;">${(state.deletedData||[]).length}</span></div>
+        <div style="font-size:12px;color:#9e9a93;margin-bottom:12px;">${(state.deletedData||[]).length} commande${(state.deletedData||[]).length>1?'s':''} supprimée${(state.deletedData||[]).length>1?'s':''}</div>
+        ${(state.deletedData||[]).length?`
+        <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:12px;">
+            ${(state.deletedData||[]).map((c,i)=>`
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:#fff;border-radius:10px;border:1px solid #fecaca;">
+                <span style="font-size:13px;font-weight:500;">${c.type==='taxi'?'🚕':c.type==='repas'?'🍽':'📦'} ${c.desc||'—'} · ${$d(c.date)}</span>
+                <button data-restore="${i}" style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:4px 10px;font-size:12px;font-weight:600;color:#15803d;cursor:pointer;">↩</button>
+            </div>`).join('')}
+        </div>
+        <button id="emptyTrash" style="width:100%;background:#fef2f2;border:1px solid #fecaca;border-radius:12px;padding:10px;color:#b91c1c;cursor:pointer;font-size:13px;font-weight:600;">🗑 Vider la corbeille</button>
+        `:'<div style="text-align:center;color:#9e9a93;padding:16px;font-size:13px;">La corbeille est vide</div>'}
+    </div>
+
+    <div style="background:#f0fdf4;border-radius:14px;padding:13px;text-align:center;color:#15803d;font-size:13px;margin-top:12px;">✓ Sauvegarde automatique</div>
     </div>`;
 }
 function renderSaisieModal(){
@@ -1730,7 +1959,30 @@ function attachEvents(){
         if((state.histPage||0)<total-1) setState({histPage:(state.histPage||0)+1});
     });
 
-        // Corbeille
+        // Yooz réglages
+    document.getElementById('saveYooz')?.addEventListener('click',()=>{
+        const map={};
+        document.querySelectorAll('.yooz-input').forEach(inp=>{
+            const presta=inp.getAttribute('data-presta');
+            if(presta&&inp.value.trim()) map[presta]=inp.value.trim();
+        });
+        state.yoozMap=map;
+        Object.assign(YOOZ_MAP, map);
+        updS({...settings, yoozMap:map});
+        showToast('✓ N° Yooz sauvegardés');
+    });
+    document.getElementById('addYoozPresta')?.addEventListener('click',()=>{
+        const presta=prompt('Nom du fournisseur :');
+        if(!presta) return;
+        const num=prompt('N° Yooz (ex: AAF-PO-26-XXXXXX) :');
+        if(!num) return;
+        if(!state.yoozMap) state.yoozMap={...YOOZ_MAP};
+        state.yoozMap[presta]=num;
+        Object.assign(YOOZ_MAP, state.yoozMap);
+        render();
+    });
+
+    // Corbeille
     document.getElementById('emptyTrash')?.addEventListener('click',()=>{
         state.deletedData=[];
         render();
@@ -1777,6 +2029,99 @@ function attachEvents(){
     document.querySelector('[data-cal-today]')?.addEventListener('click',()=>{
         setState({calMonth: null});
     });
+
+    // FAB admin
+    document.getElementById('fabAdminMain')?.addEventListener('click',()=>{
+        setState({fabAdminOpen:!state.fabAdminOpen});
+    });
+
+    // Track mode handlers
+    document.getElementById('goTrackHome')?.addEventListener('click',()=>{
+        setState({trackMode:true, trackResult:null});
+    });
+    document.getElementById('goTrack')?.addEventListener('click',()=>{
+        setState({trackMode:true, trackResult:null});
+    });
+    document.querySelector('[data-close-track]')?.addEventListener('click',()=>{
+        setState({trackMode:false, trackResult:null, trackCode:''});
+    });
+    document.getElementById('closeTrackBtn')?.addEventListener('click',()=>{
+        setState({trackMode:false, trackResult:null, trackCode:''});
+    });
+    document.getElementById('trackSearchBtn')?.addEventListener('click',()=>{
+        const code=(state.trackCode||document.getElementById('trackInput')?.value||'').trim().toUpperCase();
+        if(!code){showToast('⚠️ Entrez un code');return;}
+        const found=state.data.find(c=>c.code&&c.code.toUpperCase()===code);
+        state.trackResult=found||false;
+        render();
+    });
+    document.getElementById('trackInput')?.addEventListener('input',e=>{state.trackCode=e.target.value;});
+    document.getElementById('trackInput')?.addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('trackSearchBtn')?.click();});
+    document.getElementById('trackSearch')?.addEventListener('click',()=>{
+        const code=(document.getElementById('trackInput')?.value||'').trim().toUpperCase();
+        if(!code){showToast('⚠️ Entrez un code');return;}
+        const found=state.data.find(c=>c.code&&c.code.toUpperCase()===code);
+        state.trackResult=found||false;
+        render();
+    });
+    document.getElementById('trackInput')?.addEventListener('input',e=>{
+        state.trackCode=e.target.value;
+    });
+    document.getElementById('trackInput')?.addEventListener('keydown',e=>{
+        if(e.key==='Enter') document.getElementById('trackSearch')?.click();
+    });
+    document.querySelectorAll('[data-cancel-track]').forEach(btn=>{
+        btn.onclick=async()=>{
+            const id=parseInt(btn.getAttribute('data-cancel-track'));
+            state.data=state.data.map(c=>c.id===id?{...c,pris:'Annulé'}:c);
+            state.trackResult={...state.trackResult,pris:'Annulé'};
+            showToast('✓ Demande annulée');
+            render();
+            await dbUpdate(id,{pris:'Annulé'});
+        };
+    });
+
+    // Filtres Activité
+    ['all','attente','avenir','passees','repas','taxi','commande'].forEach(k=>{
+        const btn=document.getElementById('f-'+k);
+        if(btn) btn.onclick=()=>setState({resaFilter:k});
+    });
+
+    // Délégation globale pour tous les onglets et filtres
+    if(!window._globalDelegSet){
+        window._globalDelegSet=true;
+        document.addEventListener('click',e=>{
+            const at=e.target.closest('[data-activite-tab]');
+            if(at){setState({activiteTab:at.getAttribute('data-activite-tab')});return;}
+            const rf=e.target.closest('[data-resa-filter]');
+            if(rf){setState({resaFilter:rf.getAttribute('data-resa-filter')});return;}
+            const cf=e.target.closest('[data-cmd-filter]');
+            if(cf){setState({cmdFilter:cf.getAttribute('data-cmd-filter')});return;}
+            const hs=e.target.closest('[data-hist-sort]');
+            if(hs){
+                const col=hs.getAttribute('data-hist-sort');
+                if(state.histSort===col) setState({histSort:col,histPage:0,histSortAsc:!state.histSortAsc});
+                else setState({histSort:col,histPage:0,histSortAsc:true});
+                return;
+            }
+            const rs=e.target.closest('[data-resa-sort]');
+            if(rs){
+                const col=rs.getAttribute('data-resa-sort');
+                if(state.resaSort===col) setState({resaSortAsc:!state.resaSortAsc});
+                else setState({resaSort:col,resaSortAsc:true});
+                return;
+            }
+            const cs=e.target.closest('[data-cmd-sort]');
+            if(cs){
+                const col=cs.getAttribute('data-cmd-sort');
+                if(state.cmdSort===col) setState({cmdSortAsc:!state.cmdSortAsc});
+                else setState({cmdSort:col,cmdSortAsc:true});
+                return;
+            }
+            const st=e.target.closest('[data-settings-tab]');
+            if(st){setState({settingsTab:st.getAttribute('data-settings-tab')});return;}
+        });
+    }
 
     // Drag & drop colonnes historique
     const histHead = document.getElementById('histTableHead');
@@ -1930,9 +2275,10 @@ function attachEvents(){
         const f=state.form;
         const pourQuiLabel=f.pourQui.includes('__autre__')?(f.pourQuiAutre||'Autre'):f.pourQui.join(', ');
         const descFinal=f.type==='taxi'?`Taxi ${(f.de||'?').split(',')[0]} → ${(f.vers||'?').split(',')[0]}`:(f.desc||'Commande repas');
-        const newItem={id:Date.now(),pris:"En attente",demandeur:f.dem,pourQui:pourQuiLabel,date:f.date,desc:descFinal,lieu:f.type==='taxi'?f.de:f.lieu,heure:f.heure,presta:f.presta,prix:0,paie:"",nb:parseInt(f.nb)||1,comment:f.com,type:f.type,depart:f.de,arrivee:f.vers,vol:f.vol||''};
+        const code=genCode(f.type);
+        const newItem={id:Date.now(),code,pris:"En attente",demandeur:f.dem,pourQui:pourQuiLabel,date:f.date,desc:descFinal,lieu:f.type==='taxi'?f.de:f.lieu,heure:f.heure,presta:f.presta,prix:0,paie:"",nb:parseInt(f.nb)||1,comment:f.com,type:f.type,depart:f.de,arrivee:f.vers,vol:f.vol||''};
         state.data=[newItem,...state.data];
-        state.form.sent=true;render();
+        state.form.sent=true;state.form.code=code;render();
         const saved=await dbInsert(newItem);
         if(saved.id!==newItem.id){state.data=state.data.map(c=>c.id===newItem.id?saved:c);}
         (settings.adminEmails||[]).forEach(email=>{
@@ -2043,7 +2389,17 @@ function attachEvents(){
         showToast('✓ Emails admin sauvegardés');
     });
 
-        document.getElementById('saveAllEmails')?.addEventListener('click',()=>{
+        // Suppression email assistante
+    document.querySelectorAll('[data-rm-email]').forEach(btn=>{
+        btn.onclick=()=>{
+            const nom=btn.getAttribute('data-rm-email');
+            delete settings.emails[nom];
+            updS({...settings});
+            showToast('✓ Email supprimé');
+        };
+    });
+
+    document.getElementById('saveAllEmails')?.addEventListener('click',()=>{
         const newEmails={...settings.emails};
         let count=0;
         document.querySelectorAll('.email-input').forEach(input=>{
