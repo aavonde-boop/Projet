@@ -944,7 +944,7 @@ function renderDetail(d,m){
 
         <div class="form-group"><label class="form-label">Description / Titre</label>
             ${isRepas
-                ? `<select id="editDesc" class="form-select"><option value="">— Choisir —</option>${P_REPAS.map(p=>`<option ${d.desc===p?'selected':''}>${p}</option>`).join('')}</select>`
+                ? `<select id="editDesc" class="form-select"><option value="">— Choisir —</option>${P_TYPES.map(p=>`<option ${d.desc===p?'selected':''}>${p}</option>`).join('')}</select>`
                 : `<input id="editDesc" type="text" value="${d.desc||''}" class="form-input">`
             }
         </div>
@@ -970,7 +970,24 @@ function renderDetail(d,m){
             <div class="form-group"><label class="form-label">Heure</label><input id="editHeure" type="text" value="${d.heure||''}" placeholder="Ex: 08h30" class="form-input"></div>
         </div>
 
-        <div class="form-group"><label class="form-label">Pour qui</label><input id="editPourQui" type="text" value="${d.pourQui||''}" class="form-input"></div>
+        <div class="form-group"><label class="form-label">Pour qui</label>
+            <div style="position:relative;" id="editPqWrapper">
+                <button type="button" id="editPqToggle" style="width:100%;border:1.5px solid var(--border);border-radius:14px;padding:12px 14px;font-size:14px;background:var(--white);text-align:left;cursor:pointer;display:flex;justify-content:space-between;align-items:center;font-family:'DM Sans',sans-serif;color:var(--ink);">
+                    <span id="editPqLabel">${d.pourQui||'— Choisir —'}</span>
+                    <span style="font-size:11px;color:var(--ink-soft);">▼</span>
+                </button>
+                <div id="editPqDropdown" style="display:none;position:absolute;top:calc(100% + 4px);left:0;right:0;background:var(--white);border:1.5px solid var(--border);border-radius:14px;box-shadow:0 8px 24px rgba(0,0,0,0.10);z-index:999;overflow:hidden;max-height:220px;overflow-y:auto;">
+                    ${settings.directeurs.map(dir=>`
+                    <label style="display:flex;align-items:center;gap:12px;padding:11px 16px;cursor:pointer;border-bottom:1px solid var(--border-light);" onmouseover="this.style.background='#f5f4f0'" onmouseout="this.style.background=''">
+                        <input type="checkbox" class="edit-pq-check" value="${dir}" ${(d.pourQui||'').includes(dir)?'checked':''} style="width:17px;height:17px;accent-color:var(--ink);cursor:pointer;flex-shrink:0;">
+                        <span style="font-size:14px;">${dir}</span>
+                    </label>`).join('')}
+                    <div style="padding:10px 16px;border-top:1px solid var(--border-light);">
+                        <input id="editPqAutre" type="text" placeholder="Autre nom..." value="${settings.directeurs.some(d2=>(d.pourQui||'').includes(d2))?'':d.pourQui||''}" class="form-input" style="font-size:13px;padding:7px 10px;">
+                    </div>
+                </div>
+            </div>
+        </div>
         ${d.type==='taxi'?`<div class="form-group"><label class="form-label">📱 Téléphone passager</label><input id="editTel" type="tel" value="${d.tel||''}" class="form-input"></div>`:''}
         <div class="form-group"><label class="form-label">Commentaire</label><textarea id="editComment" class="form-input" style="min-height:60px;resize:vertical;">${d.comment||''}</textarea></div>
 
@@ -1922,7 +1939,11 @@ function attachEvents(){
             desc:  document.getElementById('editDesc')?.value||d.desc,
             date:  document.getElementById('editDate')?.value||d.date,
             heure: document.getElementById('editHeure')?.value||d.heure,
-            pourQui: document.getElementById('editPourQui')?.value||d.pourQui,
+            pourQui: (()=>{
+                const checked=[...document.querySelectorAll('.edit-pq-check:checked')].map(c=>c.value);
+                const autre=document.getElementById('editPqAutre')?.value||'';
+                return checked.length?checked.join(', ')+(autre?', '+autre:''):autre||d.pourQui||'';
+            })(),
             comment: document.getElementById('editComment')?.value||'',
             prix,
             paie:  document.getElementById('editPaie')?.value||d.paie,
@@ -2242,6 +2263,21 @@ function attachEvents(){
             if(st){setState({settingsTab:st.getAttribute('data-settings-tab')});return;}
         });
     }
+
+    // Dropdown Pour qui dans détail
+    const epqToggle=document.getElementById('editPqToggle');
+    const epqDropdown=document.getElementById('editPqDropdown');
+    if(epqToggle&&epqDropdown){
+        epqToggle.onclick=e=>{e.stopPropagation();epqDropdown.style.display=epqDropdown.style.display==='none'?'block':'none';};
+        document.addEventListener('click',e=>{if(!document.getElementById('editPqWrapper')?.contains(e.target))epqDropdown.style.display='none';});
+    }
+    document.querySelectorAll('.edit-pq-check').forEach(cb=>{
+        cb.onchange=()=>{
+            const checked=[...document.querySelectorAll('.edit-pq-check:checked')].map(c=>c.value);
+            const lbl=document.getElementById('editPqLabel');
+            if(lbl) lbl.textContent=checked.join(', ')||'— Choisir —';
+        };
+    });
 
     // Drag & drop colonnes historique
     const histHead = document.getElementById('histTableHead');
