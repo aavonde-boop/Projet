@@ -167,6 +167,7 @@
 const DEFAULT_ASSISTANTES = ["Alexandra JULITTE","Hayet GUERMOUCHE","Julia POITIER","Zoe CHICHOU","Milene MODESTINE","Perle HERBIN","Laurianne MACE","Corinne LEGRAND","Melanie RABALLAND","Anne Berangere CREMER"];
 const DEFAULT_DIRECTEURS  = ["Sylvain LEMERCIER","Sara RIBEIRO","Marc RIPOTOT","Cyrius","Julien"];
 const DEFAULT_PREPAS      = ["Delicity","Uber eat","Deliveroo","Mimma","Mycarter","Le Cercle","Ciboulette","Polpo","La Boite","La famille","Ensuite","11h59","My carter"];
+const DEFAULT_TYPES_REPAS = ["Petit-déjeuner","Déjeuner","Goûter","Dîner","Cocktail","Plateau repas","Autre"];
 const DEFAULT_PTAXI       = ["Allocab","G7","Uber"];
 const DEFAULT_PCMD        = ["Nespresso","Monoprix","Lyreco","Bruneau","Kusme Tea","Carrefour","Amazon","Lavazza","Ups","Vinci"];
 // Emails des assistantes — clé = nom exact, valeur = adresse email
@@ -216,6 +217,7 @@ function loadSettingsLocal() {
         assistantes:          JSON.parse(localStorage.getItem('settings_assistantes')          ||JSON.stringify(DEFAULT_ASSISTANTES)),
         directeurs:           JSON.parse(localStorage.getItem('settings_directeurs')           ||JSON.stringify(DEFAULT_DIRECTEURS)),
         prestatairesRepas:    JSON.parse(localStorage.getItem('settings_prestataires_repas')   ||JSON.stringify(DEFAULT_PREPAS)),
+        typesRepas:           JSON.parse(localStorage.getItem('settings_types_repas')            ||JSON.stringify(DEFAULT_TYPES_REPAS)),
         prestatairesTaxi:     JSON.parse(localStorage.getItem('settings_prestataires_taxi')    ||JSON.stringify(DEFAULT_PTAXI)),
         prestatairesCommande: JSON.parse(localStorage.getItem('settings_prestataires_commande')||JSON.stringify(DEFAULT_PCMD)),
         emails:               JSON.parse(localStorage.getItem('settings_emails')               ||JSON.stringify(DEFAULT_EMAILS)),
@@ -228,6 +230,7 @@ function saveSettingsLocal(s) {
     localStorage.setItem('settings_assistantes',          JSON.stringify(s.assistantes));
     localStorage.setItem('settings_directeurs',           JSON.stringify(s.directeurs));
     localStorage.setItem('settings_prestataires_repas',   JSON.stringify(s.prestatairesRepas));
+    localStorage.setItem('settings_types_repas',            JSON.stringify(s.typesRepas||DEFAULT_TYPES_REPAS));
     localStorage.setItem('settings_prestataires_taxi',    JSON.stringify(s.prestatairesTaxi));
     localStorage.setItem('settings_prestataires_commande',JSON.stringify(s.prestatairesCommande));
     localStorage.setItem('settings_emails',               JSON.stringify(s.emails));
@@ -250,6 +253,7 @@ async function loadSettingsFromDB() {
         if (map.assistantes)          settings.assistantes          = map.assistantes;
         if (map.directeurs)           settings.directeurs           = map.directeurs;
         if (map.prestatairesRepas)    settings.prestatairesRepas    = map.prestatairesRepas;
+        if (map.typesRepas)           settings.typesRepas           = map.typesRepas;
         if (map.prestatairesTaxi)     settings.prestatairesTaxi     = map.prestatairesTaxi;
         if (map.prestatairesCommande) settings.prestatairesCommande = map.prestatairesCommande;
         if (map.emails)               settings.emails               = map.emails;
@@ -264,7 +268,7 @@ async function loadSettingsFromDB() {
 
 async function saveSettingsToDB(s) {
     saveSettingsLocal(s);
-    const keys = ['assistantes','directeurs','prestatairesRepas','prestatairesTaxi','prestatairesCommande','emails','adminEmails','yoozMap'];
+    const keys = ['assistantes','directeurs','prestatairesRepas','typesRepas','prestatairesTaxi','prestatairesCommande','emails','adminEmails','yoozMap'];
     for (const cle of keys) {
         try {
             await fetch(`${SB_PARAMS}?cle=eq.${cle}`, {
@@ -288,8 +292,8 @@ function saveSettings(s) {
 }
 
 let settings = loadSettingsLocal();
-let P_REPAS=[...settings.prestatairesRepas], P_TAXI=[...settings.prestatairesTaxi], P_CMD=[...settings.prestatairesCommande];
-function refreshGlobals(){ P_REPAS=[...settings.prestatairesRepas]; P_TAXI=[...settings.prestatairesTaxi]; P_CMD=[...settings.prestatairesCommande]; }
+let P_REPAS=[...settings.prestatairesRepas], P_TAXI=[...settings.prestatairesTaxi], P_CMD=[...settings.prestatairesCommande], P_TYPES=[...(settings.typesRepas||DEFAULT_TYPES_REPAS)];
+function refreshGlobals(){ P_REPAS=[...settings.prestatairesRepas]; P_TAXI=[...settings.prestatairesTaxi]; P_CMD=[...settings.prestatairesCommande]; P_TYPES=[...(settings.typesRepas||DEFAULT_TYPES_REPAS)]; }
 
 /* ══════════════════════════════════════
    EMAILJS — envoi confirmation
@@ -2027,7 +2031,7 @@ function attachEvents(){
                         <label style="font-size:11px;color:#64748b;display:block;margin-bottom:3px;">Description</label>
                         <select class="corr-desc form-select" data-id="${c.id}" style="width:100%;padding:7px 10px;font-size:13px;">
                             <option value="">— Choisir —</option>
-                            ${P_REPAS.map(p=>`<option value="${p}" ${desc===p||desc.toLowerCase().includes(p.toLowerCase())?'selected':''}>${p}</option>`).join('')}
+                            ${P_TYPES.map(p=>`<option value="${p}" ${desc===p||desc.toLowerCase().includes(p.toLowerCase())?'selected':''}>${p}</option>`).join('')}
                             <option value="${desc}" ${!P_REPAS.includes(desc)?'selected':''}>Garder: ${desc}</option>
                         </select>
                     </div>
@@ -2553,11 +2557,11 @@ function attachEvents(){
     });
     const addMap=[['addAssistante','newAssistante','assistantes'],['addDirecteur','newDirecteur','directeurs'],['addPrepas','newPrepas','prestatairesRepas'],['addTaxi','newTaxi','prestatairesTaxi'],['addCmd','newCmd','prestatairesCommande']];
     addMap.forEach(([btnId,inputId,key])=>document.getElementById(btnId)?.addEventListener('click',()=>{const i=document.getElementById(inputId);const v=i?.value.trim();if(v&&!settings[key].includes(v))updS({...settings,[key]:[...settings[key],v]});if(i)i.value='';}));
-    const rmMap=[['remove-assistante','assistantes'],['remove-directeur','directeurs'],['remove-prepas','prestatairesRepas'],['remove-taxi','prestatairesTaxi'],['remove-cmd','prestatairesCommande']];
+    const rmMap=[['remove-assistante','assistantes'],['remove-directeur','directeurs'],['remove-typerepas','typesRepas'],['remove-prepas','prestatairesRepas'],['remove-taxi','prestatairesTaxi'],['remove-cmd','prestatairesCommande']];
     // Handler suppression réglages via délégation
     if(!window._rmHandlerSet){
         window._rmHandlerSet = true;
-        const keyMap={'remove-assistante':'assistantes','remove-directeur':'directeurs','remove-prepas':'prestatairesRepas','remove-taxi':'prestatairesTaxi','remove-cmd':'prestatairesCommande'};
+        const keyMap={'remove-assistante':'assistantes','remove-directeur':'directeurs','remove-typerepas':'typesRepas','remove-prepas':'prestatairesRepas','remove-taxi':'prestatairesTaxi','remove-cmd':'prestatairesCommande'};
         document.addEventListener('click', e=>{
             // Confirmation suppression réglages
             if(e.target.closest('[data-confirm-rm-yes]')){
