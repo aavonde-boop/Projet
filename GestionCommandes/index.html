@@ -1468,11 +1468,11 @@ function renderCalendrier(m){
             const endM=totalMin%60;
             endDt=`${yr}${pad(mo)}${pad(dy)}T${pad(endH)}${pad(endM)}00`;
         } else {
-            // Pas d'heure → événement toute la journée
-            startDt=`${yr}${pad(mo)}${pad(dy)}`;
-            endDt=`${yr}${pad(mo)}${pad(dy)}`;
+            // Pas d'heure → 12h00 par défaut
+            startDt=`${yr}${pad(mo)}${pad(dy)}T120000`;
+            endDt=`${yr}${pad(mo)}${pad(dy)}T123000`;
         }
-        const isAllDay=!heureMatch;
+        const isAllDay=false;
         return [
             'BEGIN:VEVENT',
             `UID:${uid}`,
@@ -1737,6 +1737,17 @@ function renderSettings(){
         `:'<div style="text-align:center;color:#9e9a93;padding:16px;font-size:13px;">La corbeille est vide</div>'}
     </div>
 
+    <!-- Outil correction données -->
+    <div class="settings-section" style="margin-top:18px;border:1.5px solid #e0e7ff;background:#f5f3ff;">
+        <div style="font-weight:700;margin-bottom:4px;font-size:14px;">🔧 Correction des descriptions</div>
+        <div style="font-size:12px;color:#9e9a93;margin-bottom:14px;">Séparez les descriptions mixtes (ex: "Repas Franck" → Description + Pour qui)</div>
+        <button id="showCorrector" style="background:var(--ink);color:#fff;border:none;border-radius:12px;padding:10px 16px;font-size:13px;font-weight:600;cursor:pointer;width:100%;">🔧 Ouvrir l'outil de correction</button>
+        <div id="correctorPanel" style="display:none;margin-top:14px;">
+            <div id="correctorList"></div>
+            <button id="saveCorrections" style="background:#16a34a;color:#fff;border:none;border-radius:12px;padding:11px;font-size:13px;font-weight:700;cursor:pointer;width:100%;margin-top:12px;">💾 Sauvegarder toutes les corrections</button>
+        </div>
+    </div>
+
     <div style="background:#f0fdf4;border-radius:14px;padding:13px;text-align:center;color:#15803d;font-size:13px;margin-top:12px;">✓ Sauvegarde automatique</div>
     </div>`;
 }
@@ -1994,7 +2005,61 @@ function attachEvents(){
         if((state.histPage||0)<total-1) setState({histPage:(state.histPage||0)+1});
     });
 
-        // Yooz réglages
+        // Outil correction descriptions
+    document.getElementById('showCorrector')?.addEventListener('click',()=>{
+        const panel=document.getElementById('correctorPanel');
+        const list=document.getElementById('correctorList');
+        if(!panel||!list) return;
+        panel.style.display=panel.style.display==='none'?'block':'none';
+        if(panel.style.display==='none') return;
+
+        // Générer les lignes à corriger (repas uniquement)
+        const repas=state.data.filter(c=>c.type==='repas');
+        if(!repas.length){list.innerHTML='<div style="color:#9e9a93;text-align:center;padding:16px;">Aucun repas à corriger</div>';return;}
+
+        list.innerHTML=repas.map((c,i)=>{
+            const desc=c.desc||'';
+            const pourQui=c.pourQui||'';
+            return `<div style="display:flex;flex-direction:column;gap:6px;padding:12px;background:#fff;border-radius:12px;border:1px solid #e0e7ff;margin-bottom:8px;">
+                <div style="font-size:11px;color:#6366f1;font-weight:600;margin-bottom:2px;">ID: ${c.id} — Actuel: <strong>${desc}</strong> / Pour qui: <strong>${pourQui||'—'}</strong></div>
+                <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                    <div style="flex:1;min-width:140px;">
+                        <label style="font-size:11px;color:#64748b;display:block;margin-bottom:3px;">Description</label>
+                        <select class="corr-desc form-select" data-id="${c.id}" style="width:100%;padding:7px 10px;font-size:13px;">
+                            <option value="">— Choisir —</option>
+                            ${P_REPAS.map(p=>`<option value="${p}" ${desc===p||desc.toLowerCase().includes(p.toLowerCase())?'selected':''}>${p}</option>`).join('')}
+                            <option value="${desc}" ${!P_REPAS.includes(desc)?'selected':''}>Garder: ${desc}</option>
+                        </select>
+                    </div>
+                    <div style="flex:1;min-width:140px;">
+                        <label style="font-size:11px;color:#64748b;display:block;margin-bottom:3px;">Pour qui</label>
+                        <input class="corr-pourqui form-input" data-id="${c.id}" value="${pourQui}" placeholder="Nom de la personne" style="width:100%;padding:7px 10px;font-size:13px;">
+                    </div>
+                </div>
+            </div>`;
+        }).join('');
+    });
+
+    document.getElementById('saveCorrections')?.addEventListener('click',async()=>{
+        const descs=document.querySelectorAll('.corr-desc');
+        const pourquis=document.querySelectorAll('.corr-pourqui');
+        let saved=0;
+        for(let i=0;i<descs.length;i++){
+            const id=parseInt(descs[i].getAttribute('data-id'));
+            const newDesc=descs[i].value;
+            const newPourQui=pourquis[i].value;
+            if(!newDesc) continue;
+            state.data=state.data.map(c=>c.id===id?{...c,desc:newDesc,pourQui:newPourQui}:c);
+            try{
+                await dbUpdate(id,{descr:newDesc,pour_qui:newPourQui});
+                saved++;
+            }catch(e){console.error('Erreur save',id,e);}
+        }
+        showToast(`✓ ${saved} corrections sauvegardées`);
+        render();
+    });
+
+    // Yooz réglages
     document.getElementById('saveYooz')?.addEventListener('click',()=>{
         const map={};
         document.querySelectorAll('.yooz-input').forEach(inp=>{
