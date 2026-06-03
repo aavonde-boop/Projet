@@ -554,9 +554,9 @@ let state = {
     detail:null, adminTab:"dashboard",
     search:"", filtre:"all", toast:"",
     saisieType:null, fabOpen:false, fabAdminOpen:false, trackMode:false, trackResult:null, trackCode:"" ,
-    resaFilter:"all", cmdFilter:"all", resaSort:"date", resaSortAsc:true, cmdSort:"date", cmdSortAsc:true,
+    resaFilter:"all", cmdFilter:"all", resaSort:"date", resaSortAsc:true, cmdSort:"date", cmdSortAsc:true, histSortAsc:true,
     activiteTab:"reservations", histSort:"date", histPage:0, calMonth:null, colOrder:["date","code","type","desc","demandeur","pourQui","statut","prix"],
-    deletedData:[], confirmRm:null, confirmDelete:null, yoozMap:null, settingsTab:null,
+    deletedData:[], confirmRm:null, confirmDelete:null, yoozMap:null, settingsTab:null, adminForm:null,
     form:{ type:null, step:1, sent:false, code:null,
         dem:"", pourQui:[], pourQuiAutre:"", vol:"", tel:"", copyMail:false,
         date:today(), heure:"12h00",
@@ -1098,17 +1098,16 @@ function renderActivite(m){
 
     const all=state.data.filter(c=>{
         if(search&&!`${c.desc} ${c.presta} ${c.demandeur} ${c.pourQui}`.toLowerCase().includes(search)) return false;
-        if(filter==='attente') return c.pris==='En attente'||c.pris==='En cours';
         if(filter==='avenir'){const d=parseDate(c.date);return c.pris==='OUI'&&d&&d>=today2;}
-        if(filter==='passees'){const d=parseDate(c.date);return c.pris==='Annulé'||c.pris==='Reçu'||(c.pris==='OUI'&&(!d||d<today2));}
-        if(filter==='repas') return c.type==='repas';
-        if(filter==='taxi') return c.type==='taxi';
-        if(filter==='commande') return c.type==='commande';
-        return true;
+        return true; // "all"
     }).sort((a,b)=>{
         let va,vb;
         if(sortCol==='date'){va=parseDate(a.date)||new Date(0);vb=parseDate(b.date)||new Date(0);}
         else if(sortCol==='prix'){va=a.prix||0;vb=b.prix||0;}
+        else if(sortCol==='statut'){va=a.pris||'';vb=b.pris||'';}
+        else if(sortCol==='pourQui'){va=a.pourQui||'';vb=b.pourQui||'';}
+        else if(sortCol==='desc'){va=a.desc||'';vb=b.desc||'';}
+        else if(sortCol==='type'){va=a.type||'';vb=b.type||'';}
         else{va=(a[sortCol]||'');vb=(b[sortCol]||'');}
         if(va<vb) return sortAsc?-1:1;
         if(va>vb) return sortAsc?1:-1;
@@ -1123,60 +1122,61 @@ function renderActivite(m){
 
     const typeIcon=t=>t==='taxi'?'🚕':t==='repas'?'🍽':'📦';
 
-    const nbAttente=state.data.filter(c=>c.pris==='En attente'||c.pris==='En cours').length;
     const nbAvenir=state.data.filter(c=>{const d=parseDate(c.date);return c.pris==='OUI'&&d&&d>=today2;}).length;
 
-    const FILTERS=[
-        ['all','Tout',0],
-        ['attente','⏳ En attente',nbAttente],
-        ['avenir','📅 À venir',nbAvenir],
-        ['passees','🗂 Passées',0],
-        ['repas','🍽 Repas',0],
-        ['taxi','🚕 Taxi',0],
-        ['commande','📦 Commande',0],
-    ];
+    // Filtres : uniquement Tout et À venir
+    const FILTERS=[['all','Tout',0],['avenir','📅 À venir',nbAvenir]];
+    const filterBtns = FILTERS.map(([k,l,n])=>
+        '<button id="f-'+k+'" style="padding:6px 16px;border:none;border-radius:24px;font-size:13px;font-weight:500;cursor:pointer;background:'+(filter===k?'var(--ink)':'#f0eeea')+';color:'+(filter===k?'#fff':'#7a7570')+';transition:all 0.15s;">'+l+(n?' <span style="background:#22c55e;color:#fff;border-radius:50%;min-width:16px;height:16px;font-size:10px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;padding:0 3px;">'+n+'</span>':'')+'</button>'
+    ).join('');
 
-    const filterBtns = FILTERS.filter(([k,,n])=>k==='all'||k==='passees'||(k==='attente'&&nbAttente>0)||(k==='avenir'&&nbAvenir>0)||['repas','taxi','commande'].includes(k))
-        .map(([k,l,n])=>`<button id="f-${k}" style="display:flex;align-items:center;gap:5px;padding:5px 12px;border:none;border-radius:24px;font-size:12px;font-weight:500;cursor:pointer;background:${filter===k?'var(--ink)':'#f0eeea'};color:${filter===k?'#fff':'#7a7570'};">${l}${n?`<span style="background:#f59e0b;color:#fff;border-radius:50%;min-width:16px;height:16px;font-size:10px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;">${n}</span>`:''}</button>`).join('');
+    // En-têtes triables
+    function th(col, label, align){
+        const active=sortCol===col;
+        const arrow=active?(sortAsc?' ↑':' ↓'):'';
+        const a=align||'left';
+        return `<th id="th-${col}" style="text-align:${a};padding:10px 14px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:${active?'#1a1f36':'#64748b'};cursor:pointer;user-select:none;white-space:nowrap;background:${active?'#f0f4ff':'#f8fafc'};">${label}${arrow}</th>`;
+    }
 
     return `<div>
     <div style="font-family:'DM Serif Display',serif;font-size:${m?'18px':'22px'};margin-bottom:14px;">📋 Activité <span style="font-size:13px;color:#94a3b8;font-weight:400;">${all.length} entrée${all.length>1?'s':''}</span></div>
 
-    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;">
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;align-items:center;">
         <input id="adminSearch" type="text" placeholder="🔍 Rechercher..." value="${state.search||''}" class="search-input" style="flex:1;min-width:140px;margin-bottom:0;">
-    </div>
-    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px;" id="filterBtns">
-        ${filterBtns}
+        <div style="display:flex;gap:4px;background:#f0eeea;border-radius:30px;padding:3px;" id="filterBtns">
+            ${filterBtns}
+        </div>
     </div>
 
     <div style="background:#fff;border-radius:16px;border:1px solid #e4e7ec;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.04);">
         <div style="overflow-x:auto;">
-            <table style="width:100%;border-collapse:collapse;font-size:13px;min-width:${m?'480px':'560px'};">
+            <table style="width:100%;border-collapse:collapse;font-size:13px;min-width:${m?'480px':'600px'};">
                 <thead>
-                    <tr style="background:#f8fafc;border-bottom:2px solid #e2e8f0;">
-                        <th style="text-align:left;padding:10px 14px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:#64748b;">Date</th>
-                        <th style="text-align:left;padding:10px 14px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:#64748b;">Type / Description</th>
-                        <th style="text-align:left;padding:10px 14px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:#64748b;">Pour qui</th>
-                        <th style="text-align:left;padding:10px 14px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:#64748b;">Demandeur</th>
-                        <th style="text-align:center;padding:10px 14px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:#64748b;">Statut</th>
-                        <th style="text-align:right;padding:10px 14px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:#64748b;">Prix</th>
+                    <tr style="border-bottom:2px solid #e2e8f0;">
+                        ${th('date','Date')}
+                        ${th('type','Type')}
+                        ${th('desc','Description')}
+                        ${th('pourQui','Pour qui')}
+                        ${th('demandeur','Demandeur')}
+                        ${th('statut','Statut','center')}
+                        ${th('prix','Prix','right')}
                     </tr>
                 </thead>
                 <tbody>
                     ${all.length?all.map((c,i)=>`
                     <tr data-open-detail='${JSON.stringify(c).replace(/'/g,"&apos;")}' style="border-bottom:1px solid #f1f5f9;cursor:pointer;background:${i%2===0?'#fff':'#fafafa'};" onmouseover="this.style.background='#eff6ff'" onmouseout="this.style.background='${i%2===0?'#fff':'#fafafa'}'">
                         <td style="padding:11px 14px;color:#64748b;white-space:nowrap;font-size:12px;">${$d(c.date)}</td>
-                        <td style="padding:11px 14px;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
-                            <span style="margin-right:5px;">${typeIcon(c.type)}</span>
+                        <td style="padding:11px 14px;text-align:center;font-size:16px;">${typeIcon(c.type)}</td>
+                        <td style="padding:11px 14px;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
                             <span style="font-weight:600;color:#1a1f36;">${c.desc||'—'}</span>
-                            ${c.vol?`<span style="font-size:10px;color:#6366f1;margin-left:5px;font-weight:600;" title="N° vol/train: ${c.vol}">✈️ ${c.vol}</span>`:''}
+                            ${c.vol?`<span style="font-size:10px;color:#6366f1;margin-left:5px;">✈️ ${c.vol}</span>`:''}
                             ${c.comment?`<span style="font-size:10px;color:#94a3b8;margin-left:4px;" title="${c.comment}">💬</span>`:''}
                         </td>
                         <td style="padding:11px 14px;color:#1a1f36;font-weight:500;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${c.pourQui||'—'}</td>
                         <td style="padding:11px 14px;color:#64748b;white-space:nowrap;">${c.demandeur||'—'}</td>
                         <td style="padding:11px 14px;text-align:center;">${statusBadge(c.pris)}</td>
                         <td style="padding:11px 14px;text-align:right;font-weight:700;color:${c.prix?'#16a34a':'#94a3b8'};">${c.prix?$m(c.prix):'—'}</td>
-                    </tr>`).join(''):`<tr><td colspan="6" style="text-align:center;padding:40px;color:#94a3b8;">Aucune entrée</td></tr>`}
+                    </tr>`).join(''):`<tr><td colspan="7" style="text-align:center;padding:40px;color:#94a3b8;">Aucune entrée</td></tr>`}
                 </tbody>
             </table>
         </div>
@@ -1313,7 +1313,7 @@ function renderCommandes(m){
         return `<span style="padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;background:${st.bg};color:${st.color};">${st.label}</span>`;
     };
 
-    function th(col,label){
+    function thc(col,label){
         const active=sortCol===col;
         const arrow=active?(sortAsc?'↑':'↓'):'';
         return `<th data-cmd-sort="${col}" style="text-align:${col==='prix'?'right':'left'};padding:10px 14px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:${active?'#1a1f36':'#64748b'};white-space:nowrap;cursor:pointer;user-select:none;">
@@ -1344,12 +1344,12 @@ function renderCommandes(m){
             <table style="width:100%;border-collapse:collapse;font-size:13px;min-width:${m?'480px':'560px'};">
                 <thead>
                     <tr style="background:#f8fafc;border-bottom:2px solid #e2e8f0;">
-                        ${th('date','Date')}
-                        ${th('desc','Description')}
-                        ${th('presta','Fournisseur')}
-                        ${th('demandeur','Demandeur')}
-                        ${th('statut','Statut')}
-                        ${th('prix','Prix')}
+                        ${thc('date','Date')}
+                        ${thc('desc','Description')}
+                        ${thc('presta','Fournisseur')}
+                        ${thc('demandeur','Demandeur')}
+                        ${thc('statut','Statut')}
+                        ${thc('prix','Prix')}
                     </tr>
                 </thead>
                 <tbody>
@@ -1452,17 +1452,34 @@ function renderCalendrier(m){
         if(c.date.includes('-')){ [yr,mo,dy]=c.date.split('-').map(Number); }
         else { const p=c.date.split('/'); dy=+p[0];mo=+p[1];yr=+p[2]; }
         const pad=n=>String(n).padStart(2,'0');
-        const dt=`${yr}${pad(mo)}${pad(dy)}`;
         const uid=`${c.id}@gestioncommandes`;
         const desc=(c.desc||'').replace(/,/g,'').replace(/[\r\n]+/g,' ');
         const loc=(c.lieu||c.depart||'').replace(/,/g,'');
+        // Calculer heure début depuis c.heure (ex: "09h30")
+        let startDt, endDt;
+        const heureMatch=(c.heure||'').match(/(\d{1,2})h(\d{2})/);
+        if(heureMatch){
+            const hh=parseInt(heureMatch[1]);
+            const mm=parseInt(heureMatch[2]);
+            startDt=`${yr}${pad(mo)}${pad(dy)}T${pad(hh)}${pad(mm)}00`;
+            // Fin = début + 30 min
+            const totalMin=hh*60+mm+30;
+            const endH=Math.floor(totalMin/60)%24;
+            const endM=totalMin%60;
+            endDt=`${yr}${pad(mo)}${pad(dy)}T${pad(endH)}${pad(endM)}00`;
+        } else {
+            // Pas d'heure → événement toute la journée
+            startDt=`${yr}${pad(mo)}${pad(dy)}`;
+            endDt=`${yr}${pad(mo)}${pad(dy)}`;
+        }
+        const isAllDay=!heureMatch;
         return [
             'BEGIN:VEVENT',
             `UID:${uid}`,
-            `DTSTART;VALUE=DATE:${dt}`,
-            `DTEND;VALUE=DATE:${dt}`,
+            isAllDay?`DTSTART;VALUE=DATE:${startDt}`:`DTSTART:${startDt}`,
+            isAllDay?`DTEND;VALUE=DATE:${endDt}`:`DTEND:${endDt}`,
             `SUMMARY:${c.type==='taxi'?'🚕':c.type==='repas'?'🍽':'📦'} ${desc}`,
-            `DESCRIPTION:${c.demandeur||''} — ${c.pourQui||''} — ${c.presta||''}`,
+            `DESCRIPTION:${c.demandeur||''} — ${c.pourQui||''} — ${c.presta||''}${c.tel?' — 📱 '+c.tel:''}`,
             loc?`LOCATION:${loc}`:'',
             'END:VEVENT'
         ].filter(Boolean).join('\r\n');
@@ -2108,9 +2125,17 @@ function attachEvents(){
     });
 
     // Filtres Activité
-    ['all','attente','avenir','passees','repas','taxi','commande'].forEach(k=>{
+    ['all','avenir'].forEach(k=>{
         const btn=document.getElementById('f-'+k);
         if(btn) btn.onclick=()=>setState({resaFilter:k});
+    });
+    // Tri colonnes Activité
+    ['date','type','desc','pourQui','demandeur','statut','prix'].forEach(col=>{
+        const th=document.getElementById('th-'+col);
+        if(th) th.onclick=()=>{
+            if(state.resaSort===col) setState({resaSortAsc:!state.resaSortAsc});
+            else setState({resaSort:col,resaSortAsc:true});
+        };
     });
 
     // Délégation globale pour tous les onglets et filtres
@@ -2368,12 +2393,13 @@ function attachEvents(){
         af.pourQui=[...document.querySelectorAll('.af-pq-check:checked')].map(c=>c.value);
         af.pourQuiAutre=document.getElementById('afPqAutre')?.value||'';
         const pourQuiLabel=af.pourQui.includes('__autre__')?(af.pourQuiAutre||'Autre'):af.pourQui.join(', ');
-        const date=document.getElementById('afDate')?.value||today();
+        const rawDate=document.getElementById('afDate')?.value||today();
+        const date=rawDate.includes('-')?rawDate.split('-').reverse().join('/'):rawDate;
         const heure=document.getElementById('afHeure')?.value||'12h00';
         const com=document.getElementById('afCom')?.value||'';
         const prix=parseFloat(document.getElementById('afPrix')?.value)||0;
         const paie=document.getElementById('afPaie')?.value||'CB';
-        const yooz=document.getElementById('afYooz')?.value||YOOZ_MAP[presta]||'';
+        let yooz="";
         const tel=document.getElementById('afTel')?.value||'';
         let desc='',lieu='',nb=1,presta='',depart='',arrivee='',vol='';
         if(t==='repas'){
@@ -2393,16 +2419,18 @@ function attachEvents(){
             lieu=document.getElementById('afLieu')?.value||'';
             desc=document.getElementById('afDesc')?.value||'';
         }
+        yooz=document.getElementById('afYooz')?.value||YOOZ_MAP[presta]||'';
         if(!dem){showToast('⚠️ Choisir une assistante');return;}
         const newCmd={id:Date.now(),pris:"OUI",demandeur:dem,pourQui:pourQuiLabel,date,desc,lieu,heure,presta,prix,paie,nb,comment:com,type:t,depart,arrivee,vol,yooz,tel};
         state.data=[newCmd,...state.data];
         state.saisieType=null;
         state.adminForm=null;
         showToast('✓ Commande ajoutée');
+        state.adminTab='activite';state.resaFilter='all';
         render();
         const savedCmd=await dbInsert(newCmd);
         if(savedCmd.id!==newCmd.id){state.data=state.data.map(c=>c.id===newCmd.id?savedCmd:c);}
-    };;
+    };
 
     // Settings helpers
     function updS(ns){settings=ns;saveSettings(settings);refreshGlobals();showToast("✓ Réglages sauvegardés");render();}
