@@ -938,6 +938,10 @@ function renderDetail(d,m){
     const isTaxi=d.type==='taxi';
     const isCmd=d.type==='commande';
 
+    const pqHtml = isCmd
+        ? '<label class="form-label">Fournisseur</label><select id="editPresta2" class="form-select"><option value="">—</option>'+P_CMD.map(p=>'<option '+(d.presta===p?'selected':'')+'>'+p+'</option>').join('')+'</select>'
+        : '<label class="form-label">Pour qui</label><div style="position:relative;" id="editPqWrapper"><button type="button" id="editPqToggle" style="width:100%;border:1.5px solid var(--border);border-radius:14px;padding:12px 14px;font-size:14px;background:var(--white);text-align:left;cursor:pointer;display:flex;justify-content:space-between;align-items:center;font-family:DM Sans,sans-serif;color:var(--ink);"><span id="editPqLabel">'+(d.pourQui||'— Choisir —')+'</span><span style="font-size:11px;color:var(--ink-soft);">▼</span></button><div id="editPqDropdown" style="display:none;position:absolute;top:calc(100% + 4px);left:0;right:0;background:var(--white);border:1.5px solid var(--border);border-radius:14px;box-shadow:0 8px 24px rgba(0,0,0,0.10);z-index:999;overflow:hidden;max-height:220px;overflow-y:auto;">'+settings.directeurs.map(dir=>'<label style="display:flex;align-items:center;gap:12px;padding:11px 16px;cursor:pointer;border-bottom:1px solid var(--border-light);"><input type="checkbox" class="edit-pq-check" value="'+dir+'" '+((d.pourQui||'').includes(dir)?'checked':'')+' style="width:17px;height:17px;accent-color:var(--ink);cursor:pointer;flex-shrink:0;"><span style="font-size:14px;">'+dir+'</span></label>').join('')+'<div style="padding:10px 16px;border-top:1px solid var(--border-light);"><input id="editPqAutre" type="text" placeholder="Autre nom..." value="'+(settings.directeurs.some(d2=>(d.pourQui||'').includes(d2))?'':d.pourQui||'')+'" class="form-input" style="font-size:13px;padding:7px 10px;"></div></div></div>';
+
     const editForm=`
     <div style="background:#fafaf8;border-radius:16px;padding:16px;margin-bottom:14px;">
         <div style="font-weight:700;font-size:13px;margin-bottom:14px;color:var(--ink-soft);">✏️ Modifier la commande</div>
@@ -970,24 +974,7 @@ function renderDetail(d,m){
             <div class="form-group"><label class="form-label">Heure</label><input id="editHeure" type="text" value="${d.heure||''}" placeholder="Ex: 08h30" class="form-input"></div>
         </div>
 
-        <div class="form-group"><label class="form-label">Pour qui</label>
-            <div style="position:relative;" id="editPqWrapper">
-                <button type="button" id="editPqToggle" style="width:100%;border:1.5px solid var(--border);border-radius:14px;padding:12px 14px;font-size:14px;background:var(--white);text-align:left;cursor:pointer;display:flex;justify-content:space-between;align-items:center;font-family:'DM Sans',sans-serif;color:var(--ink);">
-                    <span id="editPqLabel">${d.pourQui||'— Choisir —'}</span>
-                    <span style="font-size:11px;color:var(--ink-soft);">▼</span>
-                </button>
-                <div id="editPqDropdown" style="display:none;position:absolute;top:calc(100% + 4px);left:0;right:0;background:var(--white);border:1.5px solid var(--border);border-radius:14px;box-shadow:0 8px 24px rgba(0,0,0,0.10);z-index:999;overflow:hidden;max-height:220px;overflow-y:auto;">
-                    ${settings.directeurs.map(dir=>`
-                    <label style="display:flex;align-items:center;gap:12px;padding:11px 16px;cursor:pointer;border-bottom:1px solid var(--border-light);" onmouseover="this.style.background='#f5f4f0'" onmouseout="this.style.background=''">
-                        <input type="checkbox" class="edit-pq-check" value="${dir}" ${(d.pourQui||'').includes(dir)?'checked':''} style="width:17px;height:17px;accent-color:var(--ink);cursor:pointer;flex-shrink:0;">
-                        <span style="font-size:14px;">${dir}</span>
-                    </label>`).join('')}
-                    <div style="padding:10px 16px;border-top:1px solid var(--border-light);">
-                        <input id="editPqAutre" type="text" placeholder="Autre nom..." value="${settings.directeurs.some(d2=>(d.pourQui||'').includes(d2))?'':d.pourQui||''}" class="form-input" style="font-size:13px;padding:7px 10px;">
-                    </div>
-                </div>
-            </div>
-        </div>
+        <div class="form-group">${pqHtml}</div>
         ${d.type==='taxi'?`<div class="form-group"><label class="form-label">📱 Téléphone passager</label><input id="editTel" type="tel" value="${d.tel||''}" class="form-input"></div>`:''}
         <div class="form-group"><label class="form-label">Commentaire</label><textarea id="editComment" class="form-input" style="min-height:60px;resize:vertical;">${d.comment||''}</textarea></div>
 
@@ -1189,11 +1176,11 @@ function renderActivite(m){
                         <td style="padding:11px 14px;color:#64748b;white-space:nowrap;font-size:12px;">${$d(c.date)}</td>
                         <td style="padding:11px 14px;text-align:center;font-size:16px;">${typeIcon(c.type)}</td>
                         <td style="padding:11px 14px;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
-                            <span style="font-weight:600;color:#1a1f36;">${c.desc||'—'}</span>
+                            <span style="font-weight:600;color:#1a1f36;">${c.type==='commande'?'Commande':c.desc||'—'}</span>
                             ${c.vol?`<span style="font-size:10px;color:#6366f1;margin-left:5px;">✈️ ${c.vol}</span>`:''}
                             ${c.comment?`<span style="font-size:10px;color:#94a3b8;margin-left:4px;" title="${c.comment}">💬</span>`:''}
                         </td>
-                        <td style="padding:11px 14px;color:#1a1f36;font-weight:500;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${c.pourQui||'—'}</td>
+                        <td style="padding:11px 14px;color:#1a1f36;font-weight:500;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${c.type==='commande'?(c.presta||c.pourQui||'—'):(c.pourQui||'—')}</td>
                         <td style="padding:11px 14px;color:#64748b;white-space:nowrap;">${c.demandeur||'—'}</td>
                         <td style="padding:11px 14px;text-align:center;">${statusBadge(c.pris)}</td>
                         <td style="padding:11px 14px;text-align:right;font-weight:700;color:${c.prix?'#16a34a':'#94a3b8'};">${c.prix?$m(c.prix):'—'}</td>
@@ -1948,7 +1935,7 @@ function attachEvents(){
             prix,
             paie:  document.getElementById('editPaie')?.value||d.paie,
             lieu:  document.getElementById('editLieu')?.value||d.lieu||'',
-            presta:document.getElementById('editPresta')?.value||d.presta||'',
+            presta:document.getElementById('editPresta2')?.value||document.getElementById('editPresta')?.value||d.presta||'',
             depart:document.getElementById('editDe')?.value||d.depart||'',
             arrivee:document.getElementById('editVers')?.value||d.arrivee||'',
             nb:    document.getElementById('editNb')?.value||d.nb||1,
