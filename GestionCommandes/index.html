@@ -939,14 +939,14 @@ function renderDetail(d,m){
     const isCmd=d.type==='commande';
 
     const pqHtml = isCmd
-        ? '<label class="form-label">Fournisseur</label><select id="editPresta2" class="form-select"><option value="">—</option>'+P_CMD.map(p=>'<option '+(d.presta===p?'selected':'')+'>'+p+'</option>').join('')+'</select>'
+        ? '<label class="form-label">Fournisseur</label><select id="editPresta2" class="form-select"><option value="">—</option>'+(d.presta&&!P_CMD.includes(d.presta)?'<option selected>'+d.presta+'</option>':'')+P_CMD.map(p=>'<option '+(d.presta===p?'selected':'')+'>'+p+'</option>').join('')+'</select>'
         : '<label class="form-label">Pour qui</label><div style="position:relative;" id="editPqWrapper"><button type="button" id="editPqToggle" style="width:100%;border:1.5px solid var(--border);border-radius:14px;padding:12px 14px;font-size:14px;background:var(--white);text-align:left;cursor:pointer;display:flex;justify-content:space-between;align-items:center;font-family:DM Sans,sans-serif;color:var(--ink);"><span id="editPqLabel">'+(d.pourQui||'— Choisir —')+'</span><span style="font-size:11px;color:var(--ink-soft);">▼</span></button><div id="editPqDropdown" style="display:none;position:absolute;top:calc(100% + 4px);left:0;right:0;background:var(--white);border:1.5px solid var(--border);border-radius:14px;box-shadow:0 8px 24px rgba(0,0,0,0.10);z-index:999;overflow:hidden;max-height:220px;overflow-y:auto;">'+settings.directeurs.map(dir=>'<label style="display:flex;align-items:center;gap:12px;padding:11px 16px;cursor:pointer;border-bottom:1px solid var(--border-light);"><input type="checkbox" class="edit-pq-check" value="'+dir+'" '+((d.pourQui||'').includes(dir)?'checked':'')+' style="width:17px;height:17px;accent-color:var(--ink);cursor:pointer;flex-shrink:0;"><span style="font-size:14px;">'+dir+'</span></label>').join('')+'<div style="padding:10px 16px;border-top:1px solid var(--border-light);"><input id="editPqAutre" type="text" placeholder="Autre nom..." value="'+(settings.directeurs.some(d2=>(d.pourQui||'').includes(d2))?'':d.pourQui||'')+'" class="form-input" style="font-size:13px;padding:7px 10px;"></div></div></div>';
 
     const editForm=`
     <div style="background:#fafaf8;border-radius:16px;padding:16px;margin-bottom:14px;">
         <div style="font-weight:700;font-size:13px;margin-bottom:14px;color:var(--ink-soft);">✏️ Modifier la commande</div>
 
-        <div class="form-group"><label class="form-label">Description / Titre</label>
+        <div class="form-group"><label class="form-label">${isRepas?"Type de repas":"Description"}</label>
             ${isRepas
                 ? `<select id="editDesc" class="form-select"><option value="">— Choisir —</option>${P_TYPES.map(p=>`<option ${d.desc===p?'selected':''}>${p}</option>`).join('')}</select>`
                 : `<input id="editDesc" type="text" value="${d.desc||''}" class="form-input">`
@@ -954,6 +954,7 @@ function renderDetail(d,m){
         </div>
 
         ${isRepas?`
+        <div class="form-group"><label class="form-label">🍽 Type de repas souhaité</label><select id="editPresta" class="form-select"><option value="">—</option>${d.presta&&!P_REPAS.includes(d.presta)?`<option selected>${d.presta}</option>`:""  }${P_REPAS.map(p=>`<option ${d.presta===p?'selected':''}>${p}</option>`).join('')}</select></div>
         <div class="form-group"><label class="form-label">Lieu</label><input id="editLieu" type="text" value="${d.lieu||''}" class="form-input"></div>
         <div class="form-group"><label class="form-label">Nb personnes</label><select id="editNb" class="form-select">${['1','2','3','4','5','6','7','8','9','10+'].map(n=>`<option ${String(d.nb)===n?'selected':''}>${n}</option>`).join('')}</select></div>
         `:''}
@@ -1181,7 +1182,7 @@ function renderActivite(m){
                             ${c.comment?`<span style="font-size:10px;color:#94a3b8;margin-left:4px;" title="${c.comment}">💬</span>`:''}
                         </td>
                         <td style="padding:11px 14px;color:#1a1f36;font-weight:500;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${c.type==='commande'?(c.presta||c.pourQui||'—'):(c.pourQui||'—')}</td>
-                        <td style="padding:11px 14px;color:#64748b;white-space:nowrap;">${c.demandeur||'—'}</td>
+                        <td style="padding:11px 14px;color:#64748b;white-space:nowrap;">${c.demandeur||'—'}${c.type==='repas'&&c.nb>1?` <span style="font-size:10px;color:#94a3b8;">(${c.nb}p)</span>`:''}</td>
                         <td style="padding:11px 14px;text-align:center;">${statusBadge(c.pris)}</td>
                         <td style="padding:11px 14px;text-align:right;font-weight:700;color:${c.prix?'#16a34a':'#94a3b8'};">${c.prix?$m(c.prix):'—'}</td>
                     </tr>`).join(''):`<tr><td colspan="7" style="text-align:center;padding:40px;color:#94a3b8;">Aucune entrée</td></tr>`}
@@ -1823,6 +1824,7 @@ function renderSaisieModal(){
         <div class="form-group"><label class="form-label">🏁 Arrivée</label><input id="afVers" type="text" value="${af.vers}" class="form-input" autocomplete="off" placeholder="Destination…"></div>
         ${(()=>{const dest=(af.vers||'').toLowerCase();const dep=(af.de||'').toLowerCase();const need=dest.includes('aéroport')||dest.includes('aeroport')||dest.includes('cdg')||dest.includes('orly')||dest.includes('gare')||dep.includes('aéroport')||dep.includes('aeroport')||dep.includes('gare');return need?`<div class="form-group"><label class="form-label" style="color:#b45309;">✈️ N° de vol / train *</label><input id="afVol" type="text" value="${af.vol||''}" placeholder="Ex: AF1234…" class="form-input" style="border-color:#f59e0b;"></div>`:'';})()}
         <div class="form-group"><label class="form-label">📱 Téléphone du passager *</label><input id="afTel" type="tel" value="${af.tel||''}" placeholder="Ex: 06 12 34 56 78" class="form-input"></div>
+        <div class="form-group"><label class="form-label">✈️ N° vol / train</label><input id="afVol" type="text" value="${af.vol||''}" placeholder="Ex: AF1234, TGV 6201…" class="form-input"></div>
         <div class="form-group"><label class="form-label">Prestataire</label><select id="afPresta" class="form-select"><option value="">—</option>${P_TAXI.map(p=>`<option ${af.presta===p?'selected':''}>${p}</option>`).join('')}</select></div>
         `:`
         <div class="form-group"><label class="form-label">Fournisseur</label><select id="afPresta" class="form-select"><option value="">—</option>${P_CMD.map(p=>`<option ${af.presta===p?'selected':''}>${p}</option>`).join('')}</select></div>
