@@ -1787,14 +1787,16 @@ function renderSaisieModal(){
             </select>
         </div>
         <div class="form-group">
-            <label class="form-label">Pour qui ?</label>
+            <label class="form-label">${t==='commande'?'Fournisseur':'Pour qui ?'}</label>
             <div style="position:relative;" id="afPqWrapper">
                 <button type="button" id="afPqToggle" style="width:100%;border:1.5px solid var(--border);border-radius:14px;padding:13px 14px;font-size:15px;background:var(--white);text-align:left;cursor:pointer;display:flex;justify-content:space-between;align-items:center;font-family:'DM Sans',sans-serif;color:var(--ink);">
                     <span id="afPqLabel">${af.pourQui.length?af.pourQui.filter(v=>v!=='__autre__').join(', ')+(af.pourQui.includes('__autre__')?(af.pourQui.length>1?', Autre':'Autre'):''):'— Choisir —'}</span>
                     <span style="font-size:11px;color:var(--ink-soft);">▼</span>
                 </button>
                 <div id="afPqDropdown" style="display:none;position:absolute;top:calc(100% + 4px);left:0;right:0;background:var(--white);border:1.5px solid var(--border);border-radius:14px;box-shadow:0 8px 24px rgba(0,0,0,0.10);z-index:999;overflow:hidden;max-height:220px;overflow-y:auto;">
-                    ${settings.directeurs.map(d=>`
+                    ${t==='commande'
+                        ? P_CMD.map(p=>`<label style="display:flex;align-items:center;gap:12px;padding:11px 16px;cursor:pointer;border-bottom:1px solid var(--border-light);" onmouseover="this.style.background='#f5f4f0'" onmouseout="this.style.background=''"><input type="checkbox" class="af-pq-check" value="${p}" ${af.pourQui.includes(p)?'checked':''} style="width:17px;height:17px;accent-color:var(--ink);cursor:pointer;flex-shrink:0;"><span style="font-size:14px;">${p}</span></label>`).join('')
+                        : settings.directeurs.map(d=>`
                     <label style="display:flex;align-items:center;gap:12px;padding:11px 16px;cursor:pointer;border-bottom:1px solid var(--border-light);" onmouseover="this.style.background='#f5f4f0'" onmouseout="this.style.background=''">
                         <input type="checkbox" class="af-pq-check" value="${d}" ${af.pourQui.includes(d)?'checked':''} style="width:17px;height:17px;accent-color:var(--ink);cursor:pointer;flex-shrink:0;">
                         <span style="font-size:14px;">${d}</span>
