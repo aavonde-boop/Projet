@@ -331,22 +331,25 @@ async function sendConfirmationEmail(commande, opts={}) {
     const dateLong = formatDateLong(commande.date);
 
     // Sujet avec nom, type et date
+    const isAdmin = !!toOverride && !isCopie && !isAnnulation;
+
     let subject;
     if(isAnnulation){
         subject = `❌ Annulation — ${typeEmoji} ${typeLabel} du ${dateLong}`;
     } else if(isCopie){
         subject = `✅ Copie — ${commande.code||''} — ${typeEmoji} ${typeLabel} du ${dateLong}`;
+    } else if(isAdmin){
+        subject = `🔔 Nouvelle demande — ${commande.code||''} — ${typeEmoji} ${typeLabel} — ${commande.demandeur} — ${dateLong}`;
     } else {
         subject = `${typeEmoji} ${typeLabel} — ${commande.code||''} — ${commande.demandeur} — ${dateLong}`;
     }
 
-    const template = isCopie ? EJS_TEMPLATE_COPIE || EJS_TEMPLATE : EJS_TEMPLATE;
+    const template = EJS_TEMPLATE;
 
     const params = {
         to_email:     email,
-        to_name:      prenom,
+        to_name:      isAdmin ? "Admin" : prenom,
         code:         commande.code||'',
-        subject:      subject,
         subject:      subject,
         desc:         commande.desc || "—",
         date:         dateLong,
@@ -357,11 +360,13 @@ async function sendConfirmationEmail(commande, opts={}) {
         type:         `${typeEmoji} ${typeLabel}`,
         demandeur:    commande.demandeur,
         commentaire:  commande.comment || "—",
-        is_copie:     isCopie ? "Ceci est une copie de votre demande." : "",
+        is_copie:     isCopie ? "Ceci est une copie de votre demande." : isAdmin ? "Notification administrateur — nouvelle demande reçue." : "",
         message_bas:  isAnnulation
             ? "Votre demande a été annulée. N'hésitez pas à nous contacter pour plus d'informations."
             : isCopie
             ? "Votre demande a bien été transmise et sera traitée prochainement."
+            : isAdmin
+            ? "Une nouvelle demande vient d'être soumise et est en attente de validation."
             : "Votre demande a été validée ✅ Merci !",
     };
 
@@ -2294,9 +2299,13 @@ function attachEvents(){
         console.log('newItem code:', newItem.code, 'appToRow:', JSON.stringify(appToRow(newItem)));
         const saved=await dbInsert(newItem);
         if(saved.id!==newItem.id){state.data=state.data.map(c=>c.id===newItem.id?saved:c);}
+        console.log('adminEmails:', settings.adminEmails);
         (settings.adminEmails||[]).forEach(email=>{
             if(email) sendConfirmationEmail(newItem, {to: email});
         });
+        if(!(settings.adminEmails||[]).filter(Boolean).length){
+            console.warn('Aucun email admin configuré dans les réglages !');
+        }
         if(f.copyMail && f.dem){
             sendConfirmationEmail(newItem, {isCopie: true});
         }
