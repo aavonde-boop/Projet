@@ -326,7 +326,7 @@ function(a,b,c){if(!Vd(b))throw Error(m(200));return Wd(null,a,b,!1,c)};Q.unmoun
   --st:env(safe-area-inset-top,0px);
   --sb:env(safe-area-inset-bottom,0px);
 }
-html,body,#root{height:100%;background:var(--bg);}
+html,body,#root{height:100%;background:#F4F5F7;}
 body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif;font-size:15px;color:var(--text);overflow:hidden;-webkit-font-smoothing:antialiased;}
 #root{display:flex;flex-direction:column;height:100%;}
 .screen{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:16px;padding-top:calc(var(--st) + 60px);padding-bottom:calc(var(--sb) + 80px);}
@@ -471,26 +471,26 @@ label{display:block;font-size:13px;font-weight:600;color:var(--text2);margin-bot
    MODULE TICKETS — Tableau de bord pro / institutionnel
    ══════════════════════════════════════ */
 :root{
-  --nv-marine:#0C66E4;
+  --nv-marine:#2563A8;
   --nv-marine-dark:#09326C;
-  --nv-bg:#FFFFFF;
+  --nv-bg:#F4F5F7;
   --nv-card:#FFFFFF;
   --nv-border:#EBECF0;
   --nv-text:#1D2125;
   --nv-text2:#44546F;
   --nv-text3:#8590A2;
-  --nv-ouvert:#0C66E4;
+  --nv-ouvert:#0E7C6E;
   --nv-clos:#1F845A;
   --nv-alerte:#C9372C;
   --nv-ambre:#A54800;
 }
-.nv-screen{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;background:var(--nv-bg);padding-bottom:calc(var(--sb) + 80px);}
+.nv-screen{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;background:#F4F5F7;padding-bottom:calc(var(--sb) + 80px);}tbody tr:nth-child(odd){background:#ECEEF1;}tbody tr:nth-child(even){background:#ffffff;}
 .nv-header{background:#fff;padding:calc(var(--st) + 14px) 16px 10px;color:var(--nv-text);border-bottom:1px solid var(--nv-border);}
 .nv-header-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;}
 .nv-header-title{font-size:16px;font-weight:700;letter-spacing:.1px;color:var(--nv-text);}
 .nv-header-user{font-size:11.5px;color:var(--nv-text3);font-weight:600;}
 .nv-stats-row{display:flex;gap:8px;}
-.nv-stat{flex:1;padding:8px 6px;text-align:center;background:#F7F8F9;border:1px solid var(--nv-border);border-radius:6px;}
+.nv-stat{flex:1;padding:8px 6px;text-align:center;background:#fff;border:1px solid var(--nv-border);border-radius:6px;}
 .nv-stat-val{font-size:18px;font-weight:700;color:var(--nv-text);line-height:1;}
 .nv-stat-lbl{font-size:9.5px;color:var(--nv-text3);font-weight:600;text-transform:uppercase;letter-spacing:.4px;margin-top:3px;}
 
@@ -518,7 +518,7 @@ label{display:block;font-size:13px;font-weight:600;color:var(--text2);margin-bot
 .nv-row-meta{display:flex;gap:10px;font-size:11px;color:var(--nv-text3);}
 .nv-row-meta b{color:var(--nv-text2);font-weight:600;}
 .nv-tag{font-size:9.5px;font-weight:700;padding:2px 7px;border-radius:3px;text-transform:uppercase;letter-spacing:.3px;flex-shrink:0;}
-.nv-tag.ouvert{background:#E9F2FF;color:var(--nv-ouvert);}
+.nv-tag.ouvert{background:#E6F5F3;color:var(--nv-ouvert);}
 .nv-tag.escalade{background:#FFECEB;color:var(--nv-alerte);}
 .nv-tag.clos{background:#DFFCEC;color:var(--nv-clos);}
 .nv-chevron{color:var(--nv-text3);font-size:14px;flex-shrink:0;}
@@ -627,6 +627,35 @@ label{display:block;font-size:13px;font-weight:600;color:var(--text2);margin-bot
 .nv-rep-cell:nth-child(2n){border-right:none;}
 .nv-rep-cell-val{font-size:21px;font-weight:700;color:var(--nv-text);}
 .nv-rep-cell-lbl{font-size:10.5px;color:var(--nv-text3);text-transform:uppercase;letter-spacing:.4px;margin-top:3px;font-weight:600;}
+/* TIROIR LATÉRAL */
+.tiroir-overlay{position:fixed;inset:0;background:rgba(29,33,37,.35);z-index:300;transition:opacity .2s;}
+.tiroir{position:fixed;top:0;right:0;bottom:0;width:92%;max-width:400px;background:#fff;z-index:301;display:flex;flex-direction:column;box-shadow:-4px 0 24px rgba(0,0,0,.15);transform:translateX(0);transition:transform .25s ease;}
+.tiroir-head{padding:calc(var(--st) + 14px) 16px 14px;border-bottom:1px solid var(--nv-border);display:flex;align-items:flex-start;justify-content:space-between;gap:10px;}
+.tiroir-title{font-size:16px;font-weight:700;color:var(--nv-text);flex:1;line-height:1.4;}
+.tiroir-close{background:none;border:none;font-size:22px;color:var(--nv-text3);cursor:pointer;padding:0 4px;line-height:1;}
+.tiroir-body{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:0;background:#F4F5F7;}
+.tiroir-field{padding:12px 16px;border-bottom:1px solid var(--nv-border);background:#fff;display:flex;align-items:center;gap:10px;}
+.tiroir-field-lbl{font-size:11px;font-weight:700;color:var(--nv-text3);text-transform:uppercase;letter-spacing:.4px;min-width:90px;flex-shrink:0;}
+.tiroir-field input,.tiroir-field select,.tiroir-field textarea{flex:1;border:none;outline:none;font-size:14px;font-family:inherit;color:var(--nv-text);background:transparent;padding:0;}
+.tiroir-field textarea{resize:none;line-height:1.5;}
+.tiroir-section-hd{padding:10px 16px;font-size:10.5px;font-weight:700;color:var(--nv-text3);text-transform:uppercase;letter-spacing:.5px;background:#F4F5F7;border-bottom:1px solid var(--nv-border);}
+.tiroir-foot{padding:12px 16px calc(var(--sb) + 12px);border-top:1px solid var(--nv-border);display:flex;gap:8px;background:#fff;}
+.tiroir-btn{flex:1;padding:12px;border-radius:6px;font-size:14px;font-weight:700;border:none;cursor:pointer;font-family:inherit;}
+.tiroir-btn.primary{background:var(--nv-marine);color:#fff;}
+.tiroir-btn.ghost{background:#F4F5F7;color:var(--nv-text2);}
+.tiroir-btn.danger{background:#FEF2F2;color:var(--nv-alerte);}
+@media print{.tiroir-overlay,.tiroir{display:none!important;}}
+
+@media print{
+  .bottomnav,.nv-fab,.botnav,.nv-detail-back,.nv-detail-edit,.nv-reu-progress{display:none!important;}
+  .nv-header{background:#fff!important;border-bottom:2px solid #000!important;padding:16px!important;}
+  .nv-header-title,.nv-detail-title{color:#000!important;font-size:18px!important;}
+  .nv-screen{overflow:visible!important;padding-bottom:0!important;height:auto!important;}
+  body{overflow:visible!important;}
+  #root{height:auto!important;overflow:visible!important;}
+  .nv-section{page-break-inside:avoid;}
+  .nv-tag{border:1px solid #ccc!important;background:#f5f5f5!important;color:#333!important;}
+}
 </style>
 </head>
 
@@ -660,9 +689,35 @@ function nxId(arr){return arr.length>0?Math.max(...arr.map(function(x){return x.
 function daysSince(d){if(!d)return null;return Math.round((new Date()-new Date(d+"T00:00:00"))/86400000);}
 function lastRelance(t){return t.date_relance3||t.date_relance2||t.date_relance1||null;}
 function nbRelances(t){return[t.date_relance1,t.date_relance2,t.date_relance3].filter(Boolean).length;}
+
+// Repli : extrait les dates de relance/clôture depuis l'historique quand les colonnes structurées sont vides
+// (cas des relances notées comme simples commentaires plutôt que via le bouton dédié)
+function relancesFromHisto(t,histo){
+  var struct=[t.date_relance1,t.date_relance2,t.date_relance3].filter(Boolean);
+  if(struct.length>0)return struct;
+  var entries=histo.filter(function(h){return h.ticket_id===t.id&&h.type_evenement==="Relance";})
+    .map(function(h){return h.date;}).filter(Boolean).sort();
+  return entries;
+}
+function realisationFromHisto(t,histo){
+  if(t.date_realisation)return t.date_realisation;
+  var entry=histo.filter(function(h){return h.ticket_id===t.id&&h.type_evenement==="Clôture";})
+    .map(function(h){return h.date;}).filter(Boolean).sort().pop();
+  return entry||"";
+}
 function isAlerte(t){if(t.statut==="Clos")return false;var d=lastRelance(t)||t.date_creation;return daysSince(d)>14;}
-function statKey(t){return t.escalade?"Escalade":t.statut;}
-function statLabel(t){return t.escalade?"Escaladé":t.statut==="Ouvert"?"En cours":t.statut;}
+function statKey(t){
+  var s=(t.statut||"").trim();
+  if(s==="Clos")return"Clos";
+  if(t.escalade)return"Escalade";
+  return"Ouvert"; // toute autre valeur (Ouvert, En cours, vide, etc.) compte comme "en cours"
+}
+function statLabel(t){
+  var s=(t.statut||"").trim();
+  if(s==="Clos")return"Clos";
+  if(t.escalade)return"Escaladé";
+  return"En cours";
+}
 function vibrate(){try{if(navigator.vibrate)navigator.vibrate(20);}catch(e){}}
 
 // ── Engagements gestionnaire (preuve de pression / promesses non tenues) ──
@@ -694,6 +749,8 @@ function App(){
   const [tickets,setTickets]=useState(TICKETS_INIT);
   const [histo,setHisto]=useState([]);
   const [reunions,setReunions]=useState([]);
+  const [reunionsErr,setReunionsErr]=useState(null);
+  const [prestataires,setPrestataires]=useState(function(){try{var s=localStorage.getItem("pds_prestataires");return s?JSON.parse(s):[];}catch(e){return[];}});
   const [view,setView]=useState("list");
   const [tab,setTab]=useState("list");
   const [selId,setSelId]=useState(null);
@@ -708,11 +765,27 @@ function App(){
     (async function(){
       try{
         var tk=await sb.from("tickets").select("*").order("id");
-        if(tk.data&&tk.data.length>0)setTickets(tk.data.map(function(t){return{...t,photos:t.photos||[],escalade:!!t.escalade};}));
+        if(tk.error){console.warn("Erreur tickets:",tk.error);}
+        else if(tk.data){
+          setTickets(tk.data.map(function(t){
+            return{...t,photos:t.photos||[],escalade:t.escalade===true||t.escalade==="true"||t.escalade===1};
+          }));
+        }
         var hi=await sb.from("historique").select("*").order("date");
-        if(hi.data)setHisto(hi.data);
+        if(hi.error){console.warn("Erreur historique:",hi.error);}
+        else if(hi.data)setHisto(hi.data);
         var re=await sb.from("reunions").select("*").order("date",{ascending:false});
-        if(re.data)setReunions(re.data);
+        if(re.error){
+          console.warn("Erreur réunions:",re.error);
+          setReunionsErr("Table introuvable — exécutez le SQL de création (voir README)");
+        }else{
+          setReunionsErr(null);
+          if(re.data&&re.data.length>0)setReunions(re.data.map(function(r){
+            var ids=r.ticket_ids;
+            if(typeof ids==="string"){try{ids=JSON.parse(ids);}catch(e){ids=[];}}
+            return{...r,ticket_ids:Array.isArray(ids)?ids:[]};
+          }));
+        }
       }catch(e){console.warn(e);}
     })();
   },[user]);
@@ -756,7 +829,7 @@ function App(){
   },[save,addH,showToast]);
 
   const doClose=useCallback(function(t,d){
-    save({...t,statut:"Clos",date_realisation:d||today()});
+    save({...t,statut:"Clos",date_realisation:d||today(),escalade:false});
     addH(t.id,"Ticket clôturé — réalisation le "+fmtLong(d||today()),"AAG","Clôture");
     showToast("Ticket clôturé");
     setModal(null);
@@ -774,12 +847,29 @@ function App(){
     setReunions(function(prev){return prev.find(function(x){return x.id===r.id;})?prev.map(function(x){return x.id===r.id?r:x;}):[r,...prev];});
     if(!sb)return;
     try{
-      var n={...r};
-      if(r._isNew){delete n._isNew;delete n.id;
+      var n={
+        date:r.date||today(),
+        participants:r.participants||"AAG, Gestionnaire",
+        ticket_ids:JSON.stringify(r.ticket_ids||[]),
+        notes:JSON.stringify(r.notes||{}),
+        commentaire:r.commentaire||""
+      };
+      if(r._isNew){
         var res=await sb.from("reunions").insert(n).select().single();
-        if(res.data)setReunions(function(prev){return prev.map(function(x){return x.id===r.id?res.data:x;});});
-      }else{await sb.from("reunions").upsert(n);}
-    }catch(e){console.warn(e);}
+        if(res.error){console.warn("Erreur save réunion:",res.error);}
+        else if(res.data)setReunions(function(prev){return prev.map(function(x){return x.id===r.id?res.data:x;});});
+      }else{
+        var upd={...n,id:r.id};
+        var res2=await sb.from("reunions").upsert(upd);
+        if(res2.error)console.warn("Erreur update réunion:",res2.error);
+      }
+    }catch(e){console.warn("saveReunion exception:",e);}
+  },[]);
+
+  const deleteReunion=useCallback(async function(id){
+    setReunions(function(prev){return prev.filter(function(r){return r.id!==id;});});
+    if(!sb)return;
+    try{await sb.from("reunions").delete().eq("id",id);}catch(e){console.warn("deleteReunion:",e);}
   },[]);
 
   const sel=selId?tickets.find(function(t){return t.id===selId;}):null;
@@ -789,6 +879,7 @@ function App(){
   if(view==="form"){
     mainView=React.createElement(TicketForm,{
       ticket:selId?sel:null,
+      prestataires,
       onSave:function(f){
         var isNew=!selId;
         var saved={...f,id:selId||nxId(tickets),photos:f.photos||[]};
@@ -812,24 +903,29 @@ function App(){
       onClose:function(){setModal({type:"close",onOk:function(d){doClose(sel,d);}});},
       onComment:function(txt){addH(sel.id,txt,user.label,"Commentaire");showToast("Commentaire ajouté");}
     });
-  }else if(tab==="dg"){
-    mainView=React.createElement(VueDG,{tickets,histo});
   }else if(tab==="reunion"){
     mainView=React.createElement(VueReunion,{
-      tickets,reunions,user,
+      tickets,reunions,reunionsErr,user,
       onSetEngagement:setEngagement,
       onSaveReunion:saveReunion,
+      onDeleteReunion:function(id){deleteReunion(id);showToast("Réunion supprimée");},
       onAddHisto:addH,
       onClose:doClose,
       onRelance:doRelance,
       onEscalade:doEscalade
     });
+  }else if(tab==="dg"){
+    mainView=React.createElement(VuePreuve,{tickets,reunions,histo});
   }else{
     mainView=React.createElement(TicketList,{
-      tickets,user,
+      tickets,histo,user,prestataires,
       onSelect:function(id){setSelId(id);setView("detail");},
       onNew:function(){setSelId(null);setView("form");},
-      onRelance:doRelance
+      onRelance:doRelance,
+      onSaveTicket:save,
+      onCloseTicket:function(t){setModal({type:"close",onOk:function(d){doClose(t,d);}});},
+      onEscaladeTicket:doEscalade,
+      showToast:showToast
     });
   }
 
@@ -846,7 +942,7 @@ function App(){
         React.createElement("span",{className:"botnav-icon"},"🗒️"),"Réunion"
       ),
       React.createElement("button",{className:"botnav"+(tab==="dg"?" active":""),onClick:function(){setTab("dg");}},
-        React.createElement("span",{className:"botnav-icon"},"📊"),"Rapport"
+        React.createElement("span",{className:"botnav-icon"},"📊"),"Bilan"
       )
     ),
     (view==="list"&&tab==="list")&&React.createElement("button",{className:"fab",onClick:function(){setSelId(null);setView("form");}},"+")
@@ -920,79 +1016,170 @@ function Login({onLogin}){
   );
 }
 
-function TicketList({tickets,user,onSelect,onNew,onRelance}){
-  const [filtre,setFiltre]=useState("tous");
+function TicketList({tickets,histo,user,prestataires,onSelect,onNew,onRelance,onSaveTicket,onCloseTicket,onEscaladeTicket,showToast}){
+  const [filtre,setFiltre]=useState("Ouvert");
   const [search,setSearch]=useState("");
-  const [sortBy,setSortBy]=useState("ouverture_desc");
-  const [showSort,setShowSort]=useState(false);
+  const [sortBy,setSortBy]=useState("ouverture");
+  const [sortDir,setSortDir]=useState(-1);
+  const [editing,setEditing]=useState(null); // {id, key}
+  const [editVal,setEditVal]=useState("");
 
-  var SORT_OPTIONS=[
-    {id:"ouverture_desc",l:"Ouverture — plus récents"},
-    {id:"ouverture_asc",l:"Ouverture — plus anciens"},
-    {id:"relance_asc",l:"Sans relance depuis le plus longtemps"},
-    {id:"statut",l:"Statut (escaladés en premier)"},
-    {id:"alpha",l:"Alphabétique"}
+  var COLUMNS=[
+    {key:"id",l:"N°",w:44},
+    {key:"statut",l:"Statut",w:80},
+    {key:"titre",l:"Titre",w:180},
+    {key:"prestataire",l:"Prestataire",w:90},
+    {key:"intervenant",l:"Intervenant",w:90},
+    {key:"ouverture",l:"Ouvert",w:68},
+    {key:"relance1",l:"R.1",w:60},
+    {key:"relance2",l:"R.2",w:60},
+    {key:"relance3",l:"R.3",w:60},
+    {key:"promesse",l:"Promesse",w:70},
+    {key:"realisation",l:"Clos",w:68}
   ];
-  var sortLabel=(SORT_OPTIONS.find(function(o){return o.id===sortBy;})||{}).l||"Trier";
+  var NB_COLS=COLUMNS.length;
+  var EDITABLE=["titre","prestataire","intervenant","relance1","relance2","relance3","promesse"];
+
+  function startEdit(t,key,currentVal){
+    setEditing({id:t.id,key:key});
+    setEditVal(currentVal||"");
+  }
+
+  function commitEdit(t){
+    if(!editing)return;
+    var key=editing.key;
+    var val=editVal;
+    setEditing(null);
+    setEditVal("");
+    if(key==="statut"){
+      if(val==="Clos"){
+        onCloseTicket(t); // ouvre le modal de date de clôture
+      }else{
+        onSaveTicket({...t,statut:val,escalade:false,date_realisation:""});
+        if(showToast)showToast("Statut mis à jour");
+      }
+      return;
+    }
+    var upd={...t};
+    if(key==="titre")upd.description=val;
+    else if(key==="prestataire")upd.prestataire=val;
+    else if(key==="intervenant")upd.intervenant=val;
+    else if(key==="relance1")upd.date_relance1=val;
+    else if(key==="relance2")upd.date_relance2=val;
+    else if(key==="relance3")upd.date_relance3=val;
+    else if(key==="promesse")upd.date_engagement=val;
+    onSaveTicket(upd);
+    if(showToast)showToast("Modifié");
+  }
+
+  function cancelEdit(){setEditing(null);setEditVal("");}
+
+  function getSortVal(t,key){
+    var rel=relancesFromHisto(t,histo);
+    if(key==="id")return t.id||0;
+    if(key==="statut")return statKey(t);
+    if(key==="titre")return(t.description||"").toLowerCase();
+    if(key==="ouverture")return t.date_creation||"";
+    if(key==="relance1")return rel[0]||"";
+    if(key==="relance2")return rel[1]||"";
+    if(key==="relance3")return rel[2]||"";
+    if(key==="prestataire")return(t.prestataire||"").toLowerCase();
+    if(key==="intervenant")return(t.intervenant||"").toLowerCase();
+    if(key==="promesse")return t.date_engagement||"";
+    if(key==="realisation")return realisationFromHisto(t,histo)||"";
+    return"";
+  }
+
+  function clickCol(key){
+    if(sortBy===key){setSortDir(sortDir*-1);}
+    else{setSortBy(key);setSortDir(["titre","statut","prestataire","intervenant"].includes(key)?1:-1);}
+  }
 
   var list=tickets.filter(function(t){
     if(filtre!=="tous"&&statKey(t)!==filtre)return false;
     if(search.trim()&&!(t.description||"").toLowerCase().includes(search.toLowerCase()))return false;
     return true;
   }).sort(function(a,b){
-    if(sortBy==="ouverture_asc"){
-      var aD=a.date_creation||"",bD=b.date_creation||"";
-      return aD<bD?-1:aD>bD?1:0;
-    }
-    if(sortBy==="ouverture_desc"){
-      var aD=a.date_creation||"",bD=b.date_creation||"";
-      return aD<bD?1:aD>bD?-1:0;
-    }
-    if(sortBy==="relance_asc"){
-      var aR=lastRelance(a)||a.date_creation||"",bR=lastRelance(b)||b.date_creation||"";
-      return aR<bR?-1:aR>bR?1:0;
-    }
-    if(sortBy==="statut"){
-      if(a.statut==="Clos"&&b.statut!=="Clos")return 1;
-      if(a.statut!=="Clos"&&b.statut==="Clos")return-1;
-      if(a.escalade&&!b.escalade)return-1;if(!a.escalade&&b.escalade)return 1;
-      return 0;
-    }
-    if(sortBy==="alpha"){
-      return(a.description||"").localeCompare(b.description||"");
-    }
-    return 0;
+    var av=getSortVal(a,sortBy),bv=getSortVal(b,sortBy);
+    if(av<bv)return-1*sortDir;if(av>bv)return 1*sortDir;return 0;
   });
 
   var nb=function(s){return tickets.filter(function(t){return statKey(t)===s;}).length;};
 
-  return React.createElement("div",{style:{height:"100%",display:"flex",flexDirection:"column"}},
+  // Rendu d'une cellule éditable
+  function renderCell(t,key,displayVal,style){
+    var isEd=editing&&editing.id===t.id&&editing.key===key;
+    var canEdit=EDITABLE.includes(key);
+    if(isEd){
+      var isDate=key.startsWith("relance");
+      var isSelect=false; // prestataire = champ libre
+      if(isSelect){
+        return React.createElement("td",{style:Object.assign({padding:"2px 4px"},style||{})},
+          React.createElement("select",{
+            value:editVal,autoFocus:true,
+            style:{width:"100%",border:"1.5px solid var(--nv-marine)",borderRadius:4,padding:"6px 8px",fontSize:12.5,background:"#fff"},
+            onChange:function(e){setEditVal(e.target.value);},
+            onBlur:function(){commitEdit(t);}
+          },
+            React.createElement("option",{value:""},"—"),
+            prestataires.map(function(p){return React.createElement("option",{key:p,value:p},p);})
+          )
+        );
+      }
+      if(isDate){
+        return React.createElement("td",{style:Object.assign({padding:"2px 4px"},style||{})},
+          React.createElement("input",{
+            type:"date",value:editVal,autoFocus:true,
+            style:{width:"100%",border:"1.5px solid var(--nv-marine)",borderRadius:4,padding:"6px 8px",fontSize:12.5},
+            onChange:function(e){setEditVal(e.target.value);},
+            onBlur:function(){commitEdit(t);},
+            onKeyDown:function(e){if(e.key==="Enter"){commitEdit(t);}if(e.key==="Escape")cancelEdit();}
+          })
+        );
+      }
+      return React.createElement("td",{style:Object.assign({padding:"2px 4px"},style||{})},
+        React.createElement("input",{
+          type:"text",value:editVal,autoFocus:true,
+          style:{width:"100%",border:"1.5px solid var(--nv-marine)",borderRadius:4,padding:"6px 8px",fontSize:12.5},
+          onChange:function(e){setEditVal(e.target.value);},
+          onBlur:function(){commitEdit(t);},
+          onKeyDown:function(e){if(e.key==="Enter"){commitEdit(t);}if(e.key==="Escape")cancelEdit();}
+        })
+      );
+    }
+    return React.createElement("td",{
+      style:Object.assign({padding:"9px 10px",cursor:canEdit?"cell":"default"},style||{}),
+      onClick:function(e){
+        e.stopPropagation();
+        if(canEdit){
+          var val=key==="titre"?(t.description||""):key==="prestataire"?(t.prestataire||""):key==="intervenant"?(t.intervenant||""):key==="relance1"?(t.date_relance1||""):key==="relance2"?(t.date_relance2||""):key==="relance3"?(t.date_relance3||""):key==="promesse"?(t.date_engagement||""):"";
+          startEdit(t,key,val);
+        }else{
+          onSelect(t.id);
+        }
+      },
+      title:canEdit?"Cliquer pour modifier":""
+    },
+      canEdit&&React.createElement("span",{style:{display:"block",minWidth:40,minHeight:16}},displayVal),
+      !canEdit&&displayVal
+    );
+  }
+
+  return React.createElement("div",{style:{height:"100%",display:"flex",flexDirection:"column"},onClick:function(){if(editing)cancelEdit();}},
     React.createElement("div",{className:"nv-header"},
       React.createElement("div",{className:"nv-header-top"},
         React.createElement("span",{className:"nv-header-title"},"Suivi des tickets"),
         React.createElement("span",{className:"nv-header-user"},user.label)
       ),
       React.createElement("div",{className:"nv-stats-row"},
-        React.createElement("div",{className:"nv-stat"},React.createElement("div",{className:"nv-stat-val"},nb("Ouvert")),React.createElement("div",{className:"nv-stat-lbl"},"En cours")),
-        React.createElement("div",{className:"nv-stat"},React.createElement("div",{className:"nv-stat-val"},nb("Escalade")),React.createElement("div",{className:"nv-stat-lbl"},"Escaladés")),
-        React.createElement("div",{className:"nv-stat"},React.createElement("div",{className:"nv-stat-val"},nb("Clos")),React.createElement("div",{className:"nv-stat-lbl"},"Clos"))
+        React.createElement("div",{className:"nv-stat",style:{borderTop:"3px solid var(--nv-ouvert)"}},React.createElement("div",{className:"nv-stat-val",style:{color:"var(--nv-ouvert)"}},nb("Ouvert")),React.createElement("div",{className:"nv-stat-lbl"},"En cours")),
+        React.createElement("div",{className:"nv-stat",style:{borderTop:"3px solid var(--nv-alerte)"}},React.createElement("div",{className:"nv-stat-val",style:{color:"var(--nv-alerte)"}},nb("Escalade")),React.createElement("div",{className:"nv-stat-lbl"},"Escaladés")),
+        React.createElement("div",{className:"nv-stat",style:{borderTop:"3px solid var(--nv-clos)"}},React.createElement("div",{className:"nv-stat-val",style:{color:"var(--nv-clos)"}},nb("Clos")),React.createElement("div",{className:"nv-stat-lbl"},"Clos"))
       )
     ),
-    React.createElement("div",{className:"nv-toolbar",style:{position:"relative"}},
-      React.createElement("input",{className:"nv-search",type:"search",placeholder:"Rechercher un ticket…",value:search,onChange:function(e){setSearch(e.target.value);}}),
-      React.createElement("button",{className:"nv-sortbtn",onClick:function(){setShowSort(!showSort);}},"⇅ Trier"),
-      showSort&&React.createElement(React.Fragment,null,
-        React.createElement("div",{style:{position:"fixed",inset:0,zIndex:150},onClick:function(){setShowSort(false);}}),
-        React.createElement("div",{style:{position:"absolute",top:"100%",right:14,marginTop:4,background:"#fff",border:"1px solid var(--nv-border)",borderRadius:6,boxShadow:"0 4px 16px rgba(9,30,66,.15)",zIndex:151,minWidth:230,overflow:"hidden"}},
-          SORT_OPTIONS.map(function(o){
-            return React.createElement("div",{
-              key:o.id,
-              style:{padding:"10px 14px",fontSize:13.5,fontWeight:sortBy===o.id?700:500,color:sortBy===o.id?"var(--nv-marine)":"var(--nv-text)",cursor:"pointer",borderBottom:"1px solid #F0F2F5",background:sortBy===o.id?"#F0F6FF":"#fff"},
-              onClick:function(){setSortBy(o.id);setShowSort(false);}
-            },o.l);
-          })
-        )
-      )
+    React.createElement("div",{className:"nv-toolbar"},
+      React.createElement("input",{className:"nv-search",type:"search",placeholder:"Rechercher…",value:search,onChange:function(e){setSearch(e.target.value);}}),
+      React.createElement("span",{style:{fontSize:11,color:"var(--nv-text3)",whiteSpace:"nowrap"}},"Cliquer une cellule pour modifier")
     ),
     React.createElement("div",{className:"nv-filterbar"},
       [{id:"tous",l:"Tous"},{id:"Ouvert",l:"En cours"},{id:"Escalade",l:"Escaladés"},{id:"Clos",l:"Clos"}].map(function(f){
@@ -1001,64 +1188,113 @@ function TicketList({tickets,user,onSelect,onNew,onRelance}){
         );
       })
     ),
-    React.createElement("div",{className:"nv-screen"},
-      React.createElement("div",{style:{display:"flex",alignItems:"center",gap:9,padding:"7px 14px",borderBottom:"1px solid var(--nv-border)",background:"#FAFBFC"}},
-        React.createElement("span",{style:{width:16}}),
-        React.createElement("span",{style:{width:8}}),
-        React.createElement("span",{style:{fontSize:10.5,fontWeight:700,color:"var(--nv-text3)",textTransform:"uppercase",letterSpacing:".4px"}},"Aa  Résumé")
-      ),
-      list.length===0&&React.createElement("div",{className:"nv-empty"},"Aucun ticket ne correspond à ces critères"),
-      list.map(function(t){
-        var alerte=isAlerte(t);
-        var sk=statKey(t);
-        var dotCls=sk==="Escalade"?"escalade":sk==="Clos"?"clos":"ouvert";
-        var tagCls=dotCls;
-        var dernRel=lastRelance(t);
-        return React.createElement("div",{key:t.id,className:"nv-row",onClick:function(){onSelect(t.id);}},
-          React.createElement("span",{className:"nv-row-check",onClick:function(e){e.stopPropagation();}}),
-          React.createElement("span",{className:"nv-row-dot "+dotCls}),
-          React.createElement("div",{className:"nv-row-main"},
-            React.createElement("div",{className:"nv-row-top"},
-              React.createElement("span",{className:"nv-row-id"},"#"+String(t.id).padStart(4,"0")),
-              React.createElement("span",{className:"nv-tag "+tagCls},statLabel(t))
-            ),
-            React.createElement("div",{className:"nv-row-title"},t.description),
-            React.createElement("div",{className:"nv-row-meta"},
-              React.createElement("span",null,"Ouvert ",React.createElement("b",null,fmt(t.date_creation))),
-              dernRel&&React.createElement("span",{style:alerte?{color:"var(--nv-alerte)",fontWeight:700}:{}},
-                alerte?"⚠ relance "+fmt(dernRel):"Relance "+fmt(dernRel)
+    React.createElement("div",{className:"nv-screen",style:{overflowX:"auto"}},
+      React.createElement("table",{style:{width:"100%",minWidth:800,borderCollapse:"collapse",fontSize:12.5}},
+        React.createElement("thead",null,
+          React.createElement("tr",{style:{background:"#FAFBFC",borderBottom:"1px solid var(--nv-border)"}},
+            COLUMNS.map(function(c){
+              var active=sortBy===c.key;
+              return React.createElement("th",{
+                key:c.key,onClick:function(){clickCol(c.key);},
+                style:{textAlign:"left",padding:"8px 10px",fontSize:10.5,fontWeight:700,color:active?"var(--nv-marine)":"var(--nv-text3)",textTransform:"uppercase",letterSpacing:".4px",whiteSpace:"nowrap",minWidth:c.w,position:"sticky",top:0,background:active?"#F0F6FF":"#FAFBFC",cursor:"pointer",userSelect:"none"}
+              },c.l,active?(sortDir===1?" ▲":" ▼"):"");
+            })
+          )
+        ),
+        React.createElement("tbody",null,
+          list.length===0&&React.createElement("tr",null,React.createElement("td",{colSpan:NB_COLS,className:"nv-empty"},"Aucun ticket")),
+          list.map(function(t){
+            var alerte=isAlerte(t);
+            var sk=statKey(t);
+            var tagCls=sk==="Escalade"?"escalade":sk==="Clos"?"clos":"ouvert";
+            var rel=relancesFromHisto(t,histo);
+            var realisation=realisationFromHisto(t,histo);
+            var lastCmt=histo.filter(function(h){return h.ticket_id===t.id;}).sort(function(a,b){return(b.date||"")>(a.date||"")?1:-1;})[0];
+            var rowBd=lastCmt?"none":"1px solid var(--nv-border)";
+            var baseStyle={borderBottom:rowBd,color:"var(--nv-text)",whiteSpace:"nowrap"};
+            return React.createElement(React.Fragment,{key:t.id},
+              React.createElement("tr",{style:{background:"inherit"}},
+                // N° — clic = ouvrir fiche
+                React.createElement("td",{
+                  style:{padding:"9px 10px",borderBottom:rowBd,cursor:"pointer"},
+                  onClick:function(){onSelect(t.id);}
+                },React.createElement("span",{style:{fontFamily:"ui-monospace,monospace",color:"var(--nv-text3)",fontWeight:600}},"#"+String(t.id).padStart(4,"0"))),
+                // Statut — select inline
+                React.createElement("td",{style:{padding:editing&&editing.id===t.id&&editing.key==="statut"?"2px 4px":"9px 10px",borderBottom:rowBd},
+                  onClick:function(e){e.stopPropagation();}
+                },
+                  editing&&editing.id===t.id&&editing.key==="statut"
+                    ?React.createElement("select",{value:editVal,autoFocus:true,
+                        style:{border:"1.5px solid var(--nv-marine)",borderRadius:4,padding:"6px 8px",fontSize:12.5,background:"#fff"},
+                        onChange:function(e){setEditVal(e.target.value);},
+                        onBlur:function(){commitEdit(t);}
+                      },
+                        ["Ouvert","Clos"].map(function(s){return React.createElement("option",{key:s,value:s},s==="Ouvert"?"En cours":s);})
+                      )
+                    :React.createElement("span",{
+                        className:"nv-tag "+tagCls,style:{cursor:"cell"},
+                        onClick:function(){startEdit(t,"statut",t.statut);}
+                      },statLabel(t))
+                ),
+                renderCell(t,"titre",t.description,{whiteSpace:"normal",maxWidth:220,fontWeight:500,borderBottom:rowBd}),
+                renderCell(t,"prestataire",t.prestataire||React.createElement("span",{style:{color:"var(--nv-text3)"}},"—"),{minWidth:80,borderBottom:rowBd}),
+                renderCell(t,"intervenant",t.intervenant||React.createElement("span",{style:{color:"var(--nv-text3)"}},"—"),{minWidth:80,borderBottom:rowBd}),
+                React.createElement("td",{style:{padding:"6px 8px",borderBottom:rowBd,cursor:"pointer",whiteSpace:"nowrap",fontSize:12},onClick:function(){onSelect(t.id);}},fmt(t.date_creation)),
+                renderCell(t,"relance1",
+                  rel[0]?React.createElement("span",{style:{color:"#B45309",fontWeight:600,fontSize:12}},fmt(rel[0]))
+                        :React.createElement("span",{style:{color:"var(--nv-text3)",fontSize:12}},"—"),
+                  {borderBottom:rowBd,padding:"6px 8px"}
+                ),
+                renderCell(t,"relance2",
+                  rel[1]?React.createElement("span",{style:{color:"#C2410C",fontWeight:700,fontSize:12}},fmt(rel[1]))
+                        :React.createElement("span",{style:{color:"var(--nv-text3)",fontSize:12}},"—"),
+                  {borderBottom:rowBd,padding:"6px 8px"}
+                ),
+                renderCell(t,"relance3",
+                  rel[2]?React.createElement("span",{style:{color:"#991B1B",fontWeight:800,fontSize:12}},fmt(rel[2]))
+                        :React.createElement("span",{style:{color:alerte?"var(--nv-alerte)":"var(--nv-text3)",fontSize:12}},"—"),
+                  {borderBottom:rowBd,padding:"6px 8px"}
+                ),
+                (function(){
+                  var dateP=t.date_engagement;
+                  var depasse=dateP&&daysSince(dateP)>0&&t.statut!=="Clos";
+                  return renderCell(t,"promesse",
+                    dateP
+                      ?React.createElement("span",{style:{color:depasse?"var(--nv-alerte)":"#0F7B4E",fontWeight:depasse?800:600,fontSize:12}},fmt(dateP)+(depasse?" ⚠":""))
+                      :React.createElement("span",{style:{color:"var(--nv-text3)",fontSize:12}},"—"),
+                    {borderBottom:rowBd,padding:"6px 8px"}
+                  );
+                })(),
+                React.createElement("td",{style:{padding:"6px 8px",borderBottom:rowBd,color:realisation?"var(--nv-clos)":"var(--nv-text3)",fontWeight:realisation?700:400,cursor:"pointer",fontSize:12,whiteSpace:"nowrap"},onClick:function(){onSelect(t.id);}},realisation?fmt(realisation):"—")
               ),
-              t.engagement_gestionnaire&&React.createElement("span",null,"Engagement noté")
-            )
-          ),
-          React.createElement("span",{className:"nv-chevron"},"›")
-        );
-      })
+              lastCmt&&React.createElement("tr",{style:{cursor:"pointer"},onClick:function(){onSelect(t.id);}},
+                React.createElement("td",{colSpan:NB_COLS,style:{padding:"3px 10px 8px",borderBottom:"1px solid var(--nv-border)",fontSize:11.5,color:"var(--nv-text3)"}},
+                  React.createElement("span",{style:{fontWeight:600,marginRight:6}},(lastCmt.auteur||"AAG")+" · "+fmt(lastCmt.date)+" :"),
+                  React.createElement("span",{style:{fontStyle:"italic",whiteSpace:"normal"}},lastCmt.detail||lastCmt.details||"")
+                )
+              )
+            );
+          })
+        )
+      )
     ),
     React.createElement("button",{className:"nv-fab",onClick:onNew},"+")
   );
 }
 
+
 function TicketDetail({ticket:t,histo,user,onBack,onEdit,onUpdate,onRelance,onEscalade,onClose,onComment}){
   const [cmt,setCmt]=useState("");
-  const [viewPhoto,setViewPhoto]=useState(null);
   var isAdmin=user.role==="admin";
-  var comments=histo.filter(function(h){return h.ticket_id===t.id;});
+  var comments=histo.filter(function(h){return h.ticket_id===t.id;}).sort(function(a,b){
+    if(a.date!==b.date)return(b.date||"")>(a.date||"")?1:-1;
+    return(b.id||0)-(a.id||0);
+  });
   var alerte=isAlerte(t);
   var sk=statKey(t);
   var tagCls=sk==="Escalade"?"escalade":sk==="Clos"?"clos":"ouvert";
 
-  function addPhoto(e){
-    var file=e.target.files[0];if(!file)return;
-    var reader=new FileReader();
-    reader.onload=function(ev){onUpdate({...t,photos:[...(t.photos||[]),{id:Date.now(),data:ev.target.result}]});};
-    reader.readAsDataURL(file);
-  }
-
   return React.createElement("div",{style:{height:"100%",display:"flex",flexDirection:"column",background:"var(--nv-bg)"}},
-    viewPhoto&&React.createElement("div",{className:"photo-viewer",onClick:function(){setViewPhoto(null);}},
-      React.createElement("button",{className:"photo-viewer-close"},"×"),React.createElement("img",{src:viewPhoto})
-    ),
 
     React.createElement("div",{className:"nv-detail-header"},
       React.createElement("div",{className:"nv-detail-nav"},
@@ -1084,11 +1320,17 @@ function TicketDetail({ticket:t,histo,user,onBack,onEdit,onUpdate,onRelance,onEs
       React.createElement("div",{className:"nv-section"},
         React.createElement("div",{className:"nv-section-hd"},"Dates"),
         React.createElement("div",{className:"nv-section-body"},
-          React.createElement("div",{className:"nv-field-row"},React.createElement("span",{className:"nv-field-lbl"},"Ouverture"),React.createElement("span",{className:"nv-field-val"},fmt(t.date_creation))),
-          t.date_relance1&&React.createElement("div",{className:"nv-field-row"},React.createElement("span",{className:"nv-field-lbl"},"Relance 1"),React.createElement("span",{className:"nv-field-val ambre"},fmt(t.date_relance1))),
-          t.date_relance2&&React.createElement("div",{className:"nv-field-row"},React.createElement("span",{className:"nv-field-lbl"},"Relance 2"),React.createElement("span",{className:"nv-field-val ambre"},fmt(t.date_relance2))),
-          t.date_relance3&&React.createElement("div",{className:"nv-field-row"},React.createElement("span",{className:"nv-field-lbl"},"Relance 3"),React.createElement("span",{className:"nv-field-val ambre"},fmt(t.date_relance3))),
-          t.date_realisation&&React.createElement("div",{className:"nv-field-row"},React.createElement("span",{className:"nv-field-lbl"},"Réalisation"),React.createElement("span",{className:"nv-field-val clos"},fmt(t.date_realisation)))
+          (function(){
+            var rel=relancesFromHisto(t,histo);
+            var realisation=realisationFromHisto(t,histo);
+            return React.createElement(React.Fragment,null,
+              React.createElement("div",{className:"nv-field-row"},React.createElement("span",{className:"nv-field-lbl"},"Ouverture"),React.createElement("span",{className:"nv-field-val"},fmt(t.date_creation))),
+              rel[0]&&React.createElement("div",{className:"nv-field-row"},React.createElement("span",{className:"nv-field-lbl"},"Relance 1"),React.createElement("span",{className:"nv-field-val ambre"},fmt(rel[0]))),
+              rel[1]&&React.createElement("div",{className:"nv-field-row"},React.createElement("span",{className:"nv-field-lbl"},"Relance 2"),React.createElement("span",{className:"nv-field-val ambre"},fmt(rel[1]))),
+              rel[2]&&React.createElement("div",{className:"nv-field-row"},React.createElement("span",{className:"nv-field-lbl"},"Relance 3"),React.createElement("span",{className:"nv-field-val ambre"},fmt(rel[2]))),
+              realisation&&React.createElement("div",{className:"nv-field-row"},React.createElement("span",{className:"nv-field-lbl"},"Réalisation"),React.createElement("span",{className:"nv-field-val clos"},fmt(realisation)))
+            );
+          })()
         )
       ),
 
@@ -1104,9 +1346,22 @@ function TicketDetail({ticket:t,histo,user,onBack,onEdit,onUpdate,onRelance,onEs
         );
       })(),
 
+      (t.prestataire||t.intervenant)&&React.createElement("div",{className:"nv-section"},
+        React.createElement("div",{className:"nv-section-hd"},"Prestataire & Intervenant"),
+        React.createElement("div",{className:"nv-section-body"},
+          t.prestataire&&React.createElement("div",{className:"nv-field-row"},React.createElement("span",{className:"nv-field-lbl"},"Prestataire"),React.createElement("span",{className:"nv-field-val",style:{fontWeight:600}},t.prestataire)),
+          t.intervenant&&React.createElement("div",{className:"nv-field-row"},React.createElement("span",{className:"nv-field-lbl"},"Intervenant"),React.createElement("span",{className:"nv-field-val",style:{fontWeight:600}},t.intervenant))
+        )
+      ),
+
       t.commentaires&&React.createElement("div",{className:"nv-section"},
         React.createElement("div",{className:"nv-section-hd"},"Note interne"),
         React.createElement("div",{className:"nv-section-body",style:{fontSize:13.5,lineHeight:1.6,color:"var(--nv-text)"}},t.commentaires)
+      ),
+
+      t.preuve_envoi&&React.createElement("div",{className:"nv-section"},
+        React.createElement("div",{className:"nv-section-hd"},"Preuve d'envoi"),
+        React.createElement("div",{className:"nv-section-body",style:{fontSize:13.5,color:"var(--nv-text)",lineHeight:1.6}},"📎 "+t.preuve_envoi)
       ),
 
       isAdmin&&React.createElement("div",{className:"nv-actionbar"},
@@ -1114,14 +1369,6 @@ function TicketDetail({ticket:t,histo,user,onBack,onEdit,onUpdate,onRelance,onEs
         (t.statut==="Clos"||t.escalade)&&React.createElement("button",{className:"nv-actionbtn",onClick:function(){onUpdate({...t,statut:"Ouvert",date_realisation:"",escalade:false,escalade_raison:"",escalade_date:""});}},"Rouvrir"),
         t.statut!=="Clos"&&!t.escalade&&React.createElement("button",{className:"nv-actionbtn primary",onClick:onRelance},"Relancer"),
         t.statut!=="Clos"&&!t.escalade&&React.createElement("button",{className:"nv-actionbtn danger",onClick:onEscalade},"Escalader")
-      ),
-
-      React.createElement("div",{className:"nv-section"},
-        React.createElement("div",{className:"nv-section-hd"},"Photos ("+(t.photos||[]).length+")"),
-        React.createElement("div",{className:"nv-photo-grid"},
-          (t.photos||[]).map(function(p){return React.createElement("img",{key:p.id,className:"nv-photo-thumb",src:p.data,onClick:function(){setViewPhoto(p.data);}});}),
-          React.createElement("label",{className:"nv-photo-add"},"+",React.createElement("input",{type:"file",accept:"image/*",capture:"environment",style:{display:"none"},onChange:addPhoto}))
-        )
       ),
 
       React.createElement("div",{className:"nv-section",style:{marginBottom:0}},
@@ -1146,9 +1393,9 @@ function TicketDetail({ticket:t,histo,user,onBack,onEdit,onUpdate,onRelance,onEs
 }
 
 
-function TicketForm({ticket,onSave,onCancel}){
+function TicketForm({ticket,prestataires,onSave,onCancel}){
   var isNew=!ticket;
-  const [f,setF]=useState(ticket||{description:"",statut:"Ouvert",commentaires:"",date_relance1:"",date_relance2:"",date_relance3:"",date_realisation:"",photos:[],escalade:false});
+  const [f,setF]=useState(ticket||{description:"",statut:"Ouvert",commentaires:"",prestataire:"",date_relance1:"",date_relance2:"",date_relance3:"",date_realisation:"",photos:[],escalade:false});
   function u(k,v){setF(function(p){return{...p,[k]:v};});}
   return React.createElement("div",{style:{height:"100%",display:"flex",flexDirection:"column",background:"var(--nv-bg)"}},
     React.createElement("div",{className:"nv-form-header"},
@@ -1170,9 +1417,33 @@ function TicketForm({ticket,onSave,onCancel}){
         )
       ),
       React.createElement("div",{className:"nv-section"},
+        React.createElement("div",{className:"nv-section-hd"},"Prestataire & Intervenant"),
+        React.createElement("div",{className:"nv-section-body"},
+          React.createElement("div",{style:{marginBottom:12}},
+            React.createElement("label",{style:{display:"block",fontSize:11.5,fontWeight:700,color:"var(--nv-text2)",textTransform:"uppercase",letterSpacing:".4px",marginBottom:5}},"Prestataire (entreprise)"),
+React.createElement("input",{type:"text",value:f.prestataire||"",placeholder:"Nom du prestataire",style:{width:"100%",border:"1px solid var(--nv-border)",borderRadius:6,padding:"10px 12px",fontSize:15},onChange:function(e){u("prestataire",e.target.value);}})
+          ),
+          React.createElement("div",null,
+            React.createElement("label",{style:{display:"block",fontSize:11.5,fontWeight:700,color:"var(--nv-text2)",textTransform:"uppercase",letterSpacing:".4px",marginBottom:5}},"Intervenant (personne)"),
+            React.createElement("input",{type:"text",value:f.intervenant||"",placeholder:"Nom de la personne qui intervient",style:{width:"100%",border:"1px solid var(--nv-border)",borderRadius:6,padding:"10px 12px",fontSize:15},onChange:function(e){u("intervenant",e.target.value);}})
+          )
+        )
+      ),
+      React.createElement("div",{className:"nv-section"},
         React.createElement("div",{className:"nv-section-hd"},"Note interne"),
         React.createElement("div",{className:"nv-section-body"},
           React.createElement("textarea",{rows:2,value:f.commentaires||"",style:{width:"100%",border:"1px solid var(--nv-border)",borderRadius:6,padding:"10px 12px",fontSize:15,fontFamily:"inherit",resize:"none"},onChange:function(e){u("commentaires",e.target.value);}})
+        )
+      ),
+      React.createElement("div",{className:"nv-section"},
+        React.createElement("div",{className:"nv-section-hd"},"Preuve d'envoi"),
+        React.createElement("div",{className:"nv-section-body"},
+          React.createElement("input",{
+            type:"text",value:f.preuve_envoi||"",
+            placeholder:"Ex : Email du 12/06 ref. #4521 · Courrier recommandé AR n°…",
+            style:{width:"100%",border:"1px solid var(--nv-border)",borderRadius:6,padding:"10px 12px",fontSize:15},
+            onChange:function(e){u("preuve_envoi",e.target.value);}
+          })
         )
       ),
       React.createElement("div",{className:"nv-section"},
@@ -1184,9 +1455,9 @@ function TicketForm({ticket,onSave,onCancel}){
               React.createElement("input",{type:"date",value:f[k]||"",style:{width:"100%",border:"1px solid var(--nv-border)",borderRadius:6,padding:"9px 11px",fontSize:15},onChange:function(e){u(k,e.target.value);}})
             );
           }),
-          React.createElement("div",{style:{marginBottom:0}},
+          f.date_realisation&&React.createElement("div",{style:{marginBottom:0}},
             React.createElement("label",{style:{display:"block",fontSize:11.5,fontWeight:700,color:"var(--nv-text2)",textTransform:"uppercase",letterSpacing:".4px",marginBottom:5}},"Réalisation"),
-            React.createElement("input",{type:"date",value:f.date_realisation||"",style:{width:"100%",border:"1px solid var(--nv-border)",borderRadius:6,padding:"9px 11px",fontSize:15},onChange:function(e){u("date_realisation",e.target.value);}})
+            React.createElement("div",{style:{fontSize:14,color:"var(--nv-text2)",padding:"9px 0"}},fmt(f.date_realisation)+" — définie automatiquement à la clôture")
           )
         )
       ),
@@ -1213,12 +1484,15 @@ function TicketForm({ticket,onSave,onCancel}){
 // ══════════════════════════════════════
 // VUE RÉUNION — point d'avancement avec engagements gestionnaire + CR
 // ══════════════════════════════════════
-function VueReunion({tickets,reunions,user,onSetEngagement,onSaveReunion,onAddHisto,onClose,onRelance,onEscalade}){
+function VueReunion({tickets,reunions,reunionsErr,user,onSetEngagement,onSaveReunion,onDeleteReunion,onAddHisto,onClose,onRelance,onEscalade}){
   const [phase,setPhase]=useState("liste"); // liste | reunion | cr
   const [reuActive,setReuActive]=useState(null);
   const [idx,setIdx]=useState(0);
   const [engDraft,setEngDraft]=useState({}); // {text, date} pendant la saisie
   const [noteDraft,setNoteDraft]=useState("");
+  const [dateResoDraft,setDateResoDraft]=useState("");
+  const [pasDeDate,setPasDeDate]=useState(false);
+  const [decisionDraft,setDecisionDraft]=useState("");
 
   var ticketsOuverts=tickets.filter(function(t){return t.statut!=="Clos";}).sort(function(a,b){
     if(a.escalade&&!b.escalade)return-1;if(!a.escalade&&b.escalade)return 1;
@@ -1227,15 +1501,17 @@ function VueReunion({tickets,reunions,user,onSetEngagement,onSaveReunion,onAddHi
   });
 
   function demarrer(){
-    var r={id:Date.now(),_isNew:true,date:today(),participants:"AAG, Gestionnaire",ticket_ids:ticketsOuverts.map(function(t){return t.id;}),notes:{},statuts_snapshot:{}};
+    var r={id:Date.now(),_isNew:true,date:today(),participants:"AAG, Gestionnaire",ticket_ids:ticketsOuverts.map(function(t){return t.id;}),notes:{},statuts_snapshot:{},commentaire:""};
     setReuActive(r);
     setIdx(0);
     setEngDraft({});
+    setCommentaireReunion("");
     setPhase("reunion");
   }
 
   function ouvrirReunionExistante(r){
     setReuActive(r);
+    setCommentaireReunion(r.commentaire||"");
     setIdx(0);
     setPhase("cr");
   }
@@ -1244,23 +1520,24 @@ function VueReunion({tickets,reunions,user,onSetEngagement,onSaveReunion,onAddHi
 
   function validerEtSuivant(){
     var t=ticketCourant();
-    if(t&&engDraft.text){
-      if(engDraft.noDate){
-        onSetEngagement(t,engDraft.text,"");
-        onAddHisto(t.id,"Engagement noté en réunion mais SANS date précise : \""+engDraft.text+"\" — refus de s'engager sur un délai","AAG","Engagement");
-      }else if(engDraft.date){
-        onSetEngagement(t,engDraft.text,engDraft.date);
-      }
+    if(t){
+      var notes=Object.assign({},reuActive.notes||{});
+      if(noteDraft.trim())notes[t.id]=noteDraft.trim();
+      var decisions=Object.assign({},reuActive.decisions||{});
+      if(decisionDraft.trim())decisions[t.id]=decisionDraft.trim();
+      var dates_reso=Object.assign({},reuActive.dates_reso||{});
+      if(pasDeDate){dates_reso[t.id]="SANS_DATE";}
+      else if(dateResoDraft){dates_reso[t.id]=dateResoDraft;}
+      setReuActive(function(p){return{...p,notes:notes,decisions:decisions,dates_reso:dates_reso};});
     }
-    if(noteDraft.trim()&&t){
-      onAddHisto(t.id,"Note réunion du "+fmtLong(today())+" : "+noteDraft.trim(),user.label,"Commentaire");
-    }
-    setEngDraft({});
     setNoteDraft("");
+    setDecisionDraft("");
+    setDateResoDraft("");
+    setPasDeDate(false);
     if(idx<ticketsOuverts.length-1){
       setIdx(idx+1);
     }else{
-      terminerReunion();
+      setPhase("commentaire_final");
     }
   }
 
@@ -1270,7 +1547,7 @@ function VueReunion({tickets,reunions,user,onSetEngagement,onSaveReunion,onAddHi
   }
 
   function terminerReunion(){
-    var r={...reuActive,ticket_ids:ticketsOuverts.map(function(t){return t.id;})};
+    var r={...reuActive,ticket_ids:ticketsOuverts.map(function(t){return t.id;}),commentaire:commentaireReunion};
     onSaveReunion(r);
     setReuActive(r);
     setPhase("cr");
@@ -1284,33 +1561,75 @@ function VueReunion({tickets,reunions,user,onSetEngagement,onSaveReunion,onAddHi
         React.createElement("div",{className:"nv-header-top"},
           React.createElement("span",{className:"nv-header-title"},"Réunions"),
           React.createElement("span",{className:"nv-header-user"},user.label)
+        ),
+        React.createElement("div",{className:"nv-stats-row"},
+          React.createElement("div",{className:"nv-stat",style:{borderTop:"3px solid var(--nv-marine)"}},
+            React.createElement("div",{className:"nv-stat-val",style:{color:"var(--nv-marine)"}},reunions.length),
+            React.createElement("div",{className:"nv-stat-lbl"},"Réunions")
+          ),
+          React.createElement("div",{className:"nv-stat",style:{borderTop:"3px solid var(--nv-alerte)"}},
+            React.createElement("div",{className:"nv-stat-val",style:{color:nbRompues>0?"var(--nv-alerte)":"var(--nv-text3)"}},nbRompues),
+            React.createElement("div",{className:"nv-stat-lbl"},"Promesses rompues")
+          ),
+          React.createElement("div",{className:"nv-stat",style:{borderTop:"3px solid var(--nv-ouvert)"}},
+            React.createElement("div",{className:"nv-stat-val",style:{color:"var(--nv-ouvert)"}},ticketsOuverts.length),
+            React.createElement("div",{className:"nv-stat-lbl"},"Tickets ouverts")
+          )
         )
       ),
-      React.createElement("div",{className:"nv-screen"},
-        nbRompues>0&&React.createElement("div",{className:"nv-alert-banner",style:{margin:14}},
-          React.createElement("span",null,"⚠"),
-          React.createElement("span",null,nbRompues+" promesse"+(nbRompues>1?"s":"")+" gestionnaire non tenue"+(nbRompues>1?"s":"")+".")
-        ),
-        React.createElement("div",{style:{padding:"14px 14px 0"}},
-          React.createElement("button",{className:"nv-actionbtn primary",style:{width:"100%",padding:13},onClick:demarrer},
-            "Démarrer une réunion — "+ticketsOuverts.length+" ticket"+(ticketsOuverts.length>1?"s":"")+" ouvert"+(ticketsOuverts.length>1?"s":"")
+      React.createElement("div",{className:"nv-toolbar"},
+        React.createElement("button",{
+          className:"nv-actionbtn primary",
+          style:{flex:"none",padding:"8px 18px",borderRadius:5,fontSize:13},
+          onClick:demarrer
+        },"+ Nouvelle réunion"),
+        React.createElement("span",{style:{fontSize:11,color:"var(--nv-text3)"}},(ticketsOuverts.length)+" ticket"+(ticketsOuverts.length>1?"s":"")+" en cours")
+      ),
+
+      reunionsErr&&React.createElement("div",{style:{margin:"12px 14px",padding:"12px 14px",background:"#FFF8E0",borderLeft:"3px solid var(--nv-ambre)",borderRadius:6}},
+        React.createElement("div",{style:{fontSize:13,fontWeight:700,color:"var(--nv-ambre)",marginBottom:6}},"Table manquante dans Supabase"),
+        React.createElement("div",{style:{background:"#1D2125",color:"#A8D5E2",borderRadius:6,padding:"10px 12px",fontSize:11.5,fontFamily:"ui-monospace,monospace",lineHeight:1.7,overflowX:"auto",whiteSpace:"pre"}},
+          "CREATE TABLE IF NOT EXISTS reunions (\n  id bigint primary key,\n  date date,\n  participants text,\n  ticket_ids jsonb,\n  notes jsonb,\n  commentaire text\n);\nALTER TABLE reunions ENABLE ROW LEVEL SECURITY;\nCREATE POLICY \"allow all\" ON reunions FOR ALL USING (true);"
+        )
+      ),
+
+      React.createElement("div",{className:"nv-screen",style:{overflowX:"auto",paddingTop:0}},
+        React.createElement("table",{style:{width:"100%",minWidth:540,borderCollapse:"collapse",fontSize:12.5}},
+          React.createElement("thead",null,
+            React.createElement("tr",{style:{background:"#FAFBFC",borderBottom:"1px solid var(--nv-border)"}},
+              [{l:"Date",w:120},{l:"Participants",w:140},{l:"Tickets",w:60},{l:"Commentaire",w:240}].map(function(c,i){
+                return React.createElement("th",{key:i,style:{textAlign:"left",padding:"8px 12px",fontSize:10.5,fontWeight:700,color:"var(--nv-text3)",textTransform:"uppercase",letterSpacing:".4px",whiteSpace:"nowrap",minWidth:c.w,position:"sticky",top:0,background:"#FAFBFC"}},c.l);
+              }),
+              React.createElement("th",{style:{width:40,position:"sticky",top:0,background:"#FAFBFC"}})
+            )
+          ),
+          React.createElement("tbody",null,
+            !reunionsErr&&reunions.length===0&&React.createElement("tr",null,
+              React.createElement("td",{colSpan:5,className:"nv-empty"},"Aucune réunion enregistrée — démarrez-en une ci-dessus")
+            ),
+            !reunionsErr&&reunions.map(function(r,rowIdx){
+              var cmtReunion=r.commentaire||"";
+              var rowBg=rowIdx%2===0?"#fff":"#ECEEF1";
+              return React.createElement("tr",{key:r.id,style:{cursor:"pointer",background:rowBg},
+                onClick:function(){ouvrirReunionExistante(r);}
+              },
+                React.createElement("td",{style:{padding:"11px 12px",borderBottom:"1px solid var(--nv-border)",fontWeight:700,color:"var(--nv-text)",whiteSpace:"nowrap"}},fmtLong(r.date)),
+                React.createElement("td",{style:{padding:"11px 12px",borderBottom:"1px solid var(--nv-border)",color:"var(--nv-text2)",whiteSpace:"nowrap"}},r.participants||"AAG, Gestionnaire"),
+                React.createElement("td",{style:{padding:"11px 12px",borderBottom:"1px solid var(--nv-border)",textAlign:"center"}},
+                  React.createElement("span",{className:"nv-tag ouvert"},((r.ticket_ids||[]).length)+"t")
+                ),
+                React.createElement("td",{style:{padding:"11px 12px",borderBottom:"1px solid var(--nv-border)",color:"var(--nv-text2)",fontStyle:cmtReunion?"italic":"normal",whiteSpace:"normal"}},
+                  cmtReunion||React.createElement("span",{style:{color:"var(--nv-text3)"}},"—")
+                ),
+                React.createElement("td",{style:{padding:"11px 12px",borderBottom:"1px solid var(--nv-border)",textAlign:"right"},
+                  onClick:function(e){
+                    e.stopPropagation();
+                    if(window.confirm("Supprimer la réunion du "+fmtLong(r.date)+" ?")){onDeleteReunion(r.id);}
+                  }
+                },React.createElement("span",{style:{color:"var(--nv-alerte)",fontWeight:700,fontSize:15,cursor:"pointer"}},"✕"))
+              );
+            })
           )
-        ),
-        React.createElement("div",{className:"nv-section",style:{marginTop:16}},
-          React.createElement("div",{className:"nv-section-hd"},"Historique des réunions"),
-          reunions.length===0&&React.createElement("div",{className:"nv-section-body",style:{color:"var(--nv-text3)",fontSize:13}},"Aucune réunion enregistrée"),
-          reunions.map(function(r){
-            return React.createElement("div",{key:r.id,className:"nv-reu-list-item",onClick:function(){ouvrirReunionExistante(r);}},
-              React.createElement("div",null,
-                React.createElement("div",{style:{fontSize:14,fontWeight:700,color:"var(--nv-text)"}},fmtLong(r.date)),
-                React.createElement("div",{style:{fontSize:12,color:"var(--nv-text3)",marginTop:2}},r.participants||"AAG, Gestionnaire")
-              ),
-              React.createElement("div",{style:{display:"flex",alignItems:"center",gap:8}},
-                React.createElement("span",{style:{fontSize:11.5,color:"var(--nv-text3)",fontWeight:600}},(r.ticket_ids||[]).length+" ticket"+((r.ticket_ids||[]).length>1?"s":"")),
-                React.createElement("span",{className:"nv-chevron"},"›")
-              )
-            );
-          })
         )
       )
     );
@@ -1324,17 +1643,22 @@ function VueReunion({tickets,reunions,user,onSetEngagement,onSaveReunion,onAddHi
         React.createElement("div",{className:"nv-screen",style:{paddingTop:60}},
           React.createElement("div",{style:{textAlign:"center",padding:"60px 0"}},
             React.createElement("div",{style:{fontSize:42,marginBottom:10}},"✓"),
-            React.createElement("div",{style:{fontWeight:700,marginBottom:16,color:"var(--nv-text)"}},"Aucun ticket ouvert à passer en revue"),
+            React.createElement("div",{style:{fontWeight:700,marginBottom:16,color:"var(--nv-text)"}},"Aucun ticket à passer en revue"),
             React.createElement("button",{className:"nv-actionbtn",onClick:function(){setPhase("liste");}},"Retour")
           )
         )
       );
     }
     var pct=Math.round(((idx)/ticketsOuverts.length)*100);
-    var alerte=isAlerte(t);
-    var stEng=engagementStatut(t);
-    var sk=statKey(t);
-    var tagCls=sk==="Escalade"?"escalade":sk==="Clos"?"clos":"ouvert";
+
+    // Promesses non tenues depuis les réunions précédentes pour ce ticket
+    var promessesPassees=reunions.reduce(function(acc,r){
+      if(r.decisions&&r.decisions[t.id]){
+        acc.push({date:r.date,decision:r.decisions[t.id],dateReso:r.dates_reso&&r.dates_reso[t.id]});
+      }
+      return acc;
+    },[]).slice(0,3); // 3 dernières
+
     return React.createElement("div",{style:{height:"100%",display:"flex",flexDirection:"column"}},
       React.createElement("div",{className:"nv-detail-header"},
         React.createElement("div",{className:"nv-detail-nav"},
@@ -1342,74 +1666,129 @@ function VueReunion({tickets,reunions,user,onSetEngagement,onSaveReunion,onAddHi
           React.createElement("span",{style:{color:"var(--nv-text3)",fontSize:12.5,fontWeight:600}},(idx+1)+" / "+ticketsOuverts.length)
         ),
         React.createElement("div",{className:"nv-detail-id"},"RÉUNION DU "+fmtLong(today()).toUpperCase()),
-        React.createElement("div",{className:"nv-detail-title"},t.description),
-        React.createElement("span",{className:"nv-detail-tag nv-tag "+tagCls},statLabel(t))
+        React.createElement("div",{className:"nv-detail-title"},t.description)
       ),
       React.createElement("div",{className:"nv-reu-progress"},React.createElement("div",{className:"nv-reu-progress-fill",style:{width:pct+"%"}})),
       React.createElement("div",{className:"nv-screen",style:{paddingTop:0}},
 
-        alerte&&React.createElement("div",{className:"nv-alert-banner"},
-          React.createElement("span",null,"⚠"),
-          React.createElement("span",null,"Sans relance depuis "+daysSince(lastRelance(t)||t.date_creation)+" jours.")
+        // ── Décisions précédentes non tenues ──
+        promessesPassees.length>0&&React.createElement("div",{className:"nv-section",style:{marginTop:0,borderLeft:"3px solid var(--nv-alerte)"}},
+          React.createElement("div",{className:"nv-section-hd",style:{color:"var(--nv-alerte)"}},"⚠ Engagements des réunions précédentes"),
+          promessesPassees.map(function(p,i){
+            var sansDt=p.dateReso==="SANS_DATE";
+            return React.createElement("div",{key:i,style:{padding:"10px 14px",borderBottom:"1px solid var(--nv-border)",background:"#FEF9F9"}},
+              React.createElement("div",{style:{fontSize:11,color:"var(--nv-text3)",marginBottom:3}},"Réunion du "+fmtLong(p.date)),
+              React.createElement("div",{style:{fontSize:14,fontWeight:600,color:"var(--nv-text)",marginBottom:3}},p.decision),
+              sansDt
+                ?React.createElement("div",{style:{fontSize:12,color:"var(--nv-alerte)",fontWeight:700}},"⚠ Aucune date fournie à l'époque")
+                :p.dateReso
+                  ?React.createElement("div",{style:{fontSize:12,color:"var(--nv-ambre)"}},"Date promise : "+fmt(p.dateReso))
+                  :null
+            );
+          })
         ),
 
+        // ── Commentaire ──
         React.createElement("div",{className:"nv-section",style:{marginTop:0}},
-          React.createElement("div",{className:"nv-section-hd"},"Suivi"),
+          React.createElement("div",{className:"nv-section-hd"},"Commentaire"),
           React.createElement("div",{className:"nv-section-body"},
-            React.createElement("div",{className:"nv-field-row"},React.createElement("span",{className:"nv-field-lbl"},"Ouverture"),React.createElement("span",{className:"nv-field-val"},fmt(t.date_creation))),
-            React.createElement("div",{className:"nv-field-row"},React.createElement("span",{className:"nv-field-lbl"},"Relances effectuées"),React.createElement("span",{className:"nv-field-val"},nbRelances(t)))
+            React.createElement("textarea",{
+              rows:4,
+              value:noteDraft||(reuActive.notes&&reuActive.notes[t.id])||"",
+              placeholder:"Ce qui a été dit sur ce sujet en réunion…",
+              style:{width:"100%",border:"1px solid var(--nv-border)",borderRadius:6,padding:"10px 12px",fontSize:15,fontFamily:"inherit",resize:"none",lineHeight:1.6},
+              onChange:function(e){setNoteDraft(e.target.value);}
+            })
           )
         ),
 
-        t.engagement_gestionnaire&&React.createElement("div",{className:"nv-section"},
-          React.createElement("div",{className:"nv-section-hd"},"Précédent engagement"),
-          React.createElement("div",{className:"nv-engagement "+(stEng==="tenu"?"tenu":stEng==="rompu"?"rompu":"")},
-            React.createElement("span",{className:"nv-engagement-status "+stEng},engagementLabel(stEng)),
-            React.createElement("div",{className:"nv-engagement-text"},"\""+t.engagement_gestionnaire+"\""),
-            React.createElement("div",{className:"nv-engagement-date"},t.date_engagement?"Promis pour le "+fmt(t.date_engagement):"Aucune date donnée")
-          )
-        ),
-
+        // ── Décision formelle ──
         React.createElement("div",{className:"nv-section"},
-          React.createElement("div",{className:"nv-section-hd"},"Nouvel engagement"),
+          React.createElement("div",{className:"nv-section-hd"},"Décision prise"),
           React.createElement("div",{className:"nv-section-body"},
-            React.createElement("div",{style:{marginBottom:10}},
-              React.createElement("label",{style:{display:"block",fontSize:11.5,fontWeight:700,color:"var(--nv-text2)",textTransform:"uppercase",letterSpacing:".4px",marginBottom:5}},"Ce qu'elle dit en réunion (optionnel)"),
-              React.createElement("textarea",{rows:2,value:engDraft.text||"",placeholder:"« ce sera fait avant le… »",
-                style:{width:"100%",border:"1px solid var(--nv-border)",borderRadius:6,padding:"10px 12px",fontSize:15,fontFamily:"inherit",resize:"none"},
-                onChange:function(e){setEngDraft(function(p){return{...p,text:e.target.value,noDate:false};});}})
+            React.createElement("textarea",{
+              rows:3,
+              value:decisionDraft||(reuActive.decisions&&reuActive.decisions[t.id])||"",
+              placeholder:"Engagement formel pris en séance : « La gestionnaire s'engage à… »",
+              style:{width:"100%",border:"1.5px solid var(--nv-marine)",borderRadius:6,padding:"10px 12px",fontSize:15,fontFamily:"inherit",resize:"none",lineHeight:1.6,background:"#F8FAFF"},
+              onChange:function(e){setDecisionDraft(e.target.value);}
+            })
+          )
+        ),
+
+        // ── Date de résolution ──
+        React.createElement("div",{className:"nv-section"},
+          React.createElement("div",{className:"nv-section-hd"},"Date de résolution prévue"),
+          React.createElement("div",{className:"nv-section-body"},
+            React.createElement("div",{style:{display:"flex",alignItems:"center",gap:12,marginBottom:10}},
+              React.createElement("input",{
+                type:"date",
+                value:pasDeDate?"":dateResoDraft,
+                disabled:pasDeDate,
+                style:{flex:1,border:"1px solid var(--nv-border)",borderRadius:6,padding:"10px 12px",fontSize:15,opacity:pasDeDate?.4:1},
+                onChange:function(e){setDateResoDraft(e.target.value);}
+              })
             ),
-            engDraft.text&&React.createElement("div",{style:{marginBottom:10}},
-              React.createElement("label",{style:{display:"block",fontSize:11.5,fontWeight:700,color:"var(--nv-text2)",textTransform:"uppercase",letterSpacing:".4px",marginBottom:5}},"Date promise"),
-              engDraft.noDate
-                ?React.createElement("div",{style:{display:"flex",alignItems:"center",gap:10}},
-                    React.createElement("div",{style:{flex:1,padding:"10px 12px",border:"1px solid #F3C6C6",borderRadius:6,background:"#FEF5F5",color:"var(--nv-alerte)",fontSize:13.5,fontWeight:600}},"Aucune date donnée"),
-                    React.createElement("button",{className:"nv-actionbtn",style:{flex:"none",padding:"10px 14px"},onClick:function(){setEngDraft(function(p){return{...p,noDate:false};});}},"Annuler")
-                  )
-                :React.createElement("div",{style:{display:"flex",gap:8}},
-                    React.createElement("input",{type:"date",value:engDraft.date||"",style:{flex:1,border:"1px solid var(--nv-border)",borderRadius:6,padding:"9px 11px",fontSize:15},onChange:function(e){setEngDraft(function(p){return{...p,date:e.target.value};});}}),
-                    React.createElement("button",{className:"nv-actionbtn",style:{flex:"none",padding:"9px 14px",whiteSpace:"nowrap"},onClick:function(){setEngDraft(function(p){return{...p,date:"",noDate:true};});}},"Pas de date")
-                  )
-            ),
-            React.createElement("div",{style:{marginBottom:0}},
-              React.createElement("label",{style:{display:"block",fontSize:11.5,fontWeight:700,color:"var(--nv-text2)",textTransform:"uppercase",letterSpacing:".4px",marginBottom:5}},"Note de réunion (optionnel)"),
-              React.createElement("textarea",{rows:2,value:noteDraft,placeholder:"Autre remarque à consigner…",
-                style:{width:"100%",border:"1px solid var(--nv-border)",borderRadius:6,padding:"10px 12px",fontSize:15,fontFamily:"inherit",resize:"none"},
-                onChange:function(e){setNoteDraft(e.target.value);}})
+            React.createElement("label",{style:{display:"flex",alignItems:"center",gap:10,cursor:"pointer",fontSize:14,color:pasDeDate?"var(--nv-alerte)":"var(--nv-text2)",fontWeight:pasDeDate?700:400}},
+              React.createElement("input",{
+                type:"checkbox",checked:pasDeDate,
+                style:{width:18,height:18,cursor:"pointer",accentColor:"var(--nv-alerte)"},
+                onChange:function(e){setPasDeDate(e.target.checked);if(e.target.checked)setDateResoDraft("");}
+              }),
+              "Pas de date fournie"+(pasDeDate?" — à noter dans le CR":"")
             )
           )
         ),
 
-        React.createElement("div",{className:"nv-actionbar",style:{marginTop:0}},
-          React.createElement("button",{className:"nv-actionbtn primary",onClick:function(){onRelance(t);}},"Relancer"),
-          !t.escalade&&React.createElement("button",{className:"nv-actionbtn danger",onClick:function(){onEscalade(t);}},"Escalader"),
-          React.createElement("button",{className:"nv-actionbtn success",onClick:function(){onClose(t);validerEtSuivant();}},"Clôturer")
-        ),
-        React.createElement("div",{style:{display:"flex",gap:8,marginTop:14}},
-          idx>0&&React.createElement("button",{className:"nv-actionbtn",style:{flex:"none",padding:"11px 16px"},onClick:precedent},"‹ Précédent"),
+        React.createElement("div",{style:{display:"flex",gap:8,padding:"4px 0 14px"}},
+          idx>0&&React.createElement("button",{className:"nv-actionbtn",style:{flex:"none",padding:"12px 18px"},onClick:function(){
+            var notes=Object.assign({},reuActive.notes||{});
+            if(noteDraft.trim())notes[t.id]=noteDraft.trim();
+            var decisions=Object.assign({},reuActive.decisions||{});
+            if(decisionDraft.trim())decisions[t.id]=decisionDraft.trim();
+            setReuActive(function(p){return{...p,notes:notes,decisions:decisions};});
+            setNoteDraft("");setDecisionDraft("");setDateResoDraft("");setPasDeDate(false);
+            setIdx(idx-1);
+          }},"‹ Précédent"),
           React.createElement("button",{className:"nv-actionbtn primary",style:{flex:1},onClick:validerEtSuivant},
-            idx<ticketsOuverts.length-1?"Suivant ›":"Terminer la réunion"
+            idx<ticketsOuverts.length-1?"Suivant ›":"Commenter la réunion"
           )
+        )
+      )
+    );
+  }
+
+  // ── PHASE 2b : COMMENTAIRE FINAL ──
+  if(phase==="commentaire_final"){
+    return React.createElement("div",{style:{height:"100%",display:"flex",flexDirection:"column"}},
+      React.createElement("div",{className:"nv-detail-header"},
+        React.createElement("div",{className:"nv-detail-nav"},
+          React.createElement("button",{className:"nv-detail-back",onClick:function(){setPhase("reunion");setIdx(ticketsOuverts.length-1);}},"‹ Retour"),
+          React.createElement("span",{style:{fontSize:12,fontWeight:600,color:"var(--nv-text2)"}})
+        ),
+        React.createElement("div",{className:"nv-detail-title"},"Commentaire de réunion"),
+        React.createElement("div",{style:{fontSize:12,color:"var(--nv-text2)",marginTop:4}},"Ce commentaire apparaîtra en dessous du titre dans le CR")
+      ),
+      React.createElement("div",{className:"nv-screen"},
+        React.createElement("div",{className:"nv-section",style:{marginTop:0}},
+          React.createElement("div",{className:"nv-section-hd"},"Commentaire général"),
+          React.createElement("div",{className:"nv-section-body"},
+            React.createElement("textarea",{
+              rows:6,
+              value:commentaireReunion,
+              placeholder:"Résumé de la réunion, points importants, ambiance générale, décisions prises…",
+              onChange:function(e){setCommentaireReunion(e.target.value);},
+              style:{width:"100%",border:"1px solid var(--nv-border)",borderRadius:6,padding:"10px 12px",fontSize:15,fontFamily:"inherit",resize:"none",lineHeight:1.6},
+              autoFocus:true
+            })
+          )
+        ),
+        React.createElement("div",{style:{padding:"0 0 14px"}},
+          React.createElement("button",{
+            className:"nv-actionbtn primary",
+            style:{width:"100%",padding:13},
+            onClick:terminerReunion
+          },"Terminer et générer le CR")
         )
       )
     );
@@ -1422,15 +1801,26 @@ function VueReunion({tickets,reunions,user,onSetEngagement,onSaveReunion,onAddHi
     var tenues=reuTickets.filter(function(t){return engagementStatut(t)==="tenu";});
     var attente=reuTickets.filter(function(t){return engagementStatut(t)==="attente";});
     var sansDate=reuTickets.filter(function(t){return engagementStatut(t)==="sansdate";});
+    var cmtReunion=reuActive.commentaire||commentaireReunion||"";
     return React.createElement("div",{style:{height:"100%",display:"flex",flexDirection:"column"}},
       React.createElement("div",{className:"nv-header"},
         React.createElement("div",{className:"nv-header-top"},
           React.createElement("button",{className:"nv-detail-back",style:{padding:0},onClick:function(){setPhase("liste");}},"‹ Réunions"),
-          React.createElement("span",{className:"nv-header-user"},"Compte-rendu")
+          React.createElement("div",{style:{display:"flex",gap:8}},
+            React.createElement("button",{
+              style:{background:"var(--nv-marine)",color:"#fff",border:"none",borderRadius:5,padding:"5px 11px",fontSize:12,fontWeight:700,cursor:"pointer"},
+              onClick:function(){window.print();}
+            },"⬇ PDF"),
+            React.createElement("button",{
+              style:{background:"#FEE",color:"var(--nv-alerte)",border:"1px solid #FCA5A5",borderRadius:5,padding:"5px 11px",fontSize:12,fontWeight:700,cursor:"pointer"},
+              onClick:function(){if(window.confirm("Supprimer cette réunion ?")){onDeleteReunion(reuActive.id);setPhase("liste");}}
+            },"✕ Supprimer")
+          )
         ),
-        React.createElement("div",{style:{color:"#fff"}},
-          React.createElement("div",{style:{fontSize:16,fontWeight:700}},fmtLong(reuActive.date)),
-          React.createElement("div",{style:{fontSize:12,color:"rgba(255,255,255,.6)",marginTop:2}},(reuActive.participants||"AAG, Gestionnaire")+" — "+reuTickets.length+" ticket"+(reuTickets.length>1?"s":"")+" passé"+(reuTickets.length>1?"s":"")+" en revue")
+        React.createElement("div",null,
+          React.createElement("div",{style:{fontSize:16,fontWeight:700,color:"var(--nv-text)"}},fmtLong(reuActive.date)),
+          React.createElement("div",{style:{fontSize:12,color:"var(--nv-text3)",marginTop:2}},(reuActive.participants||"AAG, Gestionnaire")+" — "+reuTickets.length+" ticket"+(reuTickets.length>1?"s":"")+" passé"+(reuTickets.length>1?"s":"")+" en revue"),
+          cmtReunion&&React.createElement("div",{style:{fontSize:13,color:"var(--nv-text2)",marginTop:8,lineHeight:1.6,fontStyle:"italic",borderTop:"1px solid var(--nv-border)",paddingTop:8}},cmtReunion)
         )
       ),
       React.createElement("div",{className:"nv-screen"},
@@ -1476,23 +1866,35 @@ function VueReunion({tickets,reunions,user,onSetEngagement,onSaveReunion,onAddHi
         ),
 
         React.createElement("div",{className:"nv-section"},
-          React.createElement("div",{className:"nv-section-hd"},"Détail des tickets"),
-          reuTickets.map(function(t){
+          React.createElement("div",{className:"nv-section-hd"},"Sujets abordés"),
+          reuTickets.map(function(t,i){
+            var note=(reuActive.notes&&reuActive.notes[t.id])||"";
+            var decision=(reuActive.decisions&&reuActive.decisions[t.id])||"";
+            var dateReso=(reuActive.dates_reso&&reuActive.dates_reso[t.id])||"";
+            var sansDt=dateReso==="SANS_DATE";
             var sk=statKey(t);
             var tagCls=sk==="Escalade"?"escalade":sk==="Clos"?"clos":"ouvert";
-            return React.createElement("div",{key:t.id,className:"nv-field-row",style:{display:"block",padding:"11px 14px"}},
-              React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:3}},
-                React.createElement("span",{style:{fontSize:14,fontWeight:700,color:"var(--nv-text)"}},t.description),
-                React.createElement("span",{className:"nv-tag "+tagCls},statLabel(t))
+            return React.createElement("div",{key:t.id,style:{borderBottom:"1px solid var(--nv-border)",padding:"14px"}},
+              React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:10,marginBottom:8}},
+                React.createElement("div",{style:{fontSize:14,fontWeight:700,color:"var(--nv-text)",lineHeight:1.4}},
+                  React.createElement("span",{style:{color:"var(--nv-text3)",fontWeight:600,marginRight:8,fontFamily:"ui-monospace,monospace",fontSize:12}},(i+1)+"."),
+                  t.description
+                ),
+                React.createElement("span",{className:"nv-tag "+tagCls,style:{flexShrink:0}},statLabel(t))
               ),
-              React.createElement("div",{style:{fontSize:11.5,color:"var(--nv-text3)"}},nbRelances(t)+" relance"+(nbRelances(t)>1?"s":"")+" · ouvert depuis "+daysSince(t.date_creation)+"j")
+              note&&React.createElement("div",{style:{fontSize:13.5,color:"var(--nv-text2)",lineHeight:1.7,background:"#F8F9FA",borderRadius:6,padding:"10px 12px",borderLeft:"3px solid var(--nv-border)",marginBottom:8}},note),
+              decision&&React.createElement("div",{style:{fontSize:13.5,fontWeight:600,color:"var(--nv-text)",lineHeight:1.6,background:"#F0F6FF",borderRadius:6,padding:"10px 12px",borderLeft:"3px solid var(--nv-marine)",marginBottom:6}},
+                React.createElement("span",{style:{fontSize:10.5,fontWeight:700,color:"var(--nv-marine)",textTransform:"uppercase",letterSpacing:".4px",display:"block",marginBottom:4}},"Décision prise"),
+                decision
+              ),
+              (dateReso||sansDt)&&React.createElement("div",{style:{fontSize:13,fontWeight:700,color:sansDt?"var(--nv-alerte)":"var(--nv-clos)"}},
+                sansDt?"⚠ Aucune date de résolution fournie":"✓ Résolution prévue le "+fmt(dateReso)
+              ),
+              !note&&!decision&&React.createElement("div",{style:{fontSize:12.5,color:"var(--nv-text3)",fontStyle:"italic"}},"Aucun commentaire ni décision")
             );
           })
-        ),
-
-        React.createElement("div",{style:{padding:"14px"}},
-          React.createElement("button",{className:"nv-actionbtn",style:{width:"100%",padding:13},onClick:function(){window.print();}},"Imprimer / Enregistrer en PDF")
         )
+
       )
     );
   }
@@ -1500,92 +1902,229 @@ function VueReunion({tickets,reunions,user,onSetEngagement,onSaveReunion,onAddHi
   return null;
 }
 
-function VueDG({tickets,histo}){
-  var total=tickets.length;
-  var clos=tickets.filter(function(t){return t.statut==="Clos";});
-  var ouverts=tickets.filter(function(t){return t.statut!=="Clos";});
-  var escalades=tickets.filter(function(t){return t.escalade;});
-  var alertes=ouverts.filter(function(t){return isAlerte(t)&&!t.escalade;});
-  var txClos=total>0?Math.round(clos.length/total*100):0;
-  var delais=clos.filter(function(t){return t.date_creation&&t.date_realisation;}).map(function(t){return Math.round((new Date(t.date_realisation+"T00:00:00")-new Date(t.date_creation+"T00:00:00"))/86400000);});
-  var delaisMoyen=delais.length>0?Math.round(delais.reduce(function(a,b){return a+b;},0)/delais.length):null;
-  var totalRelances=tickets.reduce(function(s,t){return s+nbRelances(t);},0);
-  var scoreReactivite=ouverts.length>0?Math.max(0,Math.round((1-(escalades.length/ouverts.length))*100)):100;
-  var scoreColor=scoreReactivite>=70?"var(--nv-clos)":scoreReactivite>=40?"var(--nv-ambre)":"var(--nv-alerte)";
-  var recentHisto=histo.slice().sort(function(a,b){return(b.date||"")>(a.date||"")?1:-1;}).slice(0,8);
+// ── TABLEAU DE BORD "PREUVE" ──
+function VuePreuve({tickets,reunions,histo}){
   var now=new Date().toLocaleDateString("fr-FR",{day:"numeric",month:"long",year:"numeric"});
+
+  var total=tickets.length;
+  var ouverts=tickets.filter(function(t){return statKey(t)==="Ouvert";});
+  var escalades=tickets.filter(function(t){return statKey(t)==="Escalade";});
+  var clos=tickets.filter(function(t){return statKey(t)==="Clos";});
+  var alertes=ouverts.filter(function(t){return isAlerte(t);});
+
+  // Calcul total relances
+  var totalRelances=tickets.reduce(function(s,t){return s+nbRelances(t);},0);
+
+  // Délai moyen ouverture → cloture
+  var delais=clos.filter(function(t){return t.date_creation&&t.date_realisation;}).map(function(t){
+    return Math.round((new Date(t.date_realisation+"T00:00:00")-new Date(t.date_creation+"T00:00:00"))/86400000);
+  });
+  var delaiMoyen=delais.length?Math.round(delais.reduce(function(a,b){return a+b;},0)/delais.length):null;
+
+  // Décisions non tenues = décision prise en réunion mais ticket pas clos et date dépassée
+  var decisionsSansDate=[];
+  var decisionsEnRetard=[];
+  reunions.forEach(function(r){
+    if(!r.decisions)return;
+    Object.keys(r.decisions).forEach(function(tid){
+      var t=tickets.find(function(x){return String(x.id)===String(tid);});
+      if(!t||t.statut==="Clos")return;
+      var dec=r.decisions[tid];
+      var dateReso=r.dates_reso&&r.dates_reso[tid];
+      if(dateReso==="SANS_DATE"){decisionsSansDate.push({ticket:t,decision:dec,reuDate:r.date});}
+      else if(dateReso&&daysSince(dateReso)>0){decisionsEnRetard.push({ticket:t,decision:dec,datePromise:dateReso,reuDate:r.date});}
+    });
+  });
+
+  // Tickets les plus anciens non clos
+
+  // Score gestionnaire
+  var decisionsTenues=reunions.reduce(function(acc,r){
+    if(!r.decisions)return acc;
+    return acc+Object.keys(r.decisions).filter(function(tid){
+      var t=tickets.find(function(x){return String(x.id)===String(tid);});
+      return t&&t.statut==="Clos";
+    }).length;
+  },0);
+  var totalDecisions=decisionsTenues+decisionsEnRetard.length+decisionsSansDate.length;
+
+  // Journal d'activité — construit depuis l'historique + les réunions
+  var journalActivite=[];
+  histo.forEach(function(h){
+    var t=tickets.find(function(x){return x.id===h.ticket_id;});
+    journalActivite.push({
+      type:h.type_evenement||"Commentaire",
+      label:h.detail||h.details||"",
+      date:h.date,
+      ticket:t?t.description:("#"+h.ticket_id)
+    });
+  });
+  reunions.forEach(function(r){
+    journalActivite.push({
+      type:"Réunion",
+      label:"Réunion du "+fmtLong(r.date)+(r.participants?" — "+r.participants:""),
+      date:r.date,
+      ticket:null
+    });
+  });
+  journalActivite.sort(function(a,b){return(b.date||"")>(a.date||"")?1:-1;});
 
   return React.createElement("div",{style:{height:"100%",display:"flex",flexDirection:"column"}},
     React.createElement("div",{className:"nv-header"},
       React.createElement("div",{className:"nv-header-top"},
-        React.createElement("span",{className:"nv-header-title"},"Rapport"),
+        React.createElement("span",{className:"nv-header-title"},"Bilan"),
         React.createElement("span",{className:"nv-header-user"},now)
+      ),
+      React.createElement("div",{className:"nv-stats-row"},
+        React.createElement("div",{className:"nv-stat",style:{borderTop:"3px solid var(--nv-alerte)"}},React.createElement("div",{className:"nv-stat-val",style:{color:"var(--nv-alerte)"}},ouverts.length+escalades.length),React.createElement("div",{className:"nv-stat-lbl"},"Non résolus")),
+        React.createElement("div",{className:"nv-stat",style:{borderTop:"3px solid var(--nv-ambre)"}},React.createElement("div",{className:"nv-stat-val",style:{color:"var(--nv-ambre)"}},totalRelances),React.createElement("div",{className:"nv-stat-lbl"},"Relances faites")),
+        React.createElement("div",{className:"nv-stat",style:{borderTop:"3px solid var(--nv-alerte)"}},React.createElement("div",{className:"nv-stat-val",style:{color:decisionsEnRetard.length>0?"var(--nv-alerte)":"var(--nv-text3)"}},decisionsEnRetard.length+decisionsSansDate.length),React.createElement("div",{className:"nv-stat-lbl"},"Décisions non tenues"))
       )
     ),
     React.createElement("div",{className:"nv-screen"},
 
-      React.createElement("div",{className:"nv-rep-headline"},
-        React.createElement("div",null,
-          React.createElement("div",{className:"nv-rep-num",style:{color:"var(--nv-clos)"}},txClos+"%"),
-          React.createElement("div",{style:{fontSize:11.5,color:"var(--nv-text3)",marginTop:3}},clos.length+"/"+total+" résolus")
-        ),
-        React.createElement("div",{style:{flex:1}},
-          React.createElement("div",{style:{height:6,background:"var(--nv-border)",borderRadius:99,overflow:"hidden"}},
-            React.createElement("div",{style:{height:6,width:txClos+"%",background:"var(--nv-clos)",borderRadius:99}})
-          ),
-          React.createElement("div",{style:{fontSize:11,color:"var(--nv-text3)",marginTop:6}},"Taux de résolution")
-        )
+      // Résumé chiffré
+      React.createElement("div",{className:"nv-section",style:{marginTop:0}},
+        React.createElement("div",{className:"nv-section-hd"},"Résumé"),
+        React.createElement("div",{className:"nv-field-row",style:{padding:"9px 14px"}},React.createElement("span",{className:"nv-field-lbl"},"Tickets total"),React.createElement("span",{className:"nv-field-val"},total)),
+        React.createElement("div",{className:"nv-field-row",style:{padding:"9px 14px"}},React.createElement("span",{className:"nv-field-lbl"},"Résolus"),React.createElement("span",{className:"nv-field-val",style:{color:"var(--nv-clos)"}},clos.length+" ("+Math.round(clos.length/Math.max(total,1)*100)+"%)")),
+        React.createElement("div",{className:"nv-field-row",style:{padding:"9px 14px"}},React.createElement("span",{className:"nv-field-lbl"},"Sans relance +14j"),React.createElement("span",{className:"nv-field-val",style:{color:alertes.length>0?"var(--nv-alerte)":"var(--nv-text3)"}},alertes.length)),
+        React.createElement("div",{className:"nv-field-row",style:{padding:"9px 14px"}},React.createElement("span",{className:"nv-field-lbl"},"Escaladés"),React.createElement("span",{className:"nv-field-val",style:{color:escalades.length>0?"var(--nv-alerte)":"var(--nv-text3)"}},escalades.length)),
+        delaiMoyen!==null&&React.createElement("div",{className:"nv-field-row",style:{padding:"9px 14px"}},React.createElement("span",{className:"nv-field-lbl"},"Délai moyen résolution"),React.createElement("span",{className:"nv-field-val"},delaiMoyen+" jours")),
+        React.createElement("div",{className:"nv-field-row",style:{padding:"9px 14px",borderBottom:"none"}},React.createElement("span",{className:"nv-field-lbl"},"Réunions tenues"),React.createElement("span",{className:"nv-field-val"},reunions.length))
       ),
 
-      React.createElement("div",{className:"nv-rep-grid"},
-        React.createElement("div",{className:"nv-rep-cell"},React.createElement("div",{className:"nv-rep-cell-val",style:{color:"var(--nv-ouvert)"}},ouverts.length),React.createElement("div",{className:"nv-rep-cell-lbl"},"En cours")),
-        React.createElement("div",{className:"nv-rep-cell"},React.createElement("div",{className:"nv-rep-cell-val",style:{color:"var(--nv-clos)"}},clos.length),React.createElement("div",{className:"nv-rep-cell-lbl"},"Résolus")),
-        React.createElement("div",{className:"nv-rep-cell"},React.createElement("div",{className:"nv-rep-cell-val",style:{color:alertes.length>0?"var(--nv-alerte)":"var(--nv-text3)"}},alertes.length),React.createElement("div",{className:"nv-rep-cell-lbl"},"Sans réponse +14j")),
-        React.createElement("div",{className:"nv-rep-cell"},React.createElement("div",{className:"nv-rep-cell-val"},totalRelances),React.createElement("div",{className:"nv-rep-cell-lbl"},"Relances faites"))
-      ),
-
-      React.createElement("div",{className:"nv-section"},
-        React.createElement("div",{className:"nv-section-hd"},"Réactivité gestionnaire"),
-        React.createElement("div",{className:"nv-section-body"},
-          React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"flex-end",marginBottom:8}},
-            React.createElement("div",{style:{fontSize:11.5,color:"var(--nv-text3)"}},"Basé sur les escalades"),
-            React.createElement("div",{style:{fontSize:24,fontWeight:700,color:scoreColor}},scoreReactivite+"%")
-          ),
-          React.createElement("div",{style:{height:6,background:"var(--nv-border)",borderRadius:99,overflow:"hidden"}},
-            React.createElement("div",{style:{height:6,width:scoreReactivite+"%",background:scoreColor,borderRadius:99}})
-          ),
-          delaisMoyen!==null&&React.createElement("div",{style:{fontSize:12.5,color:"var(--nv-text3)",marginTop:10}},"Délai moyen de résolution : ",React.createElement("strong",{style:{color:"var(--nv-text)"}},delaisMoyen+" jours"))
-        )
-      ),
-
-      escalades.length>0&&React.createElement("div",{className:"nv-section"},
-        React.createElement("div",{className:"nv-section-hd",style:{color:"var(--nv-alerte)"}},"Bloqués par la gestionnaire ("+escalades.length+")"),
-        escalades.map(function(t){
-          return React.createElement("div",{key:t.id,className:"nv-field-row",style:{display:"block",padding:"11px 14px"}},
-            React.createElement("div",{style:{fontSize:14,fontWeight:600,color:"var(--nv-text)",marginBottom:3}},t.description),
-            React.createElement("div",{style:{fontSize:11.5,color:"var(--nv-text3)"}},"Ouvert le "+fmt(t.date_creation)+" · "+nbRelances(t)+" relance"+(nbRelances(t)>1?"s":"")),
-            t.escalade_raison&&React.createElement("div",{style:{fontSize:12.5,color:"var(--nv-text2)",marginTop:4,fontStyle:"italic"}},'"'+t.escalade_raison+'"')
+      // Décisions non tenues
+      (decisionsEnRetard.length>0||decisionsSansDate.length>0)&&React.createElement("div",{className:"nv-section"},
+        React.createElement("div",{className:"nv-section-hd",style:{color:"var(--nv-alerte)"}},"Engagements non respectés"),
+        decisionsEnRetard.map(function(d,i){
+          return React.createElement("div",{key:i,style:{padding:"12px 14px",borderBottom:"1px solid var(--nv-border)",background:"#FEF9F9"}},
+            React.createElement("div",{style:{fontSize:12,color:"var(--nv-text3)",marginBottom:3}},"Réunion du "+fmt(d.reuDate)+" · "+daysSince(d.datePromise)+"j de retard"),
+            React.createElement("div",{style:{fontSize:14,fontWeight:700,color:"var(--nv-text)",marginBottom:4}},d.ticket.description),
+            React.createElement("div",{style:{fontSize:13,color:"var(--nv-text2)",fontStyle:"italic",marginBottom:4}},d.decision),
+            React.createElement("div",{style:{fontSize:12.5,fontWeight:700,color:"var(--nv-alerte)"}},"Date promise : "+fmt(d.datePromise)+" — non tenu")
+          );
+        }),
+        decisionsSansDate.map(function(d,i){
+          return React.createElement("div",{key:"sd"+i,style:{padding:"12px 14px",borderBottom:"1px solid var(--nv-border)",background:"#FFF8F5"}},
+            React.createElement("div",{style:{fontSize:12,color:"var(--nv-text3)",marginBottom:3}},"Réunion du "+fmt(d.reuDate)),
+            React.createElement("div",{style:{fontSize:14,fontWeight:700,color:"var(--nv-text)",marginBottom:4}},d.ticket.description),
+            React.createElement("div",{style:{fontSize:13,color:"var(--nv-text2)",fontStyle:"italic",marginBottom:4}},d.decision),
+            React.createElement("div",{style:{fontSize:12.5,fontWeight:700,color:"var(--nv-ambre)"}},"⚠ Aucune date de résolution fournie")
           );
         })
       ),
 
-      React.createElement("div",{className:"nv-section",style:{marginBottom:0}},
-        React.createElement("div",{className:"nv-section-hd"},"Actions récentes"),
-        recentHisto.length===0&&React.createElement("div",{className:"nv-section-body",style:{color:"var(--nv-text3)",fontSize:13}},"Aucune action"),
-        recentHisto.map(function(h,i){
-          var dotColor=h.type_evenement==="Escalade"?"var(--nv-alerte)":h.type_evenement==="Clôture"?"var(--nv-clos)":h.type_evenement==="Relance"?"var(--nv-ambre)":"var(--nv-ouvert)";
-          return React.createElement("div",{key:i,className:"nv-field-row",style:{display:"flex",alignItems:"flex-start",gap:9,padding:"10px 14px"}},
-            React.createElement("span",{style:{width:7,height:7,borderRadius:"50%",background:dotColor,marginTop:5,flexShrink:0}}),
+      // ── Score comparé Moi vs Gestionnaire ──
+      React.createElement("div",{className:"nv-section"},
+        React.createElement("div",{className:"nv-section-hd"},"Moi vs Gestionnaire"),
+        React.createElement("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",borderBottom:"1px solid var(--nv-border)"}},
+          React.createElement("div",{style:{padding:"10px 14px",background:"#F0F6FF",borderRight:"1px solid var(--nv-border)"}},
+            React.createElement("div",{style:{fontSize:10.5,fontWeight:700,color:"var(--nv-marine)",textTransform:"uppercase",letterSpacing:".4px",marginBottom:8}},"Mon action"),
+            [
+              ["Relances effectuées", totalRelances],
+              ["Réunions organisées", reunions.length],
+              ["Tickets ouverts", ouverts.length+escalades.length],
+              ["Tickets résolus", clos.length]
+            ].map(function(r,i){
+              return React.createElement("div",{key:i,style:{marginBottom:6}},
+                React.createElement("div",{style:{fontSize:11,color:"var(--nv-text3)"}},r[0]),
+                React.createElement("div",{style:{fontSize:18,fontWeight:800,color:"var(--nv-marine)"}},r[1])
+              );
+            })
+          ),
+          React.createElement("div",{style:{padding:"10px 14px",background:"#FEF9F9"}},
+            React.createElement("div",{style:{fontSize:10.5,fontWeight:700,color:"var(--nv-alerte)",textTransform:"uppercase",letterSpacing:".4px",marginBottom:8}},"Gestionnaire"),
+            [
+              ["Décisions tenues", decisionsTenues],
+              ["Sans date fournie", decisionsSansDate.length],
+              ["Promesses rompues", decisionsEnRetard.length],
+              ["Taux de réponse", totalDecisions>0?Math.round(decisionsTenues/totalDecisions*100)+"%":"—"]
+            ].map(function(r,i){
+              var isAlrt=i===1||i===2;
+              return React.createElement("div",{key:i,style:{marginBottom:6}},
+                React.createElement("div",{style:{fontSize:11,color:"var(--nv-text3)"}},r[0]),
+                React.createElement("div",{style:{fontSize:18,fontWeight:800,color:isAlrt&&r[1]>0?"var(--nv-alerte)":"var(--nv-text)"}},r[1])
+              );
+            })
+          )
+        )
+      ),
+
+      // ── Journal d'activité ──
+      React.createElement("div",{className:"nv-section"},
+        React.createElement("div",{className:"nv-section-hd"},"Journal d'activité"),
+        journalActivite.length===0&&React.createElement("div",{className:"nv-section-body",style:{color:"var(--nv-text3)",fontSize:13}},"Aucune activité enregistrée"),
+        journalActivite.slice(0,20).map(function(e,i){
+          var icon=e.type==="Relance"?"📅":e.type==="Clôture"?"✅":e.type==="Escalade"?"🚨":e.type==="Réunion"?"🗒️":e.type==="Ouverture"?"🆕":"💬";
+          var color=e.type==="Escalade"?"var(--nv-alerte)":e.type==="Clôture"?"var(--nv-clos)":e.type==="Relance"?"var(--nv-ambre)":"var(--nv-text)";
+          return React.createElement("div",{key:i,style:{display:"flex",gap:10,padding:"9px 14px",borderBottom:"1px solid var(--nv-border)",alignItems:"flex-start"}},
+            React.createElement("span",{style:{fontSize:16,flexShrink:0}},icon),
             React.createElement("div",{style:{flex:1}},
-              React.createElement("div",{style:{fontSize:13,fontWeight:500,lineHeight:1.4,color:"var(--nv-text)"}},h.detail||h.details||""),
-              React.createElement("div",{style:{fontSize:11,color:"var(--nv-text3)",marginTop:2}},fmt(h.date)+" · Ticket #"+h.ticket_id)
+              React.createElement("div",{style:{fontSize:13,fontWeight:600,color:color,lineHeight:1.4}},e.label),
+              React.createElement("div",{style:{fontSize:11,color:"var(--nv-text3)",marginTop:2}},fmt(e.date)+(e.ticket?" · "+e.ticket:""))
             )
           );
         })
+      ),
+
+      React.createElement("div",{style:{padding:"14px"},onClick:function(){window.print();}},
+        React.createElement("button",{className:"nv-actionbtn primary",style:{width:"100%",padding:13}},"⬇ Exporter en PDF")
       )
     )
   );
 }
+
+function VueSettings({prestataires,onSave}){
+  const [list,setList]=useState(prestataires||[]);
+  const [nouv,setNouv]=useState("");
+  function add(){
+    var v=nouv.trim();
+    if(!v||list.includes(v))return;
+    setList([...list,v]);
+    setNouv("");
+  }
+  function remove(p){setList(list.filter(function(x){return x!==p;}));}
+  return React.createElement("div",{style:{height:"100%",display:"flex",flexDirection:"column"}},
+    React.createElement("div",{className:"nv-header"},
+      React.createElement("div",{className:"nv-header-top"},
+        React.createElement("span",{className:"nv-header-title"},"Réglages"),
+        React.createElement("span",{className:"nv-header-user"})
+      )
+    ),
+    React.createElement("div",{className:"nv-screen"},
+      React.createElement("div",{className:"nv-section",style:{marginTop:0}},
+        React.createElement("div",{className:"nv-section-hd"},"Prestataires"),
+        list.map(function(p){
+          return React.createElement("div",{key:p,style:{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"11px 14px",borderBottom:"1px solid var(--nv-border)",background:"#fff"}},
+            React.createElement("span",{style:{fontSize:14,fontWeight:500,color:"var(--nv-text)"}},p),
+            React.createElement("button",{style:{background:"none",border:"none",color:"var(--nv-alerte)",fontSize:14,cursor:"pointer",fontWeight:700,padding:"4px 8px"},onClick:function(){remove(p);}},"✕")
+          );
+        }),
+        list.length===0&&React.createElement("div",{style:{padding:"14px",fontSize:13,color:"var(--nv-text3)",fontStyle:"italic"}},"Aucun prestataire configuré"),
+        React.createElement("div",{style:{display:"flex",gap:8,padding:"12px 14px",borderTop:"1px solid var(--nv-border)",background:"#FAFBFC"}},
+          React.createElement("input",{
+            style:{flex:1,border:"1px solid var(--nv-border)",borderRadius:5,padding:"9px 11px",fontSize:15,fontFamily:"inherit"},
+            value:nouv,placeholder:"Nom du prestataire…",
+            onChange:function(e){setNouv(e.target.value);},
+            onKeyDown:function(e){if(e.key==="Enter")add();}
+          }),
+          React.createElement("button",{
+            style:{background:"var(--nv-marine)",color:"#fff",border:"none",borderRadius:5,padding:"9px 16px",fontSize:14,fontWeight:700,cursor:"pointer"},
+            onClick:add
+          },"Ajouter")
+        )
+      ),
+      React.createElement("div",{style:{padding:"14px 0"}},
+        React.createElement("button",{
+          style:{width:"100%",padding:13,background:"var(--nv-marine)",color:"#fff",border:"none",borderRadius:5,fontSize:15,fontWeight:700,cursor:"pointer"},
+          onClick:function(){onSave(list);}
+        },"Enregistrer les réglages")
+      )
+    )
+  );
+}
+
 
 try{var root=ReactDOM.createRoot(document.getElementById("root"));root.render(React.createElement(App));}
 catch(e){document.getElementById("root").innerHTML="<div style='padding:40px;font-size:14px'><b style='color:red'>Erreur</b><br>"+e.message+"</div>";}
