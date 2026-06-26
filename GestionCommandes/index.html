@@ -1038,11 +1038,11 @@ function renderDashboard(total,attente,m){
     const today3=new Date(); today3.setHours(0,0,0,0);
     const urgentesResa = [
         ...state.data.filter(c=>(c.pris==='En attente'||c.pris==='En cours')&&c.type!=='commande'),
-        ...state.data.filter(c=>c.pris==='OUI'&&c.type!=='commande'&&[0,1].includes(daysLeft(c.date)))
+        ...state.data.filter(c=>c.pris==='OUI'&&c.type!=='commande'&&(daysLeft(c.date)??-1)>=0)
     ].sort((a,b)=>(parseDate(a.date)||new Date(0))-(parseDate(b.date)||new Date(0)));
     const urgentesCmd = [
         ...state.data.filter(c=>(c.pris==='En attente'||c.pris==='En cours')&&c.type==='commande'),
-        ...state.data.filter(c=>c.pris==='OUI'&&c.type==='commande'&&[0,1].includes(daysLeft(c.date)))
+        ...state.data.filter(c=>c.pris==='OUI'&&c.type==='commande'&&(daysLeft(c.date)??-1)>=0)
     ].sort((a,b)=>(parseDate(a.date)||new Date(0))-(parseDate(b.date)||new Date(0)));
 
     const totalMois = state.data.filter(c=>{
