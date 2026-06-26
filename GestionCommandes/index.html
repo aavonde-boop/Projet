@@ -1036,14 +1036,15 @@ function renderDashboard(total,attente,m){
     const today2=new Date(); today2.setHours(0,0,0,0);
 
     const today3=new Date(); today3.setHours(0,0,0,0);
-    const urgentesResa = [
-        ...state.data.filter(c=>(c.pris==='En attente'||c.pris==='En cours')&&c.type!=='commande'),
-        ...state.data.filter(c=>c.pris==='OUI'&&c.type!=='commande'&&(daysLeft(c.date)??-1)>=0)
-    ].sort((a,b)=>(parseDate(a.date)||new Date(0))-(parseDate(b.date)||new Date(0)));
-    const urgentesCmd = [
-        ...state.data.filter(c=>(c.pris==='En attente'||c.pris==='En cours')&&c.type==='commande'),
-        ...state.data.filter(c=>c.pris==='OUI'&&c.type==='commande'&&(daysLeft(c.date)??-1)>=0)
-    ].sort((a,b)=>(parseDate(a.date)||new Date(0))-(parseDate(b.date)||new Date(0)));
+    // Section 1 : En attente de validation (toutes)
+    const enAttente = state.data
+        .filter(c=>c.pris==='En attente'||c.pris==='En cours')
+        .sort((a,b)=>(parseDate(a.date)||new Date(0))-(parseDate(b.date)||new Date(0)));
+
+    // Section 2 : Validées à venir (date >= aujourd'hui)
+    const aVenir = state.data
+        .filter(c=>c.pris==='OUI'&&(daysLeft(c.date)??-1)>=0)
+        .sort((a,b)=>(parseDate(a.date)||new Date(0))-(parseDate(b.date)||new Date(0)));
 
     const totalMois = state.data.filter(c=>{
         if(c.pris!=='OUI') return false;
@@ -1051,7 +1052,7 @@ function renderDashboard(total,attente,m){
         return d && d.getMonth()===today2.getMonth() && d.getFullYear()===today2.getFullYear();
     }).reduce((a,b)=>a+(b.prix||0),0);
 
-    const nbAttente = state.data.filter(c=>c.pris==="En attente"||c.pris==="En cours").length;
+    const nbAttente = enAttente.length;
 
     function makeIcsSingle(c){
         if(!c.date) return null;
@@ -1070,35 +1071,33 @@ function renderDashboard(total,attente,m){
         return ['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//GestionCommandes//FR','CALSCALE:GREGORIAN','METHOD:PUBLISH',evt,'END:VCALENDAR'].join('\r\n');
     }
 
-    function urgCard(c){
-        const j=daysLeft(c.date); const badge=j!==null?badgeColor(j):null;
-        const isAttente=c.pris==='En attente';
+    function dashCard(c, showValidateBtn){
+        const j=daysLeft(c.date); const badge=j!==null&&j<=5?badgeColor(j):null;
         const icsData=makeIcsSingle(c);
-        return `<div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #f0eeea;">
+        const typeIcon=c.type==='taxi'?'🚕':c.type==='repas'?'🍽':'📦';
+        return `<div style="display:flex;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid #f0eeea;">
             <div data-open-detail='${JSON.stringify(c).replace(/'/g,"&apos;")}' style="display:flex;align-items:center;gap:10px;flex:1;min-width:0;cursor:pointer;">
                 ${avatar(c.demandeur,32)}
                 <div style="flex:1;min-width:0;">
-                    <div style="font-weight:600;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${c.desc||'—'}</div>
-                    <div style="font-size:11px;color:#9e9a93;">${c.pourQui||c.demandeur} · ${$d(c.date)}</div>
+                    <div style="font-weight:600;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${typeIcon} ${c.desc||'—'}</div>
+                    <div style="font-size:11px;color:#9e9a93;">${c.demandeur}${c.pourQui?' · '+c.pourQui:''} · ${$d(c.date)}${c.heure?' · '+c.heure:''}</div>
                 </div>
             </div>
             <div style="display:flex;gap:5px;align-items:center;flex-shrink:0;">
                 ${badge?`<span style="background:${badge.bg};border:1px solid ${badge.border};color:${badge.color};border-radius:20px;padding:3px 8px;font-size:11px;font-weight:700;">${badge.label}</span>`:''}
-                ${icsData?`<button data-ics-single="${encodeURIComponent(icsData).replace(/"/g,'&quot;')}" data-ics-name="${(c.desc||'commande').replace(/[^a-z0-9]/gi,'_')}" title="Ajouter au calendrier" style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:4px 9px;font-size:12px;cursor:pointer;color:#1d4ed8;font-weight:700;">📆</button>`:''}
-                ${isAttente?`<button data-set-status='${JSON.stringify({id:c.id,status:"OUI"})}' style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:4px 9px;font-size:12px;cursor:pointer;color:#15803d;font-weight:700;">✓</button>
-                <button data-set-status='${JSON.stringify({id:c.id,status:"Annulé"})}' style="background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:4px 9px;font-size:12px;cursor:pointer;color:#b91c1c;font-weight:700;">✕</button>`:''}
+                ${icsData?`<button data-ics-single="${encodeURIComponent(icsData).replace(/"/g,'&quot;')}" data-ics-name="${(c.desc||'commande').replace(/[^a-z0-9]/gi,'_')}" title="Ajouter au calendrier" style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:4px 9px;font-size:13px;cursor:pointer;">📆</button>`:''}
+                ${showValidateBtn?`<button data-set-status='${JSON.stringify({id:c.id,status:"OUI"})}' style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:4px 9px;font-size:12px;cursor:pointer;color:#15803d;font-weight:700;" title="Valider">✓</button>
+                <button data-set-status='${JSON.stringify({id:c.id,status:"Annulé"})}' style="background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:4px 9px;font-size:12px;cursor:pointer;color:#b91c1c;font-weight:700;" title="Annuler">✕</button>`:''}
             </div>
         </div>`;
     }
-
-    const urgentes = [...urgentesResa, ...urgentesCmd];
 
     return `<div>
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
         <div style="font-family:'DM Serif Display',serif;font-size:${m?'18px':'22px'};">📊 Dashboard</div>
     </div>
 
-    <!-- 2 chiffres clés -->
+    <!-- Chiffres clés -->
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px;">
         <div class="stat-card" style="text-align:center;">
             <div style="font-size:11px;color:#9e9a93;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">En attente</div>
@@ -1112,15 +1111,26 @@ function renderDashboard(total,attente,m){
         </div>
     </div>
 
-    <!-- Urgences -->
-    ${urgentes.length?`<div class="stat-card">
-        <div style="font-weight:700;font-size:14px;color:#f59e0b;margin-bottom:14px;">🔔 Urgent — À traiter & Aujourd'hui/Demain <span style="background:#f59e0b;color:#fff;border-radius:20px;padding:1px 8px;font-size:11px;margin-left:4px;">${urgentes.length}</span></div>
-        ${urgentes.map(urgCard).join('')}
-        <button data-admin-tab="activite" style="display:block;width:100%;text-align:center;background:none;border:none;color:#9e9a93;cursor:pointer;font-size:12px;padding-top:10px;margin-top:4px;">Voir tout →</button>
-    </div>`:`<div class="stat-card" style="text-align:center;padding:32px;color:#9e9a93;">
-        <div style="font-size:36px;margin-bottom:8px;">✓</div>
-        <div style="font-size:14px;">Tout est à jour !</div>
-    </div>`}
+    <!-- Section 1 : En attente de validation -->
+    <div class="stat-card" style="margin-bottom:16px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+            <div style="font-weight:700;font-size:14px;color:#b45309;">⏳ En attente de validation${enAttente.length?` <span style="background:#f59e0b;color:#fff;border-radius:20px;padding:1px 8px;font-size:11px;margin-left:4px;">${enAttente.length}</span>`:''}</div>
+        </div>
+        ${enAttente.length
+            ? enAttente.map(c=>dashCard(c,true)).join('')
+            : `<div style="text-align:center;color:#9e9a93;padding:16px 0;font-size:13px;">✓ Aucune demande en attente</div>`}
+    </div>
+
+    <!-- Section 2 : Validées à venir -->
+    <div class="stat-card">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+            <div style="font-weight:700;font-size:14px;color:#1d4ed8;">✅ À venir — validées${aVenir.length?` <span style="background:#3b82f6;color:#fff;border-radius:20px;padding:1px 8px;font-size:11px;margin-left:4px;">${aVenir.length}</span>`:''}</div>
+        </div>
+        ${aVenir.length
+            ? aVenir.map(c=>dashCard(c,false)).join('')
+            : `<div style="text-align:center;color:#9e9a93;padding:16px 0;font-size:13px;">Aucune commande à venir</div>`}
+        <button data-admin-tab="activite" style="display:block;width:100%;text-align:center;background:none;border:none;color:#9e9a93;cursor:pointer;font-size:12px;padding-top:10px;margin-top:4px;">Voir tout l'historique →</button>
+    </div>
     </div>`;
 }
 
