@@ -6,7 +6,7 @@
     <title>Gestion des commandes — 2026</title>
     <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
-    <script>emailjs.init("n04JbAxmU3mf9UuXz");</script>
+    <script>emailjs.init("n04JbAxmU3mf9UuXz"); /* Public Key OK */</script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
         :root {
@@ -185,7 +185,7 @@ const DEFAULT_EMAILS = {
 };
 
 // EmailJS config
-const EJS_SERVICE  = "service_i09ljga";
+const EJS_SERVICE  = "service_assistantes";
 const EJS_TEMPLATE = "template_xz4on7w";
 // Génération code unique REP/TAX/CMD-XXXX
 function genCode(type){
@@ -203,7 +203,7 @@ const YOOZ_MAP = {
     "La Boite":  "AAF-PO-26-051558",
 };
 
-const EJS_TEMPLATE_COPIE = "template_xz4on7w"; // ← Remplace par l'ID de ton template "copie" dans EmailJS
+const EJS_TEMPLATE_COPIE = "template_xz4on7w";
 
 // Settings: localStorage comme cache + Supabase comme source principale
 const SB_URL  = 'https://yvlcmdcnjeoiffrlawti.supabase.co';
@@ -862,7 +862,7 @@ function renderAdminView(m){
             <span style="font-family:'DM Serif Display',serif;font-size:16px;">Administration</span>
         </div>
         <nav style="display:flex;gap:4px;flex-wrap:wrap;">
-            ${[["dashboard","📊","Dashboard"],["activite","📋","Activité"],["calendrier","📅","Calendrier"],["settings","⚙️","Réglages"]].map(([tab,icon,label])=>`
+            ${[["dashboard","📊","Dashboard"],["activite","📋","Activité"],["settings","⚙️","Réglages"]].map(([tab,icon,label])=>`
                 <button data-admin-tab="${tab}" style="display:flex;align-items:center;gap:6px;padding:7px 14px;border-radius:30px;border:none;cursor:pointer;font-size:13px;font-weight:500;background:${state.adminTab===tab?'var(--ink)':'transparent'};color:${state.adminTab===tab?'#fff':'#5a5550'};transition:all 0.15s;white-space:nowrap;">
                     ${icon} ${label}${tab==='activite'&&attente.length?` <span style="background:#f59e0b;color:#fff;border-radius:50%;width:16px;height:16px;font-size:10px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;margin-left:2px;">${attente.length}</span>`:''}
                 </button>`).join('')}
@@ -884,7 +884,7 @@ function renderAdminView(m){
     let main='';
     if(state.adminTab==='settings')        main=renderSettings();
     else if(state.adminTab==='activite')     main=renderActivite(m);
-    else if(state.adminTab==='calendrier')   main=renderCalendrier(m);
+
     else main=renderDashboard(total,attente,m);
 
     if(m) return `
@@ -892,7 +892,7 @@ function renderAdminView(m){
         <div style="display:flex;align-items:center;justify-content:space-between;">
             <div>
                 <div style="font-size:10px;font-weight:600;letter-spacing:2px;color:rgba(255,255,255,.35);margin-bottom:4px;">ADMIN</div>
-                <div style="font-family:'DM Serif Display',serif;font-size:19px;color:#fff;">${{dashboard:"📊 Dashboard",activite:"📋 Activité",calendrier:"📅 Calendrier",settings:"⚙️ Réglages"}[state.adminTab]}</div>
+                <div style="font-family:'DM Serif Display',serif;font-size:19px;color:#fff;">${{dashboard:"📊 Dashboard",activite:"📋 Activité",settings:"⚙️ Réglages"}[state.adminTab]}</div>
             </div>
             <button data-admin-logout style="background:rgba(255,255,255,.1);border:none;border-radius:10px;padding:8px 13px;color:rgba(255,255,255,.7);cursor:pointer;font-size:13px;font-weight:600;">🔓</button>
         </div>
@@ -908,7 +908,7 @@ function renderAdminView(m){
     </div>
     <nav class="mobile-nav"><div class="mobile-nav-items">
         <button class="mobile-nav-btn" data-back-home><span class="nav-icon">🏠</span><span>Accueil</span></button>
-        ${[["dashboard","📊","Dash"],["activite","📋","Activité"],["calendrier","📅","Cal."],["settings","⚙️","Régl."]].map(([tab,icon,label])=>`
+        ${[["dashboard","📊","Dash"],["activite","📋","Activité"],["settings","⚙️","Régl."]].map(([tab,icon,label])=>`
             <button class="mobile-nav-btn ${state.adminTab===tab?'active':''}" data-admin-tab="${tab}">
                 <span class="nav-icon">${icon}</span><span>${label}</span><span class="nav-dot"></span>
             </button>`).join('')}
@@ -1001,9 +1001,10 @@ function renderDetail(d,m){
     ${editForm}
 
     <div style="margin-bottom:14px;">
-        <div class="form-label" style="margin-bottom:10px;">Changer le statut</div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;">
-            ${["OUI","Reçu","En cours","En attente","Annulé"].map(s=>`<button data-set-status='${JSON.stringify({id:d.id,status:s})}' style="padding:8px 16px;border-radius:20px;font-size:13px;border:1.5px solid ${d.pris===s?'var(--ink)':'var(--border)'};background:${d.pris===s?'var(--ink)':'#fff'};color:${d.pris===s?'#fff':'#5a5550'};cursor:pointer;">${ST[s]?.label||s}</button>`).join('')}
+        <div class="form-label" style="margin-bottom:10px;">Statut de la commande</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+            <button data-set-status='${JSON.stringify({id:d.id,status:"En cours"})}' style="padding:8px 16px;border-radius:20px;font-size:13px;border:1.5px solid ${d.pris==='En cours'?'var(--ink)':'var(--border)'};background:${d.pris==='En cours'?'var(--ink)':'#fff'};color:${d.pris==='En cours'?'#fff':'#5a5550'};cursor:pointer;">${ST['En cours'].label}</button>
+            <button data-set-status='${JSON.stringify({id:d.id,status:"OUI"})}' style="padding:9px 18px;border-radius:20px;font-size:13px;font-weight:700;border:1.5px solid ${d.pris==='OUI'?'var(--ink)':'#22c55e'};background:${d.pris==='OUI'?'var(--ink)':'#f0fdf4'};color:${d.pris==='OUI'?'#fff':'#15803d'};cursor:pointer;">✅ Commande validée</button>
         </div>
     </div>
     ${state.confirmDelete===d.id?`
@@ -1018,7 +1019,7 @@ function renderDetail(d,m){
     <button data-delete-item="${d.id}" class="btn-danger" style="width:100%;padding:12px;border-radius:14px;">🗑 Supprimer la commande</button>`}
     ${m?'</div>':''}`;
 
-    if(m) return `<div class="detail-view">${inner}</div>${state.toast?`<div class="toast">${state.toast}</div>`:''}<nav class="mobile-nav"><div class="mobile-nav-items"><button class="mobile-nav-btn" data-back-home><span class="nav-icon">🏠</span><span>Accueil</span></button>${[["dashboard","📊","Dash"],["activite","📋","Activité"],["calendrier","📅","Cal."],["settings","⚙️","Régl."]].map(([tab,icon,label])=>`<button class="mobile-nav-btn ${state.adminTab===tab?'active':''}" data-admin-tab="${tab}"><span class="nav-icon">${icon}</span><span>${label}</span><span class="nav-dot"></span></button>`).join('')}</div></nav>`;
+    if(m) return `<div class="detail-view">${inner}</div>${state.toast?`<div class="toast">${state.toast}</div>`:''}<nav class="mobile-nav"><div class="mobile-nav-items"><button class="mobile-nav-btn" data-back-home><span class="nav-icon">🏠</span><span>Accueil</span></button>${[["dashboard","📊","Dash"],["activite","📋","Activité"],["settings","⚙️","Régl."]].map(([tab,icon,label])=>`<button class="mobile-nav-btn ${state.adminTab===tab?'active':''}" data-admin-tab="${tab}"><span class="nav-icon">${icon}</span><span>${label}</span><span class="nav-dot"></span></button>`).join('')}</div></nav>`;
     return inner;
 }
 
@@ -1047,17 +1048,38 @@ function renderDashboard(total,attente,m){
 
     const nbAttente = state.data.filter(c=>c.pris==="En attente"||c.pris==="En cours").length;
 
+    function makeIcsSingle(c){
+        if(!c.date) return null;
+        let yr,mo,dy;
+        if(c.date.includes('-')){ [yr,mo,dy]=c.date.split('-').map(Number); }
+        else { const p=c.date.split('/'); dy=+p[0];mo=+p[1];yr=+p[2]; }
+        const pad=n=>String(n).padStart(2,'0');
+        const uid=`${c.id}@gestioncommandes`;
+        const desc=(c.desc||'').replace(/,/g,'').replace(/[\r\n]+/g,' ');
+        const loc=(c.lieu||c.depart||'').replace(/,/g,'');
+        let startDt,endDt;
+        const hm=(c.heure||'').match(/(\d{1,2})h(\d{2})/);
+        if(hm){ const hh=parseInt(hm[1]),mm=parseInt(hm[2]); startDt=`${yr}${pad(mo)}${pad(dy)}T${pad(hh)}${pad(mm)}00`; const tot=hh*60+mm+30; endDt=`${yr}${pad(mo)}${pad(dy)}T${pad(Math.floor(tot/60)%24)}${pad(tot%60)}00`; }
+        else { startDt=`${yr}${pad(mo)}${pad(dy)}T120000`; endDt=`${yr}${pad(mo)}${pad(dy)}T123000`; }
+        const evt=['BEGIN:VEVENT',`UID:${uid}`,`DTSTART:${startDt}`,`DTEND:${endDt}`,`SUMMARY:${c.type==='taxi'?'🚕':c.type==='repas'?'🍽':'📦'} ${desc}`,`DESCRIPTION:${c.demandeur||''} — ${c.pourQui||''} — ${c.presta||''}${c.tel?' — 📱 '+c.tel:''}`,loc?`LOCATION:${loc}`:'','END:VEVENT'].filter(Boolean).join('\r\n');
+        return ['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//GestionCommandes//FR','CALSCALE:GREGORIAN','METHOD:PUBLISH',evt,'END:VCALENDAR'].join('\r\n');
+    }
+
     function urgCard(c){
         const j=daysLeft(c.date); const badge=j!==null?badgeColor(j):null;
         const isAttente=c.pris==='En attente';
-        return `<div data-open-detail='${JSON.stringify(c).replace(/'/g,"&apos;")}' style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #f0eeea;cursor:pointer;">
-            ${avatar(c.demandeur,32)}
-            <div style="flex:1;min-width:0;">
-                <div style="font-weight:600;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${c.desc||'—'}</div>
-                <div style="font-size:11px;color:#9e9a93;">${c.pourQui||c.demandeur} · ${$d(c.date)}</div>
+        const icsData=makeIcsSingle(c);
+        return `<div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #f0eeea;">
+            <div data-open-detail='${JSON.stringify(c).replace(/'/g,"&apos;")}' style="display:flex;align-items:center;gap:10px;flex:1;min-width:0;cursor:pointer;">
+                ${avatar(c.demandeur,32)}
+                <div style="flex:1;min-width:0;">
+                    <div style="font-weight:600;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${c.desc||'—'}</div>
+                    <div style="font-size:11px;color:#9e9a93;">${c.pourQui||c.demandeur} · ${$d(c.date)}</div>
+                </div>
             </div>
             <div style="display:flex;gap:5px;align-items:center;flex-shrink:0;">
                 ${badge?`<span style="background:${badge.bg};border:1px solid ${badge.border};color:${badge.color};border-radius:20px;padding:3px 8px;font-size:11px;font-weight:700;">${badge.label}</span>`:''}
+                ${icsData?`<button data-ics-single="${encodeURIComponent(icsData).replace(/"/g,'&quot;')}" data-ics-name="${(c.desc||'commande').replace(/[^a-z0-9]/gi,'_')}" title="Ajouter au calendrier" style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:4px 9px;font-size:12px;cursor:pointer;color:#1d4ed8;font-weight:700;">📆</button>`:''}
                 ${isAttente?`<button data-set-status='${JSON.stringify({id:c.id,status:"OUI"})}' style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:4px 9px;font-size:12px;cursor:pointer;color:#15803d;font-weight:700;">✓</button>
                 <button data-set-status='${JSON.stringify({id:c.id,status:"Annulé"})}' style="background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:4px 9px;font-size:12px;cursor:pointer;color:#b91c1c;font-weight:700;">✕</button>`:''}
             </div>
@@ -1381,150 +1403,6 @@ function renderCommandes(m){
 }
 
 
-function renderCalendrier(m){
-    const now = new Date();
-    const calDate = state.calMonth ? new Date(state.calMonth) : new Date(now.getFullYear(), now.getMonth(), 1);
-    const year = calDate.getFullYear();
-    const month = calDate.getMonth();
-    const MONTHS_FULL = ["Janvier","Février","Mars","Avril","Mai","Juin","Juillet","Août","Septembre","Octobre","Novembre","Décembre"];
-    const DAYS = ["Lun","Mar","Mer","Jeu","Ven"]; // Sam/Dim retirés
-
-    const firstDay = new Date(year, month, 1);
-    // startDow : 0=lun, 4=ven, sam(5) et dim(6) ignorés
-    const rawDow = (firstDay.getDay()+6)%7; // lundi=0, sam=5, dim=6
-    const startDow = Math.min(rawDow, 5); // si commence sam/dim → col 0
-    const daysInMonth = new Date(year, month+1, 0).getDate();
-
-    // Indexer les commandes par jour
-    const byDay = {};
-    state.data.forEach(c => {
-        if(!c.date) return;
-        let p;
-        if(c.date.includes('-')) { const x=c.date.split('-'); p=[parseInt(x[2]),parseInt(x[1])-1,parseInt(x[0])]; }
-        else { const x=c.date.split('/'); p=[parseInt(x[0]),parseInt(x[1])-1,parseInt(x[2])]; }
-        if(p[1]===month && p[2]===year) {
-            if(!byDay[p[0]]) byDay[p[0]]=[];
-            byDay[p[0]].push(c);
-        }
-    });
-
-    const typeColor = t => t==='taxi'?'#3b82f6':t==='repas'?'#f97316':'#8b5cf6';
-    const typeIcon  = t => t==='taxi'?'🚕':t==='repas'?'🍽':'📦';
-
-    // Construire les cellules (sem lun→ven uniquement)
-    const colW = '20%'; // 5 colonnes égales
-    let rows = '';
-    let col = rawDow > 4 ? 0 : rawDow; // si commence week-end, on démarre lundi
-    let row = [];
-
-    // Remplir les cases vides avant le 1er
-    for(let i=0; i<col; i++) row.push(`<td style="width:${colW};border:1px solid #e4e7ec;background:#f8fafc;"></td>`);
-
-    for(let day=1; day<=daysInMonth; day++) {
-        const dow = (new Date(year,month,day).getDay()+6)%7;
-        if(dow>=5) continue; // sauter sam/dim
-
-        const isToday = day===now.getDate()&&month===now.getMonth()&&year===now.getFullYear();
-        const events = byDay[day]||[];
-        const hasUrgent = events.some(c=>c.pris==='En attente');
-
-        row.push(`<td style="width:${colW};border:1px solid #e4e7ec;vertical-align:top;padding:6px;min-height:${m?'60px':'90px'};background:${isToday?'#eff6ff':'#fff'};${hasUrgent?'border-left:3px solid #f59e0b;':''}">
-            <div style="font-size:12px;font-weight:${isToday?'700':'500'};color:${isToday?'#fff':'#1a1f36'};margin-bottom:4px;${isToday?'background:#3b82f6;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;':''}">${day}</div>
-            ${events.slice(0,m?1:3).map(c=>{
-                const isAttente=c.pris==='En attente'||c.pris==='En cours';
-                const bg=isAttente?'#fffbeb':`${typeColor(c.type)}18`;
-                const border=isAttente?'#f59e0b':typeColor(c.type);
-                const col=isAttente?'#b45309':typeColor(c.type);
-                const prefix=isAttente?'⏳ ':'';
-                return `<div data-open-detail='${JSON.stringify(c).replace(/'/g,"&apos;")}' style="font-size:10px;padding:2px 5px;border-radius:4px;margin-bottom:2px;background:${bg};color:${col};font-weight:600;cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;border-left:2px solid ${border};" title="${c.pris} — ${c.desc||''}">${prefix}${typeIcon(c.type)} ${c.desc||'—'}</div>`;
-            }).join('')}
-            ${events.length>(m?1:3)?`<div style="font-size:9px;color:#94a3b8;padding-left:4px;">+${events.length-(m?1:3)}</div>`:''}
-        </td>`);
-
-        col++;
-        if(col>=5) { // fin de semaine → nouvelle ligne
-            rows += `<tr>${row.join('')}</tr>`;
-            row = [];
-            col = 0;
-        }
-    }
-    // Compléter la dernière ligne
-    if(row.length>0) {
-        while(row.length<5) row.push(`<td style="width:${colW};border:1px solid #e4e7ec;background:#f8fafc;"></td>`);
-        rows += `<tr>${row.join('')}</tr>`;
-    }
-
-    // Générer les événements ICS pour export Outlook (sans doublons par id)
-    const icsEvents = [...new Map(state.data.map(c=>[c.id,c])).values()].map(c=>{
-        if(!c.date) return '';
-        let yr,mo,dy;
-        if(c.date.includes('-')){ [yr,mo,dy]=c.date.split('-').map(Number); }
-        else { const p=c.date.split('/'); dy=+p[0];mo=+p[1];yr=+p[2]; }
-        const pad=n=>String(n).padStart(2,'0');
-        const uid=`${c.id}@gestioncommandes`;
-        const desc=(c.desc||'').replace(/,/g,'').replace(/[\r\n]+/g,' ');
-        const loc=(c.lieu||c.depart||'').replace(/,/g,'');
-        // Calculer heure début depuis c.heure (ex: "09h30")
-        let startDt, endDt;
-        const heureMatch=(c.heure||'').match(/(\d{1,2})h(\d{2})/);
-        if(heureMatch){
-            const hh=parseInt(heureMatch[1]);
-            const mm=parseInt(heureMatch[2]);
-            startDt=`${yr}${pad(mo)}${pad(dy)}T${pad(hh)}${pad(mm)}00`;
-            // Fin = début + 30 min
-            const totalMin=hh*60+mm+30;
-            const endH=Math.floor(totalMin/60)%24;
-            const endM=totalMin%60;
-            endDt=`${yr}${pad(mo)}${pad(dy)}T${pad(endH)}${pad(endM)}00`;
-        } else {
-            // Pas d'heure → 12h00 par défaut
-            startDt=`${yr}${pad(mo)}${pad(dy)}T120000`;
-            endDt=`${yr}${pad(mo)}${pad(dy)}T123000`;
-        }
-        const isAllDay=false;
-        return [
-            'BEGIN:VEVENT',
-            `UID:${uid}`,
-            isAllDay?`DTSTART;VALUE=DATE:${startDt}`:`DTSTART:${startDt}`,
-            isAllDay?`DTEND;VALUE=DATE:${endDt}`:`DTEND:${endDt}`,
-            `SUMMARY:${c.type==='taxi'?'🚕':c.type==='repas'?'🍽':'📦'} ${desc}`,
-            `DESCRIPTION:${c.demandeur||''} — ${c.pourQui||''} — ${c.presta||''}${c.tel?' — 📱 '+c.tel:''}`,
-            loc?`LOCATION:${loc}`:'',
-            'END:VEVENT'
-        ].filter(Boolean).join('\r\n');
-    }).filter(Boolean).join('\r\n');
-
-    const icsContent = ['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//GestionCommandes//FR','CALSCALE:GREGORIAN','METHOD:PUBLISH',icsEvents,'END:VCALENDAR'].join('\r\n');
-
-    return `<div>
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:10px;">
-        <div style="font-family:'DM Serif Display',serif;font-size:${m?'18px':'22px'};">📅 Calendrier</div>
-        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-            <button data-cal-prev style="background:#f1f5f9;border:none;border-radius:30px;padding:7px 14px;cursor:pointer;font-size:13px;font-weight:600;">←</button>
-            <span style="font-weight:700;font-size:${m?'13px':'15px'};min-width:140px;text-align:center;">${MONTHS_FULL[month]} ${year}</span>
-            <button data-cal-next style="background:#f1f5f9;border:none;border-radius:30px;padding:7px 14px;cursor:pointer;font-size:13px;font-weight:600;">→</button>
-            <button data-cal-today style="background:var(--ink);color:#fff;border:none;border-radius:30px;padding:7px 14px;cursor:pointer;font-size:13px;font-weight:600;">Aujourd'hui</button>
-            <button id="exportICS" style="background:#0078d4;color:#fff;border:none;border-radius:30px;padding:7px 14px;cursor:pointer;font-size:13px;font-weight:600;" data-ics="${encodeURIComponent(icsContent)}">📆 Export Outlook</button>
-        </div>
-    </div>
-
-    <div style="background:#fff;border-radius:20px;border:1px solid #e4e7ec;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.04);">
-        <table style="width:100%;border-collapse:collapse;table-layout:fixed;">
-            <thead>
-                <tr style="background:#f8fafc;">
-                    ${DAYS.map(d=>`<th style="width:${colW};padding:12px 6px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:#64748b;border-bottom:2px solid #e4e7ec;text-align:center;">${d}</th>`).join('')}
-                </tr>
-            </thead>
-            <tbody>${rows}</tbody>
-        </table>
-    </div>
-
-    <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:14px;">
-        ${[['🍽','Repas','#f97316'],['🚕','Taxi','#3b82f6'],['📦','Commande','#8b5cf6']].map(([ic,l,c])=>`<div style="display:flex;align-items:center;gap:5px;font-size:12px;color:#64748b;"><div style="width:12px;height:12px;border-radius:3px;background:${c};"></div>${ic} ${l}</div>`).join('')}
-        <div style="display:flex;align-items:center;gap:5px;font-size:12px;color:#64748b;"><div style="width:3px;height:12px;border-radius:1px;background:#f59e0b;"></div>En attente</div>
-    </div>
-    </div>`;
-}
 
 
 function renderCorbeille(m){
@@ -2116,34 +1994,22 @@ function attachEvents(){
         };
     });
 
-    // Export ICS Outlook
-    document.getElementById('exportICS')?.addEventListener('click', function(){
-        const ics = decodeURIComponent(this.getAttribute('data-ics'));
-        const blob = new Blob([ics], {type:'text/calendar;charset=utf-8'});
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'GestionCommandes.ics';
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-        showToast('✓ Fichier .ics téléchargé');
-    });
 
-    // Calendrier navigation
-    document.querySelector('[data-cal-prev]')?.addEventListener('click',()=>{
-        const cur = state.calMonth ? new Date(state.calMonth) : new Date();
-        const d = new Date(cur.getFullYear(), cur.getMonth()-1, 1);
-        setState({calMonth: d.toISOString()});
-    });
-    document.querySelector('[data-cal-next]')?.addEventListener('click',()=>{
-        const cur = state.calMonth ? new Date(state.calMonth) : new Date();
-        const d = new Date(cur.getFullYear(), cur.getMonth()+1, 1);
-        setState({calMonth: d.toISOString()});
-    });
-    document.querySelector('[data-cal-today]')?.addEventListener('click',()=>{
-        setState({calMonth: null});
+
+    // Export ICS individuel
+    document.querySelectorAll('[data-ics-single]').forEach(btn=>{
+        btn.addEventListener('click', e=>{
+            e.stopPropagation();
+            const ics = decodeURIComponent(btn.getAttribute('data-ics-single'));
+            const name = btn.getAttribute('data-ics-name') || 'commande';
+            const blob = new Blob([ics], {type:'text/calendar;charset=utf-8'});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url; a.download = `${name}.ics`;
+            document.body.appendChild(a); a.click();
+            document.body.removeChild(a); URL.revokeObjectURL(url);
+            showToast('📆 Ajouté au calendrier');
+        });
     });
 
     // FAB admin
@@ -2172,37 +2038,24 @@ function attachEvents(){
     document.getElementById('closeTrackBtn')?.addEventListener('click',()=>{
         setState({trackMode:false, trackResult:null, trackCode:''});
     });
-    document.getElementById('trackSearchBtn')?.addEventListener('click',()=>{
+    function doTrackSearch(){
         const code=(state.trackCode||document.getElementById('trackInput')?.value||'').trim().toUpperCase();
         if(!code){showToast('⚠️ Entrez un code');return;}
         const found=state.data.find(c=>c.code&&c.code.toUpperCase()===code);
         state.trackResult=found||false;
         render();
-    });
+    }
+    document.getElementById('trackSearchBtn')?.addEventListener('click', doTrackSearch);
     document.getElementById('trackInput')?.addEventListener('input',e=>{state.trackCode=e.target.value;});
-    document.getElementById('trackInput')?.addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('trackSearchBtn')?.click();});
-    document.getElementById('trackSearch')?.addEventListener('click',()=>{
-        const code=(document.getElementById('trackInput')?.value||'').trim().toUpperCase();
-        if(!code){showToast('⚠️ Entrez un code');return;}
-        const found=state.data.find(c=>c.code&&c.code.toUpperCase()===code);
-        state.trackResult=found||false;
+    document.getElementById('trackInput')?.addEventListener('keydown',e=>{if(e.key==='Enter') doTrackSearch();});
+    document.getElementById('cancelTrackBtn')?.addEventListener('click', async()=>{
+        const r=state.trackResult;
+        if(!r||!r.id) return;
+        state.data=state.data.map(c=>c.id===r.id?{...c,pris:'Annulé'}:c);
+        state.trackResult={...r,pris:'Annulé'};
+        showToast('✓ Demande annulée');
         render();
-    });
-    document.getElementById('trackInput')?.addEventListener('input',e=>{
-        state.trackCode=e.target.value;
-    });
-    document.getElementById('trackInput')?.addEventListener('keydown',e=>{
-        if(e.key==='Enter') document.getElementById('trackSearch')?.click();
-    });
-    document.querySelectorAll('[data-cancel-track]').forEach(btn=>{
-        btn.onclick=async()=>{
-            const id=parseInt(btn.getAttribute('data-cancel-track'));
-            state.data=state.data.map(c=>c.id===id?{...c,pris:'Annulé'}:c);
-            state.trackResult={...state.trackResult,pris:'Annulé'};
-            showToast('✓ Demande annulée');
-            render();
-            await dbUpdate(id,{pris:'Annulé'});
-        };
+        await dbUpdate(r.id,{pris:'Annulé'});
     });
 
     // Filtres Activité
@@ -2374,7 +2227,7 @@ function attachEvents(){
     document.querySelectorAll('.pq-check').forEach(cb=>{
         cb.onchange=()=>{
             // Sauvegarder tous les champs avant le render
-            state.form.dem=document.getElementById('formDem')?.value||state.form.dem;
+            const _demVal=document.getElementById('formDem')?.value; if(_demVal) state.form.dem=_demVal;
             state.form.pourQui=[...document.querySelectorAll('.pq-check:checked')].map(c=>c.value);
             state.form.pourQuiAutre=document.getElementById('pourQuiAutreInput')?.value||state.form.pourQuiAutre;
             state.form.desc=document.getElementById('formDesc')?.value||state.form.desc;
