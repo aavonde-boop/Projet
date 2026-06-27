@@ -2309,11 +2309,15 @@ function attachEvents(){
         console.log('newItem code:', newItem.code, 'appToRow:', JSON.stringify(appToRow(newItem)));
         const saved=await dbInsert(newItem);
         if(saved.id!==newItem.id){state.data=state.data.map(c=>c.id===newItem.id?saved:c);}
-        console.log('adminEmails:', settings.adminEmails);
-        (settings.adminEmails||[]).forEach(email=>{
+        // Fallback localStorage si Supabase pas encore chargé
+        const adminEmailsSafe = (settings.adminEmails||[]).filter(Boolean).length
+            ? settings.adminEmails
+            : JSON.parse(localStorage.getItem('settings_admin_emails')||'[]');
+        console.log('adminEmails utilisés:', adminEmailsSafe);
+        adminEmailsSafe.forEach(email=>{
             if(email) sendConfirmationEmail(newItem, {to: email});
         });
-        if(!(settings.adminEmails||[]).filter(Boolean).length){
+        if(!adminEmailsSafe.filter(Boolean).length){
             console.warn('Aucun email admin configuré dans les réglages !');
         }
         if(f.copyMail && f.dem){
@@ -2398,6 +2402,8 @@ function attachEvents(){
         render();
         const savedCmd=await dbInsert(newCmd);
         if(savedCmd.id!==newCmd.id){state.data=state.data.map(c=>c.id===newCmd.id?savedCmd:c);}
+        // Notifier les admins
+        (settings.adminEmails||[]).forEach(email=>{ if(email) sendConfirmationEmail(savedCmd.id!==newCmd.id?savedCmd:newCmd,{to:email}); });
     };
 
     // Settings helpers
