@@ -4,7 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>BuildDesk</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
@@ -76,40 +75,30 @@ header .spacer{flex:1}
 }
 .hdr-dot{width:7px;height:7px;border-radius:50%;background:var(--amber);flex-shrink:0}
 
-/* ── LAYOUT ── */
-.shell{display:flex;flex:1;overflow:hidden}
-
-/* ── SIDEBAR ── */
-nav{
-  width:216px;min-width:216px;background:var(--surface);
-  border-right:1px solid var(--border);
-  padding:14px 0 20px;display:flex;flex-direction:column;overflow-y:auto;
-}
-nav .sec{
-  font-size:10px;font-weight:700;letter-spacing:1.6px;text-transform:uppercase;
-  color:var(--muted);padding:14px 18px 5px;
-}
-nav a{
-  display:flex;align-items:center;gap:9px;
-  padding:7px 14px 7px 18px;
-  color:var(--subtle);font-size:13px;font-weight:500;
+/* ── TOP NAV ── */
+.topnav{display:flex;align-items:center;gap:2px;margin-left:16px}
+.tnav-item{
+  display:flex;align-items:center;gap:6px;
+  padding:6px 13px;border-radius:8px;
+  font-size:13px;font-weight:500;color:var(--subtle);
   cursor:pointer;text-decoration:none;
-  border-left:3px solid transparent;transition:all .1s;
+  transition:all .12s;white-space:nowrap;border:none;background:none;
 }
-nav a .n-ico{
-  width:26px;height:26px;border-radius:7px;display:flex;align-items:center;justify-content:center;
-  flex-shrink:0;background:transparent;transition:background .1s;
+.tnav-item:hover{color:var(--text);background:var(--surface2)}
+.tnav-item.active{color:var(--brand);background:var(--brand-dim);font-weight:600}
+.tnav-item.tnav-meeting.active{color:var(--violet);background:var(--violet-dim)}
+.tnav-item.tnav-meeting:hover{color:var(--violet)}
+.tnav-badge{
+  font-family:var(--mono);font-size:10px;font-weight:700;
+  background:var(--surface2);color:var(--muted);
+  padding:1px 7px;border-radius:10px;border:1px solid var(--border);
+  transition:all .12s;
 }
-nav a:hover{color:var(--text);background:var(--surface2)}
-nav a:hover .n-ico{background:var(--border)}
-nav a.active{color:var(--brand);border-left-color:var(--brand);background:var(--brand-dim);font-weight:600}
-nav a.active .n-ico{background:var(--brand-mid)}
-nav a.m-lnk.active{color:var(--violet);border-left-color:var(--violet);background:var(--violet-dim)}
-nav a.m-lnk.active .n-ico{background:var(--violet-mid)}
-.nc{margin-left:auto;font-family:var(--mono);font-size:10px;font-weight:700;padding:1px 7px;border-radius:10px;background:var(--surface2);color:var(--muted);border:1px solid var(--border)}
-nav a.active .nc{background:var(--brand-mid);color:var(--brand-dk);border-color:transparent}
-nav a.m-lnk.active .nc{background:var(--violet-mid);color:var(--violet);border-color:transparent}
-.ndiv{height:1px;background:var(--border);margin:8px 14px}
+.tnav-item.active .tnav-badge{background:var(--brand-mid);color:var(--brand-dk);border-color:transparent}
+.tnav-item.tnav-meeting.active .tnav-badge{background:var(--violet-mid);color:var(--violet);border-color:transparent}
+
+/* ── LAYOUT (no sidebar) ── */
+.shell{display:flex;flex:1;overflow:hidden}
 
 /* ── MAIN ── */
 main{flex:1;padding:28px 34px;overflow-y:auto}
@@ -271,7 +260,7 @@ select:focus{border-color:var(--brand);box-shadow:0 0 0 3px var(--brand-dim)}
 .dndl{display:flex;flex-direction:column;gap:5px}
 .dndi{display:flex;align-items:center;gap:9px;background:var(--surface2);border:1.5px solid var(--border);border-radius:var(--radius);padding:8px 11px;cursor:grab;transition:all .12s}
 .dndi:hover{border-color:var(--brand-mid);background:var(--brand-dim)}
-.dndi.ov{border-color:var(--brand);background:var(--brand-dim);box-shadow:0 0 0 3px var(--brand-dim)}
+.dndi.dnd-ov{border-color:var(--brand);background:var(--brand-dim);box-shadow:0 0 0 3px var(--brand-dim)}
 .dndi.dr{opacity:.35}
 .dndh{color:var(--muted);flex-shrink:0}
 .dndt{flex:1;font-size:13px;font-weight:500;color:var(--text)}
@@ -312,7 +301,23 @@ select:focus{border-color:var(--brand);box-shadow:0 0 0 3px var(--brand-dim)}
 .crh{font-size:11px;color:var(--muted);margin-top:4px;font-family:var(--mono)}
 .crft{margin-top:22px;font-size:11px;color:var(--muted);font-family:var(--mono);border-top:1px solid var(--border);padding-top:9px;display:flex;justify-content:space-between}
 
-/* ── INDICATORS ── */
+/* ── INLINE EDIT ── */
+.editable{cursor:pointer;border-radius:4px;transition:background .1s;padding:1px 3px;margin:-1px -3px}
+.editable:hover{background:var(--brand-dim);outline:1px dashed var(--brand-mid)}
+.editable-plain{cursor:pointer;border-radius:4px;transition:background .1s;padding:2px 4px;margin:-2px -4px}
+.editable-plain:hover{background:var(--brand-dim);outline:1px dashed var(--brand-mid)}
+.inline-input{
+  border:1.5px solid var(--brand)!important;border-radius:6px!important;
+  background:var(--surface)!important;color:var(--text)!important;
+  font-family:var(--sans)!important;font-size:13px!important;
+  padding:4px 8px!important;outline:none!important;
+  box-shadow:0 0 0 3px var(--brand-dim)!important;
+  width:100%!important;min-width:120px;
+}
+.inline-input-date{font-family:var(--mono)!important;font-size:12px!important;}
+.inline-textarea{min-height:60px!important;resize:vertical!important}
+.cycle-hint{font-size:9px;color:var(--muted);font-family:var(--mono);margin-left:4px;opacity:0;transition:opacity .15s}
+tr:hover .cycle-hint{opacity:1}
 #saveIndicator{position:fixed;bottom:22px;left:22px;background:var(--surface);border:1px solid var(--border);color:var(--subtle);font-size:11px;font-family:var(--mono);font-weight:500;padding:6px 13px;border-radius:20px;display:flex;align-items:center;gap:6px;opacity:0;transform:translateY(10px);transition:all .3s;z-index:400;box-shadow:var(--sh1)}
 #connStatus{position:fixed;bottom:22px;left:22px;background:var(--surface);border:1px solid var(--border);color:var(--muted);font-size:10.5px;font-family:var(--mono);padding:5px 12px;border-radius:20px;display:none;align-items:center;gap:6px;z-index:399;box-shadow:var(--sh1)}
 #toast{position:fixed;bottom:22px;right:22px;background:var(--text);color:#fff;font-size:13px;font-weight:600;padding:11px 17px;border-radius:var(--radius);transform:translateY(60px);opacity:0;transition:all .28s;z-index:500;box-shadow:var(--sh2);display:flex;align-items:center;gap:8px}
@@ -323,25 +328,25 @@ select:focus{border-color:var(--brand);box-shadow:0 0 0 3px var(--brand-dim)}
 .empty p{font-size:13px;color:var(--subtle)}
 
 /* ── MOBILE ── */
-.mobnav{display:none;position:fixed;bottom:0;left:0;right:0;z-index:150;background:var(--surface);border-top:1px solid var(--border);height:62px;padding:0 8px;padding-bottom:env(safe-area-inset-bottom);align-items:center;justify-content:space-around;box-shadow:0 -4px 14px rgba(0,0,0,.06)}
-.mobt{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;flex:1;padding:5px 4px;cursor:pointer;color:var(--muted);border:none;background:none;font-family:var(--sans);border-radius:var(--radius);transition:all .12s;min-width:0}
-.mobt:hover{color:var(--text)}
-.mobt.active{color:var(--brand)}
-.mobt.active-m{color:var(--violet)}
-.mobt span{font-size:10px;font-weight:600;white-space:nowrap}
-.mobw{position:relative;flex:1;display:flex;justify-content:center}
-.mobb{background:var(--amber);color:#fff;border-radius:10px;font-size:9px;font-weight:700;padding:1px 5px;position:absolute;top:2px;right:calc(50% - 22px)}
-.moba{width:44px;height:44px;border-radius:50%;background:var(--brand);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(37,99,235,.35);transition:all .12s;flex-shrink:0}
-.moba:hover{background:var(--brand-dk);transform:scale(1.06)}
-.moba:active{transform:scale(.95)}
+
+
+
+
+
+
+
+
+
+
+
 
 /* ── PRINT ── */
 @media print{
-  header,nav,.btn,.toolbar,.stats,.mdet-actions,.fmo,#toast,.pb,.mobnav,#saveIndicator,#connStatus{display:none!important}
+  header,.btn,.toolbar,.stats,.mdet-actions,.fmo,#toast,.pb,#saveIndicator,#connStatus{display:none!important}
   body{background:#fff;font-size:11pt}.mo{box-shadow:none}
 }
 @media(max-width:900px){.mshl{grid-template-columns:1fr;height:auto}.mlst{height:270px;border-right:none;border-bottom:1px solid var(--border)}}
-@media(max-width:768px){nav{display:none}.stats{grid-template-columns:1fr 1fr}main{padding:14px 14px 82px}.mobnav{display:flex}#toast{bottom:76px;right:12px;left:12px;justify-content:center}}
+@media(max-width:768px){.topnav .tnav-item:nth-child(n+3){display:none}.stats{grid-template-columns:1fr 1fr}main{padding:14px}#toast{bottom:76px;right:12px;left:12px;justify-content:center}}
 </style>
 </head>
 <body>
@@ -357,19 +362,46 @@ select:focus{border-color:var(--brand);box-shadow:0 0 0 3px var(--brand-dim)}
         <rect x="8.5" y="8.5" width="5.5" height="5.5" rx="1.5" fill="white" opacity=".4"/>
       </svg>
     </div>
-    <span class="logo-text">Build<em>Desk</em></span>
+    <span class="logo-text">Ticketing<em>Desk</em></span>
   </div>
 
-  <div id="nextMeetingCountdown" onclick="showPage('meetings',document.querySelector('nav a.m-lnk'))">
+  <!-- NAV TABS -->
+  <nav class="topnav">
+    <a class="tnav-item active" id="tnav-encours" onclick="showPageFiltered('en-cours','tnav-encours')">
+      <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><circle cx="6.5" cy="6.5" r="5" stroke="currentColor" stroke-width="1.4"/><path d="M6.5 2A4.5 4.5 0 0 1 11 6.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+      En cours
+      <span class="tnav-badge" id="navEnCours">0</span>
+    </a>
+    <a class="tnav-item" id="tnav-resolu" onclick="showPageFiltered('résolu','tnav-resolu')">
+      <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><circle cx="6.5" cy="6.5" r="5" stroke="currentColor" stroke-width="1.4" fill="currentColor" fill-opacity=".1"/><path d="M4 6.5l2 2 3-3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Résolus
+      <span class="tnav-badge" id="navResolu">0</span>
+    </a>
+    <a class="tnav-item tnav-meeting" id="tnav-meetings" onclick="showPage('meetings','tnav-meetings')">
+      <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><rect x="1" y="1.5" width="11" height="10" rx="2" stroke="currentColor" stroke-width="1.4"/><path d="M4 1v2M9 1v2M1 5.5h11" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><circle cx="4.5" cy="8.5" r=".8" fill="currentColor"/><circle cx="6.5" cy="8.5" r=".8" fill="currentColor"/><circle cx="8.5" cy="8.5" r=".8" fill="currentColor"/></svg>
+      Réunions
+      <span class="tnav-badge" id="navMeetings">0</span>
+    </a>
+  </nav>
+
+  <div class="spacer"></div>
+
+  <div id="nextMeetingCountdown" onclick="document.getElementById('tnav-meetings').click()">
     <svg width="11" height="11" viewBox="0 0 11 11" fill="none"><rect x=".5" y="1" width="10" height="9.5" rx="1.5" stroke="currentColor" stroke-width="1.1"/><path d="M3.5.5v2M7.5.5v2M.5 4h10" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/></svg>
     <span id="countdownText">Prochaine réunion</span>
   </div>
 
-  <div class="spacer"></div>
   <div class="hdr-count" id="openCount"><span class="hdr-dot"></span><span>— en cours</span></div>
+
+  <!-- Export PDF icône -->
+  <button class="btn btn-outline btn-sm" onclick="exportAllPDF()" title="Exporter tous les tickets en PDF" style="padding:6px 10px">
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1.5v7.5M4.5 6.5l2.5 2.5 2.5-2.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M2 11h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+  </button>
+
   <button class="btn btn-outline btn-sm" onclick="resetAllData()" title="Réinitialiser" style="padding:6px 10px">
     <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M11 6.5A4.5 4.5 0 1 1 9.5 3.2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M11 1.5v3h-3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
   </button>
+
   <button class="btn btn-brand" id="headerBtn" onclick="handleHeaderBtn()">
     <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 1v10M1 6h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
     Nouveau ticket
@@ -377,31 +409,6 @@ select:focus{border-color:var(--brand);box-shadow:0 0 0 3px var(--brand-dim)}
 </header>
 
 <div class="shell">
-
-<!-- SIDEBAR -->
-<nav>
-  <span class="sec">Tickets</span>
-  <a class="active" onclick="showPageFiltered('en-cours',this)">
-    <span class="n-ico">
-      <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="5.5" stroke="currentColor" stroke-width="1.5"/><path d="M7 2A5 5 0 0 1 12 7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
-    </span>
-    En cours <span class="nc" id="navEnCours">0</span>
-  </a>
-  <a onclick="showPageFiltered('résolu',this)">
-    <span class="n-ico">
-      <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="5.5" stroke="currentColor" stroke-width="1.5" fill="currentColor" fill-opacity=".1"/><path d="M4.5 7l2 2 3-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-    </span>
-    Résolus <span class="nc" id="navResolu">0</span>
-  </a>
-  <div class="ndiv"></div>
-  <span class="sec">Réunions</span>
-  <a class="m-lnk" onclick="showPage('meetings',this)">
-    <span class="n-ico">
-      <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1" y="2" width="12" height="11" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M4 1v2.5M10 1v2.5M1 6.5h12" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><circle cx="4.5" cy="9.5" r=".9" fill="currentColor"/><circle cx="7" cy="9.5" r=".9" fill="currentColor"/><circle cx="9.5" cy="9.5" r=".9" fill="currentColor"/></svg>
-    </span>
-    Réunions <span class="nc" id="navMeetings">0</span>
-  </a>
-</nav>
 
 <main>
 
@@ -438,22 +445,20 @@ select:focus{border-color:var(--brand);box-shadow:0 0 0 3px var(--brand-dim)}
       <option value="en-cours">En cours</option>
       <option value="résolu">Résolu</option>
     </select>
-    <select id="filterCat" onchange="renderTable()">
-      <option value="">Toutes catégories</option>
-      <option>Ascenseur</option><option>Électricité</option><option>Plomberie</option>
-      <option>Sécurité</option><option>Ménage</option><option>Autre</option>
-    </select>
+    <button class="btn btn-outline btn-sm" onclick="exportAllPDF()">
+      <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M6.5 1v8M3.5 6l3 3 3-3M1 11h11" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Export PDF
+    </button>
   </div>
   <div id="pendingBanner"></div>
   <table class="tbl">
     <thead><tr>
       <th class="srt" onclick="sortBy('title')">Sujet<span class="sico"></span></th>
-      <th class="srt" onclick="sortBy('cat')">Catégorie<span class="sico"></span></th>
-      <th>Statut</th>
+      <th class="srt" onclick="sortBy('status')">Statut<span class="sico"></span></th>
       <th class="srt" onclick="sortBy('intervenant')">Intervenant<span class="sico"></span></th>
       <th class="srt" onclick="sortBy('soustraitant')">Sous-traitant<span class="sico"></span></th>
       <th class="srt" onclick="sortBy('date')">Ouverture<span class="sico"></span></th>
-      <th>Relances</th>
+      <th class="srt" onclick="sortBy('_relanceCount')">Relances<span class="sico"></span></th>
       <th class="srt" onclick="sortBy('resolution')">Résolution prévue<span class="sico"></span></th>
     </tr></thead>
     <tbody id="ticketBody"></tbody>
@@ -466,35 +471,53 @@ select:focus{border-color:var(--brand);box-shadow:0 0 0 3px var(--brand-dim)}
 
 <!-- PAGE RÉUNIONS -->
 <div class="pv" id="page-meetings">
-  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:22px">
-    <div class="ptitle" style="margin-bottom:0">
-      <h1>
-        <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="2" y="3" width="16" height="15" rx="3.5" stroke="var(--violet)" stroke-width="1.7"/><path d="M6.5 1.5v3M13.5 1.5v3M2 8.5h16" stroke="var(--violet)" stroke-width="1.4" stroke-linecap="round"/><circle cx="7" cy="13" r="1.1" fill="var(--violet)"/><circle cx="10" cy="13" r="1.1" fill="var(--violet)"/><circle cx="13" cy="13" r="1.1" fill="var(--violet)"/></svg>
-        Réunions
-      </h1>
-      <p>Revues ticket par ticket · CRs consultables et téléchargeables</p>
-    </div>
+  <div class="ptitle">
+    <h1>
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="2" y="3" width="16" height="15" rx="3.5" stroke="var(--violet)" stroke-width="1.7"/><path d="M6.5 1.5v3M13.5 1.5v3M2 8.5h16" stroke="var(--violet)" stroke-width="1.4" stroke-linecap="round"/><circle cx="7" cy="13" r="1.1" fill="var(--violet)"/><circle cx="10" cy="13" r="1.1" fill="var(--violet)"/><circle cx="13" cy="13" r="1.1" fill="var(--violet)"/></svg>
+      Réunions
+    </h1>
+    <p>Toutes les réunions de décision · cliquer pour ouvrir</p>
   </div>
-  <div class="mshl">
-    <div class="mlst">
-      <div class="mlst-hdr">
-        <span class="mlst-ttl">
-          <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><circle cx="3.5" cy="3.5" r="2" stroke="currentColor" stroke-width="1.2"/><circle cx="3.5" cy="9.5" r="2" stroke="currentColor" stroke-width="1.2"/><path d="M5.5 3.5h5M5.5 9.5h5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
-          Historique
-        </span>
-        <button class="btn btn-brand btn-sm" onclick="openMeetingForm(null)">
-          <svg width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M5.5 1v9M1 5.5h9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
-          Nouvelle
-        </button>
-      </div>
-      <div class="mlst-scroll" id="mTimeline"></div>
+  <div class="toolbar">
+    <div class="srch">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="6" cy="6" r="4.5" stroke="var(--muted)" stroke-width="1.5"/><path d="M9.5 9.5l3 3" stroke="var(--muted)" stroke-width="1.5" stroke-linecap="round"/></svg>
+      <input id="mtgSearch" type="text" placeholder="Rechercher une réunion…" oninput="renderMeetingTable()">
     </div>
-    <div class="mdet" id="mDetailPanel">
-      <div class="mdet-empty" id="mDetailEmpty">
-        <svg width="50" height="50" viewBox="0 0 50 50" fill="none"><rect x="4" y="6" width="42" height="40" rx="6" stroke="currentColor" stroke-width="1.4"/><path d="M14 4v5M36 4v5M4 17h42" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="18" cy="30" r="2.2" fill="currentColor"/><circle cx="25" cy="30" r="2.2" fill="currentColor"/><circle cx="32" cy="30" r="2.2" fill="currentColor"/></svg>
-        <p>Sélectionnez une réunion</p>
+    <select id="mtgStatusFilter" onchange="renderMeetingTable()">
+      <option value="">Tous statuts</option>
+      <option value="terminee">Terminée</option>
+      <option value="planifiee">Planifiée</option>
+    </select>
+    <button class="btn btn-violet btn-sm" onclick="openMeetingForm(null)">
+      <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 1v10M1 6h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      Nouvelle réunion
+    </button>
+  </div>
+  <table class="tbl" id="mtgTable">
+    <thead><tr>
+      <th class="srt" onclick="sortMtg('title')">Titre<span class="sico" id="msico-title"></span></th>
+      <th class="srt" onclick="sortMtg('date')">Date<span class="sico" id="msico-date"></span></th>
+      <th class="srt" onclick="sortMtg('participants')">Participants<span class="sico" id="msico-participants"></span></th>
+      <th>Tickets abordés</th>
+      <th class="srt" onclick="sortMtg('nextDate')">Prochaine réunion<span class="sico" id="msico-nextDate"></span></th>
+      <th>Statut</th>
+      <th></th>
+    </tr></thead>
+    <tbody id="mtgBody"></tbody>
+  </table>
+  <div class="empty" id="mtgEmpty" style="display:none">
+    <div class="empty-ico"><svg width="44" height="44" viewBox="0 0 44 44" fill="none"><rect x="4" y="4" width="36" height="36" rx="8" stroke="currentColor" stroke-width="1.4"/><path d="M12 14h20M12 22h20M12 30h12" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></div>
+    <p>Aucune réunion enregistrée.</p>
+  </div>
+
+  <!-- MEETING DETAIL PANEL (slide from right) -->
+  <div id="mtgDetailOverlay" style="display:none;position:fixed;inset:0;background:rgba(30,42,59,.2);backdrop-filter:blur(2px);z-index:250" onclick="closeMtgDetail(event)">
+    <div id="mtgDetailPanel" style="position:absolute;right:0;top:0;bottom:0;width:560px;max-width:95vw;background:var(--surface);border-left:1px solid var(--border);display:flex;flex-direction:column;box-shadow:var(--sh2);overflow:hidden;animation:sli .2s ease">
+      <div id="mtgDetailInner" style="flex:1;overflow-y:auto;padding:24px"></div>
+      <div style="padding:14px 22px;border-top:1px solid var(--border);display:flex;justify-content:space-between;gap:8px;background:var(--surface2);flex-shrink:0">
+        <button class="btn btn-outline btn-sm" onclick="closeMtgDetail()">Fermer</button>
+        <div style="display:flex;gap:8px" id="mtgDetailActions"></div>
       </div>
-      <div id="mDetailContent" style="display:none;flex-direction:column;height:100%"></div>
     </div>
   </div>
 </div>
@@ -511,10 +534,7 @@ select:focus{border-color:var(--brand);box-shadow:0 0 0 3px var(--brand-dim)}
   </h2>
   <div class="fg"><label>Sujet *</label><input id="fTitle" type="text" placeholder="ex. Fuite eau niveau 3"></div>
   <div class="fg"><label>Description</label><textarea id="fDesc" placeholder="Détails de l'incident…"></textarea></div>
-  <div class="fr">
-    <div class="fg"><label>Catégorie</label><select id="fCat"><option>Ascenseur</option><option>Électricité</option><option>Plomberie</option><option>Sécurité</option><option>Ménage</option><option>Autre</option></select></div>
-    <div class="fg"><label>Statut</label><select id="fStatus"><option value="en-cours">En cours</option><option value="résolu">Résolu</option></select></div>
-  </div>
+  <div class="fg"><label>Statut</label><select id="fStatus"><option value="en-cours">En cours</option><option value="résolu">Résolu</option></select></div>
   <div class="fr">
     <div class="fg"><label>Intervenant</label><input id="fIntervenant" type="text" placeholder="ex. Tech. Otis"></div>
     <div class="fg"><label>Sous-traitant</label><input id="fSoustraitant" type="text" placeholder="ex. Entreprise Martin"></div>
@@ -609,31 +629,6 @@ select:focus{border-color:var(--brand);box-shadow:0 0 0 3px var(--brand-dim)}
 </div>
 </div>
 
-<!-- MOBILE NAV -->
-<div class="mobnav" id="mobileNav">
-  <div class="mobw">
-    <button class="mobt active" id="mob-encours" onclick="mobNav('tickets','en-cours',this)">
-      <svg width="21" height="21" viewBox="0 0 21 21" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="10.5" cy="10.5" r="7.5"/><path d="M10.5 3.5A7 7 0 0 1 17.5 10.5" stroke-linecap="round"/></svg>
-      <span>En cours</span>
-      <span class="mobb" id="mobBadge" style="display:none">0</span>
-    </button>
-  </div>
-  <div class="mobw">
-    <button class="mobt" id="mob-resolu" onclick="mobNav('tickets','résolu',this)">
-      <svg width="21" height="21" viewBox="0 0 21 21" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="10.5" cy="10.5" r="7.5" fill="currentColor" fill-opacity=".08"/><path d="M6.5 10.5l3 3 5-5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      <span>Résolus</span>
-    </button>
-  </div>
-  <button class="moba" onclick="handleHeaderBtn()">
-    <svg width="19" height="19" viewBox="0 0 19 19" fill="none"><path d="M9.5 2.5v14M2.5 9.5h14" stroke="#fff" stroke-width="2.2" stroke-linecap="round"/></svg>
-  </button>
-  <div class="mobw">
-    <button class="mobt" id="mob-meetings" onclick="mobNav('meetings','',this)">
-      <svg width="21" height="21" viewBox="0 0 21 21" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="2" y="3.5" width="17" height="15" rx="2.5"/><path d="M6.5 2v3M14.5 2v3M2 9.5h17" stroke-linecap="round"/><circle cx="7" cy="14" r="1" fill="currentColor" stroke="none"/><circle cx="10.5" cy="14" r="1" fill="currentColor" stroke="none"/><circle cx="14" cy="14" r="1" fill="currentColor" stroke="none"/></svg>
-      <span>Réunions</span>
-    </button>
-  </div>
-</div>
 
 <div id="saveIndicator">
   <svg width="11" height="11" viewBox="0 0 11 11" fill="none"><circle cx="5.5" cy="5.5" r="4.5" fill="var(--green)"/><path d="M3.3 5.5l1.5 1.5 2.7-2.7" stroke="#fff" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -652,184 +647,63 @@ function resetAllData(){
   location.reload();
 }
 
-// ═══════════════ SUPABASE (réutilise les tables "Place de Seine") ═══════════════
-const SB_URL = "https://yvlcmdcnjeoiffrlawti.supabase.co";
-const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl2bGNtZGNuamVvaWZmcmxhd3RpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYyODYwNjEsImV4cCI6MjA5MTg2MjA2MX0.-ePViMbJVA0UhC4WY3fYciUcw0gP6yJWau_P1AspdlI";
-let sb = null;
-try{ if(window.supabase) sb = window.supabase.createClient(SB_URL, SB_KEY); }catch(e){ console.warn('Supabase init impossible', e); }
+// ═══════════════ PERSISTENCE (localStorage) ═══════════════
+const LS_KEY = 'ticketingdesk_v2';
 
-const LS_KEY = 'builddesk_data_v1'; // fallback local si Supabase indisponible
+const defaultTickets = [
+  {title:'Ascenseur A en panne',desc:"L'ascenseur A ne répond plus depuis ce matin.",status:'en-cours',date:'2026-06-20',intervenant:'Tech. Otis',soustraitant:'Otis Elevator Co.',resolution:'2026-06-28',relances:[{date:'2026-06-22',comment:'Technicien appelé, pièce commandée.'},{date:'2026-06-25',comment:'Livraison pièce retardée.'}]},
+  {title:'Prise électrique grillée salle 204',desc:'Impossible de brancher quoi que ce soit.',status:'en-cours',date:'2026-06-21',intervenant:'Élec. Marin',soustraitant:'Elec Pro SARL',resolution:'2026-06-30',relances:[{date:'2026-06-23',comment:'Devis reçu, en attente validation.'}]},
+  {title:'Fuite évier kitchenette 3F',desc:'Écoulement lent.',status:'en-cours',date:'2026-06-22',intervenant:'Plombier Leclerc',soustraitant:'',resolution:'2026-07-02',relances:[]},
+  {title:'Badge non reconnu porte nord',desc:'3 collaborateurs bloqués.',status:'résolu',date:'2026-06-19',intervenant:'Vigil. Protect+',soustraitant:'Protect+ SAS',resolution:'2026-06-20',relances:[{date:'2026-06-19',comment:'Résolu en urgence.'}]},
+  {title:'Remplacement ampoule couloir B',desc:'',status:'en-cours',date:'2026-06-24',intervenant:'',soustraitant:'',resolution:'',relances:[]},
+];
 
-// ── Mapping statut BuildDesk (en-cours/résolu) ↔ table tickets (Ouvert/Clos/Escaladé) ──
-function statusToDb(s){ return s==='résolu' ? 'Clos' : 'Ouvert'; }
-function statusFromDb(s){ return s==='Clos' ? 'résolu' : 'en-cours'; }
-
-// Les colonnes cat/intervenant/soustraitant/relances n'existent pas dans la table
-// "tickets" de Place de Seine : on les sérialise dans le champ texte "commentaires"
-// sous forme d'un bloc JSON préfixé, invisible pour l'app Place de Seine d'origine
-// mais relu proprement ici.
-const META_PREFIX = '__BD_META__';
-function packMeta(t){
-  const meta = { cat:t.cat||'Autre', intervenant:t.intervenant||'', soustraitant:t.soustraitant||'', relances:t.relances||[] };
-  return META_PREFIX + JSON.stringify(meta);
-}
-function unpackMeta(commentaires){
-  if(typeof commentaires==='string' && commentaires.startsWith(META_PREFIX)){
-    try{ return JSON.parse(commentaires.slice(META_PREFIX.length)); }catch(e){}
-  }
-  return { cat:'Autre', intervenant:'', soustraitant:'', relances:[] };
-}
-
-// Ticket BuildDesk → ligne table "tickets"
-function ticketToDbRow(t){
-  return {
-    description: t.title,
-    statut: statusToDb(t.status),
-    date_creation: t.date || today(),
-    date_relance1: (t.relances&&t.relances[0]) ? t.relances[0].date : '',
-    date_relance2: (t.relances&&t.relances[1]) ? t.relances[1].date : '',
-    date_relance3: (t.relances&&t.relances[2]) ? t.relances[2].date : '',
-    date_realisation: t.status==='résolu' ? (t.resolution||today()) : '',
-    commentaires: packMeta(t),
-    photos: [],
-    escalade: false
-  };
-}
-// Ligne table "tickets" → Ticket BuildDesk
-function dbRowToTicket(r){
-  const meta = unpackMeta(r.commentaires);
-  return {
-    _dbId: r.id,
-    title: r.description || '(sans titre)',
-    desc: '',
-    cat: meta.cat,
-    status: statusFromDb(r.statut),
-    date: r.date_creation || today(),
-    intervenant: meta.intervenant,
-    soustraitant: meta.soustraitant,
-    resolution: r.date_realisation || '',
-    relances: meta.relances && meta.relances.length ? meta.relances : [r.date_relance1,r.date_relance2,r.date_relance3].filter(Boolean).map(d=>({date:d,comment:'Relance'}))
-  };
-}
-
-// Réunion BuildDesk → ligne table "reunions"
-function meetingToDbRow(m){
-  return {
-    date: m.date || today(),
-    participants: m.participants || '',
-    ticket_ids: JSON.stringify((m.ticketReviews||[]).map(r=>tickets[r.ticketIdx]&&tickets[r.ticketIdx]._dbId).filter(Boolean)),
-    notes: JSON.stringify({ title:m.title, lieu:m.lieu, status:m.status, notes:m.notes, nextDate:m.nextDate, ticketReviews:m.ticketReviews }),
-    commentaire: m.notes || ''
-  };
-}
-// Ligne table "reunions" → Réunion BuildDesk
-function dbRowToMeeting(r){
-  let notes = {};
-  try{ notes = typeof r.notes==='string' ? JSON.parse(r.notes) : (r.notes||{}); }catch(e){}
-  return {
-    _dbId: r.id,
-    title: notes.title || ('Réunion du '+fmtDate(r.date)),
-    date: r.date,
-    lieu: notes.lieu || '',
-    participants: r.participants || '',
-    status: notes.status || 'terminee',
-    ticketReviews: notes.ticketReviews || [],
-    notes: notes.notes || r.commentaire || '',
-    nextDate: notes.nextDate || ''
-  };
-}
-
-async function loadFromSupabase(){
-  if(!sb) return null;
-  try{
-    const tk = await sb.from('tickets').select('*').order('id');
-    if(tk.error){
-      console.warn('Supabase tickets:', tk.error);
-      if(/relation .* does not exist/i.test(tk.error.message||'')){
-        toast('Table "tickets" introuvable dans Supabase — voir console pour le SQL');
-        console.info('SQL pour créer la table tickets (si absente):\n'+
-          'CREATE TABLE IF NOT EXISTS tickets (\n'+
-          '  id bigint generated always as identity primary key,\n'+
-          '  description text, statut text, date_creation date,\n'+
-          '  date_relance1 date, date_relance2 date, date_relance3 date,\n'+
-          '  date_realisation date, commentaires text, photos jsonb, escalade boolean\n'+
-          ');\nALTER TABLE tickets ENABLE ROW LEVEL SECURITY;\n'+
-          'CREATE POLICY "allow all" ON tickets FOR ALL USING (true);');
-      }
-      return null;
-    }
-    const re = await sb.from('reunions').select('*').order('date',{ascending:false});
-    if(re.error && /relation .* does not exist/i.test(re.error.message||'')){
-      console.info('SQL pour créer la table reunions (si absente):\n'+
-        'CREATE TABLE IF NOT EXISTS reunions (\n  id bigint generated always as identity primary key,\n  date date,\n  participants text,\n  ticket_ids jsonb,\n  notes jsonb,\n  commentaire text\n);\n'+
-        'ALTER TABLE reunions ENABLE ROW LEVEL SECURITY;\nCREATE POLICY "allow all" ON reunions FOR ALL USING (true);');
-    }
-    const loadedTickets = (tk.data||[]).map(dbRowToTicket);
-    const loadedMeetings = re.error ? [] : (re.data||[]).map(r=>{
-      const m = dbRowToMeeting(r);
-      // Remap ticket_ids (db ids) → index local dans `loadedTickets`
-      let dbIds = r.ticket_ids;
-      if(typeof dbIds==='string'){ try{ dbIds=JSON.parse(dbIds); }catch(e){ dbIds=[]; } }
-      if(Array.isArray(dbIds) && (!m.ticketReviews || !m.ticketReviews.length)){
-        m.ticketReviews = dbIds.map(id=>{
-          const idx = loadedTickets.findIndex(t=>t._dbId===id);
-          return idx>=0 ? {ticketIdx:idx, newStatus:loadedTickets[idx].status, statusAtTime:loadedTickets[idx].status} : null;
-        }).filter(Boolean);
-      } else if(m.ticketReviews){
-        // ticketReviews stockés avec un ticketIdx d'une session précédente : on les revalide par _dbId si possible
-        m.ticketReviews = m.ticketReviews.map(r2=>{
-          if(loadedTickets[r2.ticketIdx]) return r2;
-          return null;
-        }).filter(Boolean);
-      }
-      return m;
-    });
-    return { tickets: loadedTickets, meetings: loadedMeetings };
-  }catch(e){ console.warn('Supabase load exception:', e); return null; }
-}
-
-function loadFromLocalStorage(){
+function loadData(){
   try{
     const raw = localStorage.getItem(LS_KEY);
     if(raw){
       const parsed = JSON.parse(raw);
-      return { tickets: Array.isArray(parsed.tickets)?parsed.tickets:defaultTickets, meetings: Array.isArray(parsed.meetings)?parsed.meetings:[] };
+      const t = Array.isArray(parsed.tickets) && parsed.tickets.length > 0 ? parsed.tickets : defaultTickets;
+      const m = Array.isArray(parsed.meetings) ? parsed.meetings : [];
+      return {tickets: t, meetings: m};
     }
-  }catch(e){}
-  return { tickets: defaultTickets, meetings: [] };
+  }catch(e){ console.warn('localStorage read error:', e); }
+  return {tickets: defaultTickets, meetings: []};
 }
 
-function saveLocalBackup(){
-  try{ localStorage.setItem(LS_KEY, JSON.stringify({ tickets, meetings, savedAt: new Date().toISOString() })); }catch(e){}
+function saveData(){
+  try{ localStorage.setItem(LS_KEY, JSON.stringify({tickets, meetings, savedAt: new Date().toISOString()})); showSaveIndicator(); }
+  catch(e){ console.warn('localStorage save error:', e); }
 }
 
-let saveTimer = null;
-function saveDataDebounced(){
-  saveLocalBackup();
-  showSaveIndicator(sb ? 'cloud' : 'local');
-}
+function saveDataDebounced(){ clearTimeout(window._saveTimer); window._saveTimer = setTimeout(saveData, 400); }
 
-function showSaveIndicator(mode){
+function showSaveIndicator(){
   const el = document.getElementById('saveIndicator');
   if(!el) return;
-  el.querySelector('.si-label').textContent = mode==='cloud' ? 'Synchronisé' : 'Sauvegardé (local)';
-  el.style.opacity = '1';
-  el.style.transform = 'translateY(0)';
-  clearTimeout(el._hideTimer);
-  el._hideTimer = setTimeout(()=>{ el.style.opacity='0'; el.style.transform='translateY(10px)'; }, 1600);
+  const lbl = el.querySelector('.si-label');
+  if(lbl) lbl.textContent = 'Sauvegardé';
+  el.style.opacity='1'; el.style.transform='translateY(0)';
+  clearTimeout(el._t);
+  el._t = setTimeout(()=>{ el.style.opacity='0'; el.style.transform='translateY(10px)'; }, 1800);
 }
 
-const defaultTickets = [
-  {title:'Ascenseur A en panne',desc:"L'ascenseur A ne répond plus depuis ce matin.",cat:'Ascenseur',status:'en-cours',date:'2026-06-20',intervenant:'Tech. Otis',soustraitant:'Otis Elevator Co.',resolution:'2026-06-28',relances:[{date:'2026-06-22',comment:'Technicien appelé, pièce commandée.'},{date:'2026-06-25',comment:'Livraison pièce retardée au 28/06.'}]},
-  {title:'Prise électrique grillée salle 204',desc:'Impossible de brancher quoi que ce soit.',cat:'Électricité',status:'en-cours',date:'2026-06-21',intervenant:'Élec. Marin',soustraitant:'Elec Pro SARL',resolution:'2026-06-30',relances:[{date:'2026-06-23',comment:'Devis reçu, en attente validation direction.'}]},
-  {title:'Fuite évier kitchenette 3F',desc:'Écoulement lent, serviette posée.',cat:'Plomberie',status:'en-cours',date:'2026-06-22',intervenant:'Plombier Leclerc',soustraitant:'',resolution:'2026-07-02',relances:[]},
-  {title:'Badge non reconnu porte nord',desc:'3 collaborateurs bloqués hier soir.',cat:'Sécurité',status:'résolu',date:'2026-06-19',intervenant:'Vigil. Protect+',soustraitant:'Protect+ SAS',resolution:'2026-06-20',relances:[{date:'2026-06-19',comment:'Résolu en urgence le soir même.'}]},
-  {title:'Remplacement ampoule couloir B',desc:'',cat:'Électricité',status:'en-cours',date:'2026-06-24',intervenant:'',soustraitant:'',resolution:'',relances:[]},
-  {title:'Nettoyage salle réunion 101',desc:'Résidus après événement vendredi.',cat:'Ménage',status:'résolu',date:'2026-06-23',intervenant:'Prestataire Éclat',soustraitant:'Éclat Services',resolution:'2026-06-24',relances:[]},
-];
+function showSaveIndicator2(mode){ showSaveIndicator(); } // compat alias
 
-// ═══════════════ DATA (démarre avec le cache local, puis synchronise) ═══════════════
-const __cached = loadFromLocalStorage();
+function resetAllData(){
+  if(!confirm('Réinitialiser toutes les données ? Cette action est irréversible.')) return;
+  localStorage.removeItem(LS_KEY);
+  location.reload();
+}
+
+// Supabase stubs (désactivé - localStorage uniquement)
+const sb = null;
+function syncTicketToSupabase(){}
+function syncMeetingToSupabase(){}
+function setConnStatus(){}
+
+// ═══════════════ DATA ═══════════════
+const __cached = loadData();
 let tickets = __cached.tickets;
 let meetings = __cached.meetings;
 let currentPage = 'tickets';
@@ -845,51 +719,43 @@ let sortCol = 'date';
 let sortDir = 'desc';
 
 // ═══════════════ NAVIGATION ═══════════════
-function showPage(page, el) {
+function setActiveNav(id){
+  document.querySelectorAll('.tnav-item').forEach(a=>a.classList.remove('active'));
+  const el = typeof id==='string' ? document.getElementById(id) : id;
+  if(el) el.classList.add('active');
+}
+
+function showPage(page, navId) {
   currentPage = page;
-  document.querySelectorAll('.page-view').forEach(v=>v.classList.remove('active'));
+  document.querySelectorAll('.pv').forEach(v=>v.classList.remove('active'));
   document.getElementById('page-'+page).classList.add('active');
-  setActiveNav(el);
+  setActiveNav(navId||(page==='meetings'?'tnav-meetings':'tnav-encours'));
   if(page==='tickets'){
-    document.getElementById('filterStatus').value='en-cours';
-    document.getElementById('filterCat').value='';
-    document.getElementById('headerBtn').innerHTML='<svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M6.5 1v11M1 6.5h11" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg> Nouveau ticket';
+    document.getElementById('filterStatus').value='';
+    document.getElementById('headerBtn').innerHTML='<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 1v10M1 6h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg> Nouveau ticket';
     document.getElementById('headerBtn').className='btn btn-brand';
     renderTable();
   } else {
-    document.getElementById('headerBtn').innerHTML='<svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M6.5 1v11M1 6.5h11" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg> Nouvelle réunion';
+    document.getElementById('headerBtn').innerHTML='<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 1v10M1 6h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg> Nouvelle réunion';
     document.getElementById('headerBtn').className='btn btn-brand';
     renderTimeline();
   }
 }
-function showPageFiltered(status, el) {
+
+function showPageFiltered(status, navId) {
   currentPage='tickets';
-  document.querySelectorAll('.page-view').forEach(v=>v.classList.remove('active'));
+  document.querySelectorAll('.pv').forEach(v=>v.classList.remove('active'));
   document.getElementById('page-tickets').classList.add('active');
-  setActiveNav(el);
+  setActiveNav(navId||(status==='résolu'?'tnav-resolu':'tnav-encours'));
   document.getElementById('filterStatus').value=status;
-  document.getElementById('filterCat').value='';
-  document.getElementById('headerBtn').innerHTML='<svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M6.5 1v11M1 6.5h11" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg> Nouveau ticket';
+  document.getElementById('headerBtn').innerHTML='<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 1v10M1 6h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg> Nouveau ticket';
   document.getElementById('headerBtn').className='btn btn-brand';
   renderTable();
 }
-function resetTicketFilters(){document.getElementById('filterStatus').value='';document.getElementById('filterCat').value='';document.getElementById('searchInput').value='';}
-function handleHeaderBtn(){currentPage==='meetings'?openMeetingForm(null):openModal();}
-function setActiveNav(el){document.querySelectorAll('nav a').forEach(a=>a.classList.remove('active'));el.classList.add('active');}
 
-function mobNav(page, filter, btn){
-  // Update mobile tab styles
-  document.querySelectorAll('.mobt').forEach(t=>{t.classList.remove('active','active-meeting');});
-  btn.classList.add(page==='meetings'?'active-meeting':'active');
-  // Navigate
-  if(page==='meetings'){
-    showPage('meetings', document.querySelector('nav a.m-lnk'));
-  } else if(filter){
-    showPageFiltered(filter, document.querySelector('nav a'));
-  } else {
-    showPage('tickets', document.querySelector('nav a'));
-  }
-}
+function resetTicketFilters(){document.getElementById('filterStatus').value='';document.getElementById('searchInput').value='';}
+function handleHeaderBtn(){currentPage==='meetings'?openMeetingForm(null):openModal();}
+
 
 // ═══════════════ CHIPS ═══════════════
 function chipStatus(s){
@@ -937,16 +803,18 @@ function sortBy(col){
 function getFiltered(){
   const q=document.getElementById('searchInput').value.toLowerCase();
   const fSt=document.getElementById('filterStatus').value;
-  const fCt=document.getElementById('filterCat').value;
-  let rows=tickets.map((t,i)=>({...t,_i:i})).filter(t=>{
+  const statusOrder={'en-cours':0,'ouvert':0,'résolu':1};
+  let rows=tickets.map((t,i)=>({...t,_i:i,_relanceCount:(t.relances||[]).length})).filter(t=>{
     const normStatus=t.status==='ouvert'?'en-cours':t.status;
-    return (!q||t.title.toLowerCase().includes(q)||t.cat.toLowerCase().includes(q)||(t.intervenant||'').toLowerCase().includes(q)||(t.soustraitant||'').toLowerCase().includes(q))
-      &&(!fSt||normStatus===fSt)&&(!fCt||t.cat===fCt);
+    return (!q||t.title.toLowerCase().includes(q)||(t.intervenant||'').toLowerCase().includes(q)||(t.soustraitant||'').toLowerCase().includes(q))
+      &&(!fSt||normStatus===fSt);
   });
+  const dir=sortDir==='asc'?1:-1;
   rows.sort((a,b)=>{
-    let va=a[sortCol]||'', vb=b[sortCol]||'';
-    const cmp=va.localeCompare(vb,'fr',{sensitivity:'base'});
-    return sortDir==='asc'?cmp:-cmp;
+    if(sortCol==='_relanceCount') return dir*(a._relanceCount-b._relanceCount);
+    if(sortCol==='status') return dir*((statusOrder[a.status]??0)-(statusOrder[b.status]??0));
+    const va=String(a[sortCol]||''), vb=String(b[sortCol]||'');
+    return dir*va.localeCompare(vb,'fr',{sensitivity:'base'});
   });
   return rows;
 }
@@ -980,7 +848,7 @@ function renderPendingBanner(){
           <span>🎫 ${p.ticketTitle}</span>
           <span>📅 Décidé en réunion du ${fmtDate(p.meetingDate)}</span>
           ${p.responsable?`<span>👤 ${p.responsable}</span>`:''}
-          ${p.resolutionDate?`<span style="color:${new Date(p.resolutionDate)<new Date()?'var(--rose)':'var(--amber)'}">🎯 ${fmtDate(p.resolutionDate)}</span>`:''}
+          ${p.resolutionDate?`<span style="color:${new Date(p.resolutionDate)<new Date()?'var(--red)':'var(--amber)'}">🎯 ${fmtDate(p.resolutionDate)}</span>`:''}
         </div>
       </div>
     </div>`).join('')}
@@ -992,32 +860,40 @@ function renderTable(){
   const body=document.getElementById('ticketBody');
   const empty=document.getElementById('emptyState');
   // Update sort indicators
-  document.querySelectorAll('.tbl th.sortable').forEach(th=>{
-    th.classList.remove('sort-asc','sort-desc');
-    const col=th.getAttribute('onclick').match(/sortBy\('(\w+)'\)/)?.[1];
-    if(col===sortCol)th.classList.add('sort-'+sortDir);
+  document.querySelectorAll('.tbl th.srt').forEach(th=>{
+    th.classList.remove('sa','sd');
+    const m=th.getAttribute('onclick').match(/sortBy\('([^']+)'\)/);
+    if(m&&m[1]===sortCol) th.classList.add(sortDir==='asc'?'sa':'sd');
   });
   renderPendingBanner();
   if(!filtered.length){body.innerHTML='';empty.style.display='block';updateStats();return;}
   empty.style.display='none';
-  body.innerHTML=filtered.map(t=>`<tr>
+  body.innerHTML=filtered.map(t=>`<tr data-idx="${t._i}">
     <td>
-      <div class="tt">${t.title}</div>
-      ${t.desc?`<div class="ts">${t.desc.length>70?t.desc.slice(0,70)+'…':t.desc}</div>`:''}
+      <div class="tt editable" title="Cliquer pour éditer" onclick="inlineEdit(this,${t._i},'title')">${t.title}</div>
+      <div class="ts editable" title="Cliquer pour éditer la description" onclick="inlineEdit(this,${t._i},'desc',true)">${t.desc||'<span style="color:var(--muted);font-style:italic;font-size:11px">+ description</span>'}</div>
       <div class="ta">
         ${t.status!=='résolu'?`<button class="btn btn-outline btn-xs" onclick="changeStatus(${t._i},'résolu')">✓ Résoudre</button>`:`<button class="btn btn-outline btn-xs" onclick="changeStatus(${t._i},'en-cours')">↩ Réouvrir</button>`}
         <button class="btn btn-outline btn-xs" onclick="openRelance(${t._i})">↺ Relance</button>
-        <button class="btn btn-outline btn-xs" onclick="openEdit(${t._i})">✎ Éditer</button>
         <button class="btn btn-red btn-xs" onclick="delTicket(${t._i})">✕</button>
       </div>
     </td>
-    <td>${catPill(t.cat)}</td>
-    <td>${chipStatus(t.status)}</td>
-    <td style="font-size:12px;color:var(--text2);font-weight:500">${t.intervenant?`<span style="display:flex;align-items:center;gap:5px"><svg width="11" height="11" viewBox="0 0 11 11" fill="none"><circle cx="5.5" cy="3.5" r="2" stroke="var(--muted)" stroke-width="1.2"/><path d="M1.5 9.5c0-2.2 1.8-4 4-4s4 1.8 4 4" stroke="var(--muted)" stroke-width="1.2" stroke-linecap="round"/></svg>${t.intervenant}</span>`:'<span style="color:var(--muted)">—</span>'}</td>
-    <td style="font-size:12px;color:var(--text2)">${t.soustraitant?`<span style="display:flex;align-items:center;gap:5px"><svg width="11" height="11" viewBox="0 0 11 11" fill="none"><rect x="1" y="3" width="9" height="7" rx="1" stroke="var(--muted)" stroke-width="1.1"/><path d="M3.5 3V2.5A1.5 1.5 0 0 1 7.5 2.5V3" stroke="var(--muted)" stroke-width="1.1"/></svg>${t.soustraitant}</span>`:'<span style="color:var(--muted)">—</span>'}</td>
-    <td style="font-family:var(--mono);font-size:11.5px;color:var(--subtle)">${t.date?fmtDate(t.date):'—'}</td>
+    <td>
+      <div onclick="cycleStatus(${t._i})" title="Cliquer pour changer le statut" style="cursor:pointer;display:inline-block">${chipStatus(t.status)}</div>
+    </td>
+    <td>
+      <div class="editable-plain" title="Cliquer pour éditer" onclick="inlineEdit(this,${t._i},'intervenant')" style="font-size:12px;color:${t.intervenant?'var(--text2)':'var(--muted)'};min-height:20px">${t.intervenant||'<span style="color:var(--muted);font-style:italic;font-size:11px">+ intervenant</span>'}</div>
+    </td>
+    <td>
+      <div class="editable-plain" title="Cliquer pour éditer" onclick="inlineEdit(this,${t._i},'soustraitant')" style="font-size:12px;color:${t.soustraitant?'var(--text2)':'var(--muted)'};min-height:20px">${t.soustraitant||'<span style="color:var(--muted);font-style:italic;font-size:11px">+ sous-traitant</span>'}</div>
+    </td>
+    <td>
+      <div class="editable-plain" title="Cliquer pour éditer la date" onclick="inlineDateEdit(this,${t._i},'date')" style="font-family:var(--mono);font-size:11.5px;color:var(--subtle);cursor:pointer;min-height:20px">${t.date?fmtDate(t.date):'<span style="color:var(--muted);font-style:italic;font-size:11px">+ date</span>'}</div>
+    </td>
     <td>${relanceDots(t.relances)}</td>
-    <td style="font-family:var(--mono);font-size:12px;color:${isLate(t)?'var(--rose)':'var(--subtle)'};font-weight:${isLate(t)?'600':'400'}">${t.resolution?`<span style="display:flex;align-items:center;gap:4px"><svg width="11" height="11" viewBox="0 0 11 11" fill="none"><rect x="1" y="1.5" width="9" height="8.5" rx="1.2" stroke="currentColor" stroke-width="1.1"/><path d="M3.5 1v1.5M7.5 1v1.5M1 4.5h9" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/></svg>${fmtDate(t.resolution)}</span>`:'<span style="color:var(--muted)">—</span>'}</td>
+    <td>
+      <div class="editable-plain" title="Cliquer pour éditer la date de résolution" onclick="inlineDateEdit(this,${t._i},'resolution')" style="font-family:var(--mono);font-size:12px;color:${isLate(t)?'var(--red)':'var(--subtle)'};cursor:pointer;min-height:20px">${t.resolution?fmtDate(t.resolution):'<span style="color:var(--muted);font-style:italic;font-size:11px">+ date</span>'}</div>
+    </td>
   </tr>`).join('');
   updateStats();
 }
@@ -1032,12 +908,73 @@ function updateStats(){
   document.getElementById('navResolu').textContent=d;
   document.getElementById('navMeetings').textContent=meetings.length;
   // Mobile badge
-  const mb=document.getElementById('mobBadge');
-  if(mb){mb.textContent=p;mb.style.display=p>0?'':'none';}
   updateCountdown();
 }
 
-// ═══════════════ TICKET ACTIONS ═══════════════
+// ═══════════════ INLINE EDIT ═══════════════
+function inlineEdit(el, idx, field, multiline=false){
+  if(el.querySelector('input,textarea')) return; // already editing
+  const cur = tickets[idx][field]||'';
+  const input = document.createElement(multiline?'textarea':'input');
+  input.className = 'inline-input' + (multiline?' inline-textarea':'');
+  input.value = cur;
+  if(multiline) input.placeholder = 'Description…';
+  // replace content with input
+  el._savedHTML = el.innerHTML;
+  el.innerHTML = '';
+  el.appendChild(input);
+  input.focus();
+  input.select();
+
+  function save(){
+    const val = input.value.trim();
+    tickets[idx][field] = val;
+    saveDataDebounced();
+    syncTicketToSupabase(tickets[idx]);
+    renderTable();
+  }
+  input.addEventListener('blur', save);
+  input.addEventListener('keydown', e=>{
+    if(!multiline && e.key==='Enter'){ e.preventDefault(); input.blur(); }
+    if(e.key==='Escape'){ input.removeEventListener('blur',save); el.innerHTML=el._savedHTML; }
+  });
+  // stop click propagation so sorting doesn't fire
+  input.addEventListener('click', e=>e.stopPropagation());
+}
+
+function inlineDateEdit(el, idx, field){
+  if(el.querySelector('input')) return;
+  const cur = tickets[idx][field]||'';
+  const input = document.createElement('input');
+  input.type = 'date';
+  input.className = 'inline-input inline-input-date';
+  input.value = cur;
+  el._savedHTML = el.innerHTML;
+  el.innerHTML = '';
+  el.appendChild(input);
+  input.focus();
+  function save(){
+    tickets[idx][field] = input.value;
+    saveDataDebounced();
+    syncTicketToSupabase(tickets[idx]);
+    renderTable();
+  }
+  input.addEventListener('blur', save);
+  input.addEventListener('change', ()=>{ save(); });
+  input.addEventListener('keydown', e=>{
+    if(e.key==='Escape'){ input.removeEventListener('blur',save); el.innerHTML=el._savedHTML; }
+  });
+  input.addEventListener('click', e=>e.stopPropagation());
+}
+
+function cycleStatus(idx){
+  const cur = tickets[idx].status;
+  tickets[idx].status = cur==='résolu' ? 'en-cours' : 'résolu';
+  saveDataDebounced();
+  syncTicketToSupabase(tickets[idx]);
+  renderTable();
+  toast('Statut mis à jour');
+}
 function changeStatus(i,s){
   tickets[i].status=s;
   saveDataDebounced();
@@ -1056,20 +993,22 @@ function delTicket(i){
 function openModal(){
   editTicketIdx=null;
   document.getElementById('fTitle').value='';document.getElementById('fDesc').value='';
-  document.getElementById('fCat').value='Autre';document.getElementById('fStatus').value='en-cours';
+  document.getElementById('fStatus').value='en-cours';
   document.getElementById('fIntervenant').value='';document.getElementById('fSoustraitant').value='';
   document.getElementById('fDate').value=today();
   document.getElementById('fResolution').value='';
   document.getElementById('modalTicketTitle').innerHTML='<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1.5" y="1.5" width="13" height="13" rx="2" stroke="var(--brand)" stroke-width="1.5"/><path d="M4.5 8h7M4.5 5.5h7M4.5 10.5h4" stroke="var(--brand)" stroke-width="1.3" stroke-linecap="round"/></svg>Nouveau ticket';
   document.getElementById('btnSaveTicket').textContent='Créer';
   document.getElementById('btnSaveTicket').onclick=addTicket;
-  document.getElementById('modal').classList.add('open');
-  setTimeout(()=>document.getElementById('fTitle').focus(),100);
+  const modalEl = document.getElementById('modal');
+  if(!modalEl){ console.error('Modal #modal not found'); return; }
+  modalEl.classList.add('open');
+  setTimeout(()=>{ const f=document.getElementById('fTitle'); if(f)f.focus(); },100);
 }
 function openEdit(i){
   editTicketIdx=i;const t=tickets[i];
   document.getElementById('fTitle').value=t.title;document.getElementById('fDesc').value=t.desc||'';
-  document.getElementById('fCat').value=t.cat;document.getElementById('fStatus').value=t.status;
+  document.getElementById('fStatus').value=t.status;
   document.getElementById('fIntervenant').value=t.intervenant||'';
   document.getElementById('fSoustraitant').value=t.soustraitant||'';
   document.getElementById('fDate').value=t.date||today();
@@ -1082,7 +1021,7 @@ function openEdit(i){
 function saveEdit(){
   const t=tickets[editTicketIdx];
   t.title=document.getElementById('fTitle').value.trim()||t.title;
-  t.desc=document.getElementById('fDesc').value.trim();t.cat=document.getElementById('fCat').value;
+  t.desc=document.getElementById('fDesc').value.trim();
   t.status=document.getElementById('fStatus').value;t.intervenant=document.getElementById('fIntervenant').value.trim();
   t.soustraitant=document.getElementById('fSoustraitant').value.trim();
   t.date=document.getElementById('fDate').value||t.date;
@@ -1093,7 +1032,7 @@ function saveEdit(){
 }
 function addTicket(){
   const title=document.getElementById('fTitle').value.trim();if(!title){document.getElementById('fTitle').focus();return;}
-  const t={title,desc:document.getElementById('fDesc').value.trim(),cat:document.getElementById('fCat').value,
+  const t={title,desc:document.getElementById('fDesc').value.trim(),cat:'',
     status:document.getElementById('fStatus').value||'en-cours',
     date:document.getElementById('fDate').value||today(),
     intervenant:document.getElementById('fIntervenant').value.trim(),
@@ -1106,21 +1045,6 @@ function addTicket(){
 }
 
 // ── Synchronisation Supabase d'un ticket (insert si nouveau, upsert sinon) ──
-async function syncTicketToSupabase(t, isNew){
-  if(!sb) return;
-  try{
-    const row = ticketToDbRow(t);
-    if(isNew || !t._dbId){
-      const res = await sb.from('tickets').insert(row).select().single();
-      if(res.error){ console.warn('Supabase insert ticket:', res.error); return; }
-      if(res.data){ t._dbId = res.data.id; saveDataDebounced(); }
-    }else{
-      const res = await sb.from('tickets').upsert({...row, id:t._dbId});
-      if(res.error) console.warn('Supabase upsert ticket:', res.error);
-    }
-    showSaveIndicator('cloud');
-  }catch(e){ console.warn('syncTicketToSupabase exception:', e); }
-}
 
 // ═══════════════ RELANCE ═══════════════
 function openRelance(i){relanceTarget=i;document.getElementById('rDate').value=today();document.getElementById('rComment').value='';document.getElementById('modalRelance').classList.add('open');setTimeout(()=>document.getElementById('rComment').focus(),100);}
@@ -1134,99 +1058,357 @@ function saveRelance(){
   closeModal('modalRelance');renderTable();toast('Relance enregistrée ✓');
 }
 
-// ═══════════════ MEETINGS TIMELINE ═══════════════
-function renderTimeline(){
+// ═══════════════ MEETINGS TABLE (flat, triage-able) ═══════════════
+let mtgSortCol='date', mtgSortDir='desc';
+
+function sortMtg(col){
+  if(mtgSortCol===col) mtgSortDir=mtgSortDir==='asc'?'desc':'asc';
+  else{mtgSortCol=col;mtgSortDir='asc';}
+  renderMeetingTable();
+}
+
+function renderMeetingTable(){
   updateStats();
-  const tl=document.getElementById('mTimeline');
-  if(!meetings.length){
-    tl.innerHTML=`<div class="mlst-empty"><svg width="32" height="32" viewBox="0 0 32 32" fill="none"><rect x="2" y="4" width="28" height="26" rx="3" stroke="currentColor" stroke-width="1.3"/><path d="M9 2v4M23 2v4M2 13h28" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg><p>Aucune réunion.<br>Créez la première →</p></div>`;
-    showDetailEmpty();return;
-  }
-  tl.innerHTML=meetings.map((m,mi)=>`
-    <div class="mtli ${m.status==='terminee'?'done':''} ${activeMeetingIdx===mi?'active':''}" onclick="selectMeeting(${mi})">
-      <div class="mtli-dot"></div>
-      <div class="mtli-ln"></div>
-      <div class="mtli-date">${fmtDate(m.date)}</div>
-      <div class="mtli-ttl">${m.title}</div>
-      <div class="mtli-meta">
-        <span class="mbadge ${m.status}">${m.status==='terminee'?'Terminée':'Planifiée'}</span>
-        ${m.ticketReviews?`<span class="mtli-cnt">${m.ticketReviews.length} ticket${m.ticketReviews.length>1?'s':''}</span>`:''}
-        ${m.nextDate?`<span class="mtli-cnt" style="color:var(--brand)">↻ ${fmtDate(m.nextDate)}</span>`:''}
+  const q=(document.getElementById('mtgSearch')?.value||'').toLowerCase();
+  const fSt=document.getElementById('mtgStatusFilter')?.value||'';
+  const body=document.getElementById('mtgBody');
+  const empty=document.getElementById('mtgEmpty');
+  if(!body)return;
+
+  let rows=meetings.map((m,i)=>({...m,_i:i})).filter(m=>{
+    return(!q||m.title.toLowerCase().includes(q)||(m.participants||'').toLowerCase().includes(q))
+      &&(!fSt||m.status===fSt);
+  });
+  rows.sort((a,b)=>{
+    const va=a[mtgSortCol]||'', vb=b[mtgSortCol]||'';
+    return (mtgSortDir==='asc'?1:-1)*String(va).localeCompare(String(vb),'fr',{sensitivity:'base'});
+  });
+  // sort icons
+  ['title','date','participants','nextDate'].forEach(c=>{
+    const el=document.getElementById(`msico-${c}`);
+    if(!el)return;
+    el.textContent = mtgSortCol===c?(mtgSortDir==='asc'?'↑':'↓'):'↕';
+    el.style.opacity = mtgSortCol===c?'1':'.3';
+  });
+  if(!rows.length){body.innerHTML='';empty.style.display='block';return;}
+  empty.style.display='none';
+  body.innerHTML=rows.map(m=>`<tr style="cursor:pointer" onclick="openMtgDetail(${m._i})">
+    <td><div class="tt">${m.title}</div>${m.lieu?`<div class="ts">📍 ${m.lieu}</div>`:''}</td>
+    <td style="font-family:var(--mono);font-size:12px;color:var(--subtle)">${fmtDate(m.date)}</td>
+    <td style="font-size:12px;color:var(--text2)">${m.participants||'<span style="color:var(--muted)">—</span>'}</td>
+    <td style="font-family:var(--mono);font-size:12px;color:var(--muted)">${(m.ticketReviews||[]).length} ticket${(m.ticketReviews||[]).length!==1?'s':''}</td>
+    <td style="font-family:var(--mono);font-size:12px;color:var(--brand)">${m.nextDate?fmtDate(m.nextDate):'<span style="color:var(--muted)">—</span>'}</td>
+    <td><span class="chip ${m.status==='terminee'?'c-done':'c-prog'}">${m.status==='terminee'?'Terminée':'Planifiée'}</span></td>
+    <td onclick="event.stopPropagation()">
+      <div style="display:flex;gap:5px;opacity:0;transition:opacity .12s" class="mrow-actions">
+        <button class="btn btn-outline btn-xs" onclick="openMeetingForm(${m._i})">✎</button>
+        <button class="btn btn-outline btn-xs" onclick="viewCR(${m._i})">CR</button>
+        <button class="btn btn-outline btn-xs" onclick="dlCR(${m._i})">⬇</button>
+        <button class="btn btn-red btn-xs" onclick="delMeeting(${m._i})">✕</button>
       </div>
-    </div>`).join('');
-  if(activeMeetingIdx!==null&&meetings[activeMeetingIdx])renderDetail(activeMeetingIdx);
-  else showDetailEmpty();
+    </td>
+  </tr>`).join('');
+  // show action buttons on hover
+  document.querySelectorAll('#mtgBody tr').forEach(tr=>{
+    tr.addEventListener('mouseenter',()=>tr.querySelector('.mrow-actions')&&(tr.querySelector('.mrow-actions').style.opacity='1'));
+    tr.addEventListener('mouseleave',()=>tr.querySelector('.mrow-actions')&&(tr.querySelector('.mrow-actions').style.opacity='0'));
+  });
 }
 
-function selectMeeting(mi){
-  activeMeetingIdx=mi;
-  document.querySelectorAll('.mtli').forEach((el,i)=>el.classList.toggle('active',i===mi));
-  renderDetail(mi);
-}
+// Called by renderMeetings-compat path
+function renderTimeline(){ renderMeetingTable(); }
 
-function showDetailEmpty(){
-  document.getElementById('mDetailEmpty').style.display='flex';
-  document.getElementById('mDetailContent').style.display='none';
-}
-
-function renderDetail(mi){
+// Meeting detail slide panel
+function openMtgDetail(mi){
   const m=meetings[mi];
-  document.getElementById('mDetailEmpty').style.display='none';
-  const dc=document.getElementById('mDetailContent');
-  dc.style.display='flex';
-  dc.innerHTML=`
-    <div class="mdet-hdr">
+  const overlay=document.getElementById('mtgDetailOverlay');
+  const inner=document.getElementById('mtgDetailInner');
+  const actions=document.getElementById('mtgDetailActions');
+  if(!overlay||!inner)return;
+  inner.innerHTML=`
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:18px;gap:12px">
       <div>
-        <div class="mdet-ttl">${m.title}</div>
-        <div class="mdet-meta">
-          <span><svg width="11" height="11" viewBox="0 0 11 11" fill="none"><rect x="1" y="1.5" width="9" height="8.5" rx="1" stroke="currentColor" stroke-width="1.1"/><path d="M3.5 1v2M7.5 1v2M1 5h9" stroke="currentColor" stroke-width="1" stroke-linecap="round"/></svg>${fmtDate(m.date)}</span>
-          ${m.lieu?`<span><svg width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M5.5 1C3.57 1 2 2.57 2 4.5c0 2.72 3.5 6 3.5 6s3.5-3.28 3.5-6C9 2.57 7.43 1 5.5 1z" stroke="currentColor" stroke-width="1.1"/><circle cx="5.5" cy="4.5" r="1" fill="currentColor"/></svg>${m.lieu}</span>`:''}
-          ${m.participants?`<span><svg width="11" height="11" viewBox="0 0 11 11" fill="none"><circle cx="4" cy="3.5" r="1.5" stroke="currentColor" stroke-width="1.1"/><path d="M1 8.5c0-1.7 1.3-3 3-3" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/><circle cx="8" cy="3.5" r="1.5" stroke="currentColor" stroke-width="1.1"/><path d="M8 5.5c1.7 0 3 1.3 3 3" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/></svg>${m.participants}</span>`:''}
-          <span class="mbadge ${m.status}" style="font-size:10px">${m.status==='terminee'?'Terminée':'Planifiée'}</span>
+        <div style="font-size:18px;font-weight:700;color:var(--text);margin-bottom:5px">${m.title}</div>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;font-size:12px;color:var(--subtle)">
+          <span>📅 ${fmtDate(m.date)}</span>
+          ${m.lieu?`<span>📍 ${m.lieu}</span>`:''}
+          ${m.participants?`<span>👥 ${m.participants}</span>`:''}
         </div>
       </div>
-      <div class="mdeta">
-        <button class="btn btn-outline btn-sm" onclick="openMeetingForm(${mi})"><svg width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M7.5 1.5l2 2-5.5 5.5H2v-2L7.5 1.5z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/></svg>Modifier</button>
-        <button class="btn btn-outline btn-sm" onclick="viewCR(${mi})"><svg width="11" height="11" viewBox="0 0 11 11" fill="none"><rect x="1" y="1" width="9" height="9" rx="1.2" stroke="currentColor" stroke-width="1.1"/><path d="M3 4h5M3 6h5M3 8h3" stroke="currentColor" stroke-width="1" stroke-linecap="round"/></svg>CR</button>
-        <button class="btn btn-brand btn-sm" onclick="dlCR(${mi})"><svg width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M5.5 1v7M3 5.5l2.5 2.5 2.5-2.5M1 9.5h9" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
-        <button class="btn btn-red btn-sm" onclick="delMeeting(${mi})"><svg width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M2 3h7M4.5 3V2h2v1M3.5 3l.5 6h3l.5-6" stroke="currentColor" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
-      </div>
+      <span class="chip ${m.status==='terminee'?'c-done':'c-prog'}" style="flex-shrink:0">${m.status==='terminee'?'Terminée':'Planifiée'}</span>
     </div>
-    <div class="mdet-body">
-      ${(m.ticketReviews||[]).length?`
-        <div class="msection-lbl">
-          <svg width="11" height="11" viewBox="0 0 11 11" fill="none"><rect x="1" y="1" width="9" height="9" rx="1.5" stroke="currentColor" stroke-width="1.1"/><path d="M3.5 4.5h4M3.5 6.5h4M3.5 8.5h2" stroke="currentColor" stroke-width="1" stroke-linecap="round"/></svg>
-          Tickets passés en revue (${(m.ticketReviews||[]).length})
-        </div>
-        ${(m.ticketReviews||[]).map((r,ri)=>{
-          const t=tickets[r.ticketIdx];if(!t)return'';
-          const hist=meetings.filter(mm=>mm!==m).flatMap(mm=>(mm.ticketReviews||[]).filter(rr=>rr.ticketIdx===r.ticketIdx));
-          return`<div class="trk" id="trk-${mi}-${ri}">
-            <div class="trk-hd" onclick="toggleTrk('trk-${mi}-${ri}')">
-              <span class="trk-num">${ri+1}.</span>
-              <span class="trk-ttl">${t.title}</span>
-              ${chipStatus(r.newStatus||r.statusAtTime||t.status)}
-              ${(()=>{const col=catColor(t.cat);return `<span class="catpill" style="font-size:10px;color:${col.fg};background:${col.bg};border-color:${col.border}">${catIcon(t.cat)} ${t.cat}</span>`;})()}
-              <svg class="trk-chev" width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M4.5 3l4.5 3-4.5 3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    ${(m.ticketReviews||[]).length?`
+      <div class="slbl">Tickets passés en revue (${(m.ticketReviews||[]).length})</div>
+      ${(m.ticketReviews||[]).map((r,ri)=>{
+        const t=tickets[r.ticketIdx];if(!t)return'';
+        const hist=meetings.filter(mm=>mm!==m).flatMap(mm=>(mm.ticketReviews||[]).filter(rr=>rr.ticketIdx===r.ticketIdx));
+        return`<div class="trk" id="mtd-${mi}-${ri}">
+          <div class="trk-hd" onclick="toggleTrk('mtd-${mi}-${ri}')">
+            <span class="trk-num">${ri+1}.</span>
+            <span class="trk-ttl">${t.title}</span>
+            ${chipStatus(r.newStatus||r.statusAtTime||t.status)}
+            <svg class="trk-chev" width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M4.5 3l4.5 3-4.5 3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <div class="trk-bd">
+            ${r.comment?`<div class="trk-cmt"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M1.5 2a.5.5 0 0 1 .5-.5h8a.5.5 0 0 1 .5.5v5a.5.5 0 0 1-.5.5H4L1.5 9.5V2z" stroke="var(--muted)" stroke-width="1.1" stroke-linejoin="round"/></svg><span>${r.comment}</span></div>`:''}
+            <div class="trk-flds">
+              ${r.decision?`<div class="trk-fld"><div class="trk-flbl">Décision</div><div class="trk-fval">${r.decision}</div></div>`:''}
+              ${r.responsable?`<div class="trk-fld"><div class="trk-flbl">Responsable</div><div class="trk-fval">${r.responsable}</div></div>`:''}
+              ${r.resolutionDate?`<div class="trk-fld"><div class="trk-flbl">Résolution promise</div><div class="trk-fval">${fmtDate(r.resolutionDate)}</div></div>`:''}
             </div>
-            <div class="trk-bd">
-              ${r.comment?`<div class="trk-cmt"><svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M1.5 2a.5.5 0 0 1 .5-.5h8a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-.5.5H4L1.5 10.5V2z" stroke="var(--muted)" stroke-width="1.1" stroke-linejoin="round"/></svg><span>${r.comment}</span></div>`:''}
-              <div class="trk-flds">
-                ${r.decision?`<div class="trk-fld"><div class="trk-flbl">Décision</div><div class="trk-fval">${r.decision}</div></div>`:''}
-                ${r.responsable?`<div class="trk-fld"><div class="trk-flbl">Responsable</div><div class="trk-fval">${r.responsable}</div></div>`:''}
-                ${r.resolutionDate?`<div class="trk-fld"><div class="trk-flbl">Résolution promise</div><div class="trk-fval">${fmtDate(r.resolutionDate)}</div></div>`:''}
-                ${t.intervenant?`<div class="trk-fld"><div class="trk-flbl">Intervenant</div><div class="trk-fval">${t.intervenant}</div></div>`:''}
-              </div>
-              ${hist.length?`<div class="trk-hist"><div class="trk-hlbl">Historique des réunions précédentes</div>${hist.map(rr=>`<div class="trk-hrow">${fmtDate(rr.meetingDate||'')} — ${cap(rr.newStatus||'')}${rr.decision?' · '+rr.decision:''}</div>`).join('')}</div>`:''}
-            </div>
-          </div>`;
-        }).join('')}
-      `:''}
-      ${m.notes?`<div class="msection-lbl"><svg width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M2 2h7v7H2z" stroke="currentColor" stroke-width="1.1" stroke-linejoin="round"/><path d="M4 4.5h3M4 6.5h2" stroke="currentColor" stroke-width="1" stroke-linecap="round"/></svg>Notes</div><div class="nbox">${m.notes}</div>`:''}
-      ${m.nextDate?`<div class="msection-lbl">Prochaine réunion</div><div class="nxtbox"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1.5" y="2" width="11" height="10" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M4 1v2.5M10 1v2.5M1.5 5.5h11" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>${fmtDate(m.nextDate)}</div>`:''}
-    </div>`;
+            ${hist.length?`<div class="trk-hist"><div class="trk-hlbl">Historique</div>${hist.map(rr=>`<div class="trk-hrow">${fmtDate(rr.meetingDate||'')} — ${cap(rr.newStatus||'')}${rr.decision?' · '+rr.decision:''}</div>`).join('')}</div>`:''}
+          </div>
+        </div>`;
+      }).join('')}
+    `:''}
+    ${m.notes?`<div class="slbl">Notes</div><div class="nbox">${m.notes}</div>`:''}
+    ${m.nextDate?`<div class="slbl">Prochaine réunion</div><div class="nxtbox"><svg width="13" height="13" viewBox="0 0 13 13" fill="none"><rect x="1" y="1.5" width="11" height="10" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M4 1v2M9 1v2M1 5h11" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>${fmtDate(m.nextDate)}</div>`:''}
+  `;
+  actions.innerHTML=`
+    <button class="btn btn-outline btn-sm" onclick="openMeetingForm(${mi});closeMtgDetail()">✎ Modifier</button>
+    <button class="btn btn-outline btn-sm" onclick="viewCR(${mi})">📄 CR</button>
+    <button class="btn btn-brand btn-sm" onclick="dlCR(${mi})">⬇ PDF</button>
+  `;
+  overlay.style.display='block';
 }
-function toggleTrk(id){document.getElementById(id).classList.toggle('open');}
+function closeMtgDetail(e){
+  if(e&&e.target!==document.getElementById('mtgDetailOverlay'))return;
+  document.getElementById('mtgDetailOverlay').style.display='none';
+}
+function toggleTrk(id){document.getElementById(id)?.classList.toggle('open');}
+
+// ═══════════════ EXPORT ALL TICKETS PDF ═══════════════
+function exportAllPDF(){
+  if(!window.jspdf){toast('jsPDF non chargé');return;}
+  const {jsPDF}=window.jspdf;
+  const doc=new jsPDF({orientation:'landscape',unit:'mm',format:'a4'});
+
+  // ── Constantes ──
+  const ML=12, MR=12, MT=12;
+  const PW=297-ML-MR;
+  const PAGE_H=210;
+  const FOOTER_H=10;
+  const MAX_Y=PAGE_H-FOOTER_H-4;
+  let y=MT;
+  let pageNum=1;
+
+  const C={
+    brand:[37,99,235], brandLight:[239,246,255], brandMid:[191,219,254],
+    green:[5,150,105],  greenLight:[236,253,245],
+    amber:[217,119,6],  amberLight:[255,251,235],
+    red:[220,38,38],
+    text:[30,42,59],    text2:[61,77,99],
+    muted:[155,163,175], border:[228,234,240],
+    bg:[248,249,252],   white:[255,255,255]
+  };
+
+  // ── Colonnes : largeurs calibrées pour éviter les chevauchements ──
+  const cols=[
+    {lbl:'Sujet',         key:'title',        w:68, bold:true},
+    {lbl:'Statut',        key:'status',       w:20},
+    {lbl:'Intervenant',   key:'intervenant',  w:36},
+    {lbl:'Sous-traitant', key:'soustraitant', w:36},
+    {lbl:'Ouverture',     key:'date',         w:22, mono:true},
+    {lbl:'Relances',      key:'_relanceCount',w:16, center:true},
+    {lbl:'Résol. prévue', key:'resolution',   w:24, mono:true},
+    {lbl:'Description',   key:'desc',         w:PW-68-20-36-36-22-16-24, italic:true},
+  ];
+  // vérifier que la somme == PW
+  const totalW=cols.reduce((s,c)=>s+c.w,0);
+  cols[cols.length-1].w += PW-totalW; // ajuster la dernière colonne
+
+  const ROW_PAD=1.8; // padding vertical dans chaque cellule
+  const LINE_H=4.2;  // hauteur d'une ligne de texte
+  const MIN_ROW=8;   // hauteur minimale d'une ligne
+
+  function addPage(){
+    drawFooter();
+    doc.addPage();
+    pageNum++;
+    y=MT;
+    drawColHeaders();
+  }
+
+  function drawFooter(){
+    doc.setDrawColor(...C.border);
+    doc.line(ML,PAGE_H-FOOTER_H,ML+PW,PAGE_H-FOOTER_H);
+    doc.setFontSize(7.5);doc.setFont('helvetica','normal');doc.setTextColor(...C.muted);
+    doc.text(`TicketingDesk  ·  Export du ${fmtDate(today())}  ·  ${filtered.length} ticket${filtered.length!==1?'s':''}`,ML,PAGE_H-FOOTER_H+4);
+    doc.text(`${pageNum}`,ML+PW,PAGE_H-FOOTER_H+4,{align:'right'});
+  }
+
+  function drawColHeaders(){
+    // Fond en-tête
+    doc.setFillColor(...C.bg);
+    doc.setDrawColor(...C.border);
+    doc.rect(ML,y,PW,7,'FD');
+    // Textes
+    doc.setFontSize(7);doc.setFont('helvetica','bold');doc.setTextColor(...C.muted);
+    let cx=ML;
+    cols.forEach(c=>{
+      if(c.center) doc.text(c.lbl.toUpperCase(),cx+c.w/2,y+4.6,{align:'center'});
+      else doc.text(c.lbl.toUpperCase(),cx+2,y+4.6);
+      cx+=c.w;
+    });
+    // Séparateurs verticaux
+    doc.setDrawColor(...C.border);doc.setLineWidth(0.2);
+    cx=ML;
+    cols.forEach((c,i)=>{if(i>0)doc.line(cx,y,cx,y+7);cx+=c.w;});
+    doc.setLineWidth(0.3);
+    y+=7;
+  }
+
+  // ── HEADER PAGE ──
+  doc.setFillColor(...C.brand);
+  doc.rect(ML,y,PW,13,'F');
+  // Logo mark
+  doc.setFillColor(255,255,255,0.9);
+  doc.roundedRect(ML+4,y+2.5,8,8,1.5,1.5,'F');
+  doc.setFillColor(37,99,235);
+  doc.rect(ML+5,y+3.5,3,3,'F');
+  doc.setFillColor(255,255,255);
+  doc.rect(ML+9,y+3.5,2,1.5,'F');
+  doc.rect(ML+9,y+6,2,1.5,'F');
+  // Titre
+  doc.setFontSize(13);doc.setFont('helvetica','bold');doc.setTextColor(255,255,255);
+  doc.text('TicketingDesk',ML+15,y+7);
+  doc.setFontSize(9);doc.setFont('helvetica','normal');doc.setTextColor(191,219,254);
+  doc.text('— Export des tickets',ML+48,y+7);
+  doc.setFontSize(8);doc.setTextColor(255,255,255);
+  doc.text(`Généré le ${fmtDate(today())}`,ML+PW-2,y+7,{align:'right'});
+  y+=17;
+
+  // ── STATS ──
+  const encours=tickets.filter(t=>t.status==='en-cours'||t.status==='ouvert').length;
+  const resolu=tickets.filter(t=>t.status==='résolu').length;
+  const stats=[
+    {lbl:'Total tickets',val:String(tickets.length),col:C.text,bg:C.bg,bd:C.border},
+    {lbl:'En cours',     val:String(encours),        col:C.amber,bg:C.amberLight,bd:[253,230,138]},
+    {lbl:'Résolus',      val:String(resolu),          col:C.green,bg:C.greenLight,bd:[167,243,208]},
+  ];
+  const sw=(PW-6)/3;
+  stats.forEach((s,i)=>{
+    const sx=ML+i*(sw+3);
+    doc.setFillColor(...s.bg);doc.setDrawColor(...s.bd);
+    doc.roundedRect(sx,y,sw,11,2,2,'FD');
+    doc.setFontSize(14);doc.setFont('helvetica','bold');doc.setTextColor(...s.col);
+    doc.text(s.val,sx+sw/2,y+6.5,{align:'center'});
+    doc.setFontSize(7);doc.setFont('helvetica','normal');doc.setTextColor(...C.muted);
+    doc.text(s.lbl.toUpperCase(),sx+sw/2,y+10,{align:'center'});
+  });
+  y+=15;
+
+  // ── EN-TÊTES COLONNES ──
+  const filtered=getFiltered();
+  drawColHeaders();
+
+  // ── LIGNES ──
+  filtered.forEach((t,ri)=>{
+    // Calculer la hauteur nécessaire pour cette ligne
+    // (la colonne la plus haute détermine la hauteur de la ligne)
+    doc.setFontSize(8);
+    const cellHeights=cols.map(c=>{
+      const val=c.key==='_relanceCount'?String((t.relances||[]).length):(t[c.key]||'');
+      if(!val)return MIN_ROW;
+      const lines=doc.splitTextToSize(val,c.w-4);
+      return Math.max(MIN_ROW, lines.length*LINE_H + ROW_PAD*2);
+    });
+    const rowH=Math.max(...cellHeights);
+
+    // Nouvelle page si nécessaire
+    if(y+rowH>MAX_Y) addPage();
+
+    // Fond alterné
+    if(ri%2===0){
+      doc.setFillColor(...C.bg);
+      doc.rect(ML,y,PW,rowH,'F');
+    }
+
+    // Bordure basse
+    doc.setDrawColor(...C.border);doc.setLineWidth(0.25);
+    doc.line(ML,y+rowH,ML+PW,y+rowH);
+
+    // Séparateurs verticaux
+    doc.setLineWidth(0.15);
+    let vx=ML;
+    cols.forEach((c,i)=>{if(i>0)doc.line(vx,y,vx,y+rowH);vx+=c.w;});
+
+    // Contenu cellules
+    const isResolu=t.status==='résolu';
+    let cx=ML;
+    const textY=y+ROW_PAD+LINE_H;
+
+    cols.forEach(c=>{
+      const raw=c.key==='_relanceCount'?String((t.relances||[]).length):(t[c.key]||'');
+      doc.setFontSize(8);
+      doc.setLineWidth(0.3);
+
+      if(c.key==='status'){
+        // Badge coloré
+        const bw=16, bh=5.5;
+        const bx=cx+(c.w-bw)/2;
+        const by=y+(rowH-bh)/2;
+        if(isResolu){
+          doc.setFillColor(...C.greenLight);doc.setDrawColor(...[167,243,208]);
+          doc.roundedRect(bx,by,bw,bh,1.5,1.5,'FD');
+          doc.setFontSize(7);doc.setFont('helvetica','bold');doc.setTextColor(...C.green);
+        } else {
+          doc.setFillColor(...C.amberLight);doc.setDrawColor(...[253,230,138]);
+          doc.roundedRect(bx,by,bw,bh,1.5,1.5,'FD');
+          doc.setFontSize(7);doc.setFont('helvetica','bold');doc.setTextColor(...C.amber);
+        }
+        doc.text(isResolu?'Résolu':'En cours',bx+bw/2,by+3.8,{align:'center'});
+      } else if(c.key==='_relanceCount'){
+        const cnt=parseInt(raw)||0;
+        doc.setFont('helvetica','bold');
+        doc.setTextColor(cnt>0?...C.amber:...C.muted);
+        doc.setFontSize(9);
+        doc.text(raw,cx+c.w/2,y+rowH/2+2,{align:'center'});
+      } else {
+        // Texte normal avec retour à la ligne
+        if(c.bold) doc.setFont('helvetica','bold');
+        else if(c.italic){doc.setFont('helvetica','italic');doc.setFontSize(7.5);}
+        else doc.setFont('helvetica','normal');
+
+        if(c.key==='resolution'&&isLate(t)&&raw)
+          doc.setTextColor(...C.red);
+        else if(c.key==='title')
+          doc.setTextColor(...C.text);
+        else if(c.mono)
+          doc.setTextColor(...C.muted);
+        else
+          doc.setTextColor(...C.text2);
+
+        if(raw){
+          const lines=doc.splitTextToSize(raw,c.w-4);
+          lines.forEach((ln,li)=>{
+            const ly=textY+li*LINE_H;
+            if(ly<y+rowH-1) doc.text(ln,cx+2,ly);
+          });
+        } else {
+          doc.setTextColor(...C.muted);
+          doc.setFont('helvetica','italic');
+          doc.setFontSize(7);
+          doc.text('—',cx+2,textY);
+        }
+      }
+      cx+=c.w;
+    });
+
+    y+=rowH;
+  });
+
+  // Ligne finale du tableau
+  doc.setDrawColor(...C.border);doc.setLineWidth(0.4);
+  doc.line(ML,y,ML+PW,y);
+  // Bordures gauche/droite
+  doc.line(ML,MT+17+15+7,ML,y);
+  doc.line(ML+PW,MT+17+15+7,ML+PW,y);
+
+  drawFooter();
+  doc.save(`TicketingDesk_export_${today()}.pdf`);
+  toast(`PDF exporté (${filtered.length} tickets) ✓`);
+}
 
 // ═══════════════ MEETING FORM ═══════════════
 function openMeetingForm(midx){
@@ -1251,7 +1433,6 @@ function openMeetingForm(midx){
       <span class="dndh"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><circle cx="4" cy="3" r="1" fill="currentColor"/><circle cx="8" cy="3" r="1" fill="currentColor"/><circle cx="4" cy="6" r="1" fill="currentColor"/><circle cx="8" cy="6" r="1" fill="currentColor"/><circle cx="4" cy="9" r="1" fill="currentColor"/><circle cx="8" cy="9" r="1" fill="currentColor"/></svg></span>
       <input type="checkbox" value="${i}" ${chk} style="accent-color:var(--brand);width:14px;height:14px;flex-shrink:0">
       <span class="dndi-title">${t.title}</span>
-      ${(()=>{const col=catColor(t.cat);return `<span class="catpill" style="font-size:10px;color:${col.fg};background:${col.bg};border-color:${col.border}">${catIcon(t.cat)} ${t.cat}</span>`;})()}
     </div>`;
   }).join('')||'<div style="color:var(--muted);font-size:12px;padding:8px">Aucun ticket.</div>';
   initDnD(dndList);
@@ -1278,8 +1459,8 @@ let dndDragSrc=null;
 function initDnD(list){
   list.querySelectorAll('.dndi').forEach(item=>{
     item.addEventListener('dragstart',e=>{dndDragSrc=item;item.classList.add('dr');e.dataTransfer.effectAllowed='move';});
-    item.addEventListener('dragend',()=>{dndDragSrc=null;list.querySelectorAll('.dndi').forEach(i=>i.classList.remove('dr','ov'));});
-    item.addEventListener('dragover',e=>{e.preventDefault();if(item!==dndDragSrc){list.querySelectorAll('.dndi').forEach(i=>i.classList.remove('ov'));item.classList.add('ov');}});
+    item.addEventListener('dragend',()=>{dndDragSrc=null;list.querySelectorAll('.dndi').forEach(i=>i.classList.remove('dr','dnd-ov'));});
+    item.addEventListener('dragover',e=>{e.preventDefault();if(item!==dndDragSrc){list.querySelectorAll('.dndi').forEach(i=>i.classList.remove('dnd-ov'));item.classList.add('dnd-ov');}});
     item.addEventListener('drop',e=>{
       e.preventDefault();
       if(!dndDragSrc||item===dndDragSrc)return;
@@ -1288,7 +1469,7 @@ function initDnD(list){
       const toIdx=items.indexOf(item);
       if(fromIdx<toIdx)list.insertBefore(dndDragSrc,item.nextSibling);
       else list.insertBefore(dndDragSrc,item);
-      list.querySelectorAll('.dndi').forEach(i=>i.classList.remove('ov'));
+      list.querySelectorAll('.dndi').forEach(i=>i.classList.remove('dnd-ov'));
     });
   });
 }
@@ -1306,11 +1487,10 @@ function buildDynPanels(idxs,existing){
         <div class="tfch">
           <span class="tfcn">Ticket ${i+1}/${idxs.length}</span>
           ${chipStatus(t.status)}
-          ${catPill(t.cat)}
         ${t.desc?`<div style="font-size:12px;color:var(--subtle);margin-bottom:10px">${t.desc}</div>`:''}
         <div style="display:flex;gap:12px;font-size:11.5px;color:var(--subtle);margin-bottom:14px;flex-wrap:wrap">
           ${t.intervenant?`<span>🔧 ${t.intervenant}</span>`:''}
-          ${t.resolution?`<span style="color:${isLate(t)?'var(--rose)':'inherit'}">🎯 ${fmtDate(t.resolution)}</span>`:''}
+          ${t.resolution?`<span style="color:${isLate(t)?'var(--red)':'inherit'}">🎯 ${fmtDate(t.resolution)}</span>`:''}
           ${t.relances&&t.relances.length?`<span>📌 ${t.relances.length} relance(s)</span>`:''}
         </div>
       </div>
@@ -1392,21 +1572,6 @@ function saveMeeting(){
   closeMeetingForm();renderTimeline();renderTable();renderPendingBanner();toast('Réunion enregistrée ✓');
 }
 
-async function syncMeetingToSupabase(m, isNew){
-  if(!sb) return;
-  try{
-    const row = meetingToDbRow(m);
-    if(isNew || !m._dbId){
-      const res = await sb.from('reunions').insert(row).select().single();
-      if(res.error){ console.warn('Supabase insert réunion:', res.error); return; }
-      if(res.data){ m._dbId = res.data.id; saveDataDebounced(); }
-    }else{
-      const res = await sb.from('reunions').upsert({...row, id:m._dbId});
-      if(res.error) console.warn('Supabase upsert réunion:', res.error);
-    }
-    showSaveIndicator('cloud');
-  }catch(e){ console.warn('syncMeetingToSupabase exception:', e); }
-}
 
 function delMeeting(mi){
   if(!confirm('Supprimer cette réunion ?'))return;
@@ -1440,7 +1605,7 @@ function buildCRHTML(m){
         const t=tickets[r.ticketIdx];if(!t)return'';
         const hist=meetings.filter(mm=>mm!==m).flatMap(mm=>(mm.ticketReviews||[]).filter(rr=>rr.ticketIdx===r.ticketIdx));
         return`<div class="crb">
-          <div class="crbt">${i+1}. ${t.title} <span style="font-size:11px;font-family:var(--mono);color:var(--muted)">${t.cat}</span></div>
+          <div class="crbt">${i+1}. ${t.title} </div>
           <div class="crr"><span class="crl">Statut</span><span class="crv">${cap(r.newStatus||t.status)}</span></div>
           ${r.responsable?`<div class="crr"><span class="crl">Responsable</span><span class="crv">${r.responsable}</span></div>`:''}
           ${t.intervenant?`<div class="crr"><span class="crl">Intervenant</span><span class="crv">${t.intervenant}</span></div>`:''}
@@ -1557,7 +1722,7 @@ function dlCR(mi){
 
     // Category + status badge
     doc.setFontSize(7.5); doc.setFont('helvetica','normal'); doc.setTextColor(...MUTED);
-    doc.text(`[${t.cat}]`, MARGIN+6, y+10);
+    
     const statusTxt = isResolu ? 'Résolu' : 'En cours';
     doc.setFillColor(...isResolu ? [224,237,232] : [250,236,216]);
     doc.roundedRect(MARGIN+PW-22, y+1, 22, 6, 1.5, 1.5, 'F');
@@ -1686,9 +1851,10 @@ function toast(msg){
 }
 
 // ═══════════════ INIT ═══════════════
+document.getElementById('filterStatus').value='';
 renderTable();
 
-function setConnStatus(state){
+function setConnStatus_unused(state){
   const el=document.getElementById('connStatus');
   const dot=document.getElementById('connDot');
   const lbl=document.getElementById('connLabel');
@@ -1699,26 +1865,12 @@ function setConnStatus(state){
     dot.style.background='var(--brand)'; lbl.textContent='Connecté à Supabase';
     setTimeout(()=>{ el.style.display='none'; }, 2000);
   } else if(state==='offline'){
-    dot.style.background='var(--rose)'; lbl.textContent='Mode local (hors-ligne)';
+    dot.style.background='var(--red)'; lbl.textContent='Mode local (hors-ligne)';
     setTimeout(()=>{ el.style.display='none'; }, 3500);
   }
 }
 
-(async function bootstrap(){
-  if(!sb){ setConnStatus('offline'); return; }
-  setConnStatus('connecting');
-  const remote = await loadFromSupabase();
-  if(remote){
-    tickets = remote.tickets;
-    meetings = remote.meetings;
-    saveLocalBackup();
-    renderTable();
-    if(currentPage==='meetings') renderTimeline();
-    setConnStatus('connected');
-  } else {
-    setConnStatus('offline');
-  }
-})();
+// Supabase désactivé - localStorage uniquement
 </script>
 </body>
 </html>
