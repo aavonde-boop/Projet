@@ -4,454 +4,495 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>BuildDesk</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
 :root{
-  --bg:#F2F0EB;--surface:#FFF;--border:#DDD9D0;--border2:#C8C3B8;
-  --muted:#A09B90;--subtle:#6E6A62;--text:#17160F;--text2:#3D3B34;
-  --ink:#17160F;--sage:#3A6B5A;--sage-dim:#E0EDE8;--sage-mid:#C2DDD5;
-  --amber:#9E5C10;--amber-dim:#FAECD8;--amber-mid:#F0CFA0;
-  --rose:#A8292E;--rose-dim:#F8E4E4;
-  --slate:#374357;--slate-dim:#E3E8F2;--slate-mid:#B8C4D8;
-  --radius:6px;--mono:'JetBrains Mono',monospace;--sans:'Inter',sans-serif;
-  --shadow-sm:0 1px 3px rgba(23,22,15,.08),0 1px 2px rgba(23,22,15,.05);
-  --shadow:0 4px 16px rgba(23,22,15,.10),0 2px 4px rgba(23,22,15,.06);
+  --bg:#F7F8FA;
+  --surface:#FFFFFF;
+  --surface2:#F1F3F8;
+  --border:#E4E7EF;
+  --border2:#CDD1E0;
+  --text:#1E2A3B;
+  --text2:#3D4D63;
+  --subtle:#637081;
+  --muted:#9AA5B4;
+
+  --brand:#2563EB;
+  --brand-dk:#1D4ED8;
+  --brand-dim:#EFF6FF;
+  --brand-mid:#BFDBFE;
+
+  --green:#059669;  --green-dim:#ECFDF5; --green-mid:#A7F3D0;
+  --amber:#D97706;  --amber-dim:#FFFBEB; --amber-mid:#FDE68A;
+  --red:#DC2626;    --red-dim:#FEF2F2;   --red-mid:#FECACA;
+  --violet:#7C3AED; --violet-dim:#EDE9FE;--violet-mid:#C4B5FD;
+  --cyan:#0891B2;   --cyan-dim:#ECFEFF;  --cyan-mid:#A5F3FC;
+
+  --radius:8px; --radius-lg:12px;
+  --mono:'JetBrains Mono',monospace;
+  --sans:'Plus Jakarta Sans',sans-serif;
+  --sh0:0 1px 2px rgba(0,0,0,.05);
+  --sh1:0 2px 6px rgba(0,0,0,.07),0 1px 2px rgba(0,0,0,.04);
+  --sh2:0 8px 24px rgba(0,0,0,.09),0 2px 6px rgba(0,0,0,.05);
 }
-body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14px;line-height:1.55;min-height:100vh;display:flex;flex-direction:column;-webkit-font-smoothing:antialiased}
 
-/* HEADER */
-header{display:flex;align-items:center;justify-content:space-between;padding:0 24px;height:54px;background:var(--ink);position:sticky;top:0;z-index:100}
-.logo{font-family:var(--mono);font-weight:500;font-size:15px;color:#fff;letter-spacing:-.4px;display:flex;align-items:center;gap:8px}
-.logo-mark{width:26px;height:26px;background:var(--sage);border-radius:6px;display:flex;align-items:center;justify-content:center}
-.header-right{display:flex;align-items:center;gap:10px}
-.badge-pill{background:rgba(255,255,255,.15);color:#fff;border-radius:20px;font-family:var(--mono);font-size:11px;padding:3px 10px;border:1px solid rgba(255,255,255,.2)}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14px;line-height:1.6;min-height:100vh;display:flex;flex-direction:column;-webkit-font-smoothing:antialiased}
 
-/* LAYOUT */
-.shell{display:flex;flex:1}
+/* ── HEADER ── */
+header{
+  display:flex;align-items:center;gap:16px;
+  padding:0 28px;height:56px;
+  background:var(--surface);border-bottom:1px solid var(--border);
+  position:sticky;top:0;z-index:100;box-shadow:var(--sh0);
+}
+.logo{display:flex;align-items:center;gap:9px;text-decoration:none;flex-shrink:0}
+.logo-mark{
+  width:30px;height:30px;border-radius:8px;
+  background:linear-gradient(135deg,#3B82F6 0%,#1D4ED8 100%);
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 2px 6px rgba(37,99,235,.3);
+}
+.logo-text{font-family:var(--mono);font-size:14px;font-weight:500;color:var(--text);letter-spacing:-.4px}
+.logo-text em{color:var(--brand);font-style:normal}
+header .spacer{flex:1}
+#nextMeetingCountdown{
+  display:none;align-items:center;gap:6px;
+  font-family:var(--mono);font-size:11px;font-weight:500;
+  color:var(--brand);background:var(--brand-dim);
+  border:1px solid var(--brand-mid);padding:4px 12px;border-radius:20px;
+  cursor:pointer;transition:all .15s;
+}
+#nextMeetingCountdown:hover{background:var(--brand-mid)}
+#nextMeetingCountdown.urgent{color:var(--amber);background:var(--amber-dim);border-color:var(--amber-mid)}
+.hdr-count{
+  display:flex;align-items:center;gap:5px;
+  font-family:var(--mono);font-size:11px;font-weight:600;
+  color:var(--subtle);background:var(--surface2);
+  border:1px solid var(--border);padding:4px 11px;border-radius:20px;
+}
+.hdr-dot{width:7px;height:7px;border-radius:50%;background:var(--amber);flex-shrink:0}
 
-/* SIDEBAR */
-nav{width:210px;min-width:210px;background:var(--surface);border-right:2px solid var(--border);padding:20px 0;display:flex;flex-direction:column}
-nav .sec{font-family:var(--mono);font-size:9.5px;color:var(--muted);text-transform:uppercase;letter-spacing:1.6px;padding:16px 18px 6px;display:flex;align-items:center;gap:6px}
-nav a{display:flex;align-items:center;gap:9px;padding:8px 16px 8px 18px;color:var(--subtle);text-decoration:none;font-size:13px;font-weight:400;cursor:pointer;border-left:3px solid transparent;transition:all .12s;margin:1px 0}
-nav a:hover{color:var(--text);background:#EEECE6}
-nav a.active{color:var(--ink);border-left-color:var(--ink);background:#E8E4DC;font-weight:600}
-nav a.nav-meeting.active{color:var(--sage);border-left-color:var(--sage);background:var(--sage-dim);font-weight:600}
-nav a .nc{margin-left:auto;font-family:var(--mono);font-size:10px;background:var(--border);padding:2px 7px;border-radius:8px;color:var(--subtle);font-weight:500}
-nav a.active .nc{background:var(--border2);color:var(--text2)}
-nav .nav-divider{height:1px;background:var(--border);margin:10px 14px}
+/* ── LAYOUT ── */
+.shell{display:flex;flex:1;overflow:hidden}
 
-/* MAIN */
-main{flex:1;padding:32px 36px;overflow-y:auto}
-.page-view{display:none}.page-view.active{display:block}
+/* ── SIDEBAR ── */
+nav{
+  width:216px;min-width:216px;background:var(--surface);
+  border-right:1px solid var(--border);
+  padding:14px 0 20px;display:flex;flex-direction:column;overflow-y:auto;
+}
+nav .sec{
+  font-size:10px;font-weight:700;letter-spacing:1.6px;text-transform:uppercase;
+  color:var(--muted);padding:14px 18px 5px;
+}
+nav a{
+  display:flex;align-items:center;gap:9px;
+  padding:7px 14px 7px 18px;
+  color:var(--subtle);font-size:13px;font-weight:500;
+  cursor:pointer;text-decoration:none;
+  border-left:3px solid transparent;transition:all .1s;
+}
+nav a .n-ico{
+  width:26px;height:26px;border-radius:7px;display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;background:transparent;transition:background .1s;
+}
+nav a:hover{color:var(--text);background:var(--surface2)}
+nav a:hover .n-ico{background:var(--border)}
+nav a.active{color:var(--brand);border-left-color:var(--brand);background:var(--brand-dim);font-weight:600}
+nav a.active .n-ico{background:var(--brand-mid)}
+nav a.m-lnk.active{color:var(--violet);border-left-color:var(--violet);background:var(--violet-dim)}
+nav a.m-lnk.active .n-ico{background:var(--violet-mid)}
+.nc{margin-left:auto;font-family:var(--mono);font-size:10px;font-weight:700;padding:1px 7px;border-radius:10px;background:var(--surface2);color:var(--muted);border:1px solid var(--border)}
+nav a.active .nc{background:var(--brand-mid);color:var(--brand-dk);border-color:transparent}
+nav a.m-lnk.active .nc{background:var(--violet-mid);color:var(--violet);border-color:transparent}
+.ndiv{height:1px;background:var(--border);margin:8px 14px}
 
-/* BUTTONS */
-.btn{border:none;border-radius:var(--radius);padding:8px 15px;font-family:var(--sans);font-size:13px;font-weight:500;cursor:pointer;transition:all .12s;display:inline-flex;align-items:center;gap:6px;line-height:1}
+/* ── MAIN ── */
+main{flex:1;padding:28px 34px;overflow-y:auto}
+.pv{display:none}.pv.active{display:block}
+
+/* ── BUTTONS ── */
+.btn{border:none;border-radius:var(--radius);padding:8px 15px;font-family:var(--sans);font-size:13px;font-weight:600;cursor:pointer;transition:all .12s;display:inline-flex;align-items:center;gap:7px;line-height:1;white-space:nowrap}
 .btn:active{transform:scale(.97)}
-.btn-ink{background:var(--ink);color:#fff;box-shadow:var(--shadow-sm)}.btn-ink:hover{background:#2C2B22}
-.btn-sage{background:var(--sage);color:#fff;box-shadow:var(--shadow-sm)}.btn-sage:hover{background:#2E5748}
-.btn-outline{background:var(--surface);color:var(--subtle);border:1.5px solid var(--border2)}.btn-outline:hover{border-color:var(--ink);color:var(--ink);background:var(--bg)}
-.btn-outline-rose{background:var(--surface);color:var(--rose);border:1.5px solid var(--rose-dim)}.btn-outline-rose:hover{background:var(--rose-dim)}
-.btn-sm{padding:5px 11px;font-size:12px}
-.btn-xs{padding:3px 9px;font-size:11.5px;border-radius:4px;font-weight:500}
+.btn-brand{background:var(--brand);color:#fff;box-shadow:0 1px 4px rgba(37,99,235,.25)}.btn-brand:hover{background:var(--brand-dk)}
+.btn-outline{background:var(--surface);color:var(--text2);border:1.5px solid var(--border2)}.btn-outline:hover{border-color:var(--brand);color:var(--brand);background:var(--brand-dim)}
+.btn-red{background:var(--surface);color:var(--red);border:1.5px solid var(--red-mid)}.btn-red:hover{background:var(--red-dim)}
+.btn-green{background:var(--green);color:#fff}.btn-green:hover{opacity:.9}
+.btn-violet{background:var(--violet);color:#fff}.btn-violet:hover{opacity:.9}
+.btn-sm{padding:5px 12px;font-size:12px}
+.btn-xs{padding:3px 9px;font-size:11.5px;border-radius:6px}
 
-/* PAGE TITLE */
-.page-title{margin-bottom:26px}
-.page-title h1{font-size:20px;font-weight:700;color:var(--ink);display:flex;align-items:center;gap:8px}
-.page-title p{font-size:13px;color:var(--subtle);margin-top:3px;margin-left:28px}
+/* ── PAGE TITLE ── */
+.ptitle{margin-bottom:26px}
+.ptitle h1{font-size:20px;font-weight:700;color:var(--text);display:flex;align-items:center;gap:9px;letter-spacing:-.3px}
+.ptitle p{font-size:13px;color:var(--subtle);margin-top:3px;padding-left:32px}
 
-/* STATS */
-.stats{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-bottom:28px}
-.stat{background:var(--surface);border:1.5px solid var(--border);border-radius:10px;padding:18px 20px;box-shadow:var(--shadow-sm);display:flex;align-items:center;gap:14px}
-.stat-ico{width:40px;height:40px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
-.stat-ico.s-slate{background:var(--slate-dim)}.stat-ico.s-amber{background:var(--amber-dim)}.stat-ico.s-sage{background:var(--sage-dim)}
-.stat-lbl{font-family:var(--mono);font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px}
-.stat-val{font-size:28px;font-weight:700;font-family:var(--mono);color:var(--ink);line-height:1}
-.stat.s-amber .stat-val{color:var(--amber)}.stat.s-sage .stat-val{color:var(--sage)}
+/* ── STATS ── */
+.stats{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:26px}
+.stat{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:18px 20px;box-shadow:var(--sh0);display:flex;align-items:center;gap:14px}
+.stat-ico{width:42px;height:42px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.stat-ico.ic-amber{background:var(--amber-dim)}.stat-ico.ic-green{background:var(--green-dim)}
+.stat-lbl{font-size:11.5px;font-weight:500;color:var(--subtle);margin-bottom:3px}
+.stat-val{font-size:30px;font-weight:700;font-family:var(--mono);line-height:1}
+.stat.amber .stat-val{color:var(--amber)}.stat.green .stat-val{color:var(--green)}
 
-/* TOOLBAR */
-.toolbar{display:flex;gap:8px;margin-bottom:18px;align-items:center;flex-wrap:wrap}
-.search-wrap{display:flex;align-items:center;gap:8px;background:var(--surface);border:1.5px solid var(--border2);border-radius:var(--radius);padding:7px 12px;flex:1;min-width:200px;box-shadow:var(--shadow-sm)}
-.search-wrap input{background:none;border:none;outline:none;color:var(--text);font-family:var(--sans);font-size:13px;width:100%}
-.search-wrap input::placeholder{color:var(--muted)}
-select{background:var(--surface);border:1.5px solid var(--border2);border-radius:var(--radius);color:var(--text2);font-family:var(--sans);font-size:13px;padding:7px 11px;outline:none;cursor:pointer;box-shadow:var(--shadow-sm);font-weight:500}
-select:focus{border-color:var(--sage)}
+/* ── TOOLBAR ── */
+.toolbar{display:flex;gap:8px;margin-bottom:16px;align-items:center;flex-wrap:wrap}
+.srch{display:flex;align-items:center;gap:8px;background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius);padding:7px 13px;flex:1;min-width:200px;box-shadow:var(--sh0);transition:border-color .15s}
+.srch:focus-within{border-color:var(--brand);box-shadow:0 0 0 3px var(--brand-dim)}
+.srch input{background:none;border:none;outline:none;color:var(--text);font-family:var(--sans);font-size:13px;width:100%}
+.srch input::placeholder{color:var(--muted)}
+select{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius);color:var(--text2);font-family:var(--sans);font-size:13px;padding:7px 12px;outline:none;cursor:pointer;box-shadow:var(--sh0);font-weight:500}
+select:focus{border-color:var(--brand);box-shadow:0 0 0 3px var(--brand-dim)}
 
-/* TICKET TABLE */
-.tbl{width:100%;border-collapse:collapse;background:var(--surface);border:1.5px solid var(--border);border-radius:10px;overflow:hidden;box-shadow:var(--shadow-sm)}
-.tbl th{font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.9px;color:var(--subtle);text-align:left;padding:10px 14px;border-bottom:1.5px solid var(--border);background:#F7F5F0;font-weight:500}
-.tbl td{padding:13px 14px;border-bottom:1px solid var(--border);vertical-align:top}
+/* ── TABLE ── */
+.tbl{width:100%;border-collapse:collapse;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;box-shadow:var(--sh0)}
+.tbl th{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--muted);text-align:left;padding:10px 14px;border-bottom:1px solid var(--border);background:var(--surface2)}
+.tbl td{padding:12px 14px;border-bottom:1px solid var(--border);vertical-align:top;color:var(--text2)}
 .tbl tr:last-child td{border-bottom:none}
-.tbl tbody tr:hover td{background:#FAFAF7}
-.t-title{font-weight:600;color:var(--ink);font-size:13.5px}
-.t-sub{font-size:12px;color:var(--subtle);margin-top:3px;line-height:1.4}
-.t-actions{display:flex;gap:5px;opacity:0;transition:opacity .12s;margin-top:8px;flex-wrap:wrap}
-.tbl tr:hover .t-actions{opacity:1}
+.tbl tbody tr:hover td{background:#F5F7FF}
+.tt{font-weight:600;color:var(--text);font-size:13.5px}
+.ts{font-size:12px;color:var(--subtle);margin-top:2px;line-height:1.4}
+.ta{display:flex;gap:5px;opacity:0;transition:opacity .12s;margin-top:7px;flex-wrap:wrap}
+.tbl tr:hover .ta{opacity:1}
+/* sort */
+.tbl th.srt{cursor:pointer}.tbl th.srt:hover{color:var(--brand);background:#EEF2FF}
+.sico{display:inline-block;margin-left:3px;font-size:9px;opacity:.4}
+.tbl th.sa .sico::after{content:'↑';opacity:1;color:var(--brand)}
+.tbl th.sd .sico::after{content:'↓';opacity:1;color:var(--brand)}
+.tbl th:not(.sa):not(.sd) .sico::after{content:'↕'}
 
-/* CHIPS */
-.chip{display:inline-flex;align-items:center;gap:5px;font-family:var(--mono);font-size:10.5px;padding:3px 10px;border-radius:20px;white-space:nowrap;font-weight:600;border:1px solid transparent}
-.chip-open{background:var(--slate-dim);color:var(--slate);border-color:var(--slate-mid)}
-.chip-prog{background:var(--amber-dim);color:var(--amber);border-color:var(--amber-mid)}
-.chip-done{background:var(--sage-dim);color:var(--sage);border-color:var(--sage-mid)}
+/* ── CHIPS ── */
+.chip{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;white-space:nowrap;border:1px solid transparent}
+.c-prog{background:var(--amber-dim);color:var(--amber);border-color:var(--amber-mid)}
+.c-done{background:var(--green-dim);color:var(--green);border-color:var(--green-mid)}
 
-/* CAT PILL */
-.cat-pill{display:inline-flex;align-items:center;gap:5px;font-family:var(--mono);font-size:10.5px;color:var(--text2);background:var(--bg);border:1.5px solid var(--border2);padding:2px 8px;border-radius:4px;font-weight:500}
+/* ── CAT PILL ── */
+.catpill{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:600;padding:3px 10px;border-radius:8px;white-space:nowrap;border:1px solid transparent}
 
-/* RELANCE */
-.relance-row{display:flex;gap:4px;flex-wrap:wrap}
-.rl-item{display:inline-flex;align-items:center;gap:4px;font-size:10.5px;color:var(--text2);cursor:help;background:var(--bg);border:1.5px solid var(--border2);padding:2px 7px;border-radius:4px;font-family:var(--mono)}
+/* ── RELANCES ── */
+.rl-row{display:flex;gap:4px;flex-wrap:wrap}
+.rl{display:inline-flex;align-items:center;gap:4px;font-size:10.5px;font-family:var(--mono);color:var(--subtle);background:var(--surface2);border:1px solid var(--border);padding:2px 8px;border-radius:6px;cursor:help}
 .rl-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
 
-/* ══════════════════════════════════════
-   MEETINGS PAGE — NOUVEAU DESIGN
-══════════════════════════════════════ */
-.meetings-shell{display:grid;grid-template-columns:320px 1fr;gap:0;height:calc(100vh - 54px - 64px - 60px);min-height:500px;background:var(--surface);border:1.5px solid var(--border);border-radius:12px;overflow:hidden;box-shadow:var(--shadow-sm)}
+/* ── PENDING BANNER ── */
+.pb{background:var(--amber-dim);border:1px solid var(--amber-mid);border-radius:var(--radius-lg);padding:14px 18px;margin-bottom:20px}
+.pb-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.pb-title{font-weight:700;font-size:13px;color:var(--amber);display:flex;align-items:center;gap:7px}
+.pb-item{display:flex;align-items:flex-start;gap:9px;padding:8px 12px;background:rgba(255,255,255,.7);border:1px solid var(--amber-mid);border-radius:var(--radius);margin-bottom:6px;font-size:12.5px}
+.pb-item:last-child{margin-bottom:0}
+.pb-dot{width:7px;height:7px;border-radius:50%;background:var(--amber);flex-shrink:0;margin-top:4px}
+.pb-ttl{font-weight:600;color:var(--text);margin-bottom:2px}
+.pb-meta{color:var(--subtle);font-size:11.5px;display:flex;gap:12px;flex-wrap:wrap}
 
-/* LEFT: TIMELINE LIST */
-.mlist{border-right:1.5px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
-.mlist-header{padding:16px 18px;border-bottom:1px solid var(--border);background:#F7F5F0;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
-.mlist-header-title{font-size:12px;font-weight:600;color:var(--ink);display:flex;align-items:center;gap:6px}
-.mlist-scroll{flex:1;overflow-y:auto}
+/* ── MEETINGS ── */
+.mshl{display:grid;grid-template-columns:290px 1fr;height:calc(100vh - 56px - 28px - 26px - 54px);min-height:480px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;box-shadow:var(--sh0)}
+.mlst{border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;background:var(--surface2)}
+.mlst-hdr{padding:13px 16px;border-bottom:1px solid var(--border);background:var(--surface);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.mlst-ttl{font-size:12px;font-weight:700;color:var(--text);display:flex;align-items:center;gap:6px}
+.mlst-scroll{flex:1;overflow-y:auto}
 
-/* TIMELINE ITEM */
-.mtl-item{position:relative;padding:14px 16px 14px 42px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .1s}
-.mtl-item:hover{background:#FAFAF7}
-.mtl-item.active{background:var(--sage-dim);border-left:3px solid var(--sage)}
-.mtl-item.active .mtl-title{color:var(--sage)}
-.mtl-dot{position:absolute;left:18px;top:20px;width:10px;height:10px;border-radius:50%;border:2px solid var(--border2);background:var(--surface);z-index:1}
-.mtl-item.active .mtl-dot{background:var(--sage);border-color:var(--sage)}
-.mtl-item.done .mtl-dot{background:var(--sage-mid);border-color:var(--sage)}
-.mtl-line{position:absolute;left:22px;top:30px;bottom:-1px;width:2px;background:var(--border)}
-.mtl-item:last-child .mtl-line{display:none}
-.mtl-date{font-family:var(--mono);font-size:10px;color:var(--muted);margin-bottom:4px}
-.mtl-title{font-weight:600;font-size:13px;color:var(--text);margin-bottom:4px;line-height:1.3}
-.mtl-meta{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-.mtl-badge{font-family:var(--mono);font-size:10px;padding:2px 7px;border-radius:10px;font-weight:600;border:1px solid transparent}
-.mtl-badge.plan{background:var(--slate-dim);color:var(--slate);border-color:var(--slate-mid)}
-.mtl-badge.done{background:var(--sage-dim);color:var(--sage);border-color:var(--sage-mid)}
-.mtl-tcount{font-size:10.5px;color:var(--muted);font-family:var(--mono)}
+/* timeline */
+.mtli{position:relative;padding:12px 15px 12px 42px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .1s;background:var(--surface2)}
+.mtli:hover{background:#EEF2FF}
+.mtli.active{background:var(--brand-dim);border-left:3px solid var(--brand)}
+.mtli-dot{position:absolute;left:18px;top:19px;width:10px;height:10px;border-radius:50%;border:2px solid var(--border2);background:var(--surface);z-index:1}
+.mtli.active .mtli-dot{background:var(--brand);border-color:var(--brand)}
+.mtli.done .mtli-dot{background:var(--green-mid);border-color:var(--green)}
+.mtli-ln{position:absolute;left:22px;top:29px;bottom:-1px;width:2px;background:var(--border)}
+.mtli:last-child .mtli-ln{display:none}
+.mtli-date{font-family:var(--mono);font-size:10px;color:var(--muted);margin-bottom:3px;font-weight:500}
+.mtli-ttl{font-weight:600;font-size:13px;color:var(--text);margin-bottom:4px}
+.mtli.active .mtli-ttl{color:var(--brand)}
+.mtli-meta{display:flex;gap:7px;align-items:center;flex-wrap:wrap}
+.mbadge{font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;border:1px solid transparent}
+.mbadge.plan{background:var(--amber-dim);color:var(--amber);border-color:var(--amber-mid)}
+.mbadge.done{background:var(--green-dim);color:var(--green);border-color:var(--green-mid)}
+.mtli-cnt{font-size:10.5px;color:var(--muted);font-family:var(--mono)}
+.mlst-empty{padding:40px 20px;text-align:center;color:var(--muted)}
+.mlst-empty p{font-size:12px;margin-top:10px}
 
-.mlist-empty{padding:40px 20px;text-align:center;color:var(--muted)}
-.mlist-empty svg{opacity:.3;margin-bottom:10px}
-.mlist-empty p{font-size:12px}
+/* detail */
+.mdet{display:flex;flex-direction:column;overflow:hidden;background:var(--surface)}
+.mdet-empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--muted);gap:12px;padding:40px}
+.mdet-empty p{font-size:13px}
+.mdet-hdr{padding:16px 22px;border-bottom:1px solid var(--border);background:var(--surface);flex-shrink:0;display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.mdet-ttl{font-size:17px;font-weight:700;color:var(--text);margin-bottom:5px;letter-spacing:-.2px}
+.mdet-meta{display:flex;gap:12px;flex-wrap:wrap;font-size:12px;color:var(--subtle)}
+.mdet-meta span{display:flex;align-items:center;gap:5px}
+.mdet-actions{display:flex;gap:6px;flex-shrink:0;flex-wrap:wrap}
+.mdet-body{flex:1;overflow-y:auto;padding:18px 22px}
 
-/* RIGHT: DETAIL PANEL */
-.mdetail{display:flex;flex-direction:column;overflow:hidden}
-.mdetail-empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--muted);gap:12px;padding:40px}
-.mdetail-empty svg{opacity:.2}
-.mdetail-empty p{font-size:13px;color:var(--subtle)}
+/* ticket review rows */
+.trk{margin-bottom:9px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;transition:box-shadow .1s}
+.trk:hover{box-shadow:var(--sh1)}
+.trk-hd{display:flex;align-items:center;gap:9px;padding:11px 15px;cursor:pointer;transition:background .1s;user-select:none}
+.trk-hd:hover{background:var(--surface2)}
+.trk-num{font-family:var(--mono);font-size:10px;color:var(--muted);min-width:18px;font-weight:700}
+.trk-ttl{flex:1;font-weight:600;font-size:13px;color:var(--text)}
+.trk-chev{transition:transform .2s;color:var(--muted)}
+.trk.open .trk-chev{transform:rotate(90deg)}
+.trk-bd{display:none;padding:0 15px 14px;border-top:1px solid var(--border);background:var(--bg)}
+.trk.open .trk-bd{display:block}
+.trk-flds{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:11px}
+.trk-fld{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:9px 12px}
+.trk-flbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--muted);margin-bottom:3px}
+.trk-fval{font-size:12.5px;color:var(--text2);font-weight:500}
+.trk-cmt{margin-top:9px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:9px 12px;font-size:12.5px;color:var(--subtle);display:flex;gap:8px;align-items:flex-start}
+.trk-hist{margin-top:8px;padding:8px 11px;background:var(--amber-dim);border:1px solid var(--amber-mid);border-radius:var(--radius)}
+.trk-hlbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--amber);margin-bottom:4px}
+.trk-hrow{font-size:11.5px;color:var(--text2);padding-left:8px;border-left:2px solid var(--amber-mid);margin-bottom:3px}
+.slbl{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);margin:16px 0 7px;display:flex;align-items:center;gap:6px}
+.nbox{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:12px 14px;font-size:13px;color:var(--text2);line-height:1.6;white-space:pre-wrap}
+.nxtbox{display:flex;align-items:center;gap:9px;background:var(--brand-dim);border:1px solid var(--brand-mid);border-radius:var(--radius);padding:11px 14px;font-size:13px;color:var(--brand);font-weight:600}
 
-.mdetail-header{padding:18px 22px;border-bottom:1px solid var(--border);background:#F7F5F0;flex-shrink:0;display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
-.mdetail-title{font-size:17px;font-weight:700;color:var(--ink);margin-bottom:6px}
-.mdetail-meta{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--subtle)}
-.mdetail-meta span{display:flex;align-items:center;gap:4px}
-.mdetail-actions{display:flex;gap:7px;flex-shrink:0}
-
-.mdetail-body{flex:1;overflow-y:auto;padding:20px 22px}
-
-/* TICKET REVIEW ROWS */
-.trk-row{margin-bottom:12px;background:var(--bg);border:1.5px solid var(--border);border-radius:8px;overflow:hidden}
-.trk-row-head{display:flex;align-items:center;gap:10px;padding:11px 14px;cursor:pointer;transition:background .1s;user-select:none}
-.trk-row-head:hover{background:#EDEBE5}
-.trk-num{font-family:var(--mono);font-size:10px;color:var(--muted);min-width:20px}
-.trk-row-title{flex:1;font-weight:600;font-size:13px;color:var(--ink)}
-.trk-chevron{transition:transform .2s;color:var(--muted)}
-.trk-row.open .trk-chevron{transform:rotate(90deg)}
-.trk-row-body{display:none;padding:0 14px 14px;border-top:1px solid var(--border)}
-.trk-row.open .trk-row-body{display:block}
-.trk-fields{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
-.trk-field{background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:10px 12px}
-.trk-field-lbl{font-family:var(--mono);font-size:9.5px;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);margin-bottom:4px}
-.trk-field-val{font-size:12.5px;color:var(--text2);font-weight:500}
-.trk-comment{margin-top:10px;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:10px 12px;font-size:12.5px;color:var(--subtle);display:flex;gap:8px;align-items:flex-start}
-.trk-hist{margin-top:8px;padding:8px 12px;background:var(--amber-dim);border:1px solid var(--amber-mid);border-radius:6px}
-.trk-hist-lbl{font-family:var(--mono);font-size:9px;text-transform:uppercase;letter-spacing:.8px;color:var(--amber);margin-bottom:6px}
-.trk-hist-row{font-size:11px;color:var(--text2);padding-left:8px;border-left:2px solid var(--amber-mid);margin-bottom:3px}
-
-.msection-lbl{font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin:18px 0 8px;display:flex;align-items:center;gap:6px}
-.mnotes-box{background:var(--bg);border:1.5px solid var(--border);border-radius:8px;padding:12px 14px;font-size:13px;color:var(--text2);line-height:1.6;white-space:pre-wrap}
-.mnext-box{display:flex;align-items:center;gap:10px;background:var(--sage-dim);border:1.5px solid var(--sage-mid);border-radius:8px;padding:12px 14px;font-size:13px;color:var(--sage);font-weight:500}
-
-/* MEETING FORM SLIDE-IN */
-.mform-overlay{display:none;position:fixed;inset:0;background:rgba(23,22,15,.35);backdrop-filter:blur(2px);z-index:300;justify-content:flex-end}
-.mform-overlay.open{display:flex}
-.mform-panel{background:var(--surface);width:520px;max-width:95vw;height:100%;display:flex;flex-direction:column;box-shadow:var(--shadow);border-left:1.5px solid var(--border);overflow:hidden;animation:slideIn .22s ease}
-@keyframes slideIn{from{transform:translateX(40px);opacity:0}to{transform:translateX(0);opacity:1}}
-.mform-head{padding:20px 24px;border-bottom:1px solid var(--border);background:#F7F5F0;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
-.mform-head h2{font-size:16px;font-weight:700;color:var(--ink);display:flex;align-items:center;gap:8px}
-.mform-close{background:none;border:none;cursor:pointer;color:var(--subtle);padding:4px;border-radius:4px;display:flex}
-.mform-close:hover{color:var(--ink);background:var(--bg)}
-.mform-body{flex:1;overflow-y:auto;padding:22px 24px}
-.mform-foot{padding:16px 24px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px;flex-shrink:0}
-
-/* WSTEPS */
-.wsteps{display:flex;gap:6px;margin-bottom:22px}
-.wstep{flex:1;height:4px;border-radius:2px;background:var(--border);transition:background .2s}
-.wstep.done{background:var(--sage-mid)}.wstep.active{background:var(--sage)}
-.wstep-label{font-family:var(--mono);font-size:10px;color:var(--muted);margin-bottom:10px}
-
-/* WIZARD PANELS */
+/* ── FORM PANEL ── */
+.fmo{display:none;position:fixed;inset:0;background:rgba(30,42,59,.25);backdrop-filter:blur(4px);z-index:300;justify-content:flex-end}
+.fmo.open{display:flex}
+.fmp{background:var(--surface);width:540px;max-width:95vw;height:100%;display:flex;flex-direction:column;box-shadow:var(--sh2);border-left:1px solid var(--border);overflow:hidden;animation:sli .2s ease}
+@keyframes sli{from{transform:translateX(40px);opacity:0}to{transform:translateX(0);opacity:1}}
+.fmh{padding:18px 22px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.fmh h2{font-size:15px;font-weight:700;color:var(--text);display:flex;align-items:center;gap:8px}
+.fmc{background:none;border:none;cursor:pointer;color:var(--subtle);padding:6px;border-radius:var(--radius);display:flex;transition:all .1s}
+.fmc:hover{color:var(--red);background:var(--red-dim)}
+.fmb{flex:1;overflow-y:auto;padding:20px 22px}
+.fmf{padding:14px 22px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px;background:var(--surface2)}
+/* wizard */
+.wbar{display:flex;gap:4px;margin-bottom:18px}
+.ws{flex:1;height:3px;border-radius:2px;background:var(--border);transition:background .2s}
+.ws.done{background:var(--green-mid)}.ws.active{background:var(--brand)}
+.wlbl{font-size:11px;font-weight:600;color:var(--muted);margin-bottom:9px;font-family:var(--mono)}
 .wp{display:none}.wp.active{display:block}
+/* dnd */
+.dndl{display:flex;flex-direction:column;gap:5px}
+.dndi{display:flex;align-items:center;gap:9px;background:var(--surface2);border:1.5px solid var(--border);border-radius:var(--radius);padding:8px 11px;cursor:grab;transition:all .12s}
+.dndi:hover{border-color:var(--brand-mid);background:var(--brand-dim)}
+.dndi.ov{border-color:var(--brand);background:var(--brand-dim);box-shadow:0 0 0 3px var(--brand-dim)}
+.dndi.dr{opacity:.35}
+.dndh{color:var(--muted);flex-shrink:0}
+.dndt{flex:1;font-size:13px;font-weight:500;color:var(--text)}
+.tcf{font-size:10px;font-weight:700;color:var(--amber);background:var(--amber-dim);border:1px solid var(--amber-mid);padding:1px 7px;border-radius:10px}
+/* ticket form card */
+.tfc{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:13px 15px;margin-bottom:11px}
+.tfch{display:flex;align-items:center;gap:8px;margin-bottom:11px;flex-wrap:wrap}
+.tfcn{font-size:10.5px;font-weight:700;background:var(--brand-dim);color:var(--brand);padding:2px 9px;border-radius:10px;border:1px solid var(--brand-mid);font-family:var(--mono)}
+.thp{background:var(--amber-dim);border:1px solid var(--amber-mid);border-radius:var(--radius);padding:9px 11px;margin-bottom:11px}
+.thpl{font-size:10px;font-weight:700;color:var(--amber);text-transform:uppercase;letter-spacing:.7px;margin-bottom:4px;display:flex;align-items:center;gap:4px}
+.thpr{font-size:11.5px;color:var(--text2);border-left:2px solid var(--amber-mid);padding-left:7px;margin-bottom:3px}
 
-/* TICKET REVIEW FORM */
-.trk-form-card{background:var(--bg);border:1.5px solid var(--border);border-radius:8px;padding:14px 16px;margin-bottom:12px}
-.trk-form-head{display:flex;align-items:center;gap:8px;margin-bottom:12px}
-.trk-form-num{font-family:var(--mono);font-size:10px;background:var(--sage-dim);color:var(--sage);padding:2px 8px;border-radius:10px;border:1px solid var(--sage-mid)}
-.trk-form-title{font-weight:600;font-size:13px;color:var(--ink)}
-.trk-hist-prev{background:var(--amber-dim);border:1px solid var(--amber-mid);border-radius:6px;padding:10px 12px;margin-bottom:12px}
-.trk-hist-prev-lbl{font-family:var(--mono);font-size:9px;color:var(--amber);text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px;display:flex;align-items:center;gap:4px}
-.trk-hist-prev-row{font-size:11px;color:var(--text2);border-left:2px solid var(--amber-mid);padding-left:7px;margin-bottom:3px}
-
-/* MODAL GENERIC */
-.overlay{display:none;position:fixed;inset:0;background:rgba(23,22,15,.40);backdrop-filter:blur(3px);z-index:200;align-items:center;justify-content:center}
-.overlay.open{display:flex}
-.modal{background:var(--surface);border:1.5px solid var(--border);border-radius:12px;width:460px;max-width:95vw;padding:28px;max-height:92vh;overflow-y:auto;box-shadow:var(--shadow)}
-.modal h2{font-size:16px;font-weight:700;color:var(--ink);margin-bottom:20px;display:flex;align-items:center;gap:8px}
-.fg{margin-bottom:14px}
-.fg label{display:block;font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.9px;color:var(--subtle);margin-bottom:6px;font-weight:500}
-.fg input,.fg textarea,.fg select{width:100%;background:var(--bg);border:1.5px solid var(--border2);border-radius:var(--radius);color:var(--text);font-family:var(--sans);font-size:13px;padding:9px 12px;outline:none;transition:border-color .12s}
-.fg input:focus,.fg textarea:focus,.fg select:focus{border-color:var(--sage);background:var(--surface);outline:2px solid var(--sage-dim)}
-.fg textarea{resize:vertical;min-height:72px}
-.fr{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.mfoot{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:22px;flex-wrap:wrap;padding-top:18px;border-top:1px solid var(--border)}
-.mfoot-r{display:flex;gap:8px}
+/* ── MODAL ── */
+.ov{display:none;position:fixed;inset:0;background:rgba(30,42,59,.35);backdrop-filter:blur(4px);z-index:200;align-items:center;justify-content:center}
+.ov.open{display:flex}
+.mo{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);width:480px;max-width:95vw;padding:26px;max-height:92vh;overflow-y:auto;box-shadow:var(--sh2)}
+.mo h2{font-size:15.5px;font-weight:700;color:var(--text);margin-bottom:18px;display:flex;align-items:center;gap:8px;letter-spacing:-.2px}
+.fg{margin-bottom:13px}
+.fg label{display:block;font-size:11.5px;font-weight:600;color:var(--text2);margin-bottom:5px}
+.fg input,.fg textarea,.fg select{width:100%;background:var(--bg);border:1.5px solid var(--border);border-radius:var(--radius);color:var(--text);font-family:var(--sans);font-size:13px;padding:8px 12px;outline:none;transition:all .12s}
+.fg input:focus,.fg textarea:focus,.fg select:focus{border-color:var(--brand);background:var(--surface);box-shadow:0 0 0 3px var(--brand-dim)}
+.fg textarea{resize:vertical;min-height:68px}
+.fr{display:grid;grid-template-columns:1fr 1fr;gap:11px}
+.mft{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:20px;flex-wrap:wrap;padding-top:16px;border-top:1px solid var(--border)}
+.mfr{display:flex;gap:8px}
 
 /* CR */
-.cr-wrap{background:var(--bg);border:1.5px solid var(--border);border-radius:8px;padding:24px}
-.cr-h1{font-size:20px;font-weight:700;color:var(--ink);margin-bottom:2px}
-.cr-sub{font-size:12px;color:var(--subtle);margin-bottom:20px;font-family:var(--mono)}
-.cr-sec h3{font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);border-bottom:1.5px solid var(--border);padding-bottom:5px;margin:18px 0 12px}
-.cr-row{display:flex;gap:8px;font-size:12px;margin-bottom:4px}
-.cr-lbl{color:var(--muted);min-width:130px;font-family:var(--mono);font-size:10px;padding-top:1px}
-.cr-val{color:var(--text2);font-weight:500}
-.cr-tblock{border-left:3px solid var(--sage);padding-left:14px;margin-bottom:16px}
-.cr-ttitle{font-weight:700;font-size:14px;margin-bottom:6px}
-.cr-comment{font-size:12px;color:var(--subtle);padding:8px 10px;background:var(--surface);border-radius:4px;margin-top:7px;border:1px solid var(--border)}
-.cr-hist{font-size:11px;color:var(--muted);margin-top:5px;font-family:var(--mono)}
-.cr-footer{margin-top:24px;font-size:11px;color:var(--muted);font-family:var(--mono);border-top:1px solid var(--border);padding-top:10px}
+.crw{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:22px}
+.crw h1{font-size:19px;font-weight:700;color:var(--text);margin-bottom:2px;letter-spacing:-.3px}
+.crs{font-size:11px;color:var(--muted);margin-bottom:18px;font-family:var(--mono)}
+.crs3 h3{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted);border-bottom:1px solid var(--border);padding-bottom:4px;margin:16px 0 10px}
+.crr{display:flex;gap:8px;font-size:12.5px;margin-bottom:4px}
+.crl{color:var(--muted);min-width:130px;font-size:11px;font-weight:600;padding-top:1px;text-transform:uppercase;letter-spacing:.4px}
+.crv{color:var(--text2);font-weight:500}
+.crb{border-left:3px solid var(--brand);padding-left:13px;margin-bottom:14px}
+.crbt{font-weight:700;font-size:14px;margin-bottom:5px;color:var(--text)}
+.crc{font-size:12px;color:var(--subtle);padding:8px 11px;background:var(--surface);border-radius:var(--radius);margin-top:6px;border:1px solid var(--border)}
+.crh{font-size:11px;color:var(--muted);margin-top:4px;font-family:var(--mono)}
+.crft{margin-top:22px;font-size:11px;color:var(--muted);font-family:var(--mono);border-top:1px solid var(--border);padding-top:9px;display:flex;justify-content:space-between}
 
-/* TICKET CHECKBOXES */
-.tck-list{display:flex;flex-direction:column;gap:5px;max-height:200px;overflow-y:auto}
-.tck-row{display:flex;align-items:center;gap:10px;padding:8px 11px;background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius);cursor:pointer;transition:border-color .12s}
-.tck-row:hover{border-color:var(--sage)}
-.tck-row input[type=checkbox]{accent-color:var(--sage);width:14px;height:14px;flex-shrink:0}
-.tck-follow{font-size:10px;color:var(--amber);font-family:var(--mono);background:var(--amber-dim);border:1px solid var(--amber-mid);padding:1px 6px;border-radius:8px}
+/* ── INDICATORS ── */
+#saveIndicator{position:fixed;bottom:22px;left:22px;background:var(--surface);border:1px solid var(--border);color:var(--subtle);font-size:11px;font-family:var(--mono);font-weight:500;padding:6px 13px;border-radius:20px;display:flex;align-items:center;gap:6px;opacity:0;transform:translateY(10px);transition:all .3s;z-index:400;box-shadow:var(--sh1)}
+#connStatus{position:fixed;bottom:22px;left:22px;background:var(--surface);border:1px solid var(--border);color:var(--muted);font-size:10.5px;font-family:var(--mono);padding:5px 12px;border-radius:20px;display:none;align-items:center;gap:6px;z-index:399;box-shadow:var(--sh1)}
+#toast{position:fixed;bottom:22px;right:22px;background:var(--text);color:#fff;font-size:13px;font-weight:600;padding:11px 17px;border-radius:var(--radius);transform:translateY(60px);opacity:0;transition:all .28s;z-index:500;box-shadow:var(--sh2);display:flex;align-items:center;gap:8px}
 
-/* EMPTY */
-.empty{text-align:center;padding:60px 20px;color:var(--muted)}
-.empty-ico{margin-bottom:10px;opacity:.4}
+/* ── EMPTY ── */
+.empty{text-align:center;padding:56px 20px;color:var(--muted)}
+.empty-ico{margin-bottom:11px;opacity:.3}
 .empty p{font-size:13px;color:var(--subtle)}
 
-/* TOAST */
-#toast{position:fixed;bottom:24px;right:24px;background:var(--ink);color:#fff;font-size:13px;font-weight:500;padding:11px 18px;border-radius:var(--radius);transform:translateY(60px);opacity:0;transition:all .28s;z-index:500;box-shadow:var(--shadow);display:flex;align-items:center;gap:8px}
+/* ── MOBILE ── */
+.mobnav{display:none;position:fixed;bottom:0;left:0;right:0;z-index:150;background:var(--surface);border-top:1px solid var(--border);height:62px;padding:0 8px;padding-bottom:env(safe-area-inset-bottom);align-items:center;justify-content:space-around;box-shadow:0 -4px 14px rgba(0,0,0,.06)}
+.mobt{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;flex:1;padding:5px 4px;cursor:pointer;color:var(--muted);border:none;background:none;font-family:var(--sans);border-radius:var(--radius);transition:all .12s;min-width:0}
+.mobt:hover{color:var(--text)}
+.mobt.active{color:var(--brand)}
+.mobt.active-m{color:var(--violet)}
+.mobt span{font-size:10px;font-weight:600;white-space:nowrap}
+.mobw{position:relative;flex:1;display:flex;justify-content:center}
+.mobb{background:var(--amber);color:#fff;border-radius:10px;font-size:9px;font-weight:700;padding:1px 5px;position:absolute;top:2px;right:calc(50% - 22px)}
+.moba{width:44px;height:44px;border-radius:50%;background:var(--brand);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(37,99,235,.35);transition:all .12s;flex-shrink:0}
+.moba:hover{background:var(--brand-dk);transform:scale(1.06)}
+.moba:active{transform:scale(.95)}
 
-/* SORT HEADERS */
-.tbl th.sortable{cursor:pointer;user-select:none;white-space:nowrap}
-.tbl th.sortable:hover{color:var(--ink);background:#EDEBE6}
-.sort-ico{display:inline-block;margin-left:4px;opacity:.35;font-size:10px;vertical-align:middle}
-.tbl th.sort-asc .sort-ico::after{content:'↑';opacity:1}
-.tbl th.sort-desc .sort-ico::after{content:'↓';opacity:1}
-.tbl th:not(.sort-asc):not(.sort-desc) .sort-ico::after{content:'↕'}
-
-/* PENDING ACTIONS BANNER */
-.pending-banner{background:var(--amber-dim);border:1.5px solid var(--amber-mid);border-radius:10px;padding:14px 18px;margin-bottom:22px}
-.pending-banner-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
-.pending-banner-title{font-weight:600;font-size:13px;color:var(--amber);display:flex;align-items:center;gap:7px}
-.pending-item{display:flex;align-items:flex-start;gap:10px;padding:8px 10px;background:rgba(255,255,255,.6);border:1px solid var(--amber-mid);border-radius:6px;margin-bottom:6px;font-size:12.5px}
-.pending-item:last-child{margin-bottom:0}
-.pending-item-dot{width:8px;height:8px;border-radius:50%;background:var(--amber);flex-shrink:0;margin-top:3px}
-.pending-item-body{flex:1}
-.pending-item-title{font-weight:600;color:var(--text);margin-bottom:2px}
-.pending-item-meta{color:var(--subtle);font-size:11.5px;display:flex;gap:12px;flex-wrap:wrap}
-
-/* DRAG AND DROP */
-.dnd-list{display:flex;flex-direction:column;gap:6px}
-.dnd-item{display:flex;align-items:center;gap:8px;background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius);padding:9px 12px;cursor:grab;transition:box-shadow .15s,border-color .15s}
-.dnd-item:active{cursor:grabbing}
-.dnd-item.dnd-over{border-color:var(--sage);background:var(--sage-dim);box-shadow:0 0 0 2px var(--sage-mid)}
-.dnd-item.dnd-dragging{opacity:.4}
-.dnd-handle{color:var(--muted);flex-shrink:0;cursor:grab}
-.dnd-item-title{flex:1;font-size:13px;font-weight:500;color:var(--ink)}
-
-/* PRINT */
+/* ── PRINT ── */
 @media print{
-  header,nav,.btn,.toolbar,.stats,.mdetail-actions,.mform-overlay,#toast,.pending-banner{display:none!important}
-  body{background:#fff;font-family:Georgia,serif;font-size:12pt;color:#111}
-  .shell{display:block}
-  main{padding:0}
-  .tbl{box-shadow:none;border:1px solid #ccc}
-  .tbl th{background:#f5f5f5;color:#555;font-size:9pt}
-  .tbl td{font-size:10pt}
+  header,nav,.btn,.toolbar,.stats,.mdet-actions,.fmo,#toast,.pb,.mobnav,#saveIndicator,#connStatus{display:none!important}
+  body{background:#fff;font-size:11pt}.mo{box-shadow:none}
 }
-
-@media(max-width:900px){.meetings-shell{grid-template-columns:1fr;height:auto}.mlist{height:280px;border-right:none;border-bottom:1.5px solid var(--border)}}
-
-@media(max-width:768px){
-  nav{display:none}
-  .stats{grid-template-columns:1fr 1fr}
-  main{padding:14px 14px 90px}
-  .tbl th:nth-child(5),.tbl td:nth-child(5){display:none}
-  .tbl th:nth-child(6),.tbl td:nth-child(6){display:none}
-  .meetings-shell{height:auto}
-  .mdetail-header{flex-direction:column;gap:10px}
-  .mdetail-actions{flex-wrap:wrap}
-  #toast{bottom:80px;right:14px;left:14px;justify-content:center}
-}
-
-/* MOBILE BOTTOM NAV */
-.mobile-nav{
-  display:none;
-  position:fixed;bottom:0;left:0;right:0;z-index:150;
-  background:var(--surface);
-  border-top:1.5px solid var(--border);
-  height:62px;
-  padding:0 8px;
-  padding-bottom:env(safe-area-inset-bottom);
-  align-items:center;justify-content:space-around;
-  box-shadow:0 -4px 16px rgba(23,22,15,.08);
-}
-.mob-tab{
-  display:flex;flex-direction:column;align-items:center;justify-content:center;
-  gap:3px;flex:1;padding:6px 4px;cursor:pointer;
-  color:var(--muted);border:none;background:none;font-family:var(--sans);
-  border-radius:var(--radius);transition:all .12s;min-width:0;
-}
-.mob-tab:hover{color:var(--ink)}
-.mob-tab.active{color:var(--ink)}
-.mob-tab.active svg{stroke:var(--ink)}
-.mob-tab.active-meeting{color:var(--sage)}
-.mob-tab.active-meeting svg{stroke:var(--sage)}
-.mob-tab span{font-size:10px;font-weight:500;white-space:nowrap}
-.mob-tab svg{flex-shrink:0}
-.mob-badge{
-  background:var(--amber);color:#fff;border-radius:10px;
-  font-family:var(--mono);font-size:9px;padding:1px 5px;
-  position:absolute;top:4px;right:calc(50% - 22px);
-}
-.mob-tab-wrap{position:relative;flex:1;display:flex;justify-content:center}
-.mob-add{
-  width:44px;height:44px;border-radius:50%;background:var(--sage);
-  border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;
-  box-shadow:var(--shadow);transition:all .12s;flex-shrink:0;
-}
-.mob-add:hover{background:#2E5748;transform:scale(1.05)}
-.mob-add:active{transform:scale(.95)}
-
-@media(max-width:768px){
-  .mobile-nav{display:flex}
-}
+@media(max-width:900px){.mshl{grid-template-columns:1fr;height:auto}.mlst{height:270px;border-right:none;border-bottom:1px solid var(--border)}}
+@media(max-width:768px){nav{display:none}.stats{grid-template-columns:1fr 1fr}main{padding:14px 14px 82px}.mobnav{display:flex}#toast{bottom:76px;right:12px;left:12px;justify-content:center}}
 </style>
 </head>
 <body>
 
+<!-- HEADER -->
 <header>
   <div class="logo">
     <div class="logo-mark">
-      <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1" y="1" width="5" height="5" rx="1" fill="white" opacity=".9"/><rect x="8" y="1" width="5" height="5" rx="1" fill="white" opacity=".6"/><rect x="1" y="8" width="5" height="5" rx="1" fill="white" opacity=".6"/><rect x="8" y="8" width="5" height="5" rx="1" fill="white" opacity=".3"/></svg>
+      <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
+        <rect x="1" y="1" width="5.5" height="5.5" rx="1.5" fill="white"/>
+        <rect x="8.5" y="1" width="5.5" height="5.5" rx="1.5" fill="white" opacity=".7"/>
+        <rect x="1" y="8.5" width="5.5" height="5.5" rx="1.5" fill="white" opacity=".7"/>
+        <rect x="8.5" y="8.5" width="5.5" height="5.5" rx="1.5" fill="white" opacity=".4"/>
+      </svg>
     </div>
-    BuildDesk
+    <span class="logo-text">Build<em>Desk</em></span>
   </div>
-  <div class="header-right">
-    <span class="badge-pill" id="openCount">— ouverts</span>
-    <button class="btn btn-sage" id="headerBtn" onclick="handleHeaderBtn()">
-      <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M6.5 1v11M1 6.5h11" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
-      Nouveau ticket
-    </button>
+
+  <div id="nextMeetingCountdown" onclick="showPage('meetings',document.querySelector('nav a.m-lnk'))">
+    <svg width="11" height="11" viewBox="0 0 11 11" fill="none"><rect x=".5" y="1" width="10" height="9.5" rx="1.5" stroke="currentColor" stroke-width="1.1"/><path d="M3.5.5v2M7.5.5v2M.5 4h10" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/></svg>
+    <span id="countdownText">Prochaine réunion</span>
   </div>
+
+  <div class="spacer"></div>
+  <div class="hdr-count" id="openCount"><span class="hdr-dot"></span><span>— en cours</span></div>
+  <button class="btn btn-outline btn-sm" onclick="resetAllData()" title="Réinitialiser" style="padding:6px 10px">
+    <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M11 6.5A4.5 4.5 0 1 1 9.5 3.2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M11 1.5v3h-3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  </button>
+  <button class="btn btn-brand" id="headerBtn" onclick="handleHeaderBtn()">
+    <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 1v10M1 6h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+    Nouveau ticket
+  </button>
 </header>
 
 <div class="shell">
+
+<!-- SIDEBAR -->
 <nav>
-  <span class="sec">
-    <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><rect x=".5" y=".5" width="4" height="4" rx=".8" fill="currentColor" opacity=".6"/><rect x="5.5" y=".5" width="4" height="4" rx=".8" fill="currentColor" opacity=".3"/><rect x=".5" y="5.5" width="4" height="4" rx=".8" fill="currentColor" opacity=".3"/><rect x="5.5" y="5.5" width="4" height="4" rx=".8" fill="currentColor" opacity=".15"/></svg>
-    Tickets
-  </span>
-  <a class="active" onclick="showPage('tickets',this)">
-    <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1" y="1" width="12" height="12" rx="2" stroke="currentColor" stroke-width="1.4"/><path d="M4 5h6M4 7.5h6M4 10h4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
-    Tous <span class="nc" id="navAll">0</span>
-  </a>
-  <a onclick="showPageFiltered('en-cours',this)">
-    <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="5.5" stroke="currentColor" stroke-width="1.4"/><path d="M7 1.5A5.5 5.5 0 0 1 12.5 7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+  <span class="sec">Tickets</span>
+  <a class="active" onclick="showPageFiltered('en-cours',this)">
+    <span class="n-ico">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="5.5" stroke="currentColor" stroke-width="1.5"/><path d="M7 2A5 5 0 0 1 12 7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+    </span>
     En cours <span class="nc" id="navEnCours">0</span>
   </a>
   <a onclick="showPageFiltered('résolu',this)">
-    <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="5.5" stroke="currentColor" stroke-width="1.4" fill="currentColor" fill-opacity=".12"/><path d="M4.5 7l2 2 3-3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <span class="n-ico">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="5.5" stroke="currentColor" stroke-width="1.5" fill="currentColor" fill-opacity=".1"/><path d="M4.5 7l2 2 3-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </span>
     Résolus <span class="nc" id="navResolu">0</span>
   </a>
-  <div class="nav-divider"></div>
-  <span class="sec">
-    <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><rect x=".5" y="1.5" width="9" height="8" rx="1" stroke="currentColor" stroke-width="1"/><path d="M3 .5v2M7 .5v2M.5 4.5h9" stroke="currentColor" stroke-width="1" stroke-linecap="round"/></svg>
-    Réunions
-  </span>
-  <a class="nav-meeting" onclick="showPage('meetings',this)">
-    <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1" y="2.5" width="12" height="10" rx="1.5" stroke="currentColor" stroke-width="1.4"/><path d="M4 1v3M10 1v3M1 6h12" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><circle cx="4.5" cy="9" r=".8" fill="currentColor"/><circle cx="7" cy="9" r=".8" fill="currentColor"/><circle cx="9.5" cy="9" r=".8" fill="currentColor"/></svg>
+  <div class="ndiv"></div>
+  <span class="sec">Réunions</span>
+  <a class="m-lnk" onclick="showPage('meetings',this)">
+    <span class="n-ico">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1" y="2" width="12" height="11" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M4 1v2.5M10 1v2.5M1 6.5h12" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><circle cx="4.5" cy="9.5" r=".9" fill="currentColor"/><circle cx="7" cy="9.5" r=".9" fill="currentColor"/><circle cx="9.5" cy="9.5" r=".9" fill="currentColor"/></svg>
+    </span>
     Réunions <span class="nc" id="navMeetings">0</span>
   </a>
 </nav>
 
 <main>
 
-<!-- ═══ PAGE TICKETS ═══ -->
-<div class="page-view active" id="page-tickets">
-  <div class="page-title">
-    <h1><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="2" y="2" width="16" height="16" rx="3" stroke="var(--ink)" stroke-width="1.6"/><path d="M6 7h8M6 10.5h8M6 14h5" stroke="var(--ink)" stroke-width="1.4" stroke-linecap="round"/></svg>Tickets</h1>
+<!-- PAGE TICKETS -->
+<div class="pv active" id="page-tickets">
+  <div class="ptitle">
+    <h1>
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="2.5" y="2.5" width="15" height="15" rx="3.5" stroke="var(--brand)" stroke-width="1.7"/><path d="M6.5 7.5h7M6.5 10.5h7M6.5 13.5h4.5" stroke="var(--brand)" stroke-width="1.4" stroke-linecap="round"/></svg>
+      Tickets
+    </h1>
     <p>Suivi des interventions et incidents du bâtiment</p>
   </div>
   <div class="stats">
-    <div class="stat s-amber"><div class="stat-ico s-amber"><svg width="18" height="18" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="9" r="7" stroke="var(--amber)" stroke-width="1.6"/><path d="M5.5 9A3.5 3.5 0 0 1 9 5.5" stroke="var(--amber)" stroke-width="1.8" stroke-linecap="round"/></svg></div><div><div class="stat-lbl">En cours</div><div class="stat-val" id="statProgress">0</div></div></div>
-    <div class="stat s-sage"><div class="stat-ico s-sage"><svg width="18" height="18" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="9" r="7" stroke="var(--sage)" stroke-width="1.6"/><path d="M5.5 9l2.5 2.5 4-4" stroke="var(--sage)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div><div class="stat-lbl">Résolus</div><div class="stat-val" id="statClosed">0</div></div></div>
+    <div class="stat amber">
+      <div class="stat-ico ic-amber">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="7.5" stroke="var(--amber)" stroke-width="1.8"/><path d="M6.5 10A3.5 3.5 0 0 1 10 6.5" stroke="var(--amber)" stroke-width="2.2" stroke-linecap="round"/></svg>
+      </div>
+      <div><div class="stat-lbl">En cours</div><div class="stat-val" id="statProgress">0</div></div>
+    </div>
+    <div class="stat green">
+      <div class="stat-ico ic-green">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="7.5" stroke="var(--green)" stroke-width="1.8" fill="currentColor" fill-opacity=".07"/><path d="M6.5 10l2.5 2.5 4.5-4.5" stroke="var(--green)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <div><div class="stat-lbl">Résolus</div><div class="stat-val" id="statClosed">0</div></div>
+    </div>
   </div>
   <div class="toolbar">
-    <div class="search-wrap"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="6" cy="6" r="4.5" stroke="var(--muted)" stroke-width="1.4"/><path d="M9.5 9.5l3 3" stroke="var(--muted)" stroke-width="1.4" stroke-linecap="round"/></svg><input id="searchInput" type="text" placeholder="Rechercher un ticket..." oninput="renderTable()"></div>
-    <select id="filterStatus" onchange="renderTable()"><option value="">Tous statuts</option><option value="en-cours">En cours</option><option value="résolu">Résolu</option></select>
-    <select id="filterCat" onchange="renderTable()"><option value="">Toutes catégories</option><option>Ascenseur</option><option>Électricité</option><option>Plomberie</option><option>Sécurité</option><option>Ménage</option><option>Autre</option></select>
+    <div class="srch">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="6" cy="6" r="4.5" stroke="var(--muted)" stroke-width="1.5"/><path d="M9.5 9.5l3 3" stroke="var(--muted)" stroke-width="1.5" stroke-linecap="round"/></svg>
+      <input id="searchInput" type="text" placeholder="Rechercher un ticket…" oninput="renderTable()">
+    </div>
+    <select id="filterStatus" onchange="renderTable()">
+      <option value="">Tous statuts</option>
+      <option value="en-cours">En cours</option>
+      <option value="résolu">Résolu</option>
+    </select>
+    <select id="filterCat" onchange="renderTable()">
+      <option value="">Toutes catégories</option>
+      <option>Ascenseur</option><option>Électricité</option><option>Plomberie</option>
+      <option>Sécurité</option><option>Ménage</option><option>Autre</option>
+    </select>
   </div>
   <div id="pendingBanner"></div>
   <table class="tbl">
     <thead><tr>
-      <th class="sortable" onclick="sortBy('title')">Sujet<span class="sort-ico"></span></th>
-      <th class="sortable" onclick="sortBy('cat')">Catégorie<span class="sort-ico"></span></th>
+      <th class="srt" onclick="sortBy('title')">Sujet<span class="sico"></span></th>
+      <th class="srt" onclick="sortBy('cat')">Catégorie<span class="sico"></span></th>
       <th>Statut</th>
-      <th class="sortable" onclick="sortBy('intervenant')">Intervenant<span class="sort-ico"></span></th>
-      <th class="sortable" onclick="sortBy('soustraitant')">Sous-traitant<span class="sort-ico"></span></th>
+      <th class="srt" onclick="sortBy('intervenant')">Intervenant<span class="sico"></span></th>
+      <th class="srt" onclick="sortBy('soustraitant')">Sous-traitant<span class="sico"></span></th>
+      <th class="srt" onclick="sortBy('date')">Ouverture<span class="sico"></span></th>
       <th>Relances</th>
-      <th class="sortable" onclick="sortBy('resolution')">Résolution prévue<span class="sort-ico"></span></th>
+      <th class="srt" onclick="sortBy('resolution')">Résolution prévue<span class="sico"></span></th>
     </tr></thead>
     <tbody id="ticketBody"></tbody>
   </table>
-  <div class="empty" id="emptyState" style="display:none"><div class="empty-ico"><svg width="40" height="40" viewBox="0 0 40 40" fill="none"><rect x="4" y="4" width="32" height="32" rx="6" stroke="currentColor" stroke-width="1.5"/><path d="M12 14h16M12 20h16M12 26h10" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></div><p>Aucun ticket trouvé.</p></div>
+  <div class="empty" id="emptyState" style="display:none">
+    <div class="empty-ico"><svg width="44" height="44" viewBox="0 0 44 44" fill="none"><rect x="4" y="4" width="36" height="36" rx="8" stroke="currentColor" stroke-width="1.4"/><path d="M13 16h18M13 22h18M13 28h12" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></div>
+    <p>Aucun ticket ne correspond.</p>
+  </div>
 </div>
 
-<!-- ═══ PAGE RÉUNIONS ═══ -->
-<div class="page-view" id="page-meetings">
-  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
-    <div class="page-title" style="margin-bottom:0">
-      <h1><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="2" y="3" width="16" height="15" rx="2.5" stroke="var(--ink)" stroke-width="1.6"/><path d="M6 1.5v3M14 1.5v3M2 8h16" stroke="var(--ink)" stroke-width="1.4" stroke-linecap="round"/><circle cx="7" cy="13" r="1" fill="var(--ink)"/><circle cx="10" cy="13" r="1" fill="var(--ink)"/><circle cx="13" cy="13" r="1" fill="var(--ink)"/></svg>Réunions</h1>
-      <p>Revues ticket par ticket · CRs consultables & téléchargeables</p>
+<!-- PAGE RÉUNIONS -->
+<div class="pv" id="page-meetings">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:22px">
+    <div class="ptitle" style="margin-bottom:0">
+      <h1>
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="2" y="3" width="16" height="15" rx="3.5" stroke="var(--violet)" stroke-width="1.7"/><path d="M6.5 1.5v3M13.5 1.5v3M2 8.5h16" stroke="var(--violet)" stroke-width="1.4" stroke-linecap="round"/><circle cx="7" cy="13" r="1.1" fill="var(--violet)"/><circle cx="10" cy="13" r="1.1" fill="var(--violet)"/><circle cx="13" cy="13" r="1.1" fill="var(--violet)"/></svg>
+        Réunions
+      </h1>
+      <p>Revues ticket par ticket · CRs consultables et téléchargeables</p>
     </div>
   </div>
-
-  <!-- SPLIT: timeline + detail -->
-  <div class="meetings-shell">
-    <!-- LEFT TIMELINE -->
-    <div class="mlist">
-      <div class="mlist-header">
-        <span class="mlist-header-title">
-          <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><circle cx="3" cy="3" r="2" stroke="currentColor" stroke-width="1.2"/><circle cx="3" cy="9" r="2" stroke="currentColor" stroke-width="1.2"/><path d="M3 5v2M5 3h5M5 9h5" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/></svg>
+  <div class="mshl">
+    <div class="mlst">
+      <div class="mlst-hdr">
+        <span class="mlst-ttl">
+          <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><circle cx="3.5" cy="3.5" r="2" stroke="currentColor" stroke-width="1.2"/><circle cx="3.5" cy="9.5" r="2" stroke="currentColor" stroke-width="1.2"/><path d="M5.5 3.5h5M5.5 9.5h5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
           Historique
         </span>
-        <button class="btn btn-sage btn-sm" onclick="openMeetingForm(null)">
-          <svg width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M5.5 1v9M1 5.5h9" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+        <button class="btn btn-brand btn-sm" onclick="openMeetingForm(null)">
+          <svg width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M5.5 1v9M1 5.5h9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
           Nouvelle
         </button>
       </div>
-      <div class="mlist-scroll" id="mTimeline"></div>
+      <div class="mlst-scroll" id="mTimeline"></div>
     </div>
-    <!-- RIGHT DETAIL -->
-    <div class="mdetail" id="mDetailPanel">
-      <div class="mdetail-empty" id="mDetailEmpty">
-        <svg width="48" height="48" viewBox="0 0 48 48" fill="none"><rect x="4" y="7" width="40" height="37" rx="4" stroke="currentColor" stroke-width="1.5"/><path d="M14 4v7M34 4v7M4 19h40" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="17" cy="30" r="2" fill="currentColor"/><circle cx="24" cy="30" r="2" fill="currentColor"/><circle cx="31" cy="30" r="2" fill="currentColor"/></svg>
-        <p>Sélectionnez une réunion dans la liste</p>
+    <div class="mdet" id="mDetailPanel">
+      <div class="mdet-empty" id="mDetailEmpty">
+        <svg width="50" height="50" viewBox="0 0 50 50" fill="none"><rect x="4" y="6" width="42" height="40" rx="6" stroke="currentColor" stroke-width="1.4"/><path d="M14 4v5M36 4v5M4 17h42" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="18" cy="30" r="2.2" fill="currentColor"/><circle cx="25" cy="30" r="2.2" fill="currentColor"/><circle cx="32" cy="30" r="2.2" fill="currentColor"/></svg>
+        <p>Sélectionnez une réunion</p>
       </div>
       <div id="mDetailContent" style="display:none;flex-direction:column;height:100%"></div>
     </div>
@@ -462,11 +503,14 @@ select:focus{border-color:var(--sage)}
 </div>
 
 <!-- MODAL TICKET -->
-<div class="overlay" id="modal">
-<div class="modal">
-  <h2 id="modalTicketTitle"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1.5" y="1.5" width="13" height="13" rx="2" stroke="var(--sage)" stroke-width="1.5"/><path d="M4.5 8h7M4.5 5.5h7M4.5 10.5h4" stroke="var(--sage)" stroke-width="1.3" stroke-linecap="round"/></svg>Nouveau ticket</h2>
+<div class="ov" id="modal">
+<div class="mo">
+  <h2 id="modalTicketTitle">
+    <svg width="17" height="17" viewBox="0 0 17 17" fill="none"><rect x="1.5" y="1.5" width="14" height="14" rx="3" stroke="var(--brand)" stroke-width="1.5"/><path d="M5 8.5h7M5 6h7M5 11h4.5" stroke="var(--brand)" stroke-width="1.3" stroke-linecap="round"/></svg>
+    Nouveau ticket
+  </h2>
   <div class="fg"><label>Sujet *</label><input id="fTitle" type="text" placeholder="ex. Fuite eau niveau 3"></div>
-  <div class="fg"><label>Description</label><textarea id="fDesc" placeholder="Détails de l'incident..."></textarea></div>
+  <div class="fg"><label>Description</label><textarea id="fDesc" placeholder="Détails de l'incident…"></textarea></div>
   <div class="fr">
     <div class="fg"><label>Catégorie</label><select id="fCat"><option>Ascenseur</option><option>Électricité</option><option>Plomberie</option><option>Sécurité</option><option>Ménage</option><option>Autre</option></select></div>
     <div class="fg"><label>Statut</label><select id="fStatus"><option value="en-cours">En cours</option><option value="résolu">Résolu</option></select></div>
@@ -475,133 +519,307 @@ select:focus{border-color:var(--sage)}
     <div class="fg"><label>Intervenant</label><input id="fIntervenant" type="text" placeholder="ex. Tech. Otis"></div>
     <div class="fg"><label>Sous-traitant</label><input id="fSoustraitant" type="text" placeholder="ex. Entreprise Martin"></div>
   </div>
-  <div class="fg"><label>Résolution prévue</label><input id="fResolution" type="date"></div>
-  <div class="mfoot">
+  <div class="fr">
+    <div class="fg"><label>Date d'ouverture</label><input id="fDate" type="date"></div>
+    <div class="fg"><label>Résolution prévue</label><input id="fResolution" type="date"></div>
+  </div>
+  <div class="mft">
     <button class="btn btn-outline" onclick="closeModal('modal')">Annuler</button>
-    <div class="mfoot-r"><button class="btn btn-ink" id="btnSaveTicket" onclick="addTicket()">Créer</button></div>
+    <div class="mfr"><button class="btn btn-brand" id="btnSaveTicket" onclick="addTicket()">Créer le ticket</button></div>
   </div>
 </div>
 </div>
 
 <!-- MODAL RELANCE -->
-<div class="overlay" id="modalRelance">
-<div class="modal">
-  <h2><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 1.5A6.5 6.5 0 1 1 1.5 8" stroke="var(--amber)" stroke-width="1.5" stroke-linecap="round"/><path d="M1.5 4V8H5.5" stroke="var(--amber)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>Ajouter une relance</h2>
+<div class="ov" id="modalRelance">
+<div class="mo">
+  <h2>
+    <svg width="17" height="17" viewBox="0 0 17 17" fill="none"><path d="M14.5 8.5A6.5 6.5 0 1 1 10 2.5" stroke="var(--amber)" stroke-width="1.6" stroke-linecap="round"/><path d="M14.5 2v4h-4" stroke="var(--amber)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    Ajouter une relance
+  </h2>
   <div class="fg"><label>Date</label><input id="rDate" type="date"></div>
-  <div class="fg"><label>Commentaire</label><textarea id="rComment" placeholder="Point de situation..."></textarea></div>
-  <div class="mfoot">
+  <div class="fg"><label>Commentaire</label><textarea id="rComment" placeholder="Point de situation…"></textarea></div>
+  <div class="mft">
     <button class="btn btn-outline" onclick="closeModal('modalRelance')">Annuler</button>
-    <div class="mfoot-r"><button class="btn btn-ink" onclick="saveRelance()">Enregistrer</button></div>
+    <div class="mfr"><button class="btn btn-brand" onclick="saveRelance()">Enregistrer</button></div>
   </div>
 </div>
 </div>
 
 <!-- MODAL CR -->
-<div class="overlay" id="modalCR">
-<div class="modal" style="width:660px">
+<div class="ov" id="modalCR">
+<div class="mo" style="width:680px">
   <div id="crContent"></div>
-  <div class="mfoot">
+  <div class="mft">
     <button class="btn btn-outline" onclick="closeModal('modalCR')">Fermer</button>
-    <div class="mfoot-r">
-      <button class="btn btn-outline" onclick="printCR()"><svg width="13" height="13" viewBox="0 0 13 13" fill="none"><rect x="1" y="4" width="11" height="7" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M3.5 4V2a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 .5.5v2" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>Imprimer</button>
-      <button class="btn btn-sage" onclick="downloadCR()"><svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M6.5 1v8M3.5 6.5l3 3 3-3M1 10.5v1a.5.5 0 0 0 .5.5h11a.5.5 0 0 0 .5-.5v-1" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>Télécharger CR</button>
+    <div class="mfr">
+      <button class="btn btn-outline" onclick="printCR()">
+        <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><rect x="1" y="4.5" width="11" height="7" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M3.5 4.5V2.5a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 .5.5v2" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+        Imprimer
+      </button>
+      <button class="btn btn-brand" onclick="downloadCR()">
+        <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M6.5 1.5v7M3.5 6l3 3 3-3M1 11h11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Télécharger PDF
+      </button>
     </div>
   </div>
 </div>
 </div>
 
-<!-- MEETING FORM SLIDE-IN -->
-<div class="mform-overlay" id="mformOverlay">
-<div class="mform-panel">
-  <div class="mform-head">
+<!-- MEETING PANEL -->
+<div class="fmo" id="mformOverlay">
+<div class="fmp">
+  <div class="fmh">
     <h2 id="mformTitle">
-      <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1.5" y="2.5" width="13" height="12" rx="2" stroke="var(--sage)" stroke-width="1.5"/><path d="M5 1v3M11 1v3M1.5 7h13" stroke="var(--sage)" stroke-width="1.3" stroke-linecap="round"/></svg>
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1.5" y="2" width="13" height="12.5" rx="2.5" stroke="var(--violet)" stroke-width="1.5"/><path d="M5 1v3M11 1v3M1.5 7h13" stroke="var(--violet)" stroke-width="1.3" stroke-linecap="round"/></svg>
       Nouvelle réunion
     </h2>
-    <button class="mform-close" onclick="closeMeetingForm()">
-      <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M4.5 4.5l9 9M13.5 4.5l-9 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+    <button class="fmc" onclick="closeMeetingForm()">
+      <svg width="17" height="17" viewBox="0 0 17 17" fill="none"><path d="M4.5 4.5l8 8M12.5 4.5l-8 8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
     </button>
   </div>
-  <div class="mform-body">
-    <!-- progress bar -->
-    <div class="wsteps" id="wsteps"></div>
-    <div class="wstep-label" id="wstepLabel">Étape 1 — Informations</div>
-
-    <!-- STEP 0: infos -->
+  <div class="fmb">
+    <div class="wbar" id="wsteps"></div>
+    <div class="wlbl" id="wstepLabel">Étape 1 — Informations</div>
     <div class="wp active" id="mwp0">
       <div class="fr">
-        <div class="fg"><label>Titre *</label><input id="mTitle" type="text" placeholder="ex. Revue juin 2026"></div>
-        <div class="fg"><label>Date *</label><input id="mDate" type="date"></div>
+        <div class="fg"><label>Titre *</label><input id="mTitle" type="text" placeholder="ex. Revue incidents juin"></div>
+        <div class="fg"><label>Date</label><input id="mDate" type="date"></div>
       </div>
       <div class="fr">
-        <div class="fg"><label>Lieu</label><input id="mLieu" type="text" placeholder="ex. Salle 2A"></div>
-        <div class="fg"><label>Participants</label><input id="mPart" type="text" placeholder="ex. Direction, Facility"></div>
+        <div class="fg"><label>Lieu</label><input id="mLieu" type="text" placeholder="Salle 2A…"></div>
+        <div class="fg"><label>Participants</label><input id="mPart" type="text" placeholder="Direction, RH…"></div>
       </div>
       <div class="fg"><label>Statut</label><select id="mStatus"><option value="terminee">Terminée</option><option value="planifiee">Planifiée</option></select></div>
       <div class="fg">
         <label>Tickets à passer en revue <span style="font-family:var(--mono);font-size:9px;color:var(--muted);font-weight:400">— glisser pour réordonner</span></label>
-        <div class="dnd-list" id="tckList"></div>
+        <div class="dndl" id="tckList"></div>
       </div>
     </div>
-
-    <!-- STEP 1..N: ticket reviews (injected) -->
     <div id="dynPanels"></div>
-
-    <!-- STEP FINAL: synthèse -->
     <div class="wp" id="mwpFinal">
-      <div class="fg"><label>Notes de synthèse</label><textarea id="mNotes" placeholder="Points de vigilance, actions prioritaires..."></textarea></div>
-      <div class="fg"><label>Date de la prochaine réunion</label><input id="mNextDate" type="date"></div>
+      <div class="fg"><label>Notes de synthèse</label><textarea id="mNotes" placeholder="Points de vigilance, actions prioritaires…"></textarea></div>
+      <div class="fg"><label>Date prochaine réunion</label><input id="mNextDate" type="date"></div>
     </div>
   </div>
-  <div class="mform-foot">
+  <div class="fmf">
     <button class="btn btn-outline" id="mfBtnPrev" onclick="wizNav(-1)" style="display:none">← Retour</button>
-    <button class="btn btn-sage" id="mfBtnNext" onclick="wizNav(1)">Suivant →</button>
+    <button class="btn btn-violet" id="mfBtnNext" onclick="wizNav(1)">Suivant →</button>
   </div>
 </div>
 </div>
 
-<!-- MOBILE BOTTOM NAV -->
-<div class="mobile-nav" id="mobileNav">
-  <!-- Tickets -->
-  <div class="mob-tab-wrap">
-    <button class="mob-tab active" id="mob-all" onclick="mobNav('tickets','all',this)">
-      <svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="2" y="2" width="18" height="18" rx="3"/><path d="M6 8h10M6 11.5h10M6 15h6" stroke-linecap="round"/></svg>
-      <span>Tickets</span>
-    </button>
-  </div>
-  <!-- En cours -->
-  <div class="mob-tab-wrap">
-    <button class="mob-tab" id="mob-encours" onclick="mobNav('tickets','en-cours',this)">
-      <svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="11" cy="11" r="8"/><path d="M11 3.5A7.5 7.5 0 0 1 18.5 11" stroke-linecap="round"/></svg>
+<!-- MOBILE NAV -->
+<div class="mobnav" id="mobileNav">
+  <div class="mobw">
+    <button class="mobt active" id="mob-encours" onclick="mobNav('tickets','en-cours',this)">
+      <svg width="21" height="21" viewBox="0 0 21 21" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="10.5" cy="10.5" r="7.5"/><path d="M10.5 3.5A7 7 0 0 1 17.5 10.5" stroke-linecap="round"/></svg>
       <span>En cours</span>
-      <span class="mob-badge" id="mobBadge" style="display:none">0</span>
+      <span class="mobb" id="mobBadge" style="display:none">0</span>
     </button>
   </div>
-  <!-- Bouton + central -->
-  <button class="mob-add" onclick="handleHeaderBtn()" aria-label="Nouveau">
-    <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 3v14M3 10h14" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg>
-  </button>
-  <!-- Résolus -->
-  <div class="mob-tab-wrap">
-    <button class="mob-tab" id="mob-resolu" onclick="mobNav('tickets','résolu',this)">
-      <svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="11" cy="11" r="8" fill="currentColor" fill-opacity=".1"/><path d="M7 11l3 3 5-5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  <div class="mobw">
+    <button class="mobt" id="mob-resolu" onclick="mobNav('tickets','résolu',this)">
+      <svg width="21" height="21" viewBox="0 0 21 21" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="10.5" cy="10.5" r="7.5" fill="currentColor" fill-opacity=".08"/><path d="M6.5 10.5l3 3 5-5" stroke-linecap="round" stroke-linejoin="round"/></svg>
       <span>Résolus</span>
     </button>
   </div>
-  <!-- Réunions -->
-  <div class="mob-tab-wrap">
-    <button class="mob-tab" id="mob-meetings" onclick="mobNav('meetings','',this)">
-      <svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="2" y="3.5" width="18" height="16" rx="2.5"/><path d="M7 2v3.5M15 2v3.5M2 10h18" stroke-linecap="round"/><circle cx="7.5" cy="15" r="1" fill="currentColor" stroke="none"/><circle cx="11" cy="15" r="1" fill="currentColor" stroke="none"/><circle cx="14.5" cy="15" r="1" fill="currentColor" stroke="none"/></svg>
+  <button class="moba" onclick="handleHeaderBtn()">
+    <svg width="19" height="19" viewBox="0 0 19 19" fill="none"><path d="M9.5 2.5v14M2.5 9.5h14" stroke="#fff" stroke-width="2.2" stroke-linecap="round"/></svg>
+  </button>
+  <div class="mobw">
+    <button class="mobt" id="mob-meetings" onclick="mobNav('meetings','',this)">
+      <svg width="21" height="21" viewBox="0 0 21 21" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="2" y="3.5" width="17" height="15" rx="2.5"/><path d="M6.5 2v3M14.5 2v3M2 9.5h17" stroke-linecap="round"/><circle cx="7" cy="14" r="1" fill="currentColor" stroke="none"/><circle cx="10.5" cy="14" r="1" fill="currentColor" stroke="none"/><circle cx="14" cy="14" r="1" fill="currentColor" stroke="none"/></svg>
       <span>Réunions</span>
     </button>
   </div>
 </div>
 
+<div id="saveIndicator">
+  <svg width="11" height="11" viewBox="0 0 11 11" fill="none"><circle cx="5.5" cy="5.5" r="4.5" fill="var(--green)"/><path d="M3.3 5.5l1.5 1.5 2.7-2.7" stroke="#fff" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  <span class="si-label">Sauvegardé</span>
+</div>
+<div id="connStatus">
+  <span id="connDot" style="width:7px;height:7px;border-radius:50%;background:var(--muted)"></span>
+  <span id="connLabel">Connexion…</span>
+</div>
 <div id="toast"></div>
 
 <script>
-// ═══════════════ DATA ═══════════════
-let tickets = [
+function resetAllData(){
+  if(!confirm('Réinitialiser toutes les données locales (cache) ? Les données dans Supabase ne seront pas supprimées.')) return;
+  localStorage.removeItem(LS_KEY);
+  location.reload();
+}
+
+// ═══════════════ SUPABASE (réutilise les tables "Place de Seine") ═══════════════
+const SB_URL = "https://yvlcmdcnjeoiffrlawti.supabase.co";
+const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl2bGNtZGNuamVvaWZmcmxhd3RpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYyODYwNjEsImV4cCI6MjA5MTg2MjA2MX0.-ePViMbJVA0UhC4WY3fYciUcw0gP6yJWau_P1AspdlI";
+let sb = null;
+try{ if(window.supabase) sb = window.supabase.createClient(SB_URL, SB_KEY); }catch(e){ console.warn('Supabase init impossible', e); }
+
+const LS_KEY = 'builddesk_data_v1'; // fallback local si Supabase indisponible
+
+// ── Mapping statut BuildDesk (en-cours/résolu) ↔ table tickets (Ouvert/Clos/Escaladé) ──
+function statusToDb(s){ return s==='résolu' ? 'Clos' : 'Ouvert'; }
+function statusFromDb(s){ return s==='Clos' ? 'résolu' : 'en-cours'; }
+
+// Les colonnes cat/intervenant/soustraitant/relances n'existent pas dans la table
+// "tickets" de Place de Seine : on les sérialise dans le champ texte "commentaires"
+// sous forme d'un bloc JSON préfixé, invisible pour l'app Place de Seine d'origine
+// mais relu proprement ici.
+const META_PREFIX = '__BD_META__';
+function packMeta(t){
+  const meta = { cat:t.cat||'Autre', intervenant:t.intervenant||'', soustraitant:t.soustraitant||'', relances:t.relances||[] };
+  return META_PREFIX + JSON.stringify(meta);
+}
+function unpackMeta(commentaires){
+  if(typeof commentaires==='string' && commentaires.startsWith(META_PREFIX)){
+    try{ return JSON.parse(commentaires.slice(META_PREFIX.length)); }catch(e){}
+  }
+  return { cat:'Autre', intervenant:'', soustraitant:'', relances:[] };
+}
+
+// Ticket BuildDesk → ligne table "tickets"
+function ticketToDbRow(t){
+  return {
+    description: t.title,
+    statut: statusToDb(t.status),
+    date_creation: t.date || today(),
+    date_relance1: (t.relances&&t.relances[0]) ? t.relances[0].date : '',
+    date_relance2: (t.relances&&t.relances[1]) ? t.relances[1].date : '',
+    date_relance3: (t.relances&&t.relances[2]) ? t.relances[2].date : '',
+    date_realisation: t.status==='résolu' ? (t.resolution||today()) : '',
+    commentaires: packMeta(t),
+    photos: [],
+    escalade: false
+  };
+}
+// Ligne table "tickets" → Ticket BuildDesk
+function dbRowToTicket(r){
+  const meta = unpackMeta(r.commentaires);
+  return {
+    _dbId: r.id,
+    title: r.description || '(sans titre)',
+    desc: '',
+    cat: meta.cat,
+    status: statusFromDb(r.statut),
+    date: r.date_creation || today(),
+    intervenant: meta.intervenant,
+    soustraitant: meta.soustraitant,
+    resolution: r.date_realisation || '',
+    relances: meta.relances && meta.relances.length ? meta.relances : [r.date_relance1,r.date_relance2,r.date_relance3].filter(Boolean).map(d=>({date:d,comment:'Relance'}))
+  };
+}
+
+// Réunion BuildDesk → ligne table "reunions"
+function meetingToDbRow(m){
+  return {
+    date: m.date || today(),
+    participants: m.participants || '',
+    ticket_ids: JSON.stringify((m.ticketReviews||[]).map(r=>tickets[r.ticketIdx]&&tickets[r.ticketIdx]._dbId).filter(Boolean)),
+    notes: JSON.stringify({ title:m.title, lieu:m.lieu, status:m.status, notes:m.notes, nextDate:m.nextDate, ticketReviews:m.ticketReviews }),
+    commentaire: m.notes || ''
+  };
+}
+// Ligne table "reunions" → Réunion BuildDesk
+function dbRowToMeeting(r){
+  let notes = {};
+  try{ notes = typeof r.notes==='string' ? JSON.parse(r.notes) : (r.notes||{}); }catch(e){}
+  return {
+    _dbId: r.id,
+    title: notes.title || ('Réunion du '+fmtDate(r.date)),
+    date: r.date,
+    lieu: notes.lieu || '',
+    participants: r.participants || '',
+    status: notes.status || 'terminee',
+    ticketReviews: notes.ticketReviews || [],
+    notes: notes.notes || r.commentaire || '',
+    nextDate: notes.nextDate || ''
+  };
+}
+
+async function loadFromSupabase(){
+  if(!sb) return null;
+  try{
+    const tk = await sb.from('tickets').select('*').order('id');
+    if(tk.error){
+      console.warn('Supabase tickets:', tk.error);
+      if(/relation .* does not exist/i.test(tk.error.message||'')){
+        toast('Table "tickets" introuvable dans Supabase — voir console pour le SQL');
+        console.info('SQL pour créer la table tickets (si absente):\n'+
+          'CREATE TABLE IF NOT EXISTS tickets (\n'+
+          '  id bigint generated always as identity primary key,\n'+
+          '  description text, statut text, date_creation date,\n'+
+          '  date_relance1 date, date_relance2 date, date_relance3 date,\n'+
+          '  date_realisation date, commentaires text, photos jsonb, escalade boolean\n'+
+          ');\nALTER TABLE tickets ENABLE ROW LEVEL SECURITY;\n'+
+          'CREATE POLICY "allow all" ON tickets FOR ALL USING (true);');
+      }
+      return null;
+    }
+    const re = await sb.from('reunions').select('*').order('date',{ascending:false});
+    if(re.error && /relation .* does not exist/i.test(re.error.message||'')){
+      console.info('SQL pour créer la table reunions (si absente):\n'+
+        'CREATE TABLE IF NOT EXISTS reunions (\n  id bigint generated always as identity primary key,\n  date date,\n  participants text,\n  ticket_ids jsonb,\n  notes jsonb,\n  commentaire text\n);\n'+
+        'ALTER TABLE reunions ENABLE ROW LEVEL SECURITY;\nCREATE POLICY "allow all" ON reunions FOR ALL USING (true);');
+    }
+    const loadedTickets = (tk.data||[]).map(dbRowToTicket);
+    const loadedMeetings = re.error ? [] : (re.data||[]).map(r=>{
+      const m = dbRowToMeeting(r);
+      // Remap ticket_ids (db ids) → index local dans `loadedTickets`
+      let dbIds = r.ticket_ids;
+      if(typeof dbIds==='string'){ try{ dbIds=JSON.parse(dbIds); }catch(e){ dbIds=[]; } }
+      if(Array.isArray(dbIds) && (!m.ticketReviews || !m.ticketReviews.length)){
+        m.ticketReviews = dbIds.map(id=>{
+          const idx = loadedTickets.findIndex(t=>t._dbId===id);
+          return idx>=0 ? {ticketIdx:idx, newStatus:loadedTickets[idx].status, statusAtTime:loadedTickets[idx].status} : null;
+        }).filter(Boolean);
+      } else if(m.ticketReviews){
+        // ticketReviews stockés avec un ticketIdx d'une session précédente : on les revalide par _dbId si possible
+        m.ticketReviews = m.ticketReviews.map(r2=>{
+          if(loadedTickets[r2.ticketIdx]) return r2;
+          return null;
+        }).filter(Boolean);
+      }
+      return m;
+    });
+    return { tickets: loadedTickets, meetings: loadedMeetings };
+  }catch(e){ console.warn('Supabase load exception:', e); return null; }
+}
+
+function loadFromLocalStorage(){
+  try{
+    const raw = localStorage.getItem(LS_KEY);
+    if(raw){
+      const parsed = JSON.parse(raw);
+      return { tickets: Array.isArray(parsed.tickets)?parsed.tickets:defaultTickets, meetings: Array.isArray(parsed.meetings)?parsed.meetings:[] };
+    }
+  }catch(e){}
+  return { tickets: defaultTickets, meetings: [] };
+}
+
+function saveLocalBackup(){
+  try{ localStorage.setItem(LS_KEY, JSON.stringify({ tickets, meetings, savedAt: new Date().toISOString() })); }catch(e){}
+}
+
+let saveTimer = null;
+function saveDataDebounced(){
+  saveLocalBackup();
+  showSaveIndicator(sb ? 'cloud' : 'local');
+}
+
+function showSaveIndicator(mode){
+  const el = document.getElementById('saveIndicator');
+  if(!el) return;
+  el.querySelector('.si-label').textContent = mode==='cloud' ? 'Synchronisé' : 'Sauvegardé (local)';
+  el.style.opacity = '1';
+  el.style.transform = 'translateY(0)';
+  clearTimeout(el._hideTimer);
+  el._hideTimer = setTimeout(()=>{ el.style.opacity='0'; el.style.transform='translateY(10px)'; }, 1600);
+}
+
+const defaultTickets = [
   {title:'Ascenseur A en panne',desc:"L'ascenseur A ne répond plus depuis ce matin.",cat:'Ascenseur',status:'en-cours',date:'2026-06-20',intervenant:'Tech. Otis',soustraitant:'Otis Elevator Co.',resolution:'2026-06-28',relances:[{date:'2026-06-22',comment:'Technicien appelé, pièce commandée.'},{date:'2026-06-25',comment:'Livraison pièce retardée au 28/06.'}]},
   {title:'Prise électrique grillée salle 204',desc:'Impossible de brancher quoi que ce soit.',cat:'Électricité',status:'en-cours',date:'2026-06-21',intervenant:'Élec. Marin',soustraitant:'Elec Pro SARL',resolution:'2026-06-30',relances:[{date:'2026-06-23',comment:'Devis reçu, en attente validation direction.'}]},
   {title:'Fuite évier kitchenette 3F',desc:'Écoulement lent, serviette posée.',cat:'Plomberie',status:'en-cours',date:'2026-06-22',intervenant:'Plombier Leclerc',soustraitant:'',resolution:'2026-07-02',relances:[]},
@@ -609,7 +827,11 @@ let tickets = [
   {title:'Remplacement ampoule couloir B',desc:'',cat:'Électricité',status:'en-cours',date:'2026-06-24',intervenant:'',soustraitant:'',resolution:'',relances:[]},
   {title:'Nettoyage salle réunion 101',desc:'Résidus après événement vendredi.',cat:'Ménage',status:'résolu',date:'2026-06-23',intervenant:'Prestataire Éclat',soustraitant:'Éclat Services',resolution:'2026-06-24',relances:[]},
 ];
-let meetings = [];
+
+// ═══════════════ DATA (démarre avec le cache local, puis synchronise) ═══════════════
+const __cached = loadFromLocalStorage();
+let tickets = __cached.tickets;
+let meetings = __cached.meetings;
 let currentPage = 'tickets';
 let relanceTarget = null;
 let editTicketIdx = null;
@@ -629,13 +851,14 @@ function showPage(page, el) {
   document.getElementById('page-'+page).classList.add('active');
   setActiveNav(el);
   if(page==='tickets'){
-    resetTicketFilters();
+    document.getElementById('filterStatus').value='en-cours';
+    document.getElementById('filterCat').value='';
     document.getElementById('headerBtn').innerHTML='<svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M6.5 1v11M1 6.5h11" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg> Nouveau ticket';
-    document.getElementById('headerBtn').className='btn btn-sage';
+    document.getElementById('headerBtn').className='btn btn-brand';
     renderTable();
   } else {
     document.getElementById('headerBtn').innerHTML='<svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M6.5 1v11M1 6.5h11" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg> Nouvelle réunion';
-    document.getElementById('headerBtn').className='btn btn-sage';
+    document.getElementById('headerBtn').className='btn btn-brand';
     renderTimeline();
   }
 }
@@ -647,7 +870,7 @@ function showPageFiltered(status, el) {
   document.getElementById('filterStatus').value=status;
   document.getElementById('filterCat').value='';
   document.getElementById('headerBtn').innerHTML='<svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M6.5 1v11M1 6.5h11" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg> Nouveau ticket';
-  document.getElementById('headerBtn').className='btn btn-sage';
+  document.getElementById('headerBtn').className='btn btn-brand';
   renderTable();
 }
 function resetTicketFilters(){document.getElementById('filterStatus').value='';document.getElementById('filterCat').value='';document.getElementById('searchInput').value='';}
@@ -656,11 +879,11 @@ function setActiveNav(el){document.querySelectorAll('nav a').forEach(a=>a.classL
 
 function mobNav(page, filter, btn){
   // Update mobile tab styles
-  document.querySelectorAll('.mob-tab').forEach(t=>{t.classList.remove('active','active-meeting');});
+  document.querySelectorAll('.mobt').forEach(t=>{t.classList.remove('active','active-meeting');});
   btn.classList.add(page==='meetings'?'active-meeting':'active');
   // Navigate
   if(page==='meetings'){
-    showPage('meetings', document.querySelector('nav a.nav-meeting'));
+    showPage('meetings', document.querySelector('nav a.m-lnk'));
   } else if(filter){
     showPageFiltered(filter, document.querySelector('nav a'));
   } else {
@@ -670,20 +893,33 @@ function mobNav(page, filter, btn){
 
 // ═══════════════ CHIPS ═══════════════
 function chipStatus(s){
-  const map={'en-cours':'chip-prog',résolu:'chip-done'};
-  const lbl={'en-cours':'En cours',résolu:'Résolu'};
+  const map={'en-cours':'c-prog', résolu:'c-done'};
+  const lbl={'en-cours':'En cours', résolu:'Résolu'};
   const icons={
-    'en-cours':`<svg width="9" height="9" viewBox="0 0 9 9" fill="none"><circle cx="4.5" cy="4.5" r="3.8" stroke="currentColor" stroke-width="1.3"/><path d="M4.5 1A3.5 3.5 0 0 1 8 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>`,
-    résolu:`<svg width="9" height="9" viewBox="0 0 9 9" fill="none"><circle cx="4.5" cy="4.5" r="3.8" fill="currentColor" fill-opacity=".18" stroke="currentColor" stroke-width="1.3"/><path d="M2.5 4.5l1.5 1.5 2.5-2.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+    'en-cours':`<svg width="9" height="9" viewBox="0 0 9 9" fill="none"><circle cx="4.5" cy="4.5" r="3.8" stroke="currentColor" stroke-width="1.3"/><path d="M4.5 1.2A3.3 3.3 0 0 1 7.8 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>`,
+    résolu:`<svg width="9" height="9" viewBox="0 0 9 9" fill="none"><circle cx="4.5" cy="4.5" r="3.8" fill="currentColor" fill-opacity=".15" stroke="currentColor" stroke-width="1.3"/><path d="M2.5 4.5l1.5 1.5 2.5-2.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
   };
   const s2 = s==='ouvert'?'en-cours':s;
-  return `<span class="chip ${map[s2]||'chip-prog'}">${icons[s2]||''}${lbl[s2]||cap(s2)}</span>`;
+  return `<span class="chip ${map[s2]||'c-prog'}">${icons[s2]||''}${lbl[s2]||cap(s2)}</span>`;
 }
 
 // ═══════════════ TICKET TABLE ═══════════════
+const CAT_COLORS = {
+  Ascenseur:   {fg:'#1D4ED8', bg:'#EFF6FF', border:'#BFDBFE'},
+  Électricité: {fg:'#D97706', bg:'#FFFBEB', border:'#FDE68A'},
+  Plomberie:   {fg:'#0891B2', bg:'#ECFEFF', border:'#A5F3FC'},
+  Sécurité:    {fg:'#DC2626', bg:'#FEF2F2', border:'#FECACA'},
+  Ménage:      {fg:'#059669', bg:'#ECFDF5', border:'#A7F3D0'},
+  Autre:       {fg:'#7C3AED', bg:'#EDE9FE', border:'#C4B5FD'},
+};
+function catColor(c){ return CAT_COLORS[c]||CAT_COLORS['Autre']; }
 function catIcon(c){
   const m={Ascenseur:`<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><rect x="1" y="1" width="10" height="10" rx="1.5" stroke="currentColor" stroke-width="1.2"/><path d="M4 5l2-2 2 2M4 7l2 2 2-2" stroke="currentColor" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round"/></svg>`,Électricité:`<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M7.5 1.5L4 6.5h4L3.5 11" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>`,Plomberie:`<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 3h4v3H2V3z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/><path d="M6 4.5h2a2 2 0 0 1 2 2V9a1 1 0 0 1-1 1H7" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><circle cx="6.5" cy="10" r=".8" fill="currentColor"/></svg>`,Sécurité:`<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 1L2 2.5v4C2 9 4 10.5 6 11.5 8 10.5 10 9 10 6.5v-4L6 1z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/><path d="M4.5 6l1.2 1.2 2-2" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>`,Ménage:`<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M3 11V5.5L6 2l3 3.5V11" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M4.5 11V8h3v3" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/></svg>`,Autre:`<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><circle cx="6" cy="6" r="4.5" stroke="currentColor" stroke-width="1.2"/><path d="M6 4v2.5M6 8.5v.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>`};
   return m[c]||m['Autre'];
+}
+function catPill(c){
+  const col=catColor(c);
+  return `<span class="catpill" style="color:${col.fg};background:${col.bg};border-color:${col.border}">${catIcon(c)} ${c}</span>`;
 }
 function relanceDots(rl){
   if(!rl||!rl.length)return'<span style="color:var(--muted);font-size:11px">—</span>';
@@ -728,19 +964,19 @@ function renderPendingBanner(){
     });
   });
   if(!pending.length){banner.innerHTML='';return;}
-  banner.innerHTML=`<div class="pending-banner">
-    <div class="pending-banner-head">
-      <span class="pending-banner-title">
+  banner.innerHTML=`<div class="pb">
+    <div class="pb-head">
+      <span class="pb-title">
         <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1L1.5 12h11L7 1z" stroke="var(--amber)" stroke-width="1.4" stroke-linejoin="round"/><path d="M7 5.5v3M7 10v.5" stroke="var(--amber)" stroke-width="1.3" stroke-linecap="round"/></svg>
         ${pending.length} action${pending.length>1?'s':''} en suspens depuis les réunions
       </span>
-      <button class="btn btn-outline btn-xs" onclick="this.closest('.pending-banner').style.display='none'">Masquer</button>
+      <button class="btn btn-outline btn-xs" onclick="this.closest('.pb').style.display='none'">Masquer</button>
     </div>
-    ${pending.map(p=>`<div class="pending-item">
-      <div class="pending-item-dot"></div>
-      <div class="pending-item-body">
-        <div class="pending-item-title">${p.decision}</div>
-        <div class="pending-item-meta">
+    ${pending.map(p=>`<div class="pb-item">
+      <div class="pb-dot"></div>
+      <div class="pb-item-body">
+        <div class="pb-ttl">${p.decision}</div>
+        <div class="pb-meta">
           <span>🎫 ${p.ticketTitle}</span>
           <span>📅 Décidé en réunion du ${fmtDate(p.meetingDate)}</span>
           ${p.responsable?`<span>👤 ${p.responsable}</span>`:''}
@@ -766,19 +1002,20 @@ function renderTable(){
   empty.style.display='none';
   body.innerHTML=filtered.map(t=>`<tr>
     <td>
-      <div class="t-title">${t.title}</div>
-      ${t.desc?`<div class="t-sub">${t.desc.length>70?t.desc.slice(0,70)+'…':t.desc}</div>`:''}
-      <div class="t-actions">
+      <div class="tt">${t.title}</div>
+      ${t.desc?`<div class="ts">${t.desc.length>70?t.desc.slice(0,70)+'…':t.desc}</div>`:''}
+      <div class="ta">
         ${t.status!=='résolu'?`<button class="btn btn-outline btn-xs" onclick="changeStatus(${t._i},'résolu')">✓ Résoudre</button>`:`<button class="btn btn-outline btn-xs" onclick="changeStatus(${t._i},'en-cours')">↩ Réouvrir</button>`}
         <button class="btn btn-outline btn-xs" onclick="openRelance(${t._i})">↺ Relance</button>
         <button class="btn btn-outline btn-xs" onclick="openEdit(${t._i})">✎ Éditer</button>
-        <button class="btn btn-outline-rose btn-xs" onclick="delTicket(${t._i})">✕</button>
+        <button class="btn btn-red btn-xs" onclick="delTicket(${t._i})">✕</button>
       </div>
     </td>
-    <td><span class="cat-pill">${catIcon(t.cat)} ${t.cat}</span></td>
+    <td>${catPill(t.cat)}</td>
     <td>${chipStatus(t.status)}</td>
     <td style="font-size:12px;color:var(--text2);font-weight:500">${t.intervenant?`<span style="display:flex;align-items:center;gap:5px"><svg width="11" height="11" viewBox="0 0 11 11" fill="none"><circle cx="5.5" cy="3.5" r="2" stroke="var(--muted)" stroke-width="1.2"/><path d="M1.5 9.5c0-2.2 1.8-4 4-4s4 1.8 4 4" stroke="var(--muted)" stroke-width="1.2" stroke-linecap="round"/></svg>${t.intervenant}</span>`:'<span style="color:var(--muted)">—</span>'}</td>
     <td style="font-size:12px;color:var(--text2)">${t.soustraitant?`<span style="display:flex;align-items:center;gap:5px"><svg width="11" height="11" viewBox="0 0 11 11" fill="none"><rect x="1" y="3" width="9" height="7" rx="1" stroke="var(--muted)" stroke-width="1.1"/><path d="M3.5 3V2.5A1.5 1.5 0 0 1 7.5 2.5V3" stroke="var(--muted)" stroke-width="1.1"/></svg>${t.soustraitant}</span>`:'<span style="color:var(--muted)">—</span>'}</td>
+    <td style="font-family:var(--mono);font-size:11.5px;color:var(--subtle)">${t.date?fmtDate(t.date):'—'}</td>
     <td>${relanceDots(t.relances)}</td>
     <td style="font-family:var(--mono);font-size:12px;color:${isLate(t)?'var(--rose)':'var(--subtle)'};font-weight:${isLate(t)?'600':'400'}">${t.resolution?`<span style="display:flex;align-items:center;gap:4px"><svg width="11" height="11" viewBox="0 0 11 11" fill="none"><rect x="1" y="1.5" width="9" height="8.5" rx="1.2" stroke="currentColor" stroke-width="1.1"/><path d="M3.5 1v1.5M7.5 1v1.5M1 4.5h9" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/></svg>${fmtDate(t.resolution)}</span>`:'<span style="color:var(--muted)">—</span>'}</td>
   </tr>`).join('');
@@ -791,25 +1028,39 @@ function updateStats(){
   document.getElementById('statProgress').textContent=p;
   document.getElementById('statClosed').textContent=d;
   document.getElementById('openCount').textContent=p+' en cours';
-  document.getElementById('navAll').textContent=tickets.length;
   document.getElementById('navEnCours').textContent=p;
   document.getElementById('navResolu').textContent=d;
   document.getElementById('navMeetings').textContent=meetings.length;
   // Mobile badge
   const mb=document.getElementById('mobBadge');
   if(mb){mb.textContent=p;mb.style.display=p>0?'':'none';}
+  updateCountdown();
 }
 
 // ═══════════════ TICKET ACTIONS ═══════════════
-function changeStatus(i,s){tickets[i].status=s;renderTable();toast('Statut mis à jour');}
-function delTicket(i){if(!confirm('Supprimer ce ticket ?'))return;tickets.splice(i,1);renderTable();toast('Ticket supprimé');}
+function changeStatus(i,s){
+  tickets[i].status=s;
+  saveDataDebounced();
+  syncTicketToSupabase(tickets[i]);
+  renderTable();toast('Statut mis à jour');
+}
+function delTicket(i){
+  if(!confirm('Supprimer ce ticket ?'))return;
+  const t=tickets[i];
+  tickets.splice(i,1);
+  saveDataDebounced();
+  if(sb && t._dbId){ sb.from('tickets').delete().eq('id',t._dbId).then(r=>{ if(r.error) console.warn('Supabase delete ticket:',r.error); }); }
+  renderTable();toast('Ticket supprimé');
+}
 
 function openModal(){
   editTicketIdx=null;
   document.getElementById('fTitle').value='';document.getElementById('fDesc').value='';
   document.getElementById('fCat').value='Autre';document.getElementById('fStatus').value='en-cours';
-  document.getElementById('fIntervenant').value='';document.getElementById('fSoustraitant').value='';document.getElementById('fResolution').value='';
-  document.getElementById('modalTicketTitle').innerHTML='<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1.5" y="1.5" width="13" height="13" rx="2" stroke="var(--sage)" stroke-width="1.5"/><path d="M4.5 8h7M4.5 5.5h7M4.5 10.5h4" stroke="var(--sage)" stroke-width="1.3" stroke-linecap="round"/></svg>Nouveau ticket';
+  document.getElementById('fIntervenant').value='';document.getElementById('fSoustraitant').value='';
+  document.getElementById('fDate').value=today();
+  document.getElementById('fResolution').value='';
+  document.getElementById('modalTicketTitle').innerHTML='<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1.5" y="1.5" width="13" height="13" rx="2" stroke="var(--brand)" stroke-width="1.5"/><path d="M4.5 8h7M4.5 5.5h7M4.5 10.5h4" stroke="var(--brand)" stroke-width="1.3" stroke-linecap="round"/></svg>Nouveau ticket';
   document.getElementById('btnSaveTicket').textContent='Créer';
   document.getElementById('btnSaveTicket').onclick=addTicket;
   document.getElementById('modal').classList.add('open');
@@ -821,8 +1072,9 @@ function openEdit(i){
   document.getElementById('fCat').value=t.cat;document.getElementById('fStatus').value=t.status;
   document.getElementById('fIntervenant').value=t.intervenant||'';
   document.getElementById('fSoustraitant').value=t.soustraitant||'';
+  document.getElementById('fDate').value=t.date||today();
   document.getElementById('fResolution').value=t.resolution||'';
-  document.getElementById('modalTicketTitle').innerHTML='<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1.5" y="1.5" width="13" height="13" rx="2" stroke="var(--sage)" stroke-width="1.5"/><path d="M4.5 8h7M4.5 5.5h7M4.5 10.5h4" stroke="var(--sage)" stroke-width="1.3" stroke-linecap="round"/></svg>Modifier le ticket';
+  document.getElementById('modalTicketTitle').innerHTML='<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1.5" y="1.5" width="13" height="13" rx="2" stroke="var(--brand)" stroke-width="1.5"/><path d="M4.5 8h7M4.5 5.5h7M4.5 10.5h4" stroke="var(--brand)" stroke-width="1.3" stroke-linecap="round"/></svg>Modifier le ticket';
   document.getElementById('btnSaveTicket').textContent='Enregistrer';
   document.getElementById('btnSaveTicket').onclick=saveEdit;
   document.getElementById('modal').classList.add('open');
@@ -833,17 +1085,41 @@ function saveEdit(){
   t.desc=document.getElementById('fDesc').value.trim();t.cat=document.getElementById('fCat').value;
   t.status=document.getElementById('fStatus').value;t.intervenant=document.getElementById('fIntervenant').value.trim();
   t.soustraitant=document.getElementById('fSoustraitant').value.trim();
+  t.date=document.getElementById('fDate').value||t.date;
   t.resolution=document.getElementById('fResolution').value;
+  saveDataDebounced();
+  syncTicketToSupabase(t);
   closeModal('modal');renderTable();toast('Ticket mis à jour ✓');
 }
 function addTicket(){
   const title=document.getElementById('fTitle').value.trim();if(!title){document.getElementById('fTitle').focus();return;}
-  tickets.unshift({title,desc:document.getElementById('fDesc').value.trim(),cat:document.getElementById('fCat').value,
-    status:document.getElementById('fStatus').value||'en-cours',date:today(),
+  const t={title,desc:document.getElementById('fDesc').value.trim(),cat:document.getElementById('fCat').value,
+    status:document.getElementById('fStatus').value||'en-cours',
+    date:document.getElementById('fDate').value||today(),
     intervenant:document.getElementById('fIntervenant').value.trim(),
     soustraitant:document.getElementById('fSoustraitant').value.trim(),
-    resolution:document.getElementById('fResolution').value,relances:[]});
+    resolution:document.getElementById('fResolution').value,relances:[]};
+  tickets.unshift(t);
+  saveDataDebounced();
+  syncTicketToSupabase(t, true);
   closeModal('modal');renderTable();toast('Ticket créé ✓');
+}
+
+// ── Synchronisation Supabase d'un ticket (insert si nouveau, upsert sinon) ──
+async function syncTicketToSupabase(t, isNew){
+  if(!sb) return;
+  try{
+    const row = ticketToDbRow(t);
+    if(isNew || !t._dbId){
+      const res = await sb.from('tickets').insert(row).select().single();
+      if(res.error){ console.warn('Supabase insert ticket:', res.error); return; }
+      if(res.data){ t._dbId = res.data.id; saveDataDebounced(); }
+    }else{
+      const res = await sb.from('tickets').upsert({...row, id:t._dbId});
+      if(res.error) console.warn('Supabase upsert ticket:', res.error);
+    }
+    showSaveIndicator('cloud');
+  }catch(e){ console.warn('syncTicketToSupabase exception:', e); }
 }
 
 // ═══════════════ RELANCE ═══════════════
@@ -852,6 +1128,9 @@ function saveRelance(){
   const c=document.getElementById('rComment').value.trim();if(!c){document.getElementById('rComment').focus();return;}
   if(!tickets[relanceTarget].relances)tickets[relanceTarget].relances=[];
   tickets[relanceTarget].relances.push({date:document.getElementById('rDate').value,comment:c});
+  saveDataDebounced();
+  syncTicketToSupabase(tickets[relanceTarget]);
+  if(sb){ const t=tickets[relanceTarget]; sb.from('historique').insert({ticket_id:t._dbId||null,type_evenement:'Relance',detail:c,details:c,auteur:'BuildDesk',date:document.getElementById('rDate').value}).then(r=>{ if(r.error) console.warn('Supabase historique:',r.error); }); }
   closeModal('modalRelance');renderTable();toast('Relance enregistrée ✓');
 }
 
@@ -860,19 +1139,19 @@ function renderTimeline(){
   updateStats();
   const tl=document.getElementById('mTimeline');
   if(!meetings.length){
-    tl.innerHTML=`<div class="mlist-empty"><svg width="32" height="32" viewBox="0 0 32 32" fill="none"><rect x="2" y="4" width="28" height="26" rx="3" stroke="currentColor" stroke-width="1.3"/><path d="M9 2v4M23 2v4M2 13h28" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg><p>Aucune réunion.<br>Créez la première →</p></div>`;
+    tl.innerHTML=`<div class="mlst-empty"><svg width="32" height="32" viewBox="0 0 32 32" fill="none"><rect x="2" y="4" width="28" height="26" rx="3" stroke="currentColor" stroke-width="1.3"/><path d="M9 2v4M23 2v4M2 13h28" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg><p>Aucune réunion.<br>Créez la première →</p></div>`;
     showDetailEmpty();return;
   }
   tl.innerHTML=meetings.map((m,mi)=>`
-    <div class="mtl-item ${m.status==='terminee'?'done':''} ${activeMeetingIdx===mi?'active':''}" onclick="selectMeeting(${mi})">
-      <div class="mtl-dot"></div>
-      <div class="mtl-line"></div>
-      <div class="mtl-date">${fmtDate(m.date)}</div>
-      <div class="mtl-title">${m.title}</div>
-      <div class="mtl-meta">
-        <span class="mtl-badge ${m.status}">${m.status==='terminee'?'Terminée':'Planifiée'}</span>
-        ${m.ticketReviews?`<span class="mtl-tcount">${m.ticketReviews.length} ticket${m.ticketReviews.length>1?'s':''}</span>`:''}
-        ${m.nextDate?`<span class="mtl-tcount" style="color:var(--sage)">↻ ${fmtDate(m.nextDate)}</span>`:''}
+    <div class="mtli ${m.status==='terminee'?'done':''} ${activeMeetingIdx===mi?'active':''}" onclick="selectMeeting(${mi})">
+      <div class="mtli-dot"></div>
+      <div class="mtli-ln"></div>
+      <div class="mtli-date">${fmtDate(m.date)}</div>
+      <div class="mtli-ttl">${m.title}</div>
+      <div class="mtli-meta">
+        <span class="mbadge ${m.status}">${m.status==='terminee'?'Terminée':'Planifiée'}</span>
+        ${m.ticketReviews?`<span class="mtli-cnt">${m.ticketReviews.length} ticket${m.ticketReviews.length>1?'s':''}</span>`:''}
+        ${m.nextDate?`<span class="mtli-cnt" style="color:var(--brand)">↻ ${fmtDate(m.nextDate)}</span>`:''}
       </div>
     </div>`).join('');
   if(activeMeetingIdx!==null&&meetings[activeMeetingIdx])renderDetail(activeMeetingIdx);
@@ -881,7 +1160,7 @@ function renderTimeline(){
 
 function selectMeeting(mi){
   activeMeetingIdx=mi;
-  document.querySelectorAll('.mtl-item').forEach((el,i)=>el.classList.toggle('active',i===mi));
+  document.querySelectorAll('.mtli').forEach((el,i)=>el.classList.toggle('active',i===mi));
   renderDetail(mi);
 }
 
@@ -896,24 +1175,24 @@ function renderDetail(mi){
   const dc=document.getElementById('mDetailContent');
   dc.style.display='flex';
   dc.innerHTML=`
-    <div class="mdetail-header">
+    <div class="mdet-hdr">
       <div>
-        <div class="mdetail-title">${m.title}</div>
-        <div class="mdetail-meta">
+        <div class="mdet-ttl">${m.title}</div>
+        <div class="mdet-meta">
           <span><svg width="11" height="11" viewBox="0 0 11 11" fill="none"><rect x="1" y="1.5" width="9" height="8.5" rx="1" stroke="currentColor" stroke-width="1.1"/><path d="M3.5 1v2M7.5 1v2M1 5h9" stroke="currentColor" stroke-width="1" stroke-linecap="round"/></svg>${fmtDate(m.date)}</span>
           ${m.lieu?`<span><svg width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M5.5 1C3.57 1 2 2.57 2 4.5c0 2.72 3.5 6 3.5 6s3.5-3.28 3.5-6C9 2.57 7.43 1 5.5 1z" stroke="currentColor" stroke-width="1.1"/><circle cx="5.5" cy="4.5" r="1" fill="currentColor"/></svg>${m.lieu}</span>`:''}
           ${m.participants?`<span><svg width="11" height="11" viewBox="0 0 11 11" fill="none"><circle cx="4" cy="3.5" r="1.5" stroke="currentColor" stroke-width="1.1"/><path d="M1 8.5c0-1.7 1.3-3 3-3" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/><circle cx="8" cy="3.5" r="1.5" stroke="currentColor" stroke-width="1.1"/><path d="M8 5.5c1.7 0 3 1.3 3 3" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/></svg>${m.participants}</span>`:''}
-          <span class="mtl-badge ${m.status}" style="font-size:10px">${m.status==='terminee'?'Terminée':'Planifiée'}</span>
+          <span class="mbadge ${m.status}" style="font-size:10px">${m.status==='terminee'?'Terminée':'Planifiée'}</span>
         </div>
       </div>
-      <div class="mdetail-actions">
+      <div class="mdeta">
         <button class="btn btn-outline btn-sm" onclick="openMeetingForm(${mi})"><svg width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M7.5 1.5l2 2-5.5 5.5H2v-2L7.5 1.5z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/></svg>Modifier</button>
         <button class="btn btn-outline btn-sm" onclick="viewCR(${mi})"><svg width="11" height="11" viewBox="0 0 11 11" fill="none"><rect x="1" y="1" width="9" height="9" rx="1.2" stroke="currentColor" stroke-width="1.1"/><path d="M3 4h5M3 6h5M3 8h3" stroke="currentColor" stroke-width="1" stroke-linecap="round"/></svg>CR</button>
-        <button class="btn btn-sage btn-sm" onclick="dlCR(${mi})"><svg width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M5.5 1v7M3 5.5l2.5 2.5 2.5-2.5M1 9.5h9" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
-        <button class="btn btn-outline-rose btn-sm" onclick="delMeeting(${mi})"><svg width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M2 3h7M4.5 3V2h2v1M3.5 3l.5 6h3l.5-6" stroke="currentColor" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+        <button class="btn btn-brand btn-sm" onclick="dlCR(${mi})"><svg width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M5.5 1v7M3 5.5l2.5 2.5 2.5-2.5M1 9.5h9" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+        <button class="btn btn-red btn-sm" onclick="delMeeting(${mi})"><svg width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M2 3h7M4.5 3V2h2v1M3.5 3l.5 6h3l.5-6" stroke="currentColor" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
       </div>
     </div>
-    <div class="mdetail-body">
+    <div class="mdet-body">
       ${(m.ticketReviews||[]).length?`
         <div class="msection-lbl">
           <svg width="11" height="11" viewBox="0 0 11 11" fill="none"><rect x="1" y="1" width="9" height="9" rx="1.5" stroke="currentColor" stroke-width="1.1"/><path d="M3.5 4.5h4M3.5 6.5h4M3.5 8.5h2" stroke="currentColor" stroke-width="1" stroke-linecap="round"/></svg>
@@ -922,29 +1201,29 @@ function renderDetail(mi){
         ${(m.ticketReviews||[]).map((r,ri)=>{
           const t=tickets[r.ticketIdx];if(!t)return'';
           const hist=meetings.filter(mm=>mm!==m).flatMap(mm=>(mm.ticketReviews||[]).filter(rr=>rr.ticketIdx===r.ticketIdx));
-          return`<div class="trk-row" id="trk-${mi}-${ri}">
-            <div class="trk-row-head" onclick="toggleTrk('trk-${mi}-${ri}')">
+          return`<div class="trk" id="trk-${mi}-${ri}">
+            <div class="trk-hd" onclick="toggleTrk('trk-${mi}-${ri}')">
               <span class="trk-num">${ri+1}.</span>
-              <span class="trk-row-title">${t.title}</span>
+              <span class="trk-ttl">${t.title}</span>
               ${chipStatus(r.newStatus||r.statusAtTime||t.status)}
-              <span class="cat-pill" style="font-size:10px">${t.cat}</span>
-              <svg class="trk-chevron" width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M4.5 3l4.5 3-4.5 3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              ${(()=>{const col=catColor(t.cat);return `<span class="catpill" style="font-size:10px;color:${col.fg};background:${col.bg};border-color:${col.border}">${catIcon(t.cat)} ${t.cat}</span>`;})()}
+              <svg class="trk-chev" width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M4.5 3l4.5 3-4.5 3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
             </div>
-            <div class="trk-row-body">
-              ${r.comment?`<div class="trk-comment"><svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M1.5 2a.5.5 0 0 1 .5-.5h8a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-.5.5H4L1.5 10.5V2z" stroke="var(--muted)" stroke-width="1.1" stroke-linejoin="round"/></svg><span>${r.comment}</span></div>`:''}
-              <div class="trk-fields">
-                ${r.decision?`<div class="trk-field"><div class="trk-field-lbl">Décision</div><div class="trk-field-val">${r.decision}</div></div>`:''}
-                ${r.responsable?`<div class="trk-field"><div class="trk-field-lbl">Responsable</div><div class="trk-field-val">${r.responsable}</div></div>`:''}
-                ${r.resolutionDate?`<div class="trk-field"><div class="trk-field-lbl">Résolution promise</div><div class="trk-field-val">${fmtDate(r.resolutionDate)}</div></div>`:''}
-                ${t.intervenant?`<div class="trk-field"><div class="trk-field-lbl">Intervenant</div><div class="trk-field-val">${t.intervenant}</div></div>`:''}
+            <div class="trk-bd">
+              ${r.comment?`<div class="trk-cmt"><svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M1.5 2a.5.5 0 0 1 .5-.5h8a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-.5.5H4L1.5 10.5V2z" stroke="var(--muted)" stroke-width="1.1" stroke-linejoin="round"/></svg><span>${r.comment}</span></div>`:''}
+              <div class="trk-flds">
+                ${r.decision?`<div class="trk-fld"><div class="trk-flbl">Décision</div><div class="trk-fval">${r.decision}</div></div>`:''}
+                ${r.responsable?`<div class="trk-fld"><div class="trk-flbl">Responsable</div><div class="trk-fval">${r.responsable}</div></div>`:''}
+                ${r.resolutionDate?`<div class="trk-fld"><div class="trk-flbl">Résolution promise</div><div class="trk-fval">${fmtDate(r.resolutionDate)}</div></div>`:''}
+                ${t.intervenant?`<div class="trk-fld"><div class="trk-flbl">Intervenant</div><div class="trk-fval">${t.intervenant}</div></div>`:''}
               </div>
-              ${hist.length?`<div class="trk-hist"><div class="trk-hist-lbl">Historique des réunions précédentes</div>${hist.map(rr=>`<div class="trk-hist-row">${fmtDate(rr.meetingDate||'')} — ${cap(rr.newStatus||'')}${rr.decision?' · '+rr.decision:''}</div>`).join('')}</div>`:''}
+              ${hist.length?`<div class="trk-hist"><div class="trk-hlbl">Historique des réunions précédentes</div>${hist.map(rr=>`<div class="trk-hrow">${fmtDate(rr.meetingDate||'')} — ${cap(rr.newStatus||'')}${rr.decision?' · '+rr.decision:''}</div>`).join('')}</div>`:''}
             </div>
           </div>`;
         }).join('')}
       `:''}
-      ${m.notes?`<div class="msection-lbl"><svg width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M2 2h7v7H2z" stroke="currentColor" stroke-width="1.1" stroke-linejoin="round"/><path d="M4 4.5h3M4 6.5h2" stroke="currentColor" stroke-width="1" stroke-linecap="round"/></svg>Notes</div><div class="mnotes-box">${m.notes}</div>`:''}
-      ${m.nextDate?`<div class="msection-lbl">Prochaine réunion</div><div class="mnext-box"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1.5" y="2" width="11" height="10" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M4 1v2.5M10 1v2.5M1.5 5.5h11" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>${fmtDate(m.nextDate)}</div>`:''}
+      ${m.notes?`<div class="msection-lbl"><svg width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M2 2h7v7H2z" stroke="currentColor" stroke-width="1.1" stroke-linejoin="round"/><path d="M4 4.5h3M4 6.5h2" stroke="currentColor" stroke-width="1" stroke-linecap="round"/></svg>Notes</div><div class="nbox">${m.notes}</div>`:''}
+      ${m.nextDate?`<div class="msection-lbl">Prochaine réunion</div><div class="nxtbox"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1.5" y="2" width="11" height="10" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M4 1v2.5M10 1v2.5M1.5 5.5h11" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>${fmtDate(m.nextDate)}</div>`:''}
     </div>`;
 }
 function toggleTrk(id){document.getElementById(id).classList.toggle('open');}
@@ -953,7 +1232,7 @@ function toggleTrk(id){document.getElementById(id).classList.toggle('open');}
 function openMeetingForm(midx){
   editMeetingIdx=midx; wizStep=0; wizTicketIdxs=[];
   const m=midx!==null?meetings[midx]:null;
-  document.getElementById('mformTitle').innerHTML=`<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1.5" y="2.5" width="13" height="12" rx="2" stroke="var(--sage)" stroke-width="1.5"/><path d="M5 1v3M11 1v3M1.5 7h13" stroke="var(--sage)" stroke-width="1.3" stroke-linecap="round"/></svg>${m?'Modifier la réunion':'Nouvelle réunion'}`;
+  document.getElementById('mformTitle').innerHTML=`<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1.5" y="2.5" width="13" height="12" rx="2" stroke="var(--brand)" stroke-width="1.5"/><path d="M5 1v3M11 1v3M1.5 7h13" stroke="var(--brand)" stroke-width="1.3" stroke-linecap="round"/></svg>${m?'Modifier la réunion':'Nouvelle réunion'}`;
   document.getElementById('mTitle').value=m?m.title:'';
   document.getElementById('mDate').value=m?m.date:today();
   document.getElementById('mLieu').value=m?m.lieu||'':'';
@@ -968,13 +1247,11 @@ function openMeetingForm(midx){
   dndList.innerHTML=tickets.map((t,i)=>{
     const chk=wizTicketIdxs.includes(i)?'checked':'';
     const follow=prevOpen.includes(i)&&!wizTicketIdxs.includes(i);
-    return`<div class="dnd-item" draggable="true" data-idx="${i}">
-      <span class="dnd-handle"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><circle cx="4" cy="3" r="1" fill="currentColor"/><circle cx="8" cy="3" r="1" fill="currentColor"/><circle cx="4" cy="6" r="1" fill="currentColor"/><circle cx="8" cy="6" r="1" fill="currentColor"/><circle cx="4" cy="9" r="1" fill="currentColor"/><circle cx="8" cy="9" r="1" fill="currentColor"/></svg></span>
-      <input type="checkbox" value="${i}" ${chk} style="accent-color:var(--sage);width:14px;height:14px;flex-shrink:0">
-      <span class="dnd-item-title">${t.title}</span>
-      <span class="cat-pill" style="font-size:10px">${t.cat}</span>
-      ${chipStatus(t.status)}
-      ${follow?'<span class="tck-follow">suivi</span>':''}
+    return`<div class="dndi" draggable="true" data-idx="${i}">
+      <span class="dndh"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><circle cx="4" cy="3" r="1" fill="currentColor"/><circle cx="8" cy="3" r="1" fill="currentColor"/><circle cx="4" cy="6" r="1" fill="currentColor"/><circle cx="8" cy="6" r="1" fill="currentColor"/><circle cx="4" cy="9" r="1" fill="currentColor"/><circle cx="8" cy="9" r="1" fill="currentColor"/></svg></span>
+      <input type="checkbox" value="${i}" ${chk} style="accent-color:var(--brand);width:14px;height:14px;flex-shrink:0">
+      <span class="dndi-title">${t.title}</span>
+      ${(()=>{const col=catColor(t.cat);return `<span class="catpill" style="font-size:10px;color:${col.fg};background:${col.bg};border-color:${col.border}">${catIcon(t.cat)} ${t.cat}</span>`;})()}
     </div>`;
   }).join('')||'<div style="color:var(--muted);font-size:12px;padding:8px">Aucun ticket.</div>';
   initDnD(dndList);
@@ -992,26 +1269,26 @@ function getPrevOpen(){
   return[...s];
 }
 function selTickets(){
-  return [...document.querySelectorAll('#tckList .dnd-item')]
+  return [...document.querySelectorAll('#tckList .dndi')]
     .filter(el=>el.querySelector('input[type=checkbox]')?.checked)
     .map(el=>parseInt(el.dataset.idx));
 }
 
 let dndDragSrc=null;
 function initDnD(list){
-  list.querySelectorAll('.dnd-item').forEach(item=>{
-    item.addEventListener('dragstart',e=>{dndDragSrc=item;item.classList.add('dnd-dragging');e.dataTransfer.effectAllowed='move';});
-    item.addEventListener('dragend',()=>{dndDragSrc=null;list.querySelectorAll('.dnd-item').forEach(i=>i.classList.remove('dnd-dragging','dnd-over'));});
-    item.addEventListener('dragover',e=>{e.preventDefault();if(item!==dndDragSrc){list.querySelectorAll('.dnd-item').forEach(i=>i.classList.remove('dnd-over'));item.classList.add('dnd-over');}});
+  list.querySelectorAll('.dndi').forEach(item=>{
+    item.addEventListener('dragstart',e=>{dndDragSrc=item;item.classList.add('dr');e.dataTransfer.effectAllowed='move';});
+    item.addEventListener('dragend',()=>{dndDragSrc=null;list.querySelectorAll('.dndi').forEach(i=>i.classList.remove('dr','ov'));});
+    item.addEventListener('dragover',e=>{e.preventDefault();if(item!==dndDragSrc){list.querySelectorAll('.dndi').forEach(i=>i.classList.remove('ov'));item.classList.add('ov');}});
     item.addEventListener('drop',e=>{
       e.preventDefault();
       if(!dndDragSrc||item===dndDragSrc)return;
-      const items=[...list.querySelectorAll('.dnd-item')];
+      const items=[...list.querySelectorAll('.dndi')];
       const fromIdx=items.indexOf(dndDragSrc);
       const toIdx=items.indexOf(item);
       if(fromIdx<toIdx)list.insertBefore(dndDragSrc,item.nextSibling);
       else list.insertBefore(dndDragSrc,item);
-      list.querySelectorAll('.dnd-item').forEach(i=>i.classList.remove('dnd-over'));
+      list.querySelectorAll('.dndi').forEach(i=>i.classList.remove('ov'));
     });
   });
 }
@@ -1025,13 +1302,11 @@ function buildDynPanels(idxs,existing){
     const p=document.createElement('div');
     p.className='wp';p.id=`mwpt${i}`;
     p.innerHTML=`
-      <div class="trk-form-card">
-        <div class="trk-form-head">
-          <span class="trk-form-num">Ticket ${i+1}/${idxs.length}</span>
+      <div class="tfc">
+        <div class="tfch">
+          <span class="tfcn">Ticket ${i+1}/${idxs.length}</span>
           ${chipStatus(t.status)}
-          <span class="cat-pill" style="font-size:10px">${t.cat}</span>
-        </div>
-        <div style="font-size:15px;font-weight:700;color:var(--ink);margin-bottom:4px">${t.title}</div>
+          ${catPill(t.cat)}
         ${t.desc?`<div style="font-size:12px;color:var(--subtle);margin-bottom:10px">${t.desc}</div>`:''}
         <div style="display:flex;gap:12px;font-size:11.5px;color:var(--subtle);margin-bottom:14px;flex-wrap:wrap">
           ${t.intervenant?`<span>🔧 ${t.intervenant}</span>`:''}
@@ -1039,7 +1314,7 @@ function buildDynPanels(idxs,existing){
           ${t.relances&&t.relances.length?`<span>📌 ${t.relances.length} relance(s)</span>`:''}
         </div>
       </div>
-      ${hist.length?`<div class="trk-hist-prev"><div class="trk-hist-prev-lbl"><svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M5 1A4 4 0 1 1 1 5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><path d="M1 2.5V5h2.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>Réunions précédentes</div>${hist.map(r=>`<div class="trk-hist-prev-row">${fmtDate(r.meetingDate||'')} — ${cap(r.newStatus||'')}${r.decision?' · '+r.decision:''}</div>`).join('')}</div>`:''}
+      ${hist.length?`<div class="thp"><div class="thpl"><svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M5 1A4 4 0 1 1 1 5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><path d="M1 2.5V5h2.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>Réunions précédentes</div>${hist.map(r=>`<div class="thpr">${fmtDate(r.meetingDate||'')} — ${cap(r.newStatus||'')}${r.decision?' · '+r.decision:''}</div>`).join('')}</div>`:''}
       <div class="fg"><label>Commentaire de séance</label><textarea id="tc_c${i}" rows="3" placeholder="Point de situation, blocages, avancement...">${prev?prev.comment||'':''}</textarea></div>
       <div class="fr">
         <div class="fg"><label>Décision prise</label><input type="text" id="tc_d${i}" placeholder="ex. Planifier intervention semaine 27" value="${prev?prev.decision||'':''}"></div>
@@ -1108,16 +1383,39 @@ function saveMeeting(){
     participants:document.getElementById('mPart').value.trim(),
     status:document.getElementById('mStatus').value,ticketReviews:reviews,
     notes:document.getElementById('mNotes').value.trim(),nextDate:document.getElementById('mNextDate').value};
-  if(editMeetingIdx!==null){meetings[editMeetingIdx]=mtg;activeMeetingIdx=editMeetingIdx;}
+  if(editMeetingIdx!==null){ mtg._dbId = meetings[editMeetingIdx]._dbId; meetings[editMeetingIdx]=mtg;activeMeetingIdx=editMeetingIdx;}
   else{meetings.unshift(mtg);activeMeetingIdx=0;}
+  saveDataDebounced();
+  // Synchronise aussi chaque ticket modifié pendant la revue
+  wizTicketIdxs.forEach(tidx=>syncTicketToSupabase(tickets[tidx]));
+  syncMeetingToSupabase(mtg, editMeetingIdx===null);
   closeMeetingForm();renderTimeline();renderTable();renderPendingBanner();toast('Réunion enregistrée ✓');
+}
+
+async function syncMeetingToSupabase(m, isNew){
+  if(!sb) return;
+  try{
+    const row = meetingToDbRow(m);
+    if(isNew || !m._dbId){
+      const res = await sb.from('reunions').insert(row).select().single();
+      if(res.error){ console.warn('Supabase insert réunion:', res.error); return; }
+      if(res.data){ m._dbId = res.data.id; saveDataDebounced(); }
+    }else{
+      const res = await sb.from('reunions').upsert({...row, id:m._dbId});
+      if(res.error) console.warn('Supabase upsert réunion:', res.error);
+    }
+    showSaveIndicator('cloud');
+  }catch(e){ console.warn('syncMeetingToSupabase exception:', e); }
 }
 
 function delMeeting(mi){
   if(!confirm('Supprimer cette réunion ?'))return;
+  const m=meetings[mi];
   meetings.splice(mi,1);
   if(activeMeetingIdx>=meetings.length)activeMeetingIdx=meetings.length-1;
   if(activeMeetingIdx<0)activeMeetingIdx=null;
+  saveDataDebounced();
+  if(sb && m._dbId){ sb.from('reunions').delete().eq('id',m._dbId).then(r=>{ if(r.error) console.warn('Supabase delete réunion:',r.error); }); }
   renderTimeline();toast('Réunion supprimée');
 }
 
@@ -1128,129 +1426,247 @@ function viewCR(mi){
   document.getElementById('modalCR').classList.add('open');
 }
 function buildCRHTML(m){
-  return`<div class="cr-wrap">
+  return`<div class="crw">
     <div class="cr-h1">Compte Rendu — ${m.title}</div>
-    <div class="cr-sub">BuildDesk · Réunion de décision</div>
+    <div class="crs">BuildDesk · Réunion de décision</div>
     <div class="cr-sec"><h3>Informations générales</h3>
-      <div class="cr-row"><span class="cr-lbl">Date</span><span class="cr-val">${fmtDate(m.date)}</span></div>
-      ${m.lieu?`<div class="cr-row"><span class="cr-lbl">Lieu</span><span class="cr-val">${m.lieu}</span></div>`:''}
-      ${m.participants?`<div class="cr-row"><span class="cr-lbl">Participants</span><span class="cr-val">${m.participants}</span></div>`:''}
-      <div class="cr-row"><span class="cr-lbl">Statut</span><span class="cr-val">${m.status==='terminee'?'Terminée':'Planifiée'}</span></div>
+      <div class="crr"><span class="crl">Date</span><span class="crv">${fmtDate(m.date)}</span></div>
+      ${m.lieu?`<div class="crr"><span class="crl">Lieu</span><span class="crv">${m.lieu}</span></div>`:''}
+      ${m.participants?`<div class="crr"><span class="crl">Participants</span><span class="crv">${m.participants}</span></div>`:''}
+      <div class="crr"><span class="crl">Statut</span><span class="crv">${m.status==='terminee'?'Terminée':'Planifiée'}</span></div>
     </div>
     <div class="cr-sec"><h3>Revue des tickets (${(m.ticketReviews||[]).length})</h3>
       ${(m.ticketReviews||[]).map((r,i)=>{
         const t=tickets[r.ticketIdx];if(!t)return'';
         const hist=meetings.filter(mm=>mm!==m).flatMap(mm=>(mm.ticketReviews||[]).filter(rr=>rr.ticketIdx===r.ticketIdx));
-        return`<div class="cr-tblock">
-          <div class="cr-ttitle">${i+1}. ${t.title} <span style="font-size:11px;font-family:var(--mono);color:var(--muted)">${t.cat}</span></div>
-          <div class="cr-row"><span class="cr-lbl">Statut</span><span class="cr-val">${cap(r.newStatus||t.status)}</span></div>
-          ${r.responsable?`<div class="cr-row"><span class="cr-lbl">Responsable</span><span class="cr-val">${r.responsable}</span></div>`:''}
-          ${t.intervenant?`<div class="cr-row"><span class="cr-lbl">Intervenant</span><span class="cr-val">${t.intervenant}</span></div>`:''}
-          ${r.resolutionDate?`<div class="cr-row"><span class="cr-lbl">Résolution promise</span><span class="cr-val">${fmtDate(r.resolutionDate)}</span></div>`:''}
-          ${r.decision?`<div class="cr-row"><span class="cr-lbl">Décision</span><span class="cr-val"><strong>${r.decision}</strong></span></div>`:''}
-          ${r.comment?`<div class="cr-comment">${r.comment}</div>`:''}
-          ${hist.length?`<div class="cr-hist">Historique : ${hist.map(rr=>`${fmtDate(rr.meetingDate||'')} → ${cap(rr.newStatus||'')}${rr.decision?' · '+rr.decision:''}`).join(' | ')}</div>`:''}
+        return`<div class="crb">
+          <div class="crbt">${i+1}. ${t.title} <span style="font-size:11px;font-family:var(--mono);color:var(--muted)">${t.cat}</span></div>
+          <div class="crr"><span class="crl">Statut</span><span class="crv">${cap(r.newStatus||t.status)}</span></div>
+          ${r.responsable?`<div class="crr"><span class="crl">Responsable</span><span class="crv">${r.responsable}</span></div>`:''}
+          ${t.intervenant?`<div class="crr"><span class="crl">Intervenant</span><span class="crv">${t.intervenant}</span></div>`:''}
+          ${r.resolutionDate?`<div class="crr"><span class="crl">Résolution promise</span><span class="crv">${fmtDate(r.resolutionDate)}</span></div>`:''}
+          ${r.decision?`<div class="crr"><span class="crl">Décision</span><span class="crv"><strong>${r.decision}</strong></span></div>`:''}
+          ${r.comment?`<div class="crc">${r.comment}</div>`:''}
+          ${hist.length?`<div class="crh">Historique : ${hist.map(rr=>`${fmtDate(rr.meetingDate||'')} → ${cap(rr.newStatus||'')}${rr.decision?' · '+rr.decision:''}`).join(' | ')}</div>`:''}
         </div>`;
       }).join('')}
     </div>
     ${m.notes?`<div class="cr-sec"><h3>Notes & suivi</h3><p style="font-size:13px;color:var(--text2);white-space:pre-wrap">${m.notes}</p></div>`:''}
-    ${m.nextDate?`<div class="cr-sec"><h3>Prochaine réunion</h3><p style="font-size:13px;color:var(--sage);font-weight:600">📅 ${fmtDate(m.nextDate)}</p></div>`:''}
-    <div class="cr-footer">Généré le ${fmtDate(today())} · BuildDesk</div>
+    ${m.nextDate?`<div class="cr-sec"><h3>Prochaine réunion</h3><p style="font-size:13px;color:var(--brand);font-weight:600">📅 ${fmtDate(m.nextDate)}</p></div>`:''}
+    <div class="crft">Généré le ${fmtDate(today())} · BuildDesk</div>
   </div>`;
 }
 function downloadCR(){if(crMeetingIdx!==null)dlCR(crMeetingIdx);}
+
 function dlCR(mi){
-  const m=meetings[mi];
-  const html=`<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><title>CR — ${m.title}</title>
-  <style>
-    *{box-sizing:border-box;margin:0;padding:0}
-    @page{margin:2cm 2.2cm;size:A4}
-    body{font-family:'Georgia',serif;font-size:11pt;color:#1a1a18;line-height:1.65;background:#fff}
-    .page{max-width:170mm;margin:0 auto;padding:0}
-    /* HEADER */
-    .cr-header{display:flex;align-items:flex-start;justify-content:space-between;padding-bottom:14pt;border-bottom:2pt solid #1a1a18;margin-bottom:20pt}
-    .cr-logo{font-family:monospace;font-size:10pt;color:#3A6B5A;font-weight:bold;letter-spacing:1px}
-    .cr-title{font-size:18pt;font-weight:bold;color:#1a1a18;margin-bottom:3pt}
-    .cr-subtitle{font-size:9pt;color:#888;font-family:monospace;letter-spacing:.5px}
-    /* META TABLE */
-    .meta-table{width:100%;border-collapse:collapse;margin-bottom:22pt}
-    .meta-table td{padding:5pt 8pt;font-size:10pt;border-bottom:1px solid #eee}
-    .meta-table td:first-child{color:#888;font-family:monospace;font-size:8.5pt;text-transform:uppercase;letter-spacing:.8px;min-width:120pt;font-weight:bold}
-    /* SECTION */
-    .section-title{font-family:monospace;font-size:8pt;text-transform:uppercase;letter-spacing:1.2px;color:#888;border-bottom:1px solid #ddd;padding-bottom:5pt;margin:20pt 0 12pt;font-weight:bold}
-    /* TICKET BLOCK */
-    .tblock{border-left:3pt solid #3A6B5A;padding-left:12pt;margin-bottom:18pt;page-break-inside:avoid}
-    .tblock-title{font-size:12pt;font-weight:bold;color:#1a1a18;margin-bottom:8pt}
-    .tblock-cat{font-family:monospace;font-size:8pt;color:#888;font-weight:normal;letter-spacing:.5px}
-    .tblock-meta{display:flex;gap:20pt;flex-wrap:wrap;margin-bottom:6pt}
-    .tblock-field{font-size:9.5pt}
-    .tblock-field-lbl{font-family:monospace;font-size:8pt;color:#888;text-transform:uppercase;letter-spacing:.6px;display:block;margin-bottom:1pt}
-    .tblock-field-val{color:#1a1a18;font-weight:600}
-    .decision-box{background:#F0F5F2;border:1px solid #C2DDD5;border-radius:4pt;padding:8pt 10pt;margin-top:8pt;font-size:10pt}
-    .decision-box-lbl{font-family:monospace;font-size:7.5pt;color:#3A6B5A;text-transform:uppercase;letter-spacing:.8px;margin-bottom:3pt;font-weight:bold}
-    .comment-box{background:#F7F6F3;border:1px solid #ddd;border-radius:4pt;padding:8pt 10pt;margin-top:6pt;font-size:9.5pt;color:#555;font-style:italic}
-    .hist-box{font-family:monospace;font-size:8pt;color:#aaa;margin-top:6pt;padding-top:5pt;border-top:1px dashed #ddd}
-    /* STATUS BADGES */
-    .badge{display:inline-block;font-family:monospace;font-size:8pt;padding:2pt 7pt;border-radius:20pt;font-weight:bold}
-    .badge-prog{background:#FAECD8;color:#9E5C10;border:1px solid #F0CFA0}
-    .badge-done{background:#E0EDE8;color:#3A6B5A;border:1px solid #C2DDD5}
-    /* NOTES */
-    .notes-box{background:#F7F6F3;border:1px solid #ddd;border-radius:4pt;padding:10pt 12pt;font-size:10pt;white-space:pre-wrap;color:#333}
-    /* NEXT */
-    .next-box{background:#E0EDE8;border:1.5px solid #C2DDD5;border-radius:4pt;padding:10pt 14pt;font-size:11pt;color:#3A6B5A;font-weight:bold}
-    /* FOOTER */
-    .cr-footer{margin-top:24pt;padding-top:10pt;border-top:1px solid #ddd;font-family:monospace;font-size:8pt;color:#bbb;display:flex;justify-content:space-between}
-    /* PENDING */
-    .pending-section{background:#FAECD8;border:1.5px solid #F0CFA0;border-radius:6pt;padding:12pt 14pt;margin-bottom:20pt;page-break-inside:avoid}
-    .pending-lbl{font-family:monospace;font-size:8pt;color:#9E5C10;text-transform:uppercase;letter-spacing:.8px;margin-bottom:8pt;font-weight:bold}
-    .pending-row{font-size:9.5pt;padding:4pt 0;border-bottom:1px solid #F0CFA0}
-    .pending-row:last-child{border-bottom:none}
-  </style></head><body><div class="page">
-  <div class="cr-header">
-    <div><div class="cr-title">${m.title}</div><div class="cr-subtitle">Compte rendu · BuildDesk · Réunion de décision</div></div>
-    <div class="cr-logo">BUILD<br>DESK</div>
-  </div>
-  <table class="meta-table">
-    <tr><td>Date</td><td>${fmtDate(m.date)}</td></tr>
-    ${m.lieu?`<tr><td>Lieu</td><td>${m.lieu}</td></tr>`:''}
-    ${m.participants?`<tr><td>Participants</td><td>${m.participants}</td></tr>`:''}
-    <tr><td>Statut</td><td>${m.status==='terminee'?'Terminée':'Planifiée'}</td></tr>
-    <tr><td>Tickets examinés</td><td>${(m.ticketReviews||[]).length}</td></tr>
-  </table>
-  ${(()=>{
-    const pending=(m.ticketReviews||[]).filter(r=>r.decision&&tickets[r.ticketIdx]&&tickets[r.ticketIdx].status!=='résolu');
-    return pending.length?`<div class="pending-section"><div class="pending-lbl">⚠ Actions en suspens (${pending.length})</div>${pending.map(r=>`<div class="pending-row"><strong>${r.decision}</strong> — ${tickets[r.ticketIdx].title}${r.responsable?' · '+r.responsable:''}${r.resolutionDate?' · échéance '+fmtDate(r.resolutionDate):''}</div>`).join('')}</div>`:'';
-  })()}
-  <div class="section-title">Revue des tickets (${(m.ticketReviews||[]).length})</div>
-  ${(m.ticketReviews||[]).map((r,i)=>{
-    const t=tickets[r.ticketIdx];if(!t)return'';
-    const hist=meetings.filter(mm=>mm!==m).flatMap(mm=>(mm.ticketReviews||[]).filter(rr=>rr.ticketIdx===r.ticketIdx));
-    const badge=r.newStatus==='résolu'?'badge-done':'badge-prog';
-    const lbl=r.newStatus==='résolu'?'Résolu':'En cours';
-    return`<div class="tblock">
-      <div class="tblock-title">${i+1}. ${t.title} <span class="tblock-cat">[${t.cat}]</span></div>
-      <div class="tblock-meta">
-        <div class="tblock-field"><span class="tblock-field-lbl">Statut</span><span class="badge ${badge}">${lbl}</span></div>
-        ${r.responsable?`<div class="tblock-field"><span class="tblock-field-lbl">Responsable</span><span class="tblock-field-val">${r.responsable}</span></div>`:''}
-        ${t.intervenant?`<div class="tblock-field"><span class="tblock-field-lbl">Intervenant</span><span class="tblock-field-val">${t.intervenant}</span></div>`:''}
-        ${t.soustraitant?`<div class="tblock-field"><span class="tblock-field-lbl">Sous-traitant</span><span class="tblock-field-val">${t.soustraitant}</span></div>`:''}
-        ${r.resolutionDate?`<div class="tblock-field"><span class="tblock-field-lbl">Résolution promise</span><span class="tblock-field-val">${fmtDate(r.resolutionDate)}</span></div>`:''}
-      </div>
-      ${r.decision?`<div class="decision-box"><div class="decision-box-lbl">✓ Décision prise</div>${r.decision}</div>`:''}
-      ${r.comment?`<div class="comment-box">${r.comment}</div>`:''}
-      ${hist.length?`<div class="hist-box">Historique : ${hist.map(rr=>`${fmtDate(rr.meetingDate||'')} → ${cap(rr.newStatus||'')}${rr.decision?' · '+rr.decision:''}`).join(' | ')}</div>`:''}
-    </div>`;
-  }).join('')}
-  ${m.notes?`<div class="section-title">Notes & suivi</div><div class="notes-box">${m.notes}</div>`:''}
-  ${m.nextDate?`<div class="section-title">Prochaine réunion</div><div class="next-box">📅 ${fmtDate(m.nextDate)}</div>`:''}
-  <div class="cr-footer"><span>BuildDesk — Généré le ${fmtDate(today())}</span><span>${m.title}</span></div>
-  </div></body></html>`;
-  const a=document.createElement('a');
-  a.href=URL.createObjectURL(new Blob([html],{type:'text/html'}));
-  a.download=`CR_${m.title.replace(/[^a-zA-Z0-9]/g,'_')}_${m.date}.html`;
-  a.click();toast('CR téléchargé ✓');
+  const m = meetings[mi];
+  if(!window.jspdf){ toast('jsPDF non chargé, essayez à nouveau'); return; }
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation:'portrait', unit:'mm', format:'a4' });
+
+  const MARGIN = 18;
+  const PW = 210 - MARGIN*2; // page width usable
+  let y = MARGIN;
+  const SAGE = [58, 107, 90];
+  const INK  = [26, 25, 18];
+  const MUTED = [140, 135, 128];
+  const AMBER = [158, 92, 16];
+
+  function checkNewPage(needed=10){
+    if(y + needed > 280){ doc.addPage(); y = MARGIN; drawPageNum(); }
+  }
+  let pageNum = 1;
+  function drawPageNum(){
+    doc.setFontSize(8); doc.setTextColor(...MUTED);
+    doc.text(`BuildDesk — ${m.title} — p.${pageNum}`, MARGIN, 290);
+    pageNum++;
+  }
+
+  // ── HEADER ──
+  doc.setFillColor(...SAGE);
+  doc.rect(MARGIN, y, PW, 14, 'F');
+  doc.setFontSize(13); doc.setFont('helvetica','bold'); doc.setTextColor(255,255,255);
+  doc.text('BUILDDESK', MARGIN+4, y+6);
+  doc.setFontSize(8); doc.setFont('helvetica','normal');
+  doc.text('Compte Rendu de Réunion', MARGIN+4, y+11);
+  doc.setFontSize(12); doc.setFont('helvetica','bold'); doc.setTextColor(255,255,255);
+  doc.text(m.title, 210-MARGIN-2, y+9, {align:'right'});
+  y += 18;
+
+  // ── META ──
+  const metaRows = [
+    ['Date', fmtDate(m.date)],
+    m.lieu ? ['Lieu', m.lieu] : null,
+    m.participants ? ['Participants', m.participants] : null,
+    ['Statut', m.status==='terminee'?'Terminée':'Planifiée'],
+    [`Tickets examinés`, String((m.ticketReviews||[]).length)],
+  ].filter(Boolean);
+  metaRows.forEach(([l,v])=>{
+    doc.setFontSize(8); doc.setFont('helvetica','bold'); doc.setTextColor(...MUTED); doc.text(l.toUpperCase(), MARGIN, y);
+    doc.setFont('helvetica','normal'); doc.setTextColor(...INK); doc.text(v||'—', MARGIN+42, y);
+    y += 5.5;
+  });
+  y += 3;
+
+  // ── ACTIONS EN SUSPENS ──
+  const pending = (m.ticketReviews||[]).filter(r=>r.decision && tickets[r.ticketIdx] && tickets[r.ticketIdx].status!=='résolu');
+  if(pending.length){
+    checkNewPage(12+pending.length*8);
+    doc.setFillColor(250,236,216); doc.setDrawColor(...AMBER);
+    doc.roundedRect(MARGIN, y, PW, 8+pending.length*7, 2, 2, 'FD');
+    doc.setFontSize(8); doc.setFont('helvetica','bold'); doc.setTextColor(...AMBER);
+    doc.text(`⚠ ${pending.length} ACTION${pending.length>1?'S':''} EN SUSPENS`, MARGIN+3, y+5);
+    y += 9;
+    pending.forEach(r=>{
+      const t=tickets[r.ticketIdx];
+      doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(...INK);
+      const line = `• ${r.decision} — ${t.title}${r.responsable?' ('+r.responsable+')':''}`;
+      const lines = doc.splitTextToSize(line, PW-6);
+      doc.text(lines, MARGIN+3, y);
+      y += lines.length*4.5;
+    });
+    y += 4;
+  }
+
+  // ── SEPARATOR ──
+  doc.setDrawColor(...SAGE); doc.setLineWidth(0.5); doc.line(MARGIN, y, MARGIN+PW, y); y += 6;
+
+  // ── TICKETS ──
+  doc.setFontSize(9); doc.setFont('helvetica','bold'); doc.setTextColor(...INK);
+  doc.text(`REVUE DES TICKETS (${(m.ticketReviews||[]).length})`, MARGIN, y); y += 7;
+
+  (m.ticketReviews||[]).forEach((r, ri)=>{
+    const t = tickets[r.ticketIdx]; if(!t) return;
+    const hist = meetings.filter(mm=>mm!==m).flatMap(mm=>(mm.ticketReviews||[]).filter(rr=>rr.ticketIdx===r.ticketIdx));
+    const isResolu = r.newStatus==='résolu';
+
+    const blockLines = [
+      r.comment ? doc.splitTextToSize(r.comment, PW-20).length : 0,
+      r.decision ? 1 : 0,
+      hist.length ? 1 : 0,
+    ].reduce((a,b)=>a+b,0);
+    checkNewPage(22 + blockLines*5);
+
+    // Left accent bar
+    doc.setFillColor(...isResolu ? SAGE : AMBER);
+    doc.rect(MARGIN, y, 2.5, 14, 'F');
+
+    // Ticket title
+    doc.setFontSize(10); doc.setFont('helvetica','bold'); doc.setTextColor(...INK);
+    doc.text(`${ri+1}. ${t.title}`, MARGIN+6, y+5);
+
+    // Category + status badge
+    doc.setFontSize(7.5); doc.setFont('helvetica','normal'); doc.setTextColor(...MUTED);
+    doc.text(`[${t.cat}]`, MARGIN+6, y+10);
+    const statusTxt = isResolu ? 'Résolu' : 'En cours';
+    doc.setFillColor(...isResolu ? [224,237,232] : [250,236,216]);
+    doc.roundedRect(MARGIN+PW-22, y+1, 22, 6, 1.5, 1.5, 'F');
+    doc.setTextColor(...isResolu ? SAGE : AMBER);
+    doc.setFont('helvetica','bold'); doc.setFontSize(7);
+    doc.text(statusTxt, MARGIN+PW-11, y+5, {align:'center'});
+    y += 16;
+
+    // Fields row
+    const fields = [
+      r.responsable ? `Resp.: ${r.responsable}` : null,
+      t.intervenant ? `Interv.: ${t.intervenant}` : null,
+      t.soustraitant ? `ST: ${t.soustraitant}` : null,
+      r.resolutionDate ? `Résol.: ${fmtDate(r.resolutionDate)}` : null,
+    ].filter(Boolean);
+    if(fields.length){
+      doc.setFontSize(7.5); doc.setFont('helvetica','normal'); doc.setTextColor(...MUTED);
+      const cols = 2, colW = PW/cols;
+      fields.forEach((f,fi)=>{
+        doc.text(f, MARGIN+6+(fi%cols)*colW, y);
+        if(fi%cols===cols-1) y+=4.5;
+      });
+      if(fields.length%cols!==0) y+=4.5;
+      y+=1;
+    }
+
+    // Decision box
+    if(r.decision){
+      checkNewPage(10);
+      doc.setFillColor(224,237,232); doc.setDrawColor(...SAGE);
+      const dLines = doc.splitTextToSize(`✓ ${r.decision}`, PW-14);
+      doc.roundedRect(MARGIN+4, y, PW-4, dLines.length*4.5+4, 1.5, 1.5, 'FD');
+      doc.setFontSize(8); doc.setFont('helvetica','bold'); doc.setTextColor(...SAGE);
+      doc.text(dLines, MARGIN+7, y+4);
+      y += dLines.length*4.5+7;
+    }
+
+    // Comment
+    if(r.comment){
+      checkNewPage(10);
+      const cLines = doc.splitTextToSize(r.comment, PW-14);
+      doc.setFillColor(247,246,243); doc.roundedRect(MARGIN+4, y, PW-4, cLines.length*4.2+4, 1.5, 1.5, 'F');
+      doc.setFontSize(7.5); doc.setFont('helvetica','italic'); doc.setTextColor(...MUTED);
+      doc.text(cLines, MARGIN+7, y+4);
+      y += cLines.length*4.2+7;
+    }
+
+    // History
+    if(hist.length){
+      doc.setFontSize(7); doc.setFont('helvetica','normal'); doc.setTextColor(...MUTED);
+      const htxt = 'Hist.: '+hist.map(rr=>`${fmtDate(rr.meetingDate||'')} → ${cap(rr.newStatus||'')}${rr.decision?' · '+rr.decision:''}`).join(' | ');
+      const hLines = doc.splitTextToSize(htxt, PW-10);
+      doc.text(hLines, MARGIN+4, y);
+      y += hLines.length*3.5+2;
+    }
+    y += 5;
+  });
+
+  // ── NOTES ──
+  if(m.notes){
+    checkNewPage(20);
+    doc.setDrawColor(...SAGE); doc.line(MARGIN, y, MARGIN+PW, y); y+=5;
+    doc.setFontSize(9); doc.setFont('helvetica','bold'); doc.setTextColor(...INK); doc.text('NOTES & SUIVI', MARGIN, y); y+=5;
+    const nLines = doc.splitTextToSize(m.notes, PW);
+    doc.setFontSize(9); doc.setFont('helvetica','normal'); doc.setTextColor(...INK);
+    doc.text(nLines, MARGIN, y); y += nLines.length*4.5+4;
+  }
+
+  // ── NEXT MEETING ──
+  if(m.nextDate){
+    checkNewPage(14);
+    doc.setFillColor(...SAGE); doc.roundedRect(MARGIN, y, PW, 10, 2, 2, 'F');
+    doc.setFontSize(9); doc.setFont('helvetica','bold'); doc.setTextColor(255,255,255);
+    doc.text(`Prochaine réunion : ${fmtDate(m.nextDate)}`, MARGIN+4, y+6.5);
+    y += 14;
+  }
+
+  // Footer on last page
+  drawPageNum();
+
+  doc.save(`CR_${m.title.replace(/[^a-zA-Z0-9]/g,'_')}_${m.date}.pdf`);
+  toast('PDF téléchargé ✓');
 }
-function printCR(){window.print();}
+
+function printCR(){ window.print(); }
+
+// ── COUNTDOWN ──
+function updateCountdown(){
+  const el = document.getElementById('nextMeetingCountdown');
+  const txt = document.getElementById('countdownText');
+  if(!el||!txt) return;
+  // Find the nearest future meeting date across all meetings
+  const today2 = new Date(); today2.setHours(0,0,0,0);
+  const upcoming = meetings
+    .filter(m=>m.nextDate)
+    .map(m=>({ title:m.title, date:new Date(m.nextDate) }))
+    .filter(m=>m.date>=today2)
+    .sort((a,b)=>a.date-b.date);
+  if(!upcoming.length){ el.style.display='none'; return; }
+  const next = upcoming[0];
+  const diff = Math.round((next.date - today2)/(1000*60*60*24));
+  let label;
+  if(diff===0) label = 'Réunion aujourd\'hui';
+  else if(diff===1) label = 'Réunion demain';
+  else label = `Réunion dans ${diff}j`;
+  txt.textContent = label;
+  el.style.display = 'flex';
+  el.classList.toggle('urgent', diff<=3);
+}
 
 // ═══════════════ MODALS ═══════════════
 function closeModal(id){document.getElementById(id).classList.remove('open');}
@@ -1264,13 +1680,45 @@ function today(){return new Date().toISOString().split('T')[0];}
 function fmtDate(d){if(!d)return'—';const[y,m,day]=d.split('-');return`${day}/${m}/${y}`;}
 function toast(msg){
   const t=document.getElementById('toast');
-  t.innerHTML=`<svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="6" fill="var(--sage)"/><path d="M4.5 7l2 2 3-3" stroke="#fff" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>${msg}`;
+  t.innerHTML=`<svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="6" fill="var(--brand)"/><path d="M4.5 7l2 2 3-3" stroke="#fff" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>${msg}`;
   t.style.transform='translateY(0)';t.style.opacity='1';
   setTimeout(()=>{t.style.transform='translateY(60px)';t.style.opacity='0';},2500);
 }
 
-// INIT
+// ═══════════════ INIT ═══════════════
 renderTable();
+
+function setConnStatus(state){
+  const el=document.getElementById('connStatus');
+  const dot=document.getElementById('connDot');
+  const lbl=document.getElementById('connLabel');
+  if(!el) return;
+  if(state==='connecting'){
+    el.style.display='flex'; dot.style.background='var(--amber)'; lbl.textContent='Connexion à Supabase…';
+  } else if(state==='connected'){
+    dot.style.background='var(--brand)'; lbl.textContent='Connecté à Supabase';
+    setTimeout(()=>{ el.style.display='none'; }, 2000);
+  } else if(state==='offline'){
+    dot.style.background='var(--rose)'; lbl.textContent='Mode local (hors-ligne)';
+    setTimeout(()=>{ el.style.display='none'; }, 3500);
+  }
+}
+
+(async function bootstrap(){
+  if(!sb){ setConnStatus('offline'); return; }
+  setConnStatus('connecting');
+  const remote = await loadFromSupabase();
+  if(remote){
+    tickets = remote.tickets;
+    meetings = remote.meetings;
+    saveLocalBackup();
+    renderTable();
+    if(currentPage==='meetings') renderTimeline();
+    setConnStatus('connected');
+  } else {
+    setConnStatus('offline');
+  }
+})();
 </script>
 </body>
 </html>
