@@ -3,1874 +3,988 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>BuildDesk</title>
+<title>TicketingDesk</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-
 :root{
-  --bg:#F7F8FA;
-  --surface:#FFFFFF;
-  --surface2:#F1F3F8;
-  --border:#E4E7EF;
-  --border2:#CDD1E0;
-  --text:#1E2A3B;
-  --text2:#3D4D63;
-  --subtle:#637081;
-  --muted:#9AA5B4;
-
-  --brand:#2563EB;
-  --brand-dk:#1D4ED8;
-  --brand-dim:#EFF6FF;
-  --brand-mid:#BFDBFE;
-
-  --green:#059669;  --green-dim:#ECFDF5; --green-mid:#A7F3D0;
-  --amber:#D97706;  --amber-dim:#FFFBEB; --amber-mid:#FDE68A;
-  --red:#DC2626;    --red-dim:#FEF2F2;   --red-mid:#FECACA;
-  --violet:#7C3AED; --violet-dim:#EDE9FE;--violet-mid:#C4B5FD;
-  --cyan:#0891B2;   --cyan-dim:#ECFEFF;  --cyan-mid:#A5F3FC;
-
-  --radius:8px; --radius-lg:12px;
-  --mono:'JetBrains Mono',monospace;
-  --sans:'Plus Jakarta Sans',sans-serif;
+  --bg:#F7F8FA; --surface:#fff; --surface2:#F1F3F8;
+  --border:#E4E7EF; --border2:#CDD1E0;
+  --text:#1E2A3B; --text2:#3D4D63; --subtle:#637081; --muted:#9AA5B4;
+  --brand:#2563EB; --brand-dk:#1D4ED8; --brand-dim:#EFF6FF; --brand-mid:#BFDBFE;
+  --green:#059669; --green-dim:#ECFDF5; --green-mid:#A7F3D0;
+  --amber:#D97706; --amber-dim:#FFFBEB; --amber-mid:#FDE68A;
+  --red:#DC2626;   --red-dim:#FEF2F2;   --red-mid:#FECACA;
+  --violet:#7C3AED;--violet-dim:#EDE9FE;--violet-mid:#C4B5FD;
+  --r:8px; --rlg:12px;
+  --sans:'Plus Jakarta Sans',sans-serif; --mono:'JetBrains Mono',monospace;
   --sh0:0 1px 2px rgba(0,0,0,.05);
-  --sh1:0 2px 6px rgba(0,0,0,.07),0 1px 2px rgba(0,0,0,.04);
-  --sh2:0 8px 24px rgba(0,0,0,.09),0 2px 6px rgba(0,0,0,.05);
+  --sh1:0 2px 6px rgba(0,0,0,.07);
+  --sh2:0 8px 24px rgba(0,0,0,.09);
 }
-
-body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14px;line-height:1.6;min-height:100vh;display:flex;flex-direction:column;-webkit-font-smoothing:antialiased}
-
-/* ── HEADER ── */
-header{
-  display:flex;align-items:center;gap:16px;
-  padding:0 28px;height:56px;
-  background:var(--surface);border-bottom:1px solid var(--border);
-  position:sticky;top:0;z-index:100;box-shadow:var(--sh0);
-}
-.logo{display:flex;align-items:center;gap:9px;text-decoration:none;flex-shrink:0}
-.logo-mark{
-  width:30px;height:30px;border-radius:8px;
-  background:linear-gradient(135deg,#3B82F6 0%,#1D4ED8 100%);
-  display:flex;align-items:center;justify-content:center;
-  box-shadow:0 2px 6px rgba(37,99,235,.3);
-}
-.logo-text{font-family:var(--mono);font-size:14px;font-weight:500;color:var(--text);letter-spacing:-.4px}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14px;line-height:1.6;min-height:100vh;-webkit-font-smoothing:antialiased}
+/* HEADER */
+header{display:flex;align-items:center;gap:12px;padding:0 24px;height:52px;background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100;box-shadow:var(--sh0)}
+.logo{display:flex;align-items:center;gap:9px;flex-shrink:0}
+.logo-mark{width:27px;height:27px;border-radius:7px;background:linear-gradient(135deg,#3B82F6,#1D4ED8);display:flex;align-items:center;justify-content:center;box-shadow:0 2px 5px rgba(37,99,235,.3)}
+.logo-text{font-family:var(--mono);font-size:13px;font-weight:500;color:var(--text)}
 .logo-text em{color:var(--brand);font-style:normal}
-header .spacer{flex:1}
-#nextMeetingCountdown{
-  display:none;align-items:center;gap:6px;
-  font-family:var(--mono);font-size:11px;font-weight:500;
-  color:var(--brand);background:var(--brand-dim);
-  border:1px solid var(--brand-mid);padding:4px 12px;border-radius:20px;
-  cursor:pointer;transition:all .15s;
-}
-#nextMeetingCountdown:hover{background:var(--brand-mid)}
-#nextMeetingCountdown.urgent{color:var(--amber);background:var(--amber-dim);border-color:var(--amber-mid)}
-.hdr-count{
-  display:flex;align-items:center;gap:5px;
-  font-family:var(--mono);font-size:11px;font-weight:600;
-  color:var(--subtle);background:var(--surface2);
-  border:1px solid var(--border);padding:4px 11px;border-radius:20px;
-}
-.hdr-dot{width:7px;height:7px;border-radius:50%;background:var(--amber);flex-shrink:0}
-
-/* ── TOP NAV ── */
-.topnav{display:flex;align-items:center;gap:2px;margin-left:16px}
-.tnav-item{
-  display:flex;align-items:center;gap:6px;
-  padding:6px 13px;border-radius:8px;
-  font-size:13px;font-weight:500;color:var(--subtle);
-  cursor:pointer;text-decoration:none;
-  transition:all .12s;white-space:nowrap;border:none;background:none;
-}
-.tnav-item:hover{color:var(--text);background:var(--surface2)}
-.tnav-item.active{color:var(--brand);background:var(--brand-dim);font-weight:600}
-.tnav-item.tnav-meeting.active{color:var(--violet);background:var(--violet-dim)}
-.tnav-item.tnav-meeting:hover{color:var(--violet)}
-.tnav-badge{
-  font-family:var(--mono);font-size:10px;font-weight:700;
-  background:var(--surface2);color:var(--muted);
-  padding:1px 7px;border-radius:10px;border:1px solid var(--border);
-  transition:all .12s;
-}
-.tnav-item.active .tnav-badge{background:var(--brand-mid);color:var(--brand-dk);border-color:transparent}
-.tnav-item.tnav-meeting.active .tnav-badge{background:var(--violet-mid);color:var(--violet);border-color:transparent}
-
-/* ── LAYOUT (no sidebar) ── */
-.shell{display:flex;flex:1;overflow:hidden}
-
-/* ── MAIN ── */
-main{flex:1;padding:28px 34px;overflow-y:auto}
-.pv{display:none}.pv.active{display:block}
-
-/* ── BUTTONS ── */
-.btn{border:none;border-radius:var(--radius);padding:8px 15px;font-family:var(--sans);font-size:13px;font-weight:600;cursor:pointer;transition:all .12s;display:inline-flex;align-items:center;gap:7px;line-height:1;white-space:nowrap}
+.hsp{flex:1}
+#countdown{display:none;align-items:center;gap:6px;font-family:var(--mono);font-size:11px;font-weight:500;color:var(--brand);background:var(--brand-dim);border:1px solid var(--brand-mid);padding:3px 11px;border-radius:18px;cursor:pointer}
+#countdown.urg{color:var(--amber);background:var(--amber-dim);border-color:var(--amber-mid)}
+/* BUTTONS */
+.btn{border:none;border-radius:var(--r);padding:7px 14px;font-family:var(--sans);font-size:13px;font-weight:600;cursor:pointer;transition:all .12s;display:inline-flex;align-items:center;gap:6px;line-height:1;white-space:nowrap}
 .btn:active{transform:scale(.97)}
 .btn-brand{background:var(--brand);color:#fff;box-shadow:0 1px 4px rgba(37,99,235,.25)}.btn-brand:hover{background:var(--brand-dk)}
 .btn-outline{background:var(--surface);color:var(--text2);border:1.5px solid var(--border2)}.btn-outline:hover{border-color:var(--brand);color:var(--brand);background:var(--brand-dim)}
 .btn-red{background:var(--surface);color:var(--red);border:1.5px solid var(--red-mid)}.btn-red:hover{background:var(--red-dim)}
-.btn-green{background:var(--green);color:#fff}.btn-green:hover{opacity:.9}
 .btn-violet{background:var(--violet);color:#fff}.btn-violet:hover{opacity:.9}
-.btn-sm{padding:5px 12px;font-size:12px}
-.btn-xs{padding:3px 9px;font-size:11.5px;border-radius:6px}
-
-/* ── PAGE TITLE ── */
-.ptitle{margin-bottom:26px}
-.ptitle h1{font-size:20px;font-weight:700;color:var(--text);display:flex;align-items:center;gap:9px;letter-spacing:-.3px}
-.ptitle p{font-size:13px;color:var(--subtle);margin-top:3px;padding-left:32px}
-
-/* ── STATS ── */
-.stats{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:26px}
-.stat{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:18px 20px;box-shadow:var(--sh0);display:flex;align-items:center;gap:14px}
-.stat-ico{width:42px;height:42px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
-.stat-ico.ic-amber{background:var(--amber-dim)}.stat-ico.ic-green{background:var(--green-dim)}
-.stat-lbl{font-size:11.5px;font-weight:500;color:var(--subtle);margin-bottom:3px}
-.stat-val{font-size:30px;font-weight:700;font-family:var(--mono);line-height:1}
-.stat.amber .stat-val{color:var(--amber)}.stat.green .stat-val{color:var(--green)}
-
-/* ── TOOLBAR ── */
-.toolbar{display:flex;gap:8px;margin-bottom:16px;align-items:center;flex-wrap:wrap}
-.srch{display:flex;align-items:center;gap:8px;background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius);padding:7px 13px;flex:1;min-width:200px;box-shadow:var(--sh0);transition:border-color .15s}
+.btn-sm{padding:5px 11px;font-size:12px}
+.btn-xs{padding:2px 8px;font-size:11.5px;border-radius:5px}
+/* MAIN */
+main{padding:26px 32px}
+/* SECTION HEADER */
+.sec-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
+.sec-title{font-size:18px;font-weight:700;color:var(--text);display:flex;align-items:center;gap:9px}
+.sec-title p{font-size:12px;color:var(--subtle);font-weight:400;margin-top:2px}
+/* STATS */
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px}
+.stat{background:var(--surface);border:1px solid var(--border);border-radius:var(--rlg);padding:16px 18px;box-shadow:var(--sh0);display:flex;align-items:center;gap:13px}
+.sico{width:40px;height:40px;border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.slbl{font-size:11px;font-weight:500;color:var(--subtle);margin-bottom:2px}
+.sval{font-size:28px;font-weight:700;font-family:var(--mono);line-height:1}
+.st-amb .sval{color:var(--amber)}.st-grn .sval{color:var(--green)}
+.st-amb .sico{background:var(--amber-dim)}.st-grn .sico{background:var(--green-dim)}
+/* TOOLBAR */
+.toolbar{display:flex;gap:8px;margin-bottom:14px;align-items:center;flex-wrap:wrap}
+.srch{display:flex;align-items:center;gap:7px;background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r);padding:6px 12px;flex:1;min-width:180px;box-shadow:var(--sh0);transition:border-color .15s}
 .srch:focus-within{border-color:var(--brand);box-shadow:0 0 0 3px var(--brand-dim)}
 .srch input{background:none;border:none;outline:none;color:var(--text);font-family:var(--sans);font-size:13px;width:100%}
 .srch input::placeholder{color:var(--muted)}
-select{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius);color:var(--text2);font-family:var(--sans);font-size:13px;padding:7px 12px;outline:none;cursor:pointer;box-shadow:var(--sh0);font-weight:500}
+select{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r);color:var(--text2);font-family:var(--sans);font-size:13px;padding:6px 11px;outline:none;cursor:pointer}
 select:focus{border-color:var(--brand);box-shadow:0 0 0 3px var(--brand-dim)}
-
-/* ── TABLE ── */
-.tbl{width:100%;border-collapse:collapse;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;box-shadow:var(--sh0)}
-.tbl th{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--muted);text-align:left;padding:10px 14px;border-bottom:1px solid var(--border);background:var(--surface2)}
-.tbl td{padding:12px 14px;border-bottom:1px solid var(--border);vertical-align:top;color:var(--text2)}
+/* TABLE */
+.tbl{width:100%;border-collapse:collapse;background:var(--surface);border:1px solid var(--border);border-radius:var(--rlg);overflow:hidden;box-shadow:var(--sh0)}
+.tbl th{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--muted);text-align:left;padding:9px 13px;border-bottom:1px solid var(--border);background:var(--surface2);white-space:nowrap}
+.tbl td{padding:11px 13px;border-bottom:1px solid var(--border);vertical-align:top;color:var(--text2)}
 .tbl tr:last-child td{border-bottom:none}
 .tbl tbody tr:hover td{background:#F5F7FF}
-.tt{font-weight:600;color:var(--text);font-size:13.5px}
-.ts{font-size:12px;color:var(--subtle);margin-top:2px;line-height:1.4}
-.ta{display:flex;gap:5px;opacity:0;transition:opacity .12s;margin-top:7px;flex-wrap:wrap}
+.tt{font-weight:600;color:var(--text);font-size:13px}
+.ts{font-size:11.5px;color:var(--subtle);margin-top:2px}
+.ta{display:flex;gap:4px;opacity:0;transition:opacity .1s;margin-top:6px;flex-wrap:wrap}
 .tbl tr:hover .ta{opacity:1}
-/* sort */
-.tbl th.srt{cursor:pointer}.tbl th.srt:hover{color:var(--brand);background:#EEF2FF}
-.sico{display:inline-block;margin-left:3px;font-size:9px;opacity:.4}
-.tbl th.sa .sico::after{content:'↑';opacity:1;color:var(--brand)}
-.tbl th.sd .sico::after{content:'↓';opacity:1;color:var(--brand)}
-.tbl th:not(.sa):not(.sd) .sico::after{content:'↕'}
-
-/* ── CHIPS ── */
-.chip{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;white-space:nowrap;border:1px solid transparent}
-.c-prog{background:var(--amber-dim);color:var(--amber);border-color:var(--amber-mid)}
-.c-done{background:var(--green-dim);color:var(--green);border-color:var(--green-mid)}
-
-/* ── CAT PILL ── */
-.catpill{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:600;padding:3px 10px;border-radius:8px;white-space:nowrap;border:1px solid transparent}
-
-/* ── RELANCES ── */
-.rl-row{display:flex;gap:4px;flex-wrap:wrap}
-.rl{display:inline-flex;align-items:center;gap:4px;font-size:10.5px;font-family:var(--mono);color:var(--subtle);background:var(--surface2);border:1px solid var(--border);padding:2px 8px;border-radius:6px;cursor:help}
-.rl-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
-
-/* ── PENDING BANNER ── */
-.pb{background:var(--amber-dim);border:1px solid var(--amber-mid);border-radius:var(--radius-lg);padding:14px 18px;margin-bottom:20px}
-.pb-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
-.pb-title{font-weight:700;font-size:13px;color:var(--amber);display:flex;align-items:center;gap:7px}
-.pb-item{display:flex;align-items:flex-start;gap:9px;padding:8px 12px;background:rgba(255,255,255,.7);border:1px solid var(--amber-mid);border-radius:var(--radius);margin-bottom:6px;font-size:12.5px}
-.pb-item:last-child{margin-bottom:0}
-.pb-dot{width:7px;height:7px;border-radius:50%;background:var(--amber);flex-shrink:0;margin-top:4px}
-.pb-ttl{font-weight:600;color:var(--text);margin-bottom:2px}
-.pb-meta{color:var(--subtle);font-size:11.5px;display:flex;gap:12px;flex-wrap:wrap}
-
-/* ── MEETINGS ── */
-.mshl{display:grid;grid-template-columns:290px 1fr;height:calc(100vh - 56px - 28px - 26px - 54px);min-height:480px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;box-shadow:var(--sh0)}
-.mlst{border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;background:var(--surface2)}
-.mlst-hdr{padding:13px 16px;border-bottom:1px solid var(--border);background:var(--surface);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
-.mlst-ttl{font-size:12px;font-weight:700;color:var(--text);display:flex;align-items:center;gap:6px}
-.mlst-scroll{flex:1;overflow-y:auto}
-
-/* timeline */
-.mtli{position:relative;padding:12px 15px 12px 42px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .1s;background:var(--surface2)}
-.mtli:hover{background:#EEF2FF}
-.mtli.active{background:var(--brand-dim);border-left:3px solid var(--brand)}
-.mtli-dot{position:absolute;left:18px;top:19px;width:10px;height:10px;border-radius:50%;border:2px solid var(--border2);background:var(--surface);z-index:1}
-.mtli.active .mtli-dot{background:var(--brand);border-color:var(--brand)}
-.mtli.done .mtli-dot{background:var(--green-mid);border-color:var(--green)}
-.mtli-ln{position:absolute;left:22px;top:29px;bottom:-1px;width:2px;background:var(--border)}
-.mtli:last-child .mtli-ln{display:none}
-.mtli-date{font-family:var(--mono);font-size:10px;color:var(--muted);margin-bottom:3px;font-weight:500}
-.mtli-ttl{font-weight:600;font-size:13px;color:var(--text);margin-bottom:4px}
-.mtli.active .mtli-ttl{color:var(--brand)}
-.mtli-meta{display:flex;gap:7px;align-items:center;flex-wrap:wrap}
-.mbadge{font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;border:1px solid transparent}
-.mbadge.plan{background:var(--amber-dim);color:var(--amber);border-color:var(--amber-mid)}
-.mbadge.done{background:var(--green-dim);color:var(--green);border-color:var(--green-mid)}
-.mtli-cnt{font-size:10.5px;color:var(--muted);font-family:var(--mono)}
-.mlst-empty{padding:40px 20px;text-align:center;color:var(--muted)}
-.mlst-empty p{font-size:12px;margin-top:10px}
-
-/* detail */
-.mdet{display:flex;flex-direction:column;overflow:hidden;background:var(--surface)}
-.mdet-empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--muted);gap:12px;padding:40px}
-.mdet-empty p{font-size:13px}
-.mdet-hdr{padding:16px 22px;border-bottom:1px solid var(--border);background:var(--surface);flex-shrink:0;display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
-.mdet-ttl{font-size:17px;font-weight:700;color:var(--text);margin-bottom:5px;letter-spacing:-.2px}
-.mdet-meta{display:flex;gap:12px;flex-wrap:wrap;font-size:12px;color:var(--subtle)}
-.mdet-meta span{display:flex;align-items:center;gap:5px}
-.mdet-actions{display:flex;gap:6px;flex-shrink:0;flex-wrap:wrap}
-.mdet-body{flex:1;overflow-y:auto;padding:18px 22px}
-
-/* ticket review rows */
-.trk{margin-bottom:9px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;transition:box-shadow .1s}
-.trk:hover{box-shadow:var(--sh1)}
-.trk-hd{display:flex;align-items:center;gap:9px;padding:11px 15px;cursor:pointer;transition:background .1s;user-select:none}
-.trk-hd:hover{background:var(--surface2)}
-.trk-num{font-family:var(--mono);font-size:10px;color:var(--muted);min-width:18px;font-weight:700}
-.trk-ttl{flex:1;font-weight:600;font-size:13px;color:var(--text)}
-.trk-chev{transition:transform .2s;color:var(--muted)}
-.trk.open .trk-chev{transform:rotate(90deg)}
-.trk-bd{display:none;padding:0 15px 14px;border-top:1px solid var(--border);background:var(--bg)}
-.trk.open .trk-bd{display:block}
-.trk-flds{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:11px}
-.trk-fld{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:9px 12px}
-.trk-flbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--muted);margin-bottom:3px}
-.trk-fval{font-size:12.5px;color:var(--text2);font-weight:500}
-.trk-cmt{margin-top:9px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:9px 12px;font-size:12.5px;color:var(--subtle);display:flex;gap:8px;align-items:flex-start}
-.trk-hist{margin-top:8px;padding:8px 11px;background:var(--amber-dim);border:1px solid var(--amber-mid);border-radius:var(--radius)}
-.trk-hlbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--amber);margin-bottom:4px}
-.trk-hrow{font-size:11.5px;color:var(--text2);padding-left:8px;border-left:2px solid var(--amber-mid);margin-bottom:3px}
-.slbl{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);margin:16px 0 7px;display:flex;align-items:center;gap:6px}
-.nbox{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:12px 14px;font-size:13px;color:var(--text2);line-height:1.6;white-space:pre-wrap}
-.nxtbox{display:flex;align-items:center;gap:9px;background:var(--brand-dim);border:1px solid var(--brand-mid);border-radius:var(--radius);padding:11px 14px;font-size:13px;color:var(--brand);font-weight:600}
-
-/* ── FORM PANEL ── */
+.srt{cursor:pointer}.srt:hover{color:var(--brand);background:#EEF2FF}
+.sico2{font-size:9px;opacity:.35;margin-left:2px}
+.sa .sico2{opacity:1;color:var(--brand)}.sa .sico2::after{content:'↑'}
+.sd .sico2{opacity:1;color:var(--brand)}.sd .sico2::after{content:'↓'}
+:not(.sa):not(.sd) .sico2::after{content:'↕'}
+/* CHIPS */
+.chip{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;padding:2px 9px;border-radius:18px;white-space:nowrap;border:1px solid transparent;cursor:pointer}
+.cp{background:var(--amber-dim);color:var(--amber);border-color:var(--amber-mid)}
+.cd{background:var(--green-dim);color:var(--green);border-color:var(--green-mid)}
+/* STATUS DROPDOWN */
+.sdrop{position:relative;display:inline-block}
+.sdrop-menu{display:none;position:absolute;top:calc(100% + 4px);left:0;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);box-shadow:var(--sh2);z-index:50;min-width:130px;overflow:hidden}
+.sdrop-menu.open{display:block}
+.sdrop-opt{display:flex;align-items:center;gap:8px;padding:8px 12px;font-size:12.5px;font-weight:500;cursor:pointer;color:var(--text2);transition:background .1s}
+.sdrop-opt:hover{background:var(--surface2)}
+/* INLINE EDIT */
+.edcell{cursor:pointer;border-radius:4px;padding:1px 3px;margin:-1px -3px;transition:background .1s;display:block}
+.edcell:hover{background:var(--brand-dim);outline:1px dashed var(--brand-mid)}
+.iput{border:1.5px solid var(--brand)!important;border-radius:5px!important;background:var(--surface)!important;color:var(--text)!important;font-family:var(--sans)!important;font-size:13px!important;padding:3px 7px!important;outline:none!important;box-shadow:0 0 0 3px var(--brand-dim)!important;width:100%!important}
+.iput-date{font-family:var(--mono)!important;font-size:12px!important}
+.itxt{min-height:52px!important;resize:vertical!important}
+/* RELANCES */
+.rl{display:flex;align-items:center;gap:5px;font-size:11px;font-family:var(--mono);color:var(--text2);padding:2px 0}
+.rl-d{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.rl-cmt{font-size:10.5px;color:var(--muted);margin-left:2px}
+/* PENDING BANNER */
+.pb{background:var(--amber-dim);border:1px solid var(--amber-mid);border-radius:var(--rlg);padding:12px 16px;margin-bottom:18px}
+.pb-ttl{font-weight:700;font-size:12.5px;color:var(--amber);display:flex;align-items:center;gap:6px;margin-bottom:9px}
+.pb-it{display:flex;gap:8px;padding:7px 11px;background:rgba(255,255,255,.7);border:1px solid var(--amber-mid);border-radius:var(--r);margin-bottom:5px;font-size:12px}
+.pb-it:last-child{margin-bottom:0}
+/* EMPTY */
+.empty{text-align:center;padding:52px 20px;color:var(--muted)}
+.empty svg{opacity:.25;margin-bottom:10px}
+.empty p{font-size:13px;color:var(--subtle)}
+/* SECTION DIVIDER */
+/* MEETING DETAIL */
+#mtgOv{display:none;position:fixed;inset:0;background:rgba(30,42,59,.2);backdrop-filter:blur(2px);z-index:250}
+#mtgPanel{position:absolute;right:0;top:0;bottom:0;width:560px;max-width:95vw;background:var(--surface);border-left:1px solid var(--border);display:flex;flex-direction:column;box-shadow:var(--sh2);overflow:hidden;animation:sli .2s ease}
+@keyframes sli{from{transform:translateX(40px);opacity:0}to{transform:translateX(0);opacity:1}}
+#mtgInner{flex:1;overflow-y:auto;padding:22px}
+#mtgFoot{padding:12px 20px;border-top:1px solid var(--border);display:flex;justify-content:space-between;gap:8px;background:var(--surface2);flex-shrink:0}
+/* MEETING FORM */
 .fmo{display:none;position:fixed;inset:0;background:rgba(30,42,59,.25);backdrop-filter:blur(4px);z-index:300;justify-content:flex-end}
 .fmo.open{display:flex}
-.fmp{background:var(--surface);width:540px;max-width:95vw;height:100%;display:flex;flex-direction:column;box-shadow:var(--sh2);border-left:1px solid var(--border);overflow:hidden;animation:sli .2s ease}
-@keyframes sli{from{transform:translateX(40px);opacity:0}to{transform:translateX(0);opacity:1}}
-.fmh{padding:18px 22px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
-.fmh h2{font-size:15px;font-weight:700;color:var(--text);display:flex;align-items:center;gap:8px}
-.fmc{background:none;border:none;cursor:pointer;color:var(--subtle);padding:6px;border-radius:var(--radius);display:flex;transition:all .1s}
+.fmp{background:var(--surface);width:520px;max-width:95vw;height:100%;display:flex;flex-direction:column;box-shadow:var(--sh2);border-left:1px solid var(--border);overflow:hidden;animation:sli .2s ease}
+.fmh{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.fmh h2{font-size:14px;font-weight:700;color:var(--text);display:flex;align-items:center;gap:7px}
+.fmc{background:none;border:none;cursor:pointer;color:var(--subtle);padding:5px;border-radius:var(--r);display:flex;transition:all .1s}
 .fmc:hover{color:var(--red);background:var(--red-dim)}
-.fmb{flex:1;overflow-y:auto;padding:20px 22px}
-.fmf{padding:14px 22px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px;background:var(--surface2)}
-/* wizard */
-.wbar{display:flex;gap:4px;margin-bottom:18px}
-.ws{flex:1;height:3px;border-radius:2px;background:var(--border);transition:background .2s}
-.ws.done{background:var(--green-mid)}.ws.active{background:var(--brand)}
-.wlbl{font-size:11px;font-weight:600;color:var(--muted);margin-bottom:9px;font-family:var(--mono)}
+.fmb{flex:1;overflow-y:auto;padding:18px 20px}
+.fmf{padding:12px 20px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px;background:var(--surface2)}
+.wbar{display:flex;gap:3px;margin-bottom:15px}
+.ws{flex:1;height:3px;border-radius:2px;background:var(--border)}
+.ws.done{background:var(--green-mid)}.ws.act{background:var(--brand)}
+.wlbl{font-size:10.5px;font-weight:600;color:var(--muted);margin-bottom:8px;font-family:var(--mono)}
 .wp{display:none}.wp.active{display:block}
-/* dnd */
-.dndl{display:flex;flex-direction:column;gap:5px}
-.dndi{display:flex;align-items:center;gap:9px;background:var(--surface2);border:1.5px solid var(--border);border-radius:var(--radius);padding:8px 11px;cursor:grab;transition:all .12s}
+.dndl{display:flex;flex-direction:column;gap:4px}
+.dndi{display:flex;align-items:center;gap:8px;background:var(--surface2);border:1.5px solid var(--border);border-radius:var(--r);padding:7px 10px;cursor:grab;transition:all .12s}
 .dndi:hover{border-color:var(--brand-mid);background:var(--brand-dim)}
-.dndi.dnd-ov{border-color:var(--brand);background:var(--brand-dim);box-shadow:0 0 0 3px var(--brand-dim)}
-.dndi.dr{opacity:.35}
-.dndh{color:var(--muted);flex-shrink:0}
-.dndt{flex:1;font-size:13px;font-weight:500;color:var(--text)}
-.tcf{font-size:10px;font-weight:700;color:var(--amber);background:var(--amber-dim);border:1px solid var(--amber-mid);padding:1px 7px;border-radius:10px}
-/* ticket form card */
-.tfc{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:13px 15px;margin-bottom:11px}
-.tfch{display:flex;align-items:center;gap:8px;margin-bottom:11px;flex-wrap:wrap}
-.tfcn{font-size:10.5px;font-weight:700;background:var(--brand-dim);color:var(--brand);padding:2px 9px;border-radius:10px;border:1px solid var(--brand-mid);font-family:var(--mono)}
-.thp{background:var(--amber-dim);border:1px solid var(--amber-mid);border-radius:var(--radius);padding:9px 11px;margin-bottom:11px}
-.thpl{font-size:10px;font-weight:700;color:var(--amber);text-transform:uppercase;letter-spacing:.7px;margin-bottom:4px;display:flex;align-items:center;gap:4px}
-.thpr{font-size:11.5px;color:var(--text2);border-left:2px solid var(--amber-mid);padding-left:7px;margin-bottom:3px}
-
-/* ── MODAL ── */
-.ov{display:none;position:fixed;inset:0;background:rgba(30,42,59,.35);backdrop-filter:blur(4px);z-index:200;align-items:center;justify-content:center}
-.ov.open{display:flex}
-.mo{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);width:480px;max-width:95vw;padding:26px;max-height:92vh;overflow-y:auto;box-shadow:var(--sh2)}
-.mo h2{font-size:15.5px;font-weight:700;color:var(--text);margin-bottom:18px;display:flex;align-items:center;gap:8px;letter-spacing:-.2px}
-.fg{margin-bottom:13px}
-.fg label{display:block;font-size:11.5px;font-weight:600;color:var(--text2);margin-bottom:5px}
-.fg input,.fg textarea,.fg select{width:100%;background:var(--bg);border:1.5px solid var(--border);border-radius:var(--radius);color:var(--text);font-family:var(--sans);font-size:13px;padding:8px 12px;outline:none;transition:all .12s}
+.dndi.dov{border-color:var(--brand);background:var(--brand-dim)}
+.dndi.dr{opacity:.3}
+.tfc{background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:12px 14px;margin-bottom:10px}
+.tfch{display:flex;align-items:center;gap:7px;margin-bottom:10px;flex-wrap:wrap}
+.tfcn{font-size:10px;font-weight:700;background:var(--brand-dim);color:var(--brand);padding:2px 8px;border-radius:9px;border:1px solid var(--brand-mid);font-family:var(--mono)}
+.thp{background:var(--amber-dim);border:1px solid var(--amber-mid);border-radius:var(--r);padding:8px 10px;margin-bottom:10px}
+.thpl{font-size:9.5px;font-weight:700;color:var(--amber);text-transform:uppercase;letter-spacing:.7px;margin-bottom:3px}
+.thpr{font-size:11px;color:var(--text2);border-left:2px solid var(--amber-mid);padding-left:6px;margin-bottom:2px}
+.trk{margin-bottom:8px;background:var(--surface);border:1px solid var(--border);border-radius:var(--rlg);overflow:hidden}
+.trk-hd{display:flex;align-items:center;gap:8px;padding:10px 14px;cursor:pointer;transition:background .1s}
+.trk-hd:hover{background:var(--surface2)}
+.trk-num{font-family:var(--mono);font-size:10px;color:var(--muted);min-width:16px;font-weight:700}
+.trk-ttl{flex:1;font-weight:600;font-size:12.5px;color:var(--text)}
+.trk-chev{transition:transform .2s;color:var(--muted)}
+.trk.open .trk-chev{transform:rotate(90deg)}
+.trk-bd{display:none;padding:0 14px 13px;border-top:1px solid var(--border);background:var(--bg)}
+.trk.open .trk-bd{display:block}
+.trk-flds{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:10px}
+.trk-fld{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:8px 11px}
+.trk-flbl{font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--muted);margin-bottom:3px}
+.trk-fval{font-size:12px;color:var(--text2);font-weight:500}
+.slbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);margin:14px 0 6px}
+.nbox{background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:10px 13px;font-size:12.5px;color:var(--text2);line-height:1.6;white-space:pre-wrap}
+.nxtbox{display:flex;align-items:center;gap:8px;background:var(--brand-dim);border:1px solid var(--brand-mid);border-radius:var(--r);padding:10px 13px;font-size:12.5px;color:var(--brand);font-weight:600}
+/* MODAL */
+.mov{display:none;position:fixed;inset:0;background:rgba(30,42,59,.4);backdrop-filter:blur(4px);z-index:500;align-items:center;justify-content:center}
+.mov.open{display:flex}
+.mo{background:var(--surface);border:1px solid var(--border);border-radius:var(--rlg);width:460px;max-width:95vw;padding:24px;max-height:92vh;overflow-y:auto;box-shadow:var(--sh2)}
+.mo h2{font-size:15px;font-weight:700;color:var(--text);margin-bottom:16px;display:flex;align-items:center;gap:7px}
+.fg{margin-bottom:12px}
+.fg label{display:block;font-size:10.5px;font-weight:700;color:var(--text2);margin-bottom:4px;text-transform:uppercase;letter-spacing:.4px}
+.fg input,.fg textarea,.fg select{width:100%;background:var(--bg);border:1.5px solid var(--border);border-radius:var(--r);color:var(--text);font-family:var(--sans);font-size:13px;padding:8px 11px;outline:none;transition:all .12s}
 .fg input:focus,.fg textarea:focus,.fg select:focus{border-color:var(--brand);background:var(--surface);box-shadow:0 0 0 3px var(--brand-dim)}
-.fg textarea{resize:vertical;min-height:68px}
-.fr{display:grid;grid-template-columns:1fr 1fr;gap:11px}
-.mft{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:20px;flex-wrap:wrap;padding-top:16px;border-top:1px solid var(--border)}
-.mfr{display:flex;gap:8px}
-
-/* CR */
-.crw{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:22px}
-.crw h1{font-size:19px;font-weight:700;color:var(--text);margin-bottom:2px;letter-spacing:-.3px}
-.crs{font-size:11px;color:var(--muted);margin-bottom:18px;font-family:var(--mono)}
-.crs3 h3{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted);border-bottom:1px solid var(--border);padding-bottom:4px;margin:16px 0 10px}
-.crr{display:flex;gap:8px;font-size:12.5px;margin-bottom:4px}
-.crl{color:var(--muted);min-width:130px;font-size:11px;font-weight:600;padding-top:1px;text-transform:uppercase;letter-spacing:.4px}
-.crv{color:var(--text2);font-weight:500}
-.crb{border-left:3px solid var(--brand);padding-left:13px;margin-bottom:14px}
-.crbt{font-weight:700;font-size:14px;margin-bottom:5px;color:var(--text)}
-.crc{font-size:12px;color:var(--subtle);padding:8px 11px;background:var(--surface);border-radius:var(--radius);margin-top:6px;border:1px solid var(--border)}
-.crh{font-size:11px;color:var(--muted);margin-top:4px;font-family:var(--mono)}
-.crft{margin-top:22px;font-size:11px;color:var(--muted);font-family:var(--mono);border-top:1px solid var(--border);padding-top:9px;display:flex;justify-content:space-between}
-
-/* ── INLINE EDIT ── */
-.editable{cursor:pointer;border-radius:4px;transition:background .1s;padding:1px 3px;margin:-1px -3px}
-.editable:hover{background:var(--brand-dim);outline:1px dashed var(--brand-mid)}
-.editable-plain{cursor:pointer;border-radius:4px;transition:background .1s;padding:2px 4px;margin:-2px -4px}
-.editable-plain:hover{background:var(--brand-dim);outline:1px dashed var(--brand-mid)}
-.inline-input{
-  border:1.5px solid var(--brand)!important;border-radius:6px!important;
-  background:var(--surface)!important;color:var(--text)!important;
-  font-family:var(--sans)!important;font-size:13px!important;
-  padding:4px 8px!important;outline:none!important;
-  box-shadow:0 0 0 3px var(--brand-dim)!important;
-  width:100%!important;min-width:120px;
-}
-.inline-input-date{font-family:var(--mono)!important;font-size:12px!important;}
-.inline-textarea{min-height:60px!important;resize:vertical!important}
-.cycle-hint{font-size:9px;color:var(--muted);font-family:var(--mono);margin-left:4px;opacity:0;transition:opacity .15s}
-tr:hover .cycle-hint{opacity:1}
-#saveIndicator{position:fixed;bottom:22px;left:22px;background:var(--surface);border:1px solid var(--border);color:var(--subtle);font-size:11px;font-family:var(--mono);font-weight:500;padding:6px 13px;border-radius:20px;display:flex;align-items:center;gap:6px;opacity:0;transform:translateY(10px);transition:all .3s;z-index:400;box-shadow:var(--sh1)}
-#connStatus{position:fixed;bottom:22px;left:22px;background:var(--surface);border:1px solid var(--border);color:var(--muted);font-size:10.5px;font-family:var(--mono);padding:5px 12px;border-radius:20px;display:none;align-items:center;gap:6px;z-index:399;box-shadow:var(--sh1)}
-#toast{position:fixed;bottom:22px;right:22px;background:var(--text);color:#fff;font-size:13px;font-weight:600;padding:11px 17px;border-radius:var(--radius);transform:translateY(60px);opacity:0;transition:all .28s;z-index:500;box-shadow:var(--sh2);display:flex;align-items:center;gap:8px}
-
-/* ── EMPTY ── */
-.empty{text-align:center;padding:56px 20px;color:var(--muted)}
-.empty-ico{margin-bottom:11px;opacity:.3}
-.empty p{font-size:13px;color:var(--subtle)}
-
-/* ── MOBILE ── */
-
-
-
-
-
-
-
-
-
-
-
-
-/* ── PRINT ── */
-@media print{
-  header,.btn,.toolbar,.stats,.mdet-actions,.fmo,#toast,.pb,#saveIndicator,#connStatus{display:none!important}
-  body{background:#fff;font-size:11pt}.mo{box-shadow:none}
-}
-@media(max-width:900px){.mshl{grid-template-columns:1fr;height:auto}.mlst{height:270px;border-right:none;border-bottom:1px solid var(--border)}}
-@media(max-width:768px){.topnav .tnav-item:nth-child(n+3){display:none}.stats{grid-template-columns:1fr 1fr}main{padding:14px}#toast{bottom:76px;right:12px;left:12px;justify-content:center}}
+.fg textarea{resize:vertical;min-height:65px}
+.fr{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.mft{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:18px;padding-top:14px;border-top:1px solid var(--border)}
+.mfr{display:flex;gap:7px}
+/* INDICATORS */
+#saveInd{position:fixed;bottom:20px;left:20px;background:var(--surface);border:1px solid var(--border);color:var(--subtle);font-size:11px;font-family:var(--mono);font-weight:500;padding:5px 12px;border-radius:18px;display:flex;align-items:center;gap:5px;opacity:0;transform:translateY(10px);transition:all .3s;z-index:400;box-shadow:var(--sh1)}
+#connBadge{position:fixed;bottom:20px;left:20px;background:var(--surface);border:1px solid var(--border);font-size:10.5px;font-family:var(--mono);padding:4px 12px;border-radius:18px;display:none;align-items:center;gap:6px;z-index:399;box-shadow:var(--sh1)}
+#toast{position:fixed;bottom:20px;right:20px;background:var(--text);color:#fff;font-size:13px;font-weight:600;padding:10px 16px;border-radius:var(--r);transform:translateY(60px);opacity:0;transition:all .28s;z-index:600;box-shadow:var(--sh2);display:flex;align-items:center;gap:7px}
+@media print{header,.btn,.toolbar,.stats,#toast,#saveInd,.pb,.fmo{display:none!important}body{background:#fff}}
 </style>
 </head>
 <body>
 
-<!-- HEADER -->
 <header>
   <div class="logo">
     <div class="logo-mark">
-      <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
-        <rect x="1" y="1" width="5.5" height="5.5" rx="1.5" fill="white"/>
-        <rect x="8.5" y="1" width="5.5" height="5.5" rx="1.5" fill="white" opacity=".7"/>
-        <rect x="1" y="8.5" width="5.5" height="5.5" rx="1.5" fill="white" opacity=".7"/>
-        <rect x="8.5" y="8.5" width="5.5" height="5.5" rx="1.5" fill="white" opacity=".4"/>
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+        <rect x="1" y="1" width="5" height="5" rx="1.2" fill="white"/>
+        <rect x="8" y="1" width="5" height="5" rx="1.2" fill="white" opacity=".7"/>
+        <rect x="1" y="8" width="5" height="5" rx="1.2" fill="white" opacity=".7"/>
+        <rect x="8" y="8" width="5" height="5" rx="1.2" fill="white" opacity=".4"/>
       </svg>
     </div>
     <span class="logo-text">Ticketing<em>Desk</em></span>
   </div>
-
-  <!-- NAV TABS -->
-  <nav class="topnav">
-    <a class="tnav-item active" id="tnav-encours" onclick="showPageFiltered('en-cours','tnav-encours')">
-      <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><circle cx="6.5" cy="6.5" r="5" stroke="currentColor" stroke-width="1.4"/><path d="M6.5 2A4.5 4.5 0 0 1 11 6.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
-      En cours
-      <span class="tnav-badge" id="navEnCours">0</span>
-    </a>
-    <a class="tnav-item" id="tnav-resolu" onclick="showPageFiltered('résolu','tnav-resolu')">
-      <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><circle cx="6.5" cy="6.5" r="5" stroke="currentColor" stroke-width="1.4" fill="currentColor" fill-opacity=".1"/><path d="M4 6.5l2 2 3-3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      Résolus
-      <span class="tnav-badge" id="navResolu">0</span>
-    </a>
-    <a class="tnav-item tnav-meeting" id="tnav-meetings" onclick="showPage('meetings','tnav-meetings')">
-      <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><rect x="1" y="1.5" width="11" height="10" rx="2" stroke="currentColor" stroke-width="1.4"/><path d="M4 1v2M9 1v2M1 5.5h11" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><circle cx="4.5" cy="8.5" r=".8" fill="currentColor"/><circle cx="6.5" cy="8.5" r=".8" fill="currentColor"/><circle cx="8.5" cy="8.5" r=".8" fill="currentColor"/></svg>
-      Réunions
-      <span class="tnav-badge" id="navMeetings">0</span>
-    </a>
-  </nav>
-
-  <div class="spacer"></div>
-
-  <div id="nextMeetingCountdown" onclick="document.getElementById('tnav-meetings').click()">
+  <div class="hsp"></div>
+  <div id="countdown" onclick="window.scrollTo({top:document.body.scrollHeight,behavior:'smooth'})">
     <svg width="11" height="11" viewBox="0 0 11 11" fill="none"><rect x=".5" y="1" width="10" height="9.5" rx="1.5" stroke="currentColor" stroke-width="1.1"/><path d="M3.5.5v2M7.5.5v2M.5 4h10" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/></svg>
-    <span id="countdownText">Prochaine réunion</span>
+    <span id="cdtxt"></span>
   </div>
-
-  <div class="hdr-count" id="openCount"><span class="hdr-dot"></span><span>— en cours</span></div>
-
-  <!-- Export PDF icône -->
-  <button class="btn btn-outline btn-sm" onclick="exportAllPDF()" title="Exporter tous les tickets en PDF" style="padding:6px 10px">
-    <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1.5v7.5M4.5 6.5l2.5 2.5 2.5-2.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M2 11h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+  <button class="btn btn-outline btn-sm" onclick="exportAllPDF()" title="Exporter PDF" style="padding:6px 10px">
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1v9M4 7.5l3 3 3-3M2 12h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
   </button>
-
-  <button class="btn btn-outline btn-sm" onclick="resetAllData()" title="Réinitialiser" style="padding:6px 10px">
+  <button class="btn btn-outline btn-sm" onclick="resetApp()" title="Réinitialiser" style="padding:6px 10px">
     <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M11 6.5A4.5 4.5 0 1 1 9.5 3.2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M11 1.5v3h-3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
   </button>
-
-  <button class="btn btn-brand" id="headerBtn" onclick="handleHeaderBtn()">
+  <button class="btn btn-brand" onclick="openModal()">
     <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 1v10M1 6h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
     Nouveau ticket
   </button>
 </header>
 
-<div class="shell">
-
 <main>
 
-<!-- PAGE TICKETS -->
-<div class="pv active" id="page-tickets">
-  <div class="ptitle">
-    <h1>
-      <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="2.5" y="2.5" width="15" height="15" rx="3.5" stroke="var(--brand)" stroke-width="1.7"/><path d="M6.5 7.5h7M6.5 10.5h7M6.5 13.5h4.5" stroke="var(--brand)" stroke-width="1.4" stroke-linecap="round"/></svg>
+<!-- TICKETS -->
+<div class="sec-hd">
+  <div>
+    <div class="sec-title">
+      <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><rect x="2" y="2" width="14" height="14" rx="3" stroke="var(--brand)" stroke-width="1.6"/><path d="M5.5 6.5h7M5.5 9.5h7M5.5 12.5h4.5" stroke="var(--brand)" stroke-width="1.3" stroke-linecap="round"/></svg>
       Tickets
-    </h1>
-    <p>Suivi des interventions et incidents du bâtiment</p>
-  </div>
-  <div class="stats">
-    <div class="stat amber">
-      <div class="stat-ico ic-amber">
-        <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="7.5" stroke="var(--amber)" stroke-width="1.8"/><path d="M6.5 10A3.5 3.5 0 0 1 10 6.5" stroke="var(--amber)" stroke-width="2.2" stroke-linecap="round"/></svg>
-      </div>
-      <div><div class="stat-lbl">En cours</div><div class="stat-val" id="statProgress">0</div></div>
     </div>
-    <div class="stat green">
-      <div class="stat-ico ic-green">
-        <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="7.5" stroke="var(--green)" stroke-width="1.8" fill="currentColor" fill-opacity=".07"/><path d="M6.5 10l2.5 2.5 4.5-4.5" stroke="var(--green)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </div>
-      <div><div class="stat-lbl">Résolus</div><div class="stat-val" id="statClosed">0</div></div>
-    </div>
+    <p style="font-size:12px;color:var(--subtle);margin-top:3px;padding-left:28px">Cliquer sur une cellule pour modifier directement</p>
   </div>
-  <div class="toolbar">
-    <div class="srch">
-      <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="6" cy="6" r="4.5" stroke="var(--muted)" stroke-width="1.5"/><path d="M9.5 9.5l3 3" stroke="var(--muted)" stroke-width="1.5" stroke-linecap="round"/></svg>
-      <input id="searchInput" type="text" placeholder="Rechercher un ticket…" oninput="renderTable()">
-    </div>
-    <select id="filterStatus" onchange="renderTable()">
-      <option value="">Tous statuts</option>
-      <option value="en-cours">En cours</option>
-      <option value="résolu">Résolu</option>
-    </select>
-    <button class="btn btn-outline btn-sm" onclick="exportAllPDF()">
-      <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M6.5 1v8M3.5 6l3 3 3-3M1 11h11" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      Export PDF
-    </button>
-  </div>
-  <div id="pendingBanner"></div>
-  <table class="tbl">
-    <thead><tr>
-      <th class="srt" onclick="sortBy('title')">Sujet<span class="sico"></span></th>
-      <th class="srt" onclick="sortBy('status')">Statut<span class="sico"></span></th>
-      <th class="srt" onclick="sortBy('intervenant')">Intervenant<span class="sico"></span></th>
-      <th class="srt" onclick="sortBy('soustraitant')">Sous-traitant<span class="sico"></span></th>
-      <th class="srt" onclick="sortBy('date')">Ouverture<span class="sico"></span></th>
-      <th class="srt" onclick="sortBy('_relanceCount')">Relances<span class="sico"></span></th>
-      <th class="srt" onclick="sortBy('resolution')">Résolution prévue<span class="sico"></span></th>
-    </tr></thead>
-    <tbody id="ticketBody"></tbody>
-  </table>
-  <div class="empty" id="emptyState" style="display:none">
-    <div class="empty-ico"><svg width="44" height="44" viewBox="0 0 44 44" fill="none"><rect x="4" y="4" width="36" height="36" rx="8" stroke="currentColor" stroke-width="1.4"/><path d="M13 16h18M13 22h18M13 28h12" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></div>
-    <p>Aucun ticket ne correspond.</p>
+  <div style="display:flex;gap:8px;align-items:center">
+    <span id="syncBadge" style="display:none;font-family:var(--mono);font-size:10.5px;color:var(--muted);padding:3px 10px;border-radius:14px;border:1px solid var(--border);background:var(--surface2)"></span>
   </div>
 </div>
 
-<!-- PAGE RÉUNIONS -->
-<div class="pv" id="page-meetings">
-  <div class="ptitle">
-    <h1>
-      <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="2" y="3" width="16" height="15" rx="3.5" stroke="var(--violet)" stroke-width="1.7"/><path d="M6.5 1.5v3M13.5 1.5v3M2 8.5h16" stroke="var(--violet)" stroke-width="1.4" stroke-linecap="round"/><circle cx="7" cy="13" r="1.1" fill="var(--violet)"/><circle cx="10" cy="13" r="1.1" fill="var(--violet)"/><circle cx="13" cy="13" r="1.1" fill="var(--violet)"/></svg>
-      Réunions
-    </h1>
-    <p>Toutes les réunions de décision · cliquer pour ouvrir</p>
+<div class="stats">
+  <div class="stat st-amb">
+    <div class="sico"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="7.5" stroke="var(--amber)" stroke-width="1.8"/><path d="M6.5 10A3.5 3.5 0 0 1 10 6.5" stroke="var(--amber)" stroke-width="2.2" stroke-linecap="round"/></svg></div>
+    <div><div class="slbl">En cours</div><div class="sval" id="s-prog">0</div></div>
   </div>
-  <div class="toolbar">
-    <div class="srch">
-      <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="6" cy="6" r="4.5" stroke="var(--muted)" stroke-width="1.5"/><path d="M9.5 9.5l3 3" stroke="var(--muted)" stroke-width="1.5" stroke-linecap="round"/></svg>
-      <input id="mtgSearch" type="text" placeholder="Rechercher une réunion…" oninput="renderMeetingTable()">
-    </div>
-    <select id="mtgStatusFilter" onchange="renderMeetingTable()">
-      <option value="">Tous statuts</option>
-      <option value="terminee">Terminée</option>
-      <option value="planifiee">Planifiée</option>
-    </select>
-    <button class="btn btn-violet btn-sm" onclick="openMeetingForm(null)">
-      <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 1v10M1 6h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-      Nouvelle réunion
-    </button>
-  </div>
-  <table class="tbl" id="mtgTable">
-    <thead><tr>
-      <th class="srt" onclick="sortMtg('title')">Titre<span class="sico" id="msico-title"></span></th>
-      <th class="srt" onclick="sortMtg('date')">Date<span class="sico" id="msico-date"></span></th>
-      <th class="srt" onclick="sortMtg('participants')">Participants<span class="sico" id="msico-participants"></span></th>
-      <th>Tickets abordés</th>
-      <th class="srt" onclick="sortMtg('nextDate')">Prochaine réunion<span class="sico" id="msico-nextDate"></span></th>
-      <th>Statut</th>
-      <th></th>
-    </tr></thead>
-    <tbody id="mtgBody"></tbody>
-  </table>
-  <div class="empty" id="mtgEmpty" style="display:none">
-    <div class="empty-ico"><svg width="44" height="44" viewBox="0 0 44 44" fill="none"><rect x="4" y="4" width="36" height="36" rx="8" stroke="currentColor" stroke-width="1.4"/><path d="M12 14h20M12 22h20M12 30h12" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></div>
-    <p>Aucune réunion enregistrée.</p>
-  </div>
-
-  <!-- MEETING DETAIL PANEL (slide from right) -->
-  <div id="mtgDetailOverlay" style="display:none;position:fixed;inset:0;background:rgba(30,42,59,.2);backdrop-filter:blur(2px);z-index:250" onclick="closeMtgDetail(event)">
-    <div id="mtgDetailPanel" style="position:absolute;right:0;top:0;bottom:0;width:560px;max-width:95vw;background:var(--surface);border-left:1px solid var(--border);display:flex;flex-direction:column;box-shadow:var(--sh2);overflow:hidden;animation:sli .2s ease">
-      <div id="mtgDetailInner" style="flex:1;overflow-y:auto;padding:24px"></div>
-      <div style="padding:14px 22px;border-top:1px solid var(--border);display:flex;justify-content:space-between;gap:8px;background:var(--surface2);flex-shrink:0">
-        <button class="btn btn-outline btn-sm" onclick="closeMtgDetail()">Fermer</button>
-        <div style="display:flex;gap:8px" id="mtgDetailActions"></div>
-      </div>
-    </div>
+  <div class="stat st-grn">
+    <div class="sico"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="7.5" stroke="var(--green)" stroke-width="1.8" fill="currentColor" fill-opacity=".07"/><path d="M6.5 10l2.5 2.5 4.5-4.5" stroke="var(--green)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+    <div><div class="slbl">Résolus</div><div class="sval" id="s-done">0</div></div>
   </div>
 </div>
+
+<div class="toolbar">
+  <div class="srch">
+    <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><circle cx="5.5" cy="5.5" r="4" stroke="var(--muted)" stroke-width="1.4"/><path d="M9 9l2.5 2.5" stroke="var(--muted)" stroke-width="1.4" stroke-linecap="round"/></svg>
+    <input id="q" type="text" placeholder="Rechercher…" oninput="render()">
+  </div>
+  <select id="fst" onchange="render()">
+    <option value="">Tous statuts</option>
+    <option value="en-cours">En cours</option>
+    <option value="résolu">Résolu</option>
+  </select>
+</div>
+
+<div id="pBanner"></div>
+
+<table class="tbl">
+  <thead><tr>
+    <th class="srt" onclick="sort('title')">Sujet<span class="sico2"></span></th>
+    <th class="srt" onclick="sort('status')">Statut<span class="sico2"></span></th>
+    <th class="srt" onclick="sort('intervenant')">Intervenant<span class="sico2"></span></th>
+    <th class="srt" onclick="sort('soustraitant')">Sous-traitant<span class="sico2"></span></th>
+    <th class="srt" onclick="sort('date')">Date création<span class="sico2"></span></th>
+    <th class="srt" onclick="sort('lastRelance')">Dernière relance<span class="sico2"></span></th>
+    <th class="srt" onclick="sort('engagement')">Engagement prestataire<span class="sico2"></span></th>
+    <th class="srt" onclick="sort('resolution')">Date fermeture<span class="sico2"></span></th>
+  </tr></thead>
+  <tbody id="tbody"></tbody>
+</table>
+<div class="empty" id="empty" style="display:none">
+  <svg width="44" height="44" viewBox="0 0 44 44" fill="none"><rect x="4" y="4" width="36" height="36" rx="8" stroke="currentColor" stroke-width="1.4"/><path d="M13 16h18M13 22h18M13 28h12" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+  <p>Aucun ticket.</p>
+</div>
+
 
 </main>
+
+<!-- MEETING DETAIL -->
+<div id="mtgOv" onclick="closeMD(event)">
+  <div id="mtgPanel">
+    <div id="mtgInner"></div>
+    <div id="mtgFoot">
+      <button class="btn btn-outline btn-sm" onclick="closeMD()">Fermer</button>
+      <div id="mtgAct" style="display:flex;gap:7px"></div>
+    </div>
+  </div>
 </div>
 
 <!-- MODAL TICKET -->
-<div class="ov" id="modal">
-<div class="mo">
-  <h2 id="modalTicketTitle">
-    <svg width="17" height="17" viewBox="0 0 17 17" fill="none"><rect x="1.5" y="1.5" width="14" height="14" rx="3" stroke="var(--brand)" stroke-width="1.5"/><path d="M5 8.5h7M5 6h7M5 11h4.5" stroke="var(--brand)" stroke-width="1.3" stroke-linecap="round"/></svg>
-    Nouveau ticket
-  </h2>
-  <div class="fg"><label>Sujet *</label><input id="fTitle" type="text" placeholder="ex. Fuite eau niveau 3"></div>
-  <div class="fg"><label>Description</label><textarea id="fDesc" placeholder="Détails de l'incident…"></textarea></div>
-  <div class="fg"><label>Statut</label><select id="fStatus"><option value="en-cours">En cours</option><option value="résolu">Résolu</option></select></div>
-  <div class="fr">
-    <div class="fg"><label>Intervenant</label><input id="fIntervenant" type="text" placeholder="ex. Tech. Otis"></div>
-    <div class="fg"><label>Sous-traitant</label><input id="fSoustraitant" type="text" placeholder="ex. Entreprise Martin"></div>
+<div class="mov" id="modal">
+  <div class="mo">
+    <h2 id="mTitle">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1.5" y="1.5" width="13" height="13" rx="2.5" stroke="var(--brand)" stroke-width="1.5"/><path d="M4.5 8h7M4.5 5.5h7M4.5 10.5h4.5" stroke="var(--brand)" stroke-width="1.3" stroke-linecap="round"/></svg>
+      Nouveau ticket
+    </h2>
+    <div class="fg"><label>Sujet *</label><input id="fTitle" type="text" placeholder="ex. Fuite eau niveau 3"></div>
+    <div class="fg"><label>Description</label><textarea id="fDesc" placeholder="Détails…"></textarea></div>
+    <div class="fg"><label>Statut</label><select id="fStatus"><option value="en-cours">En cours</option><option value="résolu">Résolu</option></select></div>
+    <div class="fr">
+      <div class="fg"><label>Intervenant</label><input id="fInter" type="text"></div>
+      <div class="fg"><label>Sous-traitant</label><input id="fSous" type="text"></div>
+    </div>
+    <div class="fr">
+      <div class="fg"><label>Date création</label><input id="fDate" type="date"></div>
+      <div class="fg"><label>Engagement prestataire</label><input id="fEng" type="date"></div>
+    </div>
+    <div class="fg"><label>Date fermeture prévue</label><input id="fResol" type="date"></div>
+    <div class="mft">
+      <button class="btn btn-outline" onclick="closeModal()">Annuler</button>
+      <div class="mfr"><button class="btn btn-brand" id="mSave">Créer le ticket</button></div>
+    </div>
   </div>
-  <div class="fr">
-    <div class="fg"><label>Date d'ouverture</label><input id="fDate" type="date"></div>
-    <div class="fg"><label>Résolution prévue</label><input id="fResolution" type="date"></div>
-  </div>
-  <div class="mft">
-    <button class="btn btn-outline" onclick="closeModal('modal')">Annuler</button>
-    <div class="mfr"><button class="btn btn-brand" id="btnSaveTicket" onclick="addTicket()">Créer le ticket</button></div>
-  </div>
-</div>
 </div>
 
 <!-- MODAL RELANCE -->
-<div class="ov" id="modalRelance">
-<div class="mo">
-  <h2>
-    <svg width="17" height="17" viewBox="0 0 17 17" fill="none"><path d="M14.5 8.5A6.5 6.5 0 1 1 10 2.5" stroke="var(--amber)" stroke-width="1.6" stroke-linecap="round"/><path d="M14.5 2v4h-4" stroke="var(--amber)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
-    Ajouter une relance
-  </h2>
-  <div class="fg"><label>Date</label><input id="rDate" type="date"></div>
-  <div class="fg"><label>Commentaire</label><textarea id="rComment" placeholder="Point de situation…"></textarea></div>
-  <div class="mft">
-    <button class="btn btn-outline" onclick="closeModal('modalRelance')">Annuler</button>
-    <div class="mfr"><button class="btn btn-brand" onclick="saveRelance()">Enregistrer</button></div>
+<div class="mov" id="mRelance">
+  <div class="mo">
+    <h2><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M13.5 8A5.5 5.5 0 1 1 9.5 2.8" stroke="var(--amber)" stroke-width="1.5" stroke-linecap="round"/><path d="M13.5 2v4h-4" stroke="var(--amber)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>Relance</h2>
+    <div class="fg"><label>Date</label><input id="rDate" type="date"></div>
+    <div class="fg"><label>Commentaire</label><textarea id="rCmt" placeholder="Point de situation…"></textarea></div>
+    <div class="mft">
+      <button class="btn btn-outline" onclick="document.getElementById('mRelance').classList.remove('open')">Annuler</button>
+      <div class="mfr"><button class="btn btn-brand" onclick="saveRelance()">Enregistrer</button></div>
+    </div>
   </div>
-</div>
 </div>
 
 <!-- MODAL CR -->
-<div class="ov" id="modalCR">
-<div class="mo" style="width:680px">
-  <div id="crContent"></div>
-  <div class="mft">
-    <button class="btn btn-outline" onclick="closeModal('modalCR')">Fermer</button>
-    <div class="mfr">
-      <button class="btn btn-outline" onclick="printCR()">
-        <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><rect x="1" y="4.5" width="11" height="7" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M3.5 4.5V2.5a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 .5.5v2" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
-        Imprimer
-      </button>
-      <button class="btn btn-brand" onclick="downloadCR()">
-        <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M6.5 1.5v7M3.5 6l3 3 3-3M1 11h11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        Télécharger PDF
-      </button>
+<div class="mov" id="mCR">
+  <div class="mo" style="width:660px">
+    <div id="crContent"></div>
+    <div class="mft">
+      <button class="btn btn-outline" onclick="document.getElementById('mCR').classList.remove('open')">Fermer</button>
+      <div class="mfr">
+        <button class="btn btn-outline" onclick="window.print()">Imprimer</button>
+        <button class="btn btn-brand" onclick="dlCR()">⬇ PDF</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MEETING FORM -->
+<div class="fmo" id="mForm">
+  <div class="fmp">
+    <div class="fmh">
+      <h2 id="mFormTitle">Nouvelle réunion</h2>
+      <button class="fmc" onclick="closeMForm()"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button>
+    </div>
+    <div class="fmb">
+      <div class="wbar" id="wbar"></div>
+      <div class="wlbl" id="wlbl">Étape 1 — Infos</div>
+      <div class="wp active" id="wp0">
+        <div class="fr"><div class="fg"><label>Titre *</label><input id="mT" type="text" placeholder="ex. Revue incidents juin"></div><div class="fg"><label>Date</label><input id="mD" type="date"></div></div>
+        <div class="fr"><div class="fg"><label>Lieu</label><input id="mL" type="text"></div><div class="fg"><label>Participants</label><input id="mP" type="text"></div></div>
+        <div class="fg"><label>Statut</label><select id="mSt"><option value="terminee">Terminée</option><option value="planifiee">Planifiée</option></select></div>
+        <div class="fg"><label>Tickets à passer en revue</label><div class="dndl" id="tckList"></div></div>
+      </div>
+      <div id="dynPanels"></div>
+      <div class="wp" id="wpFinal">
+        <div class="fg"><label>Notes</label><textarea id="mNotes"></textarea></div>
+        <div class="fg"><label>Prochaine réunion</label><input id="mNext" type="date"></div>
+      </div>
+    </div>
+    <div class="fmf">
+      <button class="btn btn-outline" id="btnPrev" onclick="wizNav(-1)" style="display:none">← Retour</button>
+      <button class="btn btn-violet" id="btnNext" onclick="wizNav(1)">Suivant →</button>
     </div>
   </div>
 </div>
-</div>
 
-<!-- MEETING PANEL -->
-<div class="fmo" id="mformOverlay">
-<div class="fmp">
-  <div class="fmh">
-    <h2 id="mformTitle">
-      <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1.5" y="2" width="13" height="12.5" rx="2.5" stroke="var(--violet)" stroke-width="1.5"/><path d="M5 1v3M11 1v3M1.5 7h13" stroke="var(--violet)" stroke-width="1.3" stroke-linecap="round"/></svg>
-      Nouvelle réunion
-    </h2>
-    <button class="fmc" onclick="closeMeetingForm()">
-      <svg width="17" height="17" viewBox="0 0 17 17" fill="none"><path d="M4.5 4.5l8 8M12.5 4.5l-8 8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
-    </button>
-  </div>
-  <div class="fmb">
-    <div class="wbar" id="wsteps"></div>
-    <div class="wlbl" id="wstepLabel">Étape 1 — Informations</div>
-    <div class="wp active" id="mwp0">
-      <div class="fr">
-        <div class="fg"><label>Titre *</label><input id="mTitle" type="text" placeholder="ex. Revue incidents juin"></div>
-        <div class="fg"><label>Date</label><input id="mDate" type="date"></div>
-      </div>
-      <div class="fr">
-        <div class="fg"><label>Lieu</label><input id="mLieu" type="text" placeholder="Salle 2A…"></div>
-        <div class="fg"><label>Participants</label><input id="mPart" type="text" placeholder="Direction, RH…"></div>
-      </div>
-      <div class="fg"><label>Statut</label><select id="mStatus"><option value="terminee">Terminée</option><option value="planifiee">Planifiée</option></select></div>
-      <div class="fg">
-        <label>Tickets à passer en revue <span style="font-family:var(--mono);font-size:9px;color:var(--muted);font-weight:400">— glisser pour réordonner</span></label>
-        <div class="dndl" id="tckList"></div>
-      </div>
-    </div>
-    <div id="dynPanels"></div>
-    <div class="wp" id="mwpFinal">
-      <div class="fg"><label>Notes de synthèse</label><textarea id="mNotes" placeholder="Points de vigilance, actions prioritaires…"></textarea></div>
-      <div class="fg"><label>Date prochaine réunion</label><input id="mNextDate" type="date"></div>
-    </div>
-  </div>
-  <div class="fmf">
-    <button class="btn btn-outline" id="mfBtnPrev" onclick="wizNav(-1)" style="display:none">← Retour</button>
-    <button class="btn btn-violet" id="mfBtnNext" onclick="wizNav(1)">Suivant →</button>
-  </div>
-</div>
-</div>
-
-
-<div id="saveIndicator">
-  <svg width="11" height="11" viewBox="0 0 11 11" fill="none"><circle cx="5.5" cy="5.5" r="4.5" fill="var(--green)"/><path d="M3.3 5.5l1.5 1.5 2.7-2.7" stroke="#fff" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-  <span class="si-label">Sauvegardé</span>
-</div>
-<div id="connStatus">
-  <span id="connDot" style="width:7px;height:7px;border-radius:50%;background:var(--muted)"></span>
-  <span id="connLabel">Connexion…</span>
-</div>
+<div id="saveInd"><svg width="10" height="10" viewBox="0 0 10 10" fill="none"><circle cx="5" cy="5" r="4" fill="var(--green)"/><path d="M3 5l1.5 1.5 2.5-2.5" stroke="#fff" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Sauvegardé</span></div>
+<div id="connBadge"><span id="connDot" style="width:7px;height:7px;border-radius:50%"></span><span id="connLbl"></span></div>
 <div id="toast"></div>
 
 <script>
-function resetAllData(){
-  if(!confirm('Réinitialiser toutes les données locales (cache) ? Les données dans Supabase ne seront pas supprimées.')) return;
-  localStorage.removeItem(LS_KEY);
-  location.reload();
-}
+// ── SUPABASE ──
+const SB_URL = "https://yvlcmdcnjeoiffrlawti.supabase.co";
+const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl2bGNtZGNuamVvaWZmcmxhd3RpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYyODYwNjEsImV4cCI6MjA5MTg2MjA2MX0.-ePViMbJVA0UhC4WY3fYciUcw0gP6yJWau_P1AspdlI";
+let sb = null;
+try{ if(window.supabase) sb = window.supabase.createClient(SB_URL, SB_KEY); }catch(e){}
 
-// ═══════════════ PERSISTENCE (localStorage) ═══════════════
-const LS_KEY = 'ticketingdesk_v2';
+// Mapping Supabase ↔ BuildDesk
+// date_creation  → ticket.date
+// date_relance1/2/3 → dernière relance = max(date_relance1,2,3)
+// date_realisation (Supabase) → ticket.engagement (engagement prestataire)
+// date_fermeture (custom dans commentaires) → ticket.resolution
+// statut: 'Ouvert'/'Clos' ↔ 'en-cours'/'résolu'
 
-const defaultTickets = [
-  {title:'Ascenseur A en panne',desc:"L'ascenseur A ne répond plus depuis ce matin.",status:'en-cours',date:'2026-06-20',intervenant:'Tech. Otis',soustraitant:'Otis Elevator Co.',resolution:'2026-06-28',relances:[{date:'2026-06-22',comment:'Technicien appelé, pièce commandée.'},{date:'2026-06-25',comment:'Livraison pièce retardée.'}]},
-  {title:'Prise électrique grillée salle 204',desc:'Impossible de brancher quoi que ce soit.',status:'en-cours',date:'2026-06-21',intervenant:'Élec. Marin',soustraitant:'Elec Pro SARL',resolution:'2026-06-30',relances:[{date:'2026-06-23',comment:'Devis reçu, en attente validation.'}]},
-  {title:'Fuite évier kitchenette 3F',desc:'Écoulement lent.',status:'en-cours',date:'2026-06-22',intervenant:'Plombier Leclerc',soustraitant:'',resolution:'2026-07-02',relances:[]},
-  {title:'Badge non reconnu porte nord',desc:'3 collaborateurs bloqués.',status:'résolu',date:'2026-06-19',intervenant:'Vigil. Protect+',soustraitant:'Protect+ SAS',resolution:'2026-06-20',relances:[{date:'2026-06-19',comment:'Résolu en urgence.'}]},
-  {title:'Remplacement ampoule couloir B',desc:'',status:'en-cours',date:'2026-06-24',intervenant:'',soustraitant:'',resolution:'',relances:[]},
-];
-
-function loadData(){
+function dbToTicket(r){
+  // Lire les métadonnées BuildDesk stockées dans commentaires
+  let meta={};
   try{
-    const raw = localStorage.getItem(LS_KEY);
-    if(raw){
-      const parsed = JSON.parse(raw);
-      const t = Array.isArray(parsed.tickets) && parsed.tickets.length > 0 ? parsed.tickets : defaultTickets;
-      const m = Array.isArray(parsed.meetings) ? parsed.meetings : [];
-      return {tickets: t, meetings: m};
-    }
-  }catch(e){ console.warn('localStorage read error:', e); }
-  return {tickets: defaultTickets, meetings: []};
-}
+    const raw=r.commentaires||'';
+    if(raw.startsWith('__BD_META__')) meta=JSON.parse(raw.slice(11));
+  }catch(e){}
 
-function saveData(){
-  try{ localStorage.setItem(LS_KEY, JSON.stringify({tickets, meetings, savedAt: new Date().toISOString()})); showSaveIndicator(); }
-  catch(e){ console.warn('localStorage save error:', e); }
-}
-
-function saveDataDebounced(){ clearTimeout(window._saveTimer); window._saveTimer = setTimeout(saveData, 400); }
-
-function showSaveIndicator(){
-  const el = document.getElementById('saveIndicator');
-  if(!el) return;
-  const lbl = el.querySelector('.si-label');
-  if(lbl) lbl.textContent = 'Sauvegardé';
-  el.style.opacity='1'; el.style.transform='translateY(0)';
-  clearTimeout(el._t);
-  el._t = setTimeout(()=>{ el.style.opacity='0'; el.style.transform='translateY(10px)'; }, 1800);
-}
-
-function showSaveIndicator2(mode){ showSaveIndicator(); } // compat alias
-
-function resetAllData(){
-  if(!confirm('Réinitialiser toutes les données ? Cette action est irréversible.')) return;
-  localStorage.removeItem(LS_KEY);
-  location.reload();
-}
-
-// Supabase stubs (désactivé - localStorage uniquement)
-const sb = null;
-function syncTicketToSupabase(){}
-function syncMeetingToSupabase(){}
-function setConnStatus(){}
-
-// ═══════════════ DATA ═══════════════
-const __cached = loadData();
-let tickets = __cached.tickets;
-let meetings = __cached.meetings;
-let currentPage = 'tickets';
-let relanceTarget = null;
-let editTicketIdx = null;
-let editMeetingIdx = null;
-let wizStep = 0;
-let wizTicketIdxs = [];
-let wizTotal = 0;
-let crMeetingIdx = null;
-let activeMeetingIdx = null;
-let sortCol = 'date';
-let sortDir = 'desc';
-
-// ═══════════════ NAVIGATION ═══════════════
-function setActiveNav(id){
-  document.querySelectorAll('.tnav-item').forEach(a=>a.classList.remove('active'));
-  const el = typeof id==='string' ? document.getElementById(id) : id;
-  if(el) el.classList.add('active');
-}
-
-function showPage(page, navId) {
-  currentPage = page;
-  document.querySelectorAll('.pv').forEach(v=>v.classList.remove('active'));
-  document.getElementById('page-'+page).classList.add('active');
-  setActiveNav(navId||(page==='meetings'?'tnav-meetings':'tnav-encours'));
-  if(page==='tickets'){
-    document.getElementById('filterStatus').value='';
-    document.getElementById('headerBtn').innerHTML='<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 1v10M1 6h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg> Nouveau ticket';
-    document.getElementById('headerBtn').className='btn btn-brand';
-    renderTable();
+  // Reconstituer les relances depuis les champs Supabase + meta
+  const rlDates=[r.date_relance1,r.date_relance2,r.date_relance3].filter(Boolean);
+  let relances=[];
+  if(meta.relances && meta.relances.length){
+    // On a des relances complètes avec commentaires
+    relances=meta.relances;
+    // Ajouter les dates Supabase manquantes si besoin
+    rlDates.forEach(d=>{
+      if(!relances.find(rl=>rl.date===d))
+        relances.push({date:d,comment:''});
+    });
   } else {
-    document.getElementById('headerBtn').innerHTML='<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 1v10M1 6h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg> Nouvelle réunion';
-    document.getElementById('headerBtn').className='btn btn-brand';
-    renderTimeline();
+    // Seulement les dates Supabase - on les affiche quand même
+    relances=rlDates.map(d=>({date:d,comment:''}));
+  }
+  relances.sort((a,b)=>a.date.localeCompare(b.date));
+  const lastRelance=relances.length?[...relances].sort((a,b)=>b.date.localeCompare(a.date))[0].date:'';
+
+  return {
+    _dbId:       r.id,
+    title:       r.description || '(sans titre)',
+    desc:        meta.desc || '',
+    status:      (r.statut==='Clos'||r.statut==='Escaladé') ? 'résolu' : 'en-cours',
+    date:        r.date_creation || '',
+    lastRelance,
+    relances,
+    intervenant: meta.intervenant || '',
+    soustraitant:meta.soustraitant || '',
+    engagement:  r.date_realisation || meta.engagement || '',
+    resolution:  meta.resolution || (r.statut==='Clos'?r.date_realisation:'') || '',
+  };
+}
+function ticketToDb(t){
+  const meta={desc:t.desc,intervenant:t.intervenant,soustraitant:t.soustraitant,engagement:t.engagement,resolution:t.resolution,relances:t.relances};
+  const rl=t.relances||[];
+  return {
+    description: t.title,
+    statut: t.status==='résolu'?'Clos':'Ouvert',
+    date_creation: t.date||today(),
+    date_relance1: rl[0]?.date||null,
+    date_relance2: rl[1]?.date||null,
+    date_relance3: rl[2]?.date||null,
+    date_realisation: t.engagement||null,
+    commentaires: '__BD_META__'+JSON.stringify(meta),
+    photos:[],escalade:false
+  };
+}
+
+// ── PERSISTENCE ──
+const LS='tdv4';
+const DEFAULTS=[
+  {title:'Ascenseur A en panne',desc:"Ne répond plus depuis ce matin.",status:'en-cours',date:'2026-06-20',intervenant:'Tech. Otis',soustraitant:'Otis Elevator Co.',engagement:'2026-06-28',resolution:'',relances:[{date:'2026-06-22',comment:'Pièce commandée.'},{date:'2026-06-25',comment:'Livraison retardée.'}]},
+  {title:'Prise grillée salle 204',desc:'Impossible de brancher.',status:'en-cours',date:'2026-06-21',intervenant:'Élec. Marin',soustraitant:'Elec Pro SARL',engagement:'2026-06-30',resolution:'',relances:[{date:'2026-06-23',comment:'Devis reçu.'}]},
+  {title:'Fuite évier kitchenette 3F',desc:'Écoulement lent.',status:'en-cours',date:'2026-06-22',intervenant:'Plombier Leclerc',soustraitant:'',engagement:'',resolution:'',relances:[]},
+  {title:'Badge non reconnu porte nord',desc:'3 collaborateurs bloqués.',status:'résolu',date:'2026-06-19',intervenant:'Protect+',soustraitant:'',engagement:'2026-06-20',resolution:'2026-06-20',relances:[{date:'2026-06-19',comment:'Résolu en urgence.'}]},
+  {title:'Ampoule couloir B',desc:'',status:'en-cours',date:'2026-06-24',intervenant:'',soustraitant:'',engagement:'',resolution:'',relances:[]},
+];
+function loadLocal(){
+  try{const r=JSON.parse(localStorage.getItem(LS)||'{}');return{tickets:r.tickets?.length?r.tickets:DEFAULTS,meetings:r.meetings||[]};}
+  catch(e){return{tickets:DEFAULTS,meetings:[]};}
+}
+const D=loadLocal();
+let tickets=[...D.tickets];
+let meetings=[...D.meetings];
+let editIdx=null,relTgt=null,crIdx=null,mEditIdx=null;
+let wizStep=0,wizIdxs=[],wizTotal=0;
+let sCol='date',sDir='desc',msCol='date',msDir='desc';
+
+function saveLocal(){
+  try{localStorage.setItem(LS,JSON.stringify({tickets,meetings,t:Date.now()}));}catch(e){}
+  const el=document.getElementById('saveInd');
+  el.style.opacity='1';el.style.transform='translateY(0)';
+  clearTimeout(el._t);el._t=setTimeout(()=>{el.style.opacity='0';el.style.transform='translateY(10px)';},1800);
+}
+function today(){return new Date().toISOString().split('T')[0];}
+function fmt(d){if(!d)return'—';const[y,m,day]=d.split('-');return`${day}/${m}/${y}`;}
+function cap(s){return s?s[0].toUpperCase()+s.slice(1):'';}
+function isLate(t){return t.status!=='résolu'&&t.resolution&&new Date(t.resolution)<new Date();}
+function isEngLate(t){return t.status!=='résolu'&&t.engagement&&new Date(t.engagement)<new Date();}
+function toast(msg){const t=document.getElementById('toast');t.innerHTML=`<svg width="13" height="13" viewBox="0 0 13 13" fill="none"><circle cx="6.5" cy="6.5" r="5.5" fill="var(--green)"/><path d="M4 6.5l2 2 3-3" stroke="#fff" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>${msg}`;t.style.opacity='1';t.style.transform='translateY(0)';clearTimeout(t._t);t._t=setTimeout(()=>{t.style.opacity='0';t.style.transform='translateY(60px)';},2500);}
+function resetApp(){if(confirm('Réinitialiser ?')){localStorage.removeItem(LS);location.reload();}}
+
+// ── SUPABASE SYNC ──
+async function syncFromSupabase(){
+  if(!sb){ setConn('offline'); return; }
+  setConn('sync');
+  try{
+    const {data,error}=await sb.from('tickets').select('*').order('id');
+    if(error){
+      console.warn('Supabase error:', error);
+      setConn('err');
+      return;
+    }
+    if(data && data.length > 0){
+      // Merge: garder les données locales non-Supabase, remplacer le reste
+      tickets = data.map(dbToTicket);
+      saveLocal();
+      render();
+      setConn('ok', data.length);
+    } else {
+      // Table vide ou nouvelle base - garder les données locales
+      setConn('empty');
+    }
+  } catch(e){
+    console.warn('Supabase exception:', e);
+    setConn('err');
   }
 }
-
-function showPageFiltered(status, navId) {
-  currentPage='tickets';
-  document.querySelectorAll('.pv').forEach(v=>v.classList.remove('active'));
-  document.getElementById('page-tickets').classList.add('active');
-  setActiveNav(navId||(status==='résolu'?'tnav-resolu':'tnav-encours'));
-  document.getElementById('filterStatus').value=status;
-  document.getElementById('headerBtn').innerHTML='<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 1v10M1 6h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg> Nouveau ticket';
-  document.getElementById('headerBtn').className='btn btn-brand';
-  renderTable();
+async function pushTicketToSb(t,isNew=false){
+  if(!sb)return;
+  const row=ticketToDb(t);
+  try{
+    if(isNew||!t._dbId){
+      const {data,error}=await sb.from('tickets').insert(row).select().single();
+      if(!error&&data)t._dbId=data.id;
+    } else {
+      await sb.from('tickets').upsert({...row,id:t._dbId});
+    }
+    saveLocal();
+  }catch(e){}
 }
-
-function resetTicketFilters(){document.getElementById('filterStatus').value='';document.getElementById('searchInput').value='';}
-function handleHeaderBtn(){currentPage==='meetings'?openMeetingForm(null):openModal();}
-
-
-// ═══════════════ CHIPS ═══════════════
-function chipStatus(s){
-  const map={'en-cours':'c-prog', résolu:'c-done'};
-  const lbl={'en-cours':'En cours', résolu:'Résolu'};
-  const icons={
-    'en-cours':`<svg width="9" height="9" viewBox="0 0 9 9" fill="none"><circle cx="4.5" cy="4.5" r="3.8" stroke="currentColor" stroke-width="1.3"/><path d="M4.5 1.2A3.3 3.3 0 0 1 7.8 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>`,
-    résolu:`<svg width="9" height="9" viewBox="0 0 9 9" fill="none"><circle cx="4.5" cy="4.5" r="3.8" fill="currentColor" fill-opacity=".15" stroke="currentColor" stroke-width="1.3"/><path d="M2.5 4.5l1.5 1.5 2.5-2.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+async function deleteTicketFromSb(t){
+  if(!sb||!t._dbId)return;
+  await sb.from('tickets').delete().eq('id',t._dbId);
+}
+function setConn(state, count){
+  const badge=document.getElementById('syncBadge');
+  if(!badge)return;
+  const map={
+    sync:['⟳ Connexion Supabase…','var(--muted)'],
+    ok:[`✓ ${count||''} tickets Supabase`,'var(--green)'],
+    err:['⚠ Mode local (Supabase indisponible)','var(--amber)'],
+    empty:['Supabase connecté — base vide','var(--muted)'],
+    offline:['Mode local','var(--muted)']
   };
-  const s2 = s==='ouvert'?'en-cours':s;
-  return `<span class="chip ${map[s2]||'c-prog'}">${icons[s2]||''}${lbl[s2]||cap(s2)}</span>`;
+  const [lbl,col]=map[state]||['',''];
+  badge.textContent=lbl;badge.style.color=col;badge.style.display='inline';
+  if(state==='ok')setTimeout(()=>{badge.style.display='none';},4000);
+  if(state==='offline')setTimeout(()=>{badge.style.display='none';},2000);
 }
 
-// ═══════════════ TICKET TABLE ═══════════════
-const CAT_COLORS = {
-  Ascenseur:   {fg:'#1D4ED8', bg:'#EFF6FF', border:'#BFDBFE'},
-  Électricité: {fg:'#D97706', bg:'#FFFBEB', border:'#FDE68A'},
-  Plomberie:   {fg:'#0891B2', bg:'#ECFEFF', border:'#A5F3FC'},
-  Sécurité:    {fg:'#DC2626', bg:'#FEF2F2', border:'#FECACA'},
-  Ménage:      {fg:'#059669', bg:'#ECFDF5', border:'#A7F3D0'},
-  Autre:       {fg:'#7C3AED', bg:'#EDE9FE', border:'#C4B5FD'},
-};
-function catColor(c){ return CAT_COLORS[c]||CAT_COLORS['Autre']; }
-function catIcon(c){
-  const m={Ascenseur:`<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><rect x="1" y="1" width="10" height="10" rx="1.5" stroke="currentColor" stroke-width="1.2"/><path d="M4 5l2-2 2 2M4 7l2 2 2-2" stroke="currentColor" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round"/></svg>`,Électricité:`<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M7.5 1.5L4 6.5h4L3.5 11" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>`,Plomberie:`<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 3h4v3H2V3z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/><path d="M6 4.5h2a2 2 0 0 1 2 2V9a1 1 0 0 1-1 1H7" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><circle cx="6.5" cy="10" r=".8" fill="currentColor"/></svg>`,Sécurité:`<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 1L2 2.5v4C2 9 4 10.5 6 11.5 8 10.5 10 9 10 6.5v-4L6 1z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/><path d="M4.5 6l1.2 1.2 2-2" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>`,Ménage:`<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M3 11V5.5L6 2l3 3.5V11" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M4.5 11V8h3v3" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/></svg>`,Autre:`<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><circle cx="6" cy="6" r="4.5" stroke="currentColor" stroke-width="1.2"/><path d="M6 4v2.5M6 8.5v.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>`};
-  return m[c]||m['Autre'];
+// ── STATS ──
+function updateStats(){
+  const p=tickets.filter(t=>t.status!=='résolu').length;
+  const d=tickets.filter(t=>t.status==='résolu').length;
+  document.getElementById('s-prog').textContent=p;
+  document.getElementById('s-done').textContent=d;
+  updateCountdown();
 }
-function catPill(c){
-  const col=catColor(c);
-  return `<span class="catpill" style="color:${col.fg};background:${col.bg};border-color:${col.border}">${catIcon(c)} ${c}</span>`;
-}
-function relanceDots(rl){
-  if(!rl||!rl.length)return'<span style="color:var(--muted);font-size:11px">—</span>';
-  const cols=['#9E5C10','#3A6B5A','#374357'];
-  return`<div class="relance-row">${rl.slice(-3).map((r,i)=>`<span class="rl-item" title="${r.date}: ${r.comment}"><span class="rl-dot" style="background:${cols[i%3]}"></span>${fmtDate(r.date)}</span>`).join('')}</div>`;
-}
-function isLate(t){return t.resolution&&t.status!=='résolu'&&new Date(t.resolution)<new Date();}
-
-function sortBy(col){
-  if(sortCol===col) sortDir=sortDir==='asc'?'desc':'asc';
-  else{sortCol=col;sortDir='asc';}
-  renderTable();
+function updateCountdown(){
+  const el=document.getElementById('countdown');
+  const now=new Date();now.setHours(0,0,0,0);
+  const next=meetings.filter(m=>m.nextDate).map(m=>new Date(m.nextDate)).filter(d=>d>=now).sort((a,b)=>a-b)[0];
+  if(!next){el.style.display='none';return;}
+  const diff=Math.round((next-now)/86400000);
+  document.getElementById('cdtxt').textContent=diff===0?'Réunion aujourd\'hui':diff===1?'Réunion demain':`Réunion dans ${diff}j`;
+  el.style.display='flex';
+  el.classList.toggle('urg',diff<=3);
 }
 
+// ── CHIP ──
+function chip(s){
+  const ok=s==='résolu';
+  return `<span class="chip ${ok?'cd':'cp'}">${ok?'✓ Résolu':'● En cours'}</span>`;
+}
+function chip2(s){return s==='terminee'?`<span class="chip cd">✓ Terminée</span>`:`<span class="chip cp">● Planifiée</span>`;}
+
+// ── STATUS DROPDOWN ──
+function toggleSD(i){
+  closeAllSD();
+  document.getElementById('sdm'+i)?.classList.toggle('open');
+}
+function closeAllSD(){document.querySelectorAll('[id^=sdm]').forEach(m=>m.classList.remove('open'));}
+document.addEventListener('click',e=>{if(!e.target.closest('[id^=sd]'))closeAllSD();});
+
+// ── RELANCES display ──
+function rlCol(rs){
+  if(!rs||!rs.length)return'<span style="color:var(--muted);font-size:11px">—</span>';
+  const colors=['#3B82F6','#F59E0B','#EF4444','#8B5CF6','#10B981'];
+  return rs.map((r,i)=>`<div class="rl"><span class="rl-d" style="background:${colors[i%colors.length]}"></span><span style="font-size:11px">${fmt(r.date)}</span>${r.comment?`<span class="rl-cmt">${r.comment.length>30?r.comment.slice(0,30)+'…':r.comment}</span>`:''}</div>`).join('');
+}
+
+// ── RENDER TICKETS ──
 function getFiltered(){
-  const q=document.getElementById('searchInput').value.toLowerCase();
-  const fSt=document.getElementById('filterStatus').value;
-  const statusOrder={'en-cours':0,'ouvert':0,'résolu':1};
-  let rows=tickets.map((t,i)=>({...t,_i:i,_relanceCount:(t.relances||[]).length})).filter(t=>{
-    const normStatus=t.status==='ouvert'?'en-cours':t.status;
-    return (!q||t.title.toLowerCase().includes(q)||(t.intervenant||'').toLowerCase().includes(q)||(t.soustraitant||'').toLowerCase().includes(q))
-      &&(!fSt||normStatus===fSt);
+  const q=(document.getElementById('q')?.value||'').toLowerCase();
+  const fs=document.getElementById('fst')?.value||'';
+  const sOrd={'en-cours':0,'ouvert':0,'résolu':1};
+  // compute lastRelance
+  let rows=tickets.map((t,i)=>{
+    const rl=t.relances||[];
+    const last=rl.length?[...rl].sort((a,b)=>b.date.localeCompare(a.date))[0].date:'';
+    return{...t,_i:i,_rc:rl.length,lastRelance:last||t.lastRelance||''};
+  }).filter(t=>{
+    const ns=t.status==='ouvert'?'en-cours':t.status;
+    return(!q||t.title.toLowerCase().includes(q)||(t.intervenant||'').toLowerCase().includes(q)||(t.soustraitant||'').toLowerCase().includes(q))&&(!fs||ns===fs);
   });
-  const dir=sortDir==='asc'?1:-1;
+  const dir=sDir==='asc'?1:-1;
   rows.sort((a,b)=>{
-    if(sortCol==='_relanceCount') return dir*(a._relanceCount-b._relanceCount);
-    if(sortCol==='status') return dir*((statusOrder[a.status]??0)-(statusOrder[b.status]??0));
-    const va=String(a[sortCol]||''), vb=String(b[sortCol]||'');
-    return dir*va.localeCompare(vb,'fr',{sensitivity:'base'});
+    if(sCol==='_rc')return dir*(a._rc-b._rc);
+    if(sCol==='status')return dir*((sOrd[a.status]??0)-(sOrd[b.status]??0));
+    return dir*String(a[sCol]||'').localeCompare(String(b[sCol]||''),'fr',{sensitivity:'base'});
   });
   return rows;
 }
-
-function renderPendingBanner(){
-  const banner=document.getElementById('pendingBanner');
-  if(!banner)return;
-  const pending=[];
-  meetings.forEach(m=>{
-    (m.ticketReviews||[]).forEach(r=>{
-      if(!r.decision)return;
-      const t=tickets[r.ticketIdx];
-      if(!t||t.status==='résolu')return;
-      pending.push({decision:r.decision,ticketTitle:t.title,meetingTitle:m.title,meetingDate:m.date,responsable:r.responsable,resolutionDate:r.resolutionDate});
-    });
-  });
-  if(!pending.length){banner.innerHTML='';return;}
-  banner.innerHTML=`<div class="pb">
-    <div class="pb-head">
-      <span class="pb-title">
-        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1L1.5 12h11L7 1z" stroke="var(--amber)" stroke-width="1.4" stroke-linejoin="round"/><path d="M7 5.5v3M7 10v.5" stroke="var(--amber)" stroke-width="1.3" stroke-linecap="round"/></svg>
-        ${pending.length} action${pending.length>1?'s':''} en suspens depuis les réunions
-      </span>
-      <button class="btn btn-outline btn-xs" onclick="this.closest('.pb').style.display='none'">Masquer</button>
-    </div>
-    ${pending.map(p=>`<div class="pb-item">
-      <div class="pb-dot"></div>
-      <div class="pb-item-body">
-        <div class="pb-ttl">${p.decision}</div>
-        <div class="pb-meta">
-          <span>🎫 ${p.ticketTitle}</span>
-          <span>📅 Décidé en réunion du ${fmtDate(p.meetingDate)}</span>
-          ${p.responsable?`<span>👤 ${p.responsable}</span>`:''}
-          ${p.resolutionDate?`<span style="color:${new Date(p.resolutionDate)<new Date()?'var(--red)':'var(--amber)'}">🎯 ${fmtDate(p.resolutionDate)}</span>`:''}
-        </div>
-      </div>
-    </div>`).join('')}
-  </div>`;
-}
-
-function renderTable(){
-  const filtered=getFiltered();
-  const body=document.getElementById('ticketBody');
-  const empty=document.getElementById('emptyState');
-  // Update sort indicators
+function sort(col){if(sCol===col)sDir=sDir==='asc'?'desc':'asc';else{sCol=col;sDir='asc';}render();}
+function render(){
+  updateStats();
+  const rows=getFiltered();
+  const body=document.getElementById('tbody');
+  const empty=document.getElementById('empty');
+  if(!body)return;
   document.querySelectorAll('.tbl th.srt').forEach(th=>{
     th.classList.remove('sa','sd');
-    const m=th.getAttribute('onclick').match(/sortBy\('([^']+)'\)/);
-    if(m&&m[1]===sortCol) th.classList.add(sortDir==='asc'?'sa':'sd');
+    const m=th.getAttribute('onclick')?.match(/sort\('([^']+)'\)/);
+    if(m&&m[1]===sCol)th.classList.add(sDir==='asc'?'sa':'sd');
   });
-  renderPendingBanner();
-  if(!filtered.length){body.innerHTML='';empty.style.display='block';updateStats();return;}
+  renderPending();
+  if(!rows.length){body.innerHTML='';empty.style.display='block';return;}
   empty.style.display='none';
-  body.innerHTML=filtered.map(t=>`<tr data-idx="${t._i}">
+  body.innerHTML=rows.map(t=>`<tr>
     <td>
-      <div class="tt editable" title="Cliquer pour éditer" onclick="inlineEdit(this,${t._i},'title')">${t.title}</div>
-      <div class="ts editable" title="Cliquer pour éditer la description" onclick="inlineEdit(this,${t._i},'desc',true)">${t.desc||'<span style="color:var(--muted);font-style:italic;font-size:11px">+ description</span>'}</div>
+      <div class="tt edcell" onclick="ed(this,${t._i},'title')">${t.title}</div>
+      <div class="ts edcell" onclick="ed(this,${t._i},'desc',true)">${t.desc||'<em style="color:var(--muted);font-size:11px">+ description</em>'}</div>
       <div class="ta">
-        ${t.status!=='résolu'?`<button class="btn btn-outline btn-xs" onclick="changeStatus(${t._i},'résolu')">✓ Résoudre</button>`:`<button class="btn btn-outline btn-xs" onclick="changeStatus(${t._i},'en-cours')">↩ Réouvrir</button>`}
         <button class="btn btn-outline btn-xs" onclick="openRelance(${t._i})">↺ Relance</button>
+        <button class="btn btn-outline btn-xs" onclick="openEdit(${t._i})">✎ Modifier</button>
         <button class="btn btn-red btn-xs" onclick="delTicket(${t._i})">✕</button>
       </div>
     </td>
     <td>
-      <div onclick="cycleStatus(${t._i})" title="Cliquer pour changer le statut" style="cursor:pointer;display:inline-block">${chipStatus(t.status)}</div>
+      <div style="position:relative;display:inline-block">
+        <div onclick="toggleSD(${t._i})">${chip(t.status)}</div>
+        <div id="sdm${t._i}" style="display:none;position:absolute;top:calc(100% + 4px);left:0;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);box-shadow:var(--sh2);z-index:50;min-width:130px;overflow:hidden">
+          <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;font-size:12.5px;font-weight:500;cursor:pointer;color:var(--text2)" onmouseover="this.style.background='var(--surface2)'" onmouseout="this.style.background=''" onclick="chStatus(${t._i},'en-cours')"><span style="width:7px;height:7px;border-radius:50%;background:var(--amber)"></span>En cours</div>
+          <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;font-size:12.5px;font-weight:500;cursor:pointer;color:var(--text2)" onmouseover="this.style.background='var(--surface2)'" onmouseout="this.style.background=''" onclick="chStatus(${t._i},'résolu')"><span style="width:7px;height:7px;border-radius:50%;background:var(--green)"></span>Résolu</div>
+        </div>
+      </div>
     </td>
-    <td>
-      <div class="editable-plain" title="Cliquer pour éditer" onclick="inlineEdit(this,${t._i},'intervenant')" style="font-size:12px;color:${t.intervenant?'var(--text2)':'var(--muted)'};min-height:20px">${t.intervenant||'<span style="color:var(--muted);font-style:italic;font-size:11px">+ intervenant</span>'}</div>
-    </td>
-    <td>
-      <div class="editable-plain" title="Cliquer pour éditer" onclick="inlineEdit(this,${t._i},'soustraitant')" style="font-size:12px;color:${t.soustraitant?'var(--text2)':'var(--muted)'};min-height:20px">${t.soustraitant||'<span style="color:var(--muted);font-style:italic;font-size:11px">+ sous-traitant</span>'}</div>
-    </td>
-    <td>
-      <div class="editable-plain" title="Cliquer pour éditer la date" onclick="inlineDateEdit(this,${t._i},'date')" style="font-family:var(--mono);font-size:11.5px;color:var(--subtle);cursor:pointer;min-height:20px">${t.date?fmtDate(t.date):'<span style="color:var(--muted);font-style:italic;font-size:11px">+ date</span>'}</div>
-    </td>
-    <td>${relanceDots(t.relances)}</td>
-    <td>
-      <div class="editable-plain" title="Cliquer pour éditer la date de résolution" onclick="inlineDateEdit(this,${t._i},'resolution')" style="font-family:var(--mono);font-size:12px;color:${isLate(t)?'var(--red)':'var(--subtle)'};cursor:pointer;min-height:20px">${t.resolution?fmtDate(t.resolution):'<span style="color:var(--muted);font-style:italic;font-size:11px">+ date</span>'}</div>
-    </td>
+    <td><div class="edcell" onclick="ed(this,${t._i},'intervenant')" style="font-size:12px;color:var(--text2)">${t.intervenant||'<em style="color:var(--muted);font-size:11px">—</em>'}</div></td>
+    <td><div class="edcell" onclick="ed(this,${t._i},'soustraitant')" style="font-size:12px;color:var(--text2)">${t.soustraitant||'<em style="color:var(--muted);font-size:11px">—</em>'}</div></td>
+    <td style="font-family:var(--mono);font-size:11px;color:var(--subtle)"><div class="edcell" onclick="edDate(this,${t._i},'date')">${t.date?fmt(t.date):'—'}</div></td>
+    <td>${rlCol(t.relances)}</td>
+    <td style="font-family:var(--mono);font-size:11px;color:${isEngLate(t)?'var(--red)':'var(--subtle)'}"><div class="edcell" onclick="edDate(this,${t._i},'engagement')">${t.engagement?fmt(t.engagement):'—'}</div></td>
+    <td style="font-family:var(--mono);font-size:11px;color:${isLate(t)?'var(--red)':'var(--subtle)'}"><div class="edcell" onclick="edDate(this,${t._i},'resolution')">${t.resolution?fmt(t.resolution):'—'}</div></td>
   </tr>`).join('');
-  updateStats();
 }
 
-function updateStats(){
-  const p=tickets.filter(t=>t.status==='en-cours'||t.status==='ouvert').length;
-  const d=tickets.filter(t=>t.status==='résolu').length;
-  document.getElementById('statProgress').textContent=p;
-  document.getElementById('statClosed').textContent=d;
-  document.getElementById('openCount').textContent=p+' en cours';
-  document.getElementById('navEnCours').textContent=p;
-  document.getElementById('navResolu').textContent=d;
-  document.getElementById('navMeetings').textContent=meetings.length;
-  // Mobile badge
-  updateCountdown();
+// ── INLINE EDIT ──
+function ed(el,i,field,multi=false){
+  if(el.querySelector('input,textarea'))return;
+  const inp=document.createElement(multi?'textarea':'input');
+  inp.className='iput'+(multi?' itxt':'');
+  inp.value=tickets[i][field]||'';
+  el.innerHTML='';el.appendChild(inp);inp.focus();inp.select();
+  function save(){const v=inp.value.trim();tickets[i][field]=v;saveLocal();pushTicketToSb(tickets[i]);render();}
+  inp.addEventListener('blur',save);
+  inp.addEventListener('keydown',e=>{if(!multi&&e.key==='Enter'){e.preventDefault();inp.blur();}if(e.key==='Escape'){inp.removeEventListener('blur',save);render();}});
+  inp.addEventListener('click',e=>e.stopPropagation());
+}
+function edDate(el,i,field){
+  if(el.querySelector('input'))return;
+  const inp=document.createElement('input');
+  inp.type='date';inp.className='iput iput-date';inp.value=tickets[i][field]||'';
+  el.innerHTML='';el.appendChild(inp);inp.focus();
+  function save(){tickets[i][field]=inp.value;saveLocal();pushTicketToSb(tickets[i]);render();}
+  inp.addEventListener('blur',save);inp.addEventListener('change',()=>inp.blur());
+  inp.addEventListener('keydown',e=>{if(e.key==='Escape'){inp.removeEventListener('blur',save);render();}});
+  inp.addEventListener('click',e=>e.stopPropagation());
 }
 
-// ═══════════════ INLINE EDIT ═══════════════
-function inlineEdit(el, idx, field, multiline=false){
-  if(el.querySelector('input,textarea')) return; // already editing
-  const cur = tickets[idx][field]||'';
-  const input = document.createElement(multiline?'textarea':'input');
-  input.className = 'inline-input' + (multiline?' inline-textarea':'');
-  input.value = cur;
-  if(multiline) input.placeholder = 'Description…';
-  // replace content with input
-  el._savedHTML = el.innerHTML;
-  el.innerHTML = '';
-  el.appendChild(input);
-  input.focus();
-  input.select();
-
-  function save(){
-    const val = input.value.trim();
-    tickets[idx][field] = val;
-    saveDataDebounced();
-    syncTicketToSupabase(tickets[idx]);
-    renderTable();
-  }
-  input.addEventListener('blur', save);
-  input.addEventListener('keydown', e=>{
-    if(!multiline && e.key==='Enter'){ e.preventDefault(); input.blur(); }
-    if(e.key==='Escape'){ input.removeEventListener('blur',save); el.innerHTML=el._savedHTML; }
-  });
-  // stop click propagation so sorting doesn't fire
-  input.addEventListener('click', e=>e.stopPropagation());
-}
-
-function inlineDateEdit(el, idx, field){
-  if(el.querySelector('input')) return;
-  const cur = tickets[idx][field]||'';
-  const input = document.createElement('input');
-  input.type = 'date';
-  input.className = 'inline-input inline-input-date';
-  input.value = cur;
-  el._savedHTML = el.innerHTML;
-  el.innerHTML = '';
-  el.appendChild(input);
-  input.focus();
-  function save(){
-    tickets[idx][field] = input.value;
-    saveDataDebounced();
-    syncTicketToSupabase(tickets[idx]);
-    renderTable();
-  }
-  input.addEventListener('blur', save);
-  input.addEventListener('change', ()=>{ save(); });
-  input.addEventListener('keydown', e=>{
-    if(e.key==='Escape'){ input.removeEventListener('blur',save); el.innerHTML=el._savedHTML; }
-  });
-  input.addEventListener('click', e=>e.stopPropagation());
-}
-
-function cycleStatus(idx){
-  const cur = tickets[idx].status;
-  tickets[idx].status = cur==='résolu' ? 'en-cours' : 'résolu';
-  saveDataDebounced();
-  syncTicketToSupabase(tickets[idx]);
-  renderTable();
-  toast('Statut mis à jour');
-}
-function changeStatus(i,s){
-  tickets[i].status=s;
-  saveDataDebounced();
-  syncTicketToSupabase(tickets[i]);
-  renderTable();toast('Statut mis à jour');
-}
+// ── TICKET ACTIONS ──
+function chStatus(i,s){tickets[i].status=s;saveLocal();pushTicketToSb(tickets[i]);closeAllSD();render();}
 function delTicket(i){
   if(!confirm('Supprimer ce ticket ?'))return;
-  const t=tickets[i];
-  tickets.splice(i,1);
-  saveDataDebounced();
-  if(sb && t._dbId){ sb.from('tickets').delete().eq('id',t._dbId).then(r=>{ if(r.error) console.warn('Supabase delete ticket:',r.error); }); }
-  renderTable();toast('Ticket supprimé');
+  deleteTicketFromSb(tickets[i]);
+  tickets.splice(i,1);saveLocal();render();toast('Ticket supprimé');
+}
+function openRelance(i){
+  relTgt=i;
+  document.getElementById('rDate').value=today();
+  document.getElementById('rCmt').value='';
+  document.getElementById('mRelance').classList.add('open');
+  setTimeout(()=>document.getElementById('rCmt').focus(),100);
+}
+function saveRelance(){
+  const c=document.getElementById('rCmt').value.trim();
+  if(!c){document.getElementById('rCmt').focus();return;}
+  if(!tickets[relTgt].relances)tickets[relTgt].relances=[];
+  tickets[relTgt].relances.push({date:document.getElementById('rDate').value,comment:c});
+  saveLocal();pushTicketToSb(tickets[relTgt]);
+  document.getElementById('mRelance').classList.remove('open');
+  render();toast('Relance enregistrée ✓');
 }
 
+// ── MODAL TICKET ──
 function openModal(){
-  editTicketIdx=null;
-  document.getElementById('fTitle').value='';document.getElementById('fDesc').value='';
+  editIdx=null;
+  ['fTitle','fDesc','fInter','fSous'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('fStatus').value='en-cours';
-  document.getElementById('fIntervenant').value='';document.getElementById('fSoustraitant').value='';
   document.getElementById('fDate').value=today();
-  document.getElementById('fResolution').value='';
-  document.getElementById('modalTicketTitle').innerHTML='<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1.5" y="1.5" width="13" height="13" rx="2" stroke="var(--brand)" stroke-width="1.5"/><path d="M4.5 8h7M4.5 5.5h7M4.5 10.5h4" stroke="var(--brand)" stroke-width="1.3" stroke-linecap="round"/></svg>Nouveau ticket';
-  document.getElementById('btnSaveTicket').textContent='Créer';
-  document.getElementById('btnSaveTicket').onclick=addTicket;
-  const modalEl = document.getElementById('modal');
-  if(!modalEl){ console.error('Modal #modal not found'); return; }
-  modalEl.classList.add('open');
-  setTimeout(()=>{ const f=document.getElementById('fTitle'); if(f)f.focus(); },100);
+  document.getElementById('fEng').value='';
+  document.getElementById('fResol').value='';
+  document.getElementById('mTitle').childNodes[1].textContent=' Nouveau ticket';
+  document.getElementById('mSave').textContent='Créer le ticket';
+  document.getElementById('mSave').onclick=addTicket;
+  document.getElementById('modal').classList.add('open');
+  setTimeout(()=>document.getElementById('fTitle').focus(),100);
 }
 function openEdit(i){
-  editTicketIdx=i;const t=tickets[i];
-  document.getElementById('fTitle').value=t.title;document.getElementById('fDesc').value=t.desc||'';
+  editIdx=i;const t=tickets[i];
+  document.getElementById('fTitle').value=t.title;
+  document.getElementById('fDesc').value=t.desc||'';
   document.getElementById('fStatus').value=t.status;
-  document.getElementById('fIntervenant').value=t.intervenant||'';
-  document.getElementById('fSoustraitant').value=t.soustraitant||'';
+  document.getElementById('fInter').value=t.intervenant||'';
+  document.getElementById('fSous').value=t.soustraitant||'';
   document.getElementById('fDate').value=t.date||today();
-  document.getElementById('fResolution').value=t.resolution||'';
-  document.getElementById('modalTicketTitle').innerHTML='<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1.5" y="1.5" width="13" height="13" rx="2" stroke="var(--brand)" stroke-width="1.5"/><path d="M4.5 8h7M4.5 5.5h7M4.5 10.5h4" stroke="var(--brand)" stroke-width="1.3" stroke-linecap="round"/></svg>Modifier le ticket';
-  document.getElementById('btnSaveTicket').textContent='Enregistrer';
-  document.getElementById('btnSaveTicket').onclick=saveEdit;
+  document.getElementById('fEng').value=t.engagement||'';
+  document.getElementById('fResol').value=t.resolution||'';
+  document.getElementById('mTitle').childNodes[1].textContent=' Modifier le ticket';
+  document.getElementById('mSave').textContent='Enregistrer';
+  document.getElementById('mSave').onclick=saveEdit;
   document.getElementById('modal').classList.add('open');
+  setTimeout(()=>document.getElementById('fTitle').focus(),100);
 }
-function saveEdit(){
-  const t=tickets[editTicketIdx];
-  t.title=document.getElementById('fTitle').value.trim()||t.title;
-  t.desc=document.getElementById('fDesc').value.trim();
-  t.status=document.getElementById('fStatus').value;t.intervenant=document.getElementById('fIntervenant').value.trim();
-  t.soustraitant=document.getElementById('fSoustraitant').value.trim();
-  t.date=document.getElementById('fDate').value||t.date;
-  t.resolution=document.getElementById('fResolution').value;
-  saveDataDebounced();
-  syncTicketToSupabase(t);
-  closeModal('modal');renderTable();toast('Ticket mis à jour ✓');
-}
+function closeModal(){document.getElementById('modal').classList.remove('open');}
 function addTicket(){
-  const title=document.getElementById('fTitle').value.trim();if(!title){document.getElementById('fTitle').focus();return;}
-  const t={title,desc:document.getElementById('fDesc').value.trim(),cat:'',
+  const title=document.getElementById('fTitle').value.trim();
+  if(!title){document.getElementById('fTitle').focus();return;}
+  const t={
+    title,
+    desc:document.getElementById('fDesc').value.trim(),
     status:document.getElementById('fStatus').value||'en-cours',
     date:document.getElementById('fDate').value||today(),
-    intervenant:document.getElementById('fIntervenant').value.trim(),
-    soustraitant:document.getElementById('fSoustraitant').value.trim(),
-    resolution:document.getElementById('fResolution').value,relances:[]};
+    intervenant:document.getElementById('fInter').value.trim(),
+    soustraitant:document.getElementById('fSous').value.trim(),
+    engagement:document.getElementById('fEng').value,
+    resolution:document.getElementById('fResol').value,
+    relances:[]
+  };
   tickets.unshift(t);
-  saveDataDebounced();
-  syncTicketToSupabase(t, true);
-  closeModal('modal');renderTable();toast('Ticket créé ✓');
+  saveLocal();
+  pushTicketToSb(t,true);
+  closeModal();render();toast('Ticket créé ✓');
+}
+function saveEdit(){
+  const t=tickets[editIdx];
+  t.title=document.getElementById('fTitle').value.trim()||t.title;
+  t.desc=document.getElementById('fDesc').value.trim();
+  t.status=document.getElementById('fStatus').value;
+  t.intervenant=document.getElementById('fInter').value.trim();
+  t.soustraitant=document.getElementById('fSous').value.trim();
+  t.date=document.getElementById('fDate').value||t.date;
+  t.engagement=document.getElementById('fEng').value;
+  t.resolution=document.getElementById('fResol').value;
+  saveLocal();pushTicketToSb(t);
+  closeModal();render();toast('Ticket mis à jour ✓');
 }
 
-// ── Synchronisation Supabase d'un ticket (insert si nouveau, upsert sinon) ──
-
-// ═══════════════ RELANCE ═══════════════
-function openRelance(i){relanceTarget=i;document.getElementById('rDate').value=today();document.getElementById('rComment').value='';document.getElementById('modalRelance').classList.add('open');setTimeout(()=>document.getElementById('rComment').focus(),100);}
-function saveRelance(){
-  const c=document.getElementById('rComment').value.trim();if(!c){document.getElementById('rComment').focus();return;}
-  if(!tickets[relanceTarget].relances)tickets[relanceTarget].relances=[];
-  tickets[relanceTarget].relances.push({date:document.getElementById('rDate').value,comment:c});
-  saveDataDebounced();
-  syncTicketToSupabase(tickets[relanceTarget]);
-  if(sb){ const t=tickets[relanceTarget]; sb.from('historique').insert({ticket_id:t._dbId||null,type_evenement:'Relance',detail:c,details:c,auteur:'BuildDesk',date:document.getElementById('rDate').value}).then(r=>{ if(r.error) console.warn('Supabase historique:',r.error); }); }
-  closeModal('modalRelance');renderTable();toast('Relance enregistrée ✓');
+// ── PENDING BANNER ──
+function renderPending(){
+  const banner=document.getElementById('pBanner');
+  const items=meetings.flatMap(m=>(m.ticketReviews||[]).filter(r=>r.decision&&tickets[r.ticketIdx]&&tickets[r.ticketIdx].status!=='résolu').map(r=>({...r,mTitle:m.title})));
+  if(!items.length){banner.innerHTML='';return;}
+  banner.innerHTML=`<div class="pb"><div class="pb-ttl">⚠ ${items.length} action${items.length>1?'s':''} en suspens</div>${items.slice(0,5).map(r=>`<div class="pb-it"><span style="width:6px;height:6px;border-radius:50%;background:var(--amber);flex-shrink:0;margin-top:4px"></span><div><div style="font-weight:600;font-size:12.5px;color:var(--text)">${r.decision}</div><div style="color:var(--subtle);font-size:11.5px">${tickets[r.ticketIdx]?.title} · ${r.mTitle}</div></div></div>`).join('')}</div>`;
 }
 
-// ═══════════════ MEETINGS TABLE (flat, triage-able) ═══════════════
-let mtgSortCol='date', mtgSortDir='desc';
-
-function sortMtg(col){
-  if(mtgSortCol===col) mtgSortDir=mtgSortDir==='asc'?'desc':'asc';
-  else{mtgSortCol=col;mtgSortDir='asc';}
-  renderMeetingTable();
-}
-
-function renderMeetingTable(){
+// ── MEETINGS ──
+function sortM(col){if(msCol===col)msDir=msDir==='asc'?'desc':'asc';else{msCol=col;msDir='asc';}renderMtg();}
+function renderMtg(){
   updateStats();
-  const q=(document.getElementById('mtgSearch')?.value||'').toLowerCase();
-  const fSt=document.getElementById('mtgStatusFilter')?.value||'';
-  const body=document.getElementById('mtgBody');
-  const empty=document.getElementById('mtgEmpty');
+  const q=(document.getElementById('mq')?.value||'').toLowerCase();
+  const fs=document.getElementById('mfst')?.value||'';
+  const body=document.getElementById('mtbody');
+  const empty=document.getElementById('mempty');
   if(!body)return;
-
-  let rows=meetings.map((m,i)=>({...m,_i:i})).filter(m=>{
-    return(!q||m.title.toLowerCase().includes(q)||(m.participants||'').toLowerCase().includes(q))
-      &&(!fSt||m.status===fSt);
-  });
-  rows.sort((a,b)=>{
-    const va=a[mtgSortCol]||'', vb=b[mtgSortCol]||'';
-    return (mtgSortDir==='asc'?1:-1)*String(va).localeCompare(String(vb),'fr',{sensitivity:'base'});
-  });
-  // sort icons
+  let rows=meetings.map((m,i)=>({...m,_i:i})).filter(m=>(!q||(m.title||'').toLowerCase().includes(q)||(m.participants||'').toLowerCase().includes(q))&&(!fs||m.status===fs));
+  const dir=msDir==='asc'?1:-1;
+  rows.sort((a,b)=>dir*String(a[msCol]||'').localeCompare(String(b[msCol]||''),'fr',{sensitivity:'base'}));
   ['title','date','participants','nextDate'].forEach(c=>{
-    const el=document.getElementById(`msico-${c}`);
-    if(!el)return;
-    el.textContent = mtgSortCol===c?(mtgSortDir==='asc'?'↑':'↓'):'↕';
-    el.style.opacity = mtgSortCol===c?'1':'.3';
+    const el=document.getElementById('ms-'+c);
+    if(el)el.textContent=msCol===c?(msDir==='asc'?'↑':'↓'):'↕';
   });
   if(!rows.length){body.innerHTML='';empty.style.display='block';return;}
   empty.style.display='none';
-  body.innerHTML=rows.map(m=>`<tr style="cursor:pointer" onclick="openMtgDetail(${m._i})">
-    <td><div class="tt">${m.title}</div>${m.lieu?`<div class="ts">📍 ${m.lieu}</div>`:''}</td>
-    <td style="font-family:var(--mono);font-size:12px;color:var(--subtle)">${fmtDate(m.date)}</td>
-    <td style="font-size:12px;color:var(--text2)">${m.participants||'<span style="color:var(--muted)">—</span>'}</td>
-    <td style="font-family:var(--mono);font-size:12px;color:var(--muted)">${(m.ticketReviews||[]).length} ticket${(m.ticketReviews||[]).length!==1?'s':''}</td>
-    <td style="font-family:var(--mono);font-size:12px;color:var(--brand)">${m.nextDate?fmtDate(m.nextDate):'<span style="color:var(--muted)">—</span>'}</td>
-    <td><span class="chip ${m.status==='terminee'?'c-done':'c-prog'}">${m.status==='terminee'?'Terminée':'Planifiée'}</span></td>
-    <td onclick="event.stopPropagation()">
-      <div style="display:flex;gap:5px;opacity:0;transition:opacity .12s" class="mrow-actions">
-        <button class="btn btn-outline btn-xs" onclick="openMeetingForm(${m._i})">✎</button>
-        <button class="btn btn-outline btn-xs" onclick="viewCR(${m._i})">CR</button>
-        <button class="btn btn-outline btn-xs" onclick="dlCR(${m._i})">⬇</button>
-        <button class="btn btn-red btn-xs" onclick="delMeeting(${m._i})">✕</button>
+  body.innerHTML=rows.map(m=>`<tr style="cursor:pointer" onclick="openMD(${m._i})">
+    <td><div class="tt">${m.title||'Sans titre'}</div>${m.lieu?`<div class="ts">📍 ${m.lieu}</div>`:''}</td>
+    <td style="font-family:var(--mono);font-size:11.5px;color:var(--subtle)">${fmt(m.date)}</td>
+    <td style="font-size:12px;color:var(--text2)">${m.participants||'—'}</td>
+    <td style="font-family:var(--mono);font-size:11.5px;color:var(--muted)">${(m.ticketReviews||[]).length}</td>
+    <td style="font-family:var(--mono);font-size:11.5px;color:var(--brand)">${m.nextDate?fmt(m.nextDate):'—'}</td>
+    <td>${chip2(m.status)}</td>
+    <td onclick="event.stopPropagation()" style="opacity:0;transition:opacity .1s" class="mrow-act">
+      <div style="display:flex;gap:4px">
+        <button class="btn btn-outline btn-xs" onclick="openMForm(${m._i})">✎</button>
+        <button class="btn btn-outline btn-xs" onclick="showCR(${m._i})">CR</button>
+        <button class="btn btn-outline btn-xs" onclick="crIdx=${m._i};dlCR()">⬇</button>
+        <button class="btn btn-red btn-xs" onclick="delMtg(${m._i})">✕</button>
       </div>
     </td>
   </tr>`).join('');
-  // show action buttons on hover
-  document.querySelectorAll('#mtgBody tr').forEach(tr=>{
-    tr.addEventListener('mouseenter',()=>tr.querySelector('.mrow-actions')&&(tr.querySelector('.mrow-actions').style.opacity='1'));
-    tr.addEventListener('mouseleave',()=>tr.querySelector('.mrow-actions')&&(tr.querySelector('.mrow-actions').style.opacity='0'));
+  document.querySelectorAll('.mrow-act').forEach(td=>{
+    const tr=td.closest('tr');
+    tr.addEventListener('mouseenter',()=>td.style.opacity='1');
+    tr.addEventListener('mouseleave',()=>td.style.opacity='0');
   });
 }
+function delMtg(i){if(!confirm('Supprimer ?'))return;meetings.splice(i,1);saveLocal();renderMtg();toast('Réunion supprimée');}
 
-// Called by renderMeetings-compat path
-function renderTimeline(){ renderMeetingTable(); }
-
-// Meeting detail slide panel
-function openMtgDetail(mi){
+// ── MEETING DETAIL ──
+function openMD(mi){
   const m=meetings[mi];
-  const overlay=document.getElementById('mtgDetailOverlay');
-  const inner=document.getElementById('mtgDetailInner');
-  const actions=document.getElementById('mtgDetailActions');
-  if(!overlay||!inner)return;
-  inner.innerHTML=`
-    <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:18px;gap:12px">
-      <div>
-        <div style="font-size:18px;font-weight:700;color:var(--text);margin-bottom:5px">${m.title}</div>
-        <div style="display:flex;gap:12px;flex-wrap:wrap;font-size:12px;color:var(--subtle)">
-          <span>📅 ${fmtDate(m.date)}</span>
-          ${m.lieu?`<span>📍 ${m.lieu}</span>`:''}
-          ${m.participants?`<span>👥 ${m.participants}</span>`:''}
-        </div>
-      </div>
-      <span class="chip ${m.status==='terminee'?'c-done':'c-prog'}" style="flex-shrink:0">${m.status==='terminee'?'Terminée':'Planifiée'}</span>
+  document.getElementById('mtgInner').innerHTML=`
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;gap:12px">
+      <div><div style="font-size:17px;font-weight:700;color:var(--text);margin-bottom:5px">${m.title}</div>
+      <div style="display:flex;gap:12px;flex-wrap:wrap;font-size:12px;color:var(--subtle)">
+        <span>📅 ${fmt(m.date)}</span>${m.lieu?`<span>📍 ${m.lieu}</span>`:''}${m.participants?`<span>👥 ${m.participants}</span>`:''}
+      </div></div>${chip2(m.status)}
     </div>
-    ${(m.ticketReviews||[]).length?`
-      <div class="slbl">Tickets passés en revue (${(m.ticketReviews||[]).length})</div>
-      ${(m.ticketReviews||[]).map((r,ri)=>{
-        const t=tickets[r.ticketIdx];if(!t)return'';
-        const hist=meetings.filter(mm=>mm!==m).flatMap(mm=>(mm.ticketReviews||[]).filter(rr=>rr.ticketIdx===r.ticketIdx));
-        return`<div class="trk" id="mtd-${mi}-${ri}">
-          <div class="trk-hd" onclick="toggleTrk('mtd-${mi}-${ri}')">
-            <span class="trk-num">${ri+1}.</span>
-            <span class="trk-ttl">${t.title}</span>
-            ${chipStatus(r.newStatus||r.statusAtTime||t.status)}
-            <svg class="trk-chev" width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M4.5 3l4.5 3-4.5 3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          </div>
-          <div class="trk-bd">
-            ${r.comment?`<div class="trk-cmt"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M1.5 2a.5.5 0 0 1 .5-.5h8a.5.5 0 0 1 .5.5v5a.5.5 0 0 1-.5.5H4L1.5 9.5V2z" stroke="var(--muted)" stroke-width="1.1" stroke-linejoin="round"/></svg><span>${r.comment}</span></div>`:''}
-            <div class="trk-flds">
-              ${r.decision?`<div class="trk-fld"><div class="trk-flbl">Décision</div><div class="trk-fval">${r.decision}</div></div>`:''}
-              ${r.responsable?`<div class="trk-fld"><div class="trk-flbl">Responsable</div><div class="trk-fval">${r.responsable}</div></div>`:''}
-              ${r.resolutionDate?`<div class="trk-fld"><div class="trk-flbl">Résolution promise</div><div class="trk-fval">${fmtDate(r.resolutionDate)}</div></div>`:''}
-            </div>
-            ${hist.length?`<div class="trk-hist"><div class="trk-hlbl">Historique</div>${hist.map(rr=>`<div class="trk-hrow">${fmtDate(rr.meetingDate||'')} — ${cap(rr.newStatus||'')}${rr.decision?' · '+rr.decision:''}</div>`).join('')}</div>`:''}
-          </div>
-        </div>`;
-      }).join('')}
-    `:''}
+    ${(m.ticketReviews||[]).length?`<div class="slbl">Tickets (${m.ticketReviews.length})</div>${m.ticketReviews.map((r,ri)=>{const t=tickets[r.ticketIdx];if(!t)return'';const hist=meetings.filter(mm=>mm!==m).flatMap(mm=>(mm.ticketReviews||[]).filter(rr=>rr.ticketIdx===r.ticketIdx));return`<div class="trk" id="md${mi}-${ri}"><div class="trk-hd" onclick="this.closest('.trk').classList.toggle('open')"><span class="trk-num">${ri+1}.</span><span class="trk-ttl">${t.title}</span>${chip(r.newStatus||t.status)}<svg class="trk-chev" width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M4 2.5l3.5 3-3.5 3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div class="trk-bd">${r.comment?`<div style="font-size:12px;color:var(--subtle);padding:8px 11px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);margin-top:10px">${r.comment}</div>`:''}<div class="trk-flds">${r.decision?`<div class="trk-fld"><div class="trk-flbl">Décision</div><div class="trk-fval">${r.decision}</div></div>`:''} ${r.responsable?`<div class="trk-fld"><div class="trk-flbl">Responsable</div><div class="trk-fval">${r.responsable}</div></div>`:''}</div>${hist.length?`<div style="margin-top:8px;padding:8px 10px;background:var(--amber-dim);border:1px solid var(--amber-mid);border-radius:var(--r)"><div style="font-size:9.5px;font-weight:700;color:var(--amber);text-transform:uppercase;letter-spacing:.7px;margin-bottom:3px">Historique</div>${hist.map(rr=>`<div style="font-size:11px;color:var(--text2);border-left:2px solid var(--amber-mid);padding-left:6px;margin-bottom:2px">${rr.meetingDate||''} · ${cap(rr.newStatus||'')}</div>`).join('')}</div>`:''}</div></div>`;}).join('')}`:''}
     ${m.notes?`<div class="slbl">Notes</div><div class="nbox">${m.notes}</div>`:''}
-    ${m.nextDate?`<div class="slbl">Prochaine réunion</div><div class="nxtbox"><svg width="13" height="13" viewBox="0 0 13 13" fill="none"><rect x="1" y="1.5" width="11" height="10" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M4 1v2M9 1v2M1 5h11" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>${fmtDate(m.nextDate)}</div>`:''}
+    ${m.nextDate?`<div class="slbl">Prochaine réunion</div><div class="nxtbox">📅 ${fmt(m.nextDate)}</div>`:''}
   `;
-  actions.innerHTML=`
-    <button class="btn btn-outline btn-sm" onclick="openMeetingForm(${mi});closeMtgDetail()">✎ Modifier</button>
-    <button class="btn btn-outline btn-sm" onclick="viewCR(${mi})">📄 CR</button>
-    <button class="btn btn-brand btn-sm" onclick="dlCR(${mi})">⬇ PDF</button>
+  document.getElementById('mtgAct').innerHTML=`
+    <button class="btn btn-outline btn-sm" onclick="openMForm(${mi});closeMD()">✎ Modifier</button>
+    <button class="btn btn-outline btn-sm" onclick="showCR(${mi})">📄 CR</button>
+    <button class="btn btn-brand btn-sm" onclick="crIdx=${mi};dlCR()">⬇ PDF</button>
   `;
-  overlay.style.display='block';
+  document.getElementById('mtgOv').style.display='block';
 }
-function closeMtgDetail(e){
-  if(e&&e.target!==document.getElementById('mtgDetailOverlay'))return;
-  document.getElementById('mtgDetailOverlay').style.display='none';
-}
-function toggleTrk(id){document.getElementById(id)?.classList.toggle('open');}
+function closeMD(e){if(e&&e.target!==document.getElementById('mtgOv'))return;document.getElementById('mtgOv').style.display='none';}
 
-// ═══════════════ EXPORT ALL TICKETS PDF ═══════════════
+// ── MEETING FORM ──
+function openMForm(mi){
+  mEditIdx=mi;wizStep=0;wizIdxs=tickets.map((_,i)=>i);wizTotal=tickets.length;
+  document.getElementById('mFormTitle').textContent=mi===null?'Nouvelle réunion':'Modifier la réunion';
+  if(mi!==null){const m=meetings[mi];document.getElementById('mT').value=m.title||'';document.getElementById('mD').value=m.date||today();document.getElementById('mL').value=m.lieu||'';document.getElementById('mP').value=m.participants||'';document.getElementById('mSt').value=m.status||'terminee';document.getElementById('mNotes').value=m.notes||'';document.getElementById('mNext').value=m.nextDate||'';}
+  else{['mT','mL','mP','mNotes','mNext'].forEach(id=>document.getElementById(id).value='');document.getElementById('mD').value=today();document.getElementById('mSt').value='terminee';}
+  buildDND();buildWizBars();showWizStep(0);
+  document.getElementById('mForm').classList.add('open');
+  setTimeout(()=>document.getElementById('mT').focus(),150);
+}
+function closeMForm(){document.getElementById('mForm').classList.remove('open');}
+function buildDND(){
+  const list=document.getElementById('tckList');
+  if(!tickets.length){list.innerHTML='<div style="color:var(--muted);font-size:12px;padding:8px">Aucun ticket.</div>';return;}
+  list.innerHTML=tickets.map((t,i)=>`<div class="dndi" draggable="true" data-i="${i}" ondragstart="dDS(event,${i})" ondragover="dDO(event,${i})" ondragleave="this.classList.remove('dov')" ondrop="dDD(event,${i})">
+    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" style="color:var(--muted)"><path d="M4 3h4M4 6h4M4 9h4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+    <span style="flex:1;font-size:12.5px;font-weight:500;color:var(--text)">${t.title}</span>
+    ${chip(t.status)}
+  </div>`).join('');
+}
+let dSrc=null;
+function dDS(e,i){dSrc=i;setTimeout(()=>document.querySelector(`[data-i="${i}"]`)?.classList.add('dr'),0);}
+function dDO(e,i){e.preventDefault();document.querySelectorAll('.dndi').forEach(d=>d.classList.remove('dov'));document.querySelector(`[data-i="${i}"]`)?.classList.add('dov');}
+function dDD(e,i){e.preventDefault();document.querySelectorAll('.dndi').forEach(d=>d.classList.remove('dov','dr'));if(dSrc===null||dSrc===i)return;const a=wizIdxs.indexOf(dSrc),b=wizIdxs.indexOf(i);if(a>=0&&b>=0){wizIdxs.splice(a,1);wizIdxs.splice(b,0,dSrc);}buildDND();}
+function buildWizBars(){document.getElementById('wbar').innerHTML=Array(wizTotal+2).fill(0).map((_,i)=>`<div class="ws" id="ws${i}"></div>`).join('');}
+function showWizStep(s){
+  wizStep=s;
+  for(let i=0;i<=wizTotal+1;i++){const el=document.getElementById('ws'+i);if(el)el.className='ws'+(i<s?' done':i===s?' act':'');}
+  document.getElementById('wlbl').textContent=s===0?'Étape 1 — Informations':s===wizTotal+1?'Étape finale — Notes':`Ticket ${s}/${wizTotal} — ${tickets[wizIdxs[s-1]]?.title||''}`;
+  document.getElementById('wp0').classList.toggle('active',s===0);
+  document.getElementById('wpFinal').classList.toggle('active',s===wizTotal+1);
+  document.querySelectorAll('#dynPanels .wp').forEach(el=>el.classList.remove('active'));
+  if(s>0&&s<=wizTotal){const el=document.getElementById('wdyn'+s);if(el)el.classList.add('active');}
+  document.getElementById('btnPrev').style.display=s>0?'':'none';
+  document.getElementById('btnNext').textContent=s===wizTotal+1?'💾 Enregistrer':'Suivant →';
+}
+function wizNav(d){
+  if(wizStep===0&&d>0){if(!document.getElementById('mT').value.trim()){document.getElementById('mT').focus();return;}buildDynPanels();}
+  if(d>0&&wizStep===wizTotal+1){saveMeeting();return;}
+  showWizStep(wizStep+d);
+}
+function buildDynPanels(){
+  const m=mEditIdx!==null?meetings[mEditIdx]:null;
+  document.getElementById('dynPanels').innerHTML=wizIdxs.map((ti,step)=>{
+    const t=tickets[ti];
+    const prev=meetings.flatMap(mm=>mm!==m?(mm.ticketReviews||[]).filter(r=>r.ticketIdx===ti).map(r=>({...r,mt:mm.title})):[]);
+    const er=(m?.ticketReviews||[]).find(r=>r.ticketIdx===ti)||{};
+    return`<div class="wp" id="wdyn${step+1}"><div class="tfc"><div class="tfch"><span class="tfcn">${step+1}/${wizIdxs.length}</span><strong style="font-size:13px">${t.title}</strong>${chip(t.status)}</div>${prev.length?`<div class="thp"><div class="thpl">Historique réunions</div>${prev.map(r=>`<div class="thpr">${r.mt}: ${cap(r.newStatus||'')}${r.decision?' · '+r.decision:''}</div>`).join('')}</div>`:''}<div class="fr"><div class="fg"><label>Statut après</label><select id="ws${step}st"><option value="en-cours" ${(er.newStatus||t.status)!=='résolu'?'selected':''}>En cours</option><option value="résolu" ${(er.newStatus||t.status)==='résolu'?'selected':''}>Résolu</option></select></div><div class="fg"><label>Responsable</label><input id="ws${step}rsp" type="text" value="${er.responsable||''}"></div></div><div class="fg"><label>Décision</label><input id="ws${step}dec" type="text" value="${er.decision||''}"></div><div class="fg"><label>Commentaire</label><textarea id="ws${step}cmt">${er.comment||''}</textarea></div></div></div>`;
+  }).join('');
+}
+function saveMeeting(){
+  const title=document.getElementById('mT').value.trim();if(!title)return;
+  const reviews=wizIdxs.map((ti,step)=>({ticketIdx:ti,newStatus:document.getElementById('ws'+step+'st')?.value||tickets[ti].status,statusAtTime:tickets[ti].status,responsable:document.getElementById('ws'+step+'rsp')?.value.trim()||'',decision:document.getElementById('ws'+step+'dec')?.value.trim()||'',comment:document.getElementById('ws'+step+'cmt')?.value.trim()||''}));
+  reviews.forEach(r=>{if(r.newStatus)tickets[r.ticketIdx].status=r.newStatus;});
+  const m={title,date:document.getElementById('mD').value,lieu:document.getElementById('mL').value.trim(),participants:document.getElementById('mP').value.trim(),status:document.getElementById('mSt').value,ticketReviews:reviews,notes:document.getElementById('mNotes').value.trim(),nextDate:document.getElementById('mNext').value};
+  if(mEditIdx!==null)meetings[mEditIdx]=m;else meetings.unshift(m);
+  saveLocal();closeMForm();renderMtg();render();toast('Réunion enregistrée ✓');
+}
+
+// ── CR ──
+function showCR(mi){
+  crIdx=mi;const m=meetings[mi];
+  document.getElementById('crContent').innerHTML=`<div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--rlg);padding:20px"><h2 style="font-size:18px;font-weight:700;margin-bottom:4px">${m.title}</h2><div style="font-family:var(--mono);font-size:11px;color:var(--muted);margin-bottom:16px">${fmt(m.date)}${m.lieu?' · '+m.lieu:''}${m.participants?' · '+m.participants:''}</div>${(m.ticketReviews||[]).map((r,ri)=>{const t=tickets[r.ticketIdx];if(!t)return'';return`<div style="border-left:3px solid var(--brand);padding-left:12px;margin-bottom:13px"><div style="font-weight:700;font-size:13.5px;margin-bottom:4px">${ri+1}. ${t.title} ${chip(r.newStatus||t.status)}</div>${r.comment?`<div style="font-size:12px;color:var(--subtle);padding:7px 10px;background:var(--surface);border-radius:var(--r);margin-top:5px;border:1px solid var(--border)">${r.comment}</div>`:''} ${r.decision?`<div style="margin-top:5px;font-size:12px;color:var(--green);font-weight:600">✓ ${r.decision}</div>`:''}</div>`;}).join('')}${m.notes?`<div style="margin-top:14px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:10px 13px;white-space:pre-wrap;font-size:12.5px;color:var(--text2)">${m.notes}</div>`:''}${m.nextDate?`<div style="margin-top:12px;padding:10px 13px;background:var(--brand-dim);border:1px solid var(--brand-mid);border-radius:var(--r);color:var(--brand);font-weight:600;font-size:13px">📅 Prochaine réunion : ${fmt(m.nextDate)}</div>`:''}</div>`;
+  document.getElementById('mCR').classList.add('open');
+}
+function dlCR(){
+  const mi=crIdx;if(mi===null||mi===undefined)return;
+  if(!window.jspdf){toast('jsPDF non chargé');return;}
+  const m=meetings[mi];
+  const {jsPDF}=window.jspdf;
+  const doc=new jsPDF({unit:'mm',format:'a4'});
+  const ML=18,PW=210-ML*2;let y=18;
+  const C={brand:[37,99,235],text:[30,42,59],muted:[155,163,175],green:[5,150,105],amber:[217,119,6]};
+  doc.setFillColor(...C.brand);doc.rect(ML,y,PW,12,'F');
+  doc.setFontSize(12);doc.setFont('helvetica','bold');doc.setTextColor(255,255,255);
+  doc.text('TicketingDesk — Compte Rendu',ML+4,y+8);
+  doc.setFontSize(8);doc.setFont('helvetica','normal');doc.text(fmt(today()),ML+PW-2,y+8,{align:'right'});y+=16;
+  doc.setFontSize(14);doc.setFont('helvetica','bold');doc.setTextColor(...C.text);doc.text(m.title,ML,y);y+=7;
+  doc.setFontSize(8);doc.setFont('helvetica','normal');doc.setTextColor(...C.muted);
+  doc.text([fmt(m.date),m.lieu,m.participants].filter(Boolean).join(' · '),ML,y);y+=8;
+  doc.setDrawColor(...C.brand);doc.setLineWidth(.4);doc.line(ML,y,ML+PW,y);y+=5;
+  (m.ticketReviews||[]).forEach((r,ri)=>{
+    const t=tickets[r.ticketIdx];if(!t)return;
+    if(y>265){doc.addPage();y=18;}
+    const ok=r.newStatus==='résolu';
+    doc.setFillColor(...ok?[236,253,245]:[255,251,235]);doc.rect(ML,y,2.5,12,'F');
+    doc.setFontSize(10);doc.setFont('helvetica','bold');doc.setTextColor(...C.text);doc.text(`${ri+1}. ${t.title}`,ML+5,y+5);
+    doc.setFontSize(8);doc.setFont('helvetica','bold');doc.setTextColor(...ok?C.green:C.amber);doc.text(ok?'Résolu':'En cours',ML+PW-2,y+5,{align:'right'});y+=12;
+    if(r.decision){doc.setFontSize(8);doc.setFont('helvetica','normal');doc.setTextColor(...C.green);doc.text('✓ '+r.decision,ML+5,y);y+=5;}
+    if(r.comment){doc.setFontSize(8);doc.setFont('helvetica','italic');doc.setTextColor(...C.muted);const ls=doc.splitTextToSize(r.comment,PW-10);doc.text(ls,ML+5,y);y+=ls.length*4;}
+    y+=3;
+  });
+  if(m.notes){doc.setDrawColor(...C.muted);doc.line(ML,y,ML+PW,y);y+=5;doc.setFontSize(9);doc.setFont('helvetica','bold');doc.setTextColor(...C.text);doc.text('Notes',ML,y);y+=5;doc.setFont('helvetica','normal');doc.setFontSize(8.5);doc.setTextColor(...C.text);const ls=doc.splitTextToSize(m.notes,PW);doc.text(ls,ML,y);}
+  if(m.nextDate){y+=8;doc.setFillColor(239,246,255);doc.roundedRect(ML,y,PW,9,2,2,'F');doc.setFontSize(9);doc.setFont('helvetica','bold');doc.setTextColor(...C.brand);doc.text('Prochaine réunion : '+fmt(m.nextDate),ML+4,y+6);}
+  doc.setFontSize(7.5);doc.setFont('helvetica','normal');doc.setTextColor(...C.muted);doc.text(`TicketingDesk · ${fmt(today())}`,ML,290);
+  doc.save(`CR_${(m.title||'reunion').replace(/[^a-zA-Z0-9]/g,'_')}.pdf`);
+  toast('PDF téléchargé ✓');
+}
+
+// ── EXPORT ALL PDF ──
 function exportAllPDF(){
   if(!window.jspdf){toast('jsPDF non chargé');return;}
   const {jsPDF}=window.jspdf;
   const doc=new jsPDF({orientation:'landscape',unit:'mm',format:'a4'});
-
-  // ── Constantes ──
-  const ML=12, MR=12, MT=12;
-  const PW=297-ML-MR;
-  const PAGE_H=210;
-  const FOOTER_H=10;
-  const MAX_Y=PAGE_H-FOOTER_H-4;
-  let y=MT;
-  let pageNum=1;
-
-  const C={
-    brand:[37,99,235], brandLight:[239,246,255], brandMid:[191,219,254],
-    green:[5,150,105],  greenLight:[236,253,245],
-    amber:[217,119,6],  amberLight:[255,251,235],
-    red:[220,38,38],
-    text:[30,42,59],    text2:[61,77,99],
-    muted:[155,163,175], border:[228,234,240],
-    bg:[248,249,252],   white:[255,255,255]
-  };
-
-  // ── Colonnes : largeurs calibrées pour éviter les chevauchements ──
-  const cols=[
-    {lbl:'Sujet',         key:'title',        w:68, bold:true},
-    {lbl:'Statut',        key:'status',       w:20},
-    {lbl:'Intervenant',   key:'intervenant',  w:36},
-    {lbl:'Sous-traitant', key:'soustraitant', w:36},
-    {lbl:'Ouverture',     key:'date',         w:22, mono:true},
-    {lbl:'Relances',      key:'_relanceCount',w:16, center:true},
-    {lbl:'Résol. prévue', key:'resolution',   w:24, mono:true},
-    {lbl:'Description',   key:'desc',         w:PW-68-20-36-36-22-16-24, italic:true},
-  ];
-  // vérifier que la somme == PW
-  const totalW=cols.reduce((s,c)=>s+c.w,0);
-  cols[cols.length-1].w += PW-totalW; // ajuster la dernière colonne
-
-  const ROW_PAD=1.8; // padding vertical dans chaque cellule
-  const LINE_H=4.2;  // hauteur d'une ligne de texte
-  const MIN_ROW=8;   // hauteur minimale d'une ligne
-
-  function addPage(){
-    drawFooter();
-    doc.addPage();
-    pageNum++;
-    y=MT;
-    drawColHeaders();
-  }
-
-  function drawFooter(){
-    doc.setDrawColor(...C.border);
-    doc.line(ML,PAGE_H-FOOTER_H,ML+PW,PAGE_H-FOOTER_H);
-    doc.setFontSize(7.5);doc.setFont('helvetica','normal');doc.setTextColor(...C.muted);
-    doc.text(`TicketingDesk  ·  Export du ${fmtDate(today())}  ·  ${filtered.length} ticket${filtered.length!==1?'s':''}`,ML,PAGE_H-FOOTER_H+4);
-    doc.text(`${pageNum}`,ML+PW,PAGE_H-FOOTER_H+4,{align:'right'});
-  }
-
-  function drawColHeaders(){
-    // Fond en-tête
-    doc.setFillColor(...C.bg);
-    doc.setDrawColor(...C.border);
-    doc.rect(ML,y,PW,7,'FD');
-    // Textes
-    doc.setFontSize(7);doc.setFont('helvetica','bold');doc.setTextColor(...C.muted);
-    let cx=ML;
-    cols.forEach(c=>{
-      if(c.center) doc.text(c.lbl.toUpperCase(),cx+c.w/2,y+4.6,{align:'center'});
-      else doc.text(c.lbl.toUpperCase(),cx+2,y+4.6);
-      cx+=c.w;
-    });
-    // Séparateurs verticaux
-    doc.setDrawColor(...C.border);doc.setLineWidth(0.2);
-    cx=ML;
-    cols.forEach((c,i)=>{if(i>0)doc.line(cx,y,cx,y+7);cx+=c.w;});
-    doc.setLineWidth(0.3);
-    y+=7;
-  }
-
-  // ── HEADER PAGE ──
-  doc.setFillColor(...C.brand);
-  doc.rect(ML,y,PW,13,'F');
-  // Logo mark
-  doc.setFillColor(255,255,255,0.9);
-  doc.roundedRect(ML+4,y+2.5,8,8,1.5,1.5,'F');
-  doc.setFillColor(37,99,235);
-  doc.rect(ML+5,y+3.5,3,3,'F');
-  doc.setFillColor(255,255,255);
-  doc.rect(ML+9,y+3.5,2,1.5,'F');
-  doc.rect(ML+9,y+6,2,1.5,'F');
-  // Titre
-  doc.setFontSize(13);doc.setFont('helvetica','bold');doc.setTextColor(255,255,255);
-  doc.text('TicketingDesk',ML+15,y+7);
-  doc.setFontSize(9);doc.setFont('helvetica','normal');doc.setTextColor(191,219,254);
-  doc.text('— Export des tickets',ML+48,y+7);
-  doc.setFontSize(8);doc.setTextColor(255,255,255);
-  doc.text(`Généré le ${fmtDate(today())}`,ML+PW-2,y+7,{align:'right'});
-  y+=17;
-
-  // ── STATS ──
-  const encours=tickets.filter(t=>t.status==='en-cours'||t.status==='ouvert').length;
-  const resolu=tickets.filter(t=>t.status==='résolu').length;
-  const stats=[
-    {lbl:'Total tickets',val:String(tickets.length),col:C.text,bg:C.bg,bd:C.border},
-    {lbl:'En cours',     val:String(encours),        col:C.amber,bg:C.amberLight,bd:[253,230,138]},
-    {lbl:'Résolus',      val:String(resolu),          col:C.green,bg:C.greenLight,bd:[167,243,208]},
-  ];
-  const sw=(PW-6)/3;
-  stats.forEach((s,i)=>{
-    const sx=ML+i*(sw+3);
-    doc.setFillColor(...s.bg);doc.setDrawColor(...s.bd);
-    doc.roundedRect(sx,y,sw,11,2,2,'FD');
-    doc.setFontSize(14);doc.setFont('helvetica','bold');doc.setTextColor(...s.col);
-    doc.text(s.val,sx+sw/2,y+6.5,{align:'center'});
-    doc.setFontSize(7);doc.setFont('helvetica','normal');doc.setTextColor(...C.muted);
-    doc.text(s.lbl.toUpperCase(),sx+sw/2,y+10,{align:'center'});
-  });
-  y+=15;
-
-  // ── EN-TÊTES COLONNES ──
-  const filtered=getFiltered();
-  drawColHeaders();
-
-  // ── LIGNES ──
-  filtered.forEach((t,ri)=>{
-    // Calculer la hauteur nécessaire pour cette ligne
-    // (la colonne la plus haute détermine la hauteur de la ligne)
+  const ML=12,PW=297-ML*2;let y=ML;
+  const C={brand:[37,99,235],text:[30,42,59],text2:[61,77,99],muted:[155,163,175],border:[228,234,240],bg:[248,249,252],green:[5,150,105],amber:[217,119,6],red:[220,38,38]};
+  const cols=[{l:'Sujet',w:62},{l:'Statut',w:20},{l:'Intervenant',w:32},{l:'Sous-traitant',w:32},{l:'Date création',w:24},{l:'Dern. relance',w:24},{l:'Engagement',w:24},{l:'Fermeture',w:24},{l:'Description',w:PW-62-20-32-32-24-24-24-24}];
+  doc.setFillColor(...C.brand);doc.rect(ML,y,PW,12,'F');
+  doc.setFontSize(12);doc.setFont('helvetica','bold');doc.setTextColor(255,255,255);
+  doc.text('TicketingDesk — Export tickets',ML+4,y+8);
+  doc.setFontSize(8);doc.setFont('helvetica','normal');doc.text(`${fmt(today())} · ${tickets.length} tickets`,ML+PW-2,y+8,{align:'right'});y+=16;
+  // col headers
+  doc.setFillColor(...C.bg);doc.setDrawColor(...C.border);doc.rect(ML,y,PW,7,'FD');
+  doc.setFontSize(7);doc.setFont('helvetica','bold');doc.setTextColor(...C.muted);
+  let cx=ML;cols.forEach(c=>{doc.text(c.l.toUpperCase(),cx+2,y+4.8);cx+=c.w;});y+=7;
+  // rows
+  const rows=getFiltered();
+  rows.forEach((t,ri)=>{
     doc.setFontSize(8);
-    const cellHeights=cols.map(c=>{
-      const val=c.key==='_relanceCount'?String((t.relances||[]).length):(t[c.key]||'');
-      if(!val)return MIN_ROW;
-      const lines=doc.splitTextToSize(val,c.w-4);
-      return Math.max(MIN_ROW, lines.length*LINE_H + ROW_PAD*2);
+    const hs=cols.map((c,ci)=>{
+      const vals=[t.title,'',t.intervenant||'',t.soustraitant||'',fmt(t.date),fmt(t.lastRelance||''),fmt(t.engagement||''),fmt(t.resolution||''),t.desc||''];
+      const v=vals[ci]||'';if(!v||v==='—')return 8;
+      return Math.max(8,doc.splitTextToSize(v,c.w-4).length*4.2+3.6);
     });
-    const rowH=Math.max(...cellHeights);
-
-    // Nouvelle page si nécessaire
-    if(y+rowH>MAX_Y) addPage();
-
-    // Fond alterné
-    if(ri%2===0){
-      doc.setFillColor(...C.bg);
-      doc.rect(ML,y,PW,rowH,'F');
-    }
-
-    // Bordure basse
-    doc.setDrawColor(...C.border);doc.setLineWidth(0.25);
-    doc.line(ML,y+rowH,ML+PW,y+rowH);
-
-    // Séparateurs verticaux
-    doc.setLineWidth(0.15);
-    let vx=ML;
-    cols.forEach((c,i)=>{if(i>0)doc.line(vx,y,vx,y+rowH);vx+=c.w;});
-
-    // Contenu cellules
-    const isResolu=t.status==='résolu';
-    let cx=ML;
-    const textY=y+ROW_PAD+LINE_H;
-
-    cols.forEach(c=>{
-      const raw=c.key==='_relanceCount'?String((t.relances||[]).length):(t[c.key]||'');
-      doc.setFontSize(8);
-      doc.setLineWidth(0.3);
-
-      if(c.key==='status'){
-        // Badge coloré
-        const bw=16, bh=5.5;
-        const bx=cx+(c.w-bw)/2;
-        const by=y+(rowH-bh)/2;
-        if(isResolu){
-          doc.setFillColor(...C.greenLight);doc.setDrawColor(...[167,243,208]);
-          doc.roundedRect(bx,by,bw,bh,1.5,1.5,'FD');
-          doc.setFontSize(7);doc.setFont('helvetica','bold');doc.setTextColor(...C.green);
-        } else {
-          doc.setFillColor(...C.amberLight);doc.setDrawColor(...[253,230,138]);
-          doc.roundedRect(bx,by,bw,bh,1.5,1.5,'FD');
-          doc.setFontSize(7);doc.setFont('helvetica','bold');doc.setTextColor(...C.amber);
-        }
-        doc.text(isResolu?'Résolu':'En cours',bx+bw/2,by+3.8,{align:'center'});
-      } else if(c.key==='_relanceCount'){
-        const cnt=parseInt(raw)||0;
-        doc.setFont('helvetica','bold');
-        doc.setTextColor(cnt>0?...C.amber:...C.muted);
-        doc.setFontSize(9);
-        doc.text(raw,cx+c.w/2,y+rowH/2+2,{align:'center'});
+    const rh=Math.max(...hs);
+    if(y+rh>198){doc.addPage();y=ML;doc.setFillColor(...C.bg);doc.setDrawColor(...C.border);doc.rect(ML,y,PW,7,'FD');doc.setFontSize(7);doc.setFont('helvetica','bold');doc.setTextColor(...C.muted);cx=ML;cols.forEach(c=>{doc.text(c.l.toUpperCase(),cx+2,y+4.8);cx+=c.w;});y+=7;}
+    if(ri%2===0){doc.setFillColor(...C.bg);doc.rect(ML,y,PW,rh,'F');}
+    doc.setDrawColor(...C.border);doc.setLineWidth(.2);doc.line(ML,y+rh,ML+PW,y+rh);
+    const ok=t.status==='résolu';
+    cx=ML;const ty=y+3.8;
+    const vals=[t.title,'',t.intervenant||'',t.soustraitant||'',fmt(t.date),fmt(t.lastRelance||''),fmt(t.engagement||''),fmt(t.resolution||''),t.desc||''];
+    cols.forEach((c,ci)=>{
+      if(ci===1){
+        const bw=16,bh=5,bx=cx+(c.w-bw)/2,by=y+(rh-bh)/2;
+        doc.setFillColor(...ok?[236,253,245]:[255,251,235]);doc.setDrawColor(...ok?[167,243,208]:[253,230,138]);
+        doc.roundedRect(bx,by,bw,bh,1.5,1.5,'FD');
+        doc.setFontSize(7);doc.setFont('helvetica','bold');doc.setTextColor(...ok?C.green:C.amber);
+        doc.text(ok?'Résolu':'En cours',bx+bw/2,by+3.6,{align:'center'});
       } else {
-        // Texte normal avec retour à la ligne
-        if(c.bold) doc.setFont('helvetica','bold');
-        else if(c.italic){doc.setFont('helvetica','italic');doc.setFontSize(7.5);}
-        else doc.setFont('helvetica','normal');
-
-        if(c.key==='resolution'&&isLate(t)&&raw)
-          doc.setTextColor(...C.red);
-        else if(c.key==='title')
-          doc.setTextColor(...C.text);
-        else if(c.mono)
-          doc.setTextColor(...C.muted);
-        else
-          doc.setTextColor(...C.text2);
-
-        if(raw){
-          const lines=doc.splitTextToSize(raw,c.w-4);
-          lines.forEach((ln,li)=>{
-            const ly=textY+li*LINE_H;
-            if(ly<y+rowH-1) doc.text(ln,cx+2,ly);
-          });
-        } else {
-          doc.setTextColor(...C.muted);
-          doc.setFont('helvetica','italic');
-          doc.setFontSize(7);
-          doc.text('—',cx+2,textY);
-        }
+        const v=vals[ci]||'';
+        if(ci===0){doc.setFont('helvetica','bold');doc.setTextColor(...C.text);}
+        else if(ci===8){doc.setFont('helvetica','italic');doc.setFontSize(7.5);doc.setTextColor(...C.muted);}
+        else{doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(...C.text2);}
+        if(v&&v!=='—'){const ls=doc.splitTextToSize(v,c.w-4);ls.forEach((l,li)=>{if(ty+li*4.2<y+rh)doc.text(l,cx+2,ty+li*4.2);});}
+        else if(ci>0){doc.setTextColor(...C.muted);doc.text('—',cx+2,ty);}
       }
       cx+=c.w;
     });
-
-    y+=rowH;
+    y+=rh;
   });
-
-  // Ligne finale du tableau
-  doc.setDrawColor(...C.border);doc.setLineWidth(0.4);
-  doc.line(ML,y,ML+PW,y);
-  // Bordures gauche/droite
-  doc.line(ML,MT+17+15+7,ML,y);
-  doc.line(ML+PW,MT+17+15+7,ML+PW,y);
-
-  drawFooter();
+  doc.setFontSize(7.5);doc.setFont('helvetica','normal');doc.setTextColor(...C.muted);
+  doc.text(`TicketingDesk · Export ${fmt(today())} · ${rows.length} ticket${rows.length!==1?'s':''}`,ML,204);
   doc.save(`TicketingDesk_export_${today()}.pdf`);
-  toast(`PDF exporté (${filtered.length} tickets) ✓`);
+  toast(`PDF exporté (${rows.length} tickets) ✓`);
 }
 
-// ═══════════════ MEETING FORM ═══════════════
-function openMeetingForm(midx){
-  editMeetingIdx=midx; wizStep=0; wizTicketIdxs=[];
-  const m=midx!==null?meetings[midx]:null;
-  document.getElementById('mformTitle').innerHTML=`<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1.5" y="2.5" width="13" height="12" rx="2" stroke="var(--brand)" stroke-width="1.5"/><path d="M5 1v3M11 1v3M1.5 7h13" stroke="var(--brand)" stroke-width="1.3" stroke-linecap="round"/></svg>${m?'Modifier la réunion':'Nouvelle réunion'}`;
-  document.getElementById('mTitle').value=m?m.title:'';
-  document.getElementById('mDate').value=m?m.date:today();
-  document.getElementById('mLieu').value=m?m.lieu||'':'';
-  document.getElementById('mPart').value=m?m.participants||'':'';
-  document.getElementById('mStatus').value=m?m.status:'terminee';
-  document.getElementById('mNotes').value=m?m.notes||'':'';
-  document.getElementById('mNextDate').value=m?m.nextDate||'':'';
-  if(m)wizTicketIdxs=(m.ticketReviews||[]).map(r=>r.ticketIdx);
+// ── MODAL CLOSE ON OVERLAY ──
+document.getElementById('modal').addEventListener('click',e=>{if(e.target===document.getElementById('modal'))closeModal();});
+document.getElementById('mRelance').addEventListener('click',e=>{if(e.target===document.getElementById('mRelance'))document.getElementById('mRelance').classList.remove('open');});
+document.getElementById('mCR').addEventListener('click',e=>{if(e.target===document.getElementById('mCR'))document.getElementById('mCR').classList.remove('open');});
 
-  const prevOpen=getPrevOpen();
-  const dndList=document.getElementById('tckList');
-  dndList.innerHTML=tickets.map((t,i)=>{
-    const chk=wizTicketIdxs.includes(i)?'checked':'';
-    const follow=prevOpen.includes(i)&&!wizTicketIdxs.includes(i);
-    return`<div class="dndi" draggable="true" data-idx="${i}">
-      <span class="dndh"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><circle cx="4" cy="3" r="1" fill="currentColor"/><circle cx="8" cy="3" r="1" fill="currentColor"/><circle cx="4" cy="6" r="1" fill="currentColor"/><circle cx="8" cy="6" r="1" fill="currentColor"/><circle cx="4" cy="9" r="1" fill="currentColor"/><circle cx="8" cy="9" r="1" fill="currentColor"/></svg></span>
-      <input type="checkbox" value="${i}" ${chk} style="accent-color:var(--brand);width:14px;height:14px;flex-shrink:0">
-      <span class="dndi-title">${t.title}</span>
-    </div>`;
-  }).join('')||'<div style="color:var(--muted);font-size:12px;padding:8px">Aucun ticket.</div>';
-  initDnD(dndList);
-
-  document.getElementById('mformOverlay').classList.add('open');
-  renderWizForm();
-}
-
-function closeMeetingForm(){document.getElementById('mformOverlay').classList.remove('open');}
-document.getElementById('mformOverlay').addEventListener('click',e=>{if(e.target===document.getElementById('mformOverlay'))closeMeetingForm();});
-
-function getPrevOpen(){
-  const s=new Set();
-  meetings.forEach(m=>(m.ticketReviews||[]).forEach(r=>{if(tickets[r.ticketIdx]&&tickets[r.ticketIdx].status!=='résolu')s.add(r.ticketIdx);}));
-  return[...s];
-}
-function selTickets(){
-  return [...document.querySelectorAll('#tckList .dndi')]
-    .filter(el=>el.querySelector('input[type=checkbox]')?.checked)
-    .map(el=>parseInt(el.dataset.idx));
-}
-
-let dndDragSrc=null;
-function initDnD(list){
-  list.querySelectorAll('.dndi').forEach(item=>{
-    item.addEventListener('dragstart',e=>{dndDragSrc=item;item.classList.add('dr');e.dataTransfer.effectAllowed='move';});
-    item.addEventListener('dragend',()=>{dndDragSrc=null;list.querySelectorAll('.dndi').forEach(i=>i.classList.remove('dr','dnd-ov'));});
-    item.addEventListener('dragover',e=>{e.preventDefault();if(item!==dndDragSrc){list.querySelectorAll('.dndi').forEach(i=>i.classList.remove('dnd-ov'));item.classList.add('dnd-ov');}});
-    item.addEventListener('drop',e=>{
-      e.preventDefault();
-      if(!dndDragSrc||item===dndDragSrc)return;
-      const items=[...list.querySelectorAll('.dndi')];
-      const fromIdx=items.indexOf(dndDragSrc);
-      const toIdx=items.indexOf(item);
-      if(fromIdx<toIdx)list.insertBefore(dndDragSrc,item.nextSibling);
-      else list.insertBefore(dndDragSrc,item);
-      list.querySelectorAll('.dndi').forEach(i=>i.classList.remove('dnd-ov'));
-    });
-  });
-}
-
-function buildDynPanels(idxs,existing){
-  document.getElementById('dynPanels').innerHTML='';
-  idxs.forEach((tidx,i)=>{
-    const t=tickets[tidx];
-    const prev=existing?existing.find(r=>r.ticketIdx===tidx):null;
-    const hist=meetings.flatMap(m=>(m.ticketReviews||[]).filter(r=>r.ticketIdx===tidx));
-    const p=document.createElement('div');
-    p.className='wp';p.id=`mwpt${i}`;
-    p.innerHTML=`
-      <div class="tfc">
-        <div class="tfch">
-          <span class="tfcn">Ticket ${i+1}/${idxs.length}</span>
-          ${chipStatus(t.status)}
-        ${t.desc?`<div style="font-size:12px;color:var(--subtle);margin-bottom:10px">${t.desc}</div>`:''}
-        <div style="display:flex;gap:12px;font-size:11.5px;color:var(--subtle);margin-bottom:14px;flex-wrap:wrap">
-          ${t.intervenant?`<span>🔧 ${t.intervenant}</span>`:''}
-          ${t.resolution?`<span style="color:${isLate(t)?'var(--red)':'inherit'}">🎯 ${fmtDate(t.resolution)}</span>`:''}
-          ${t.relances&&t.relances.length?`<span>📌 ${t.relances.length} relance(s)</span>`:''}
-        </div>
-      </div>
-      ${hist.length?`<div class="thp"><div class="thpl"><svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M5 1A4 4 0 1 1 1 5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><path d="M1 2.5V5h2.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>Réunions précédentes</div>${hist.map(r=>`<div class="thpr">${fmtDate(r.meetingDate||'')} — ${cap(r.newStatus||'')}${r.decision?' · '+r.decision:''}</div>`).join('')}</div>`:''}
-      <div class="fg"><label>Commentaire de séance</label><textarea id="tc_c${i}" rows="3" placeholder="Point de situation, blocages, avancement...">${prev?prev.comment||'':''}</textarea></div>
-      <div class="fr">
-        <div class="fg"><label>Décision prise</label><input type="text" id="tc_d${i}" placeholder="ex. Planifier intervention semaine 27" value="${prev?prev.decision||'':''}"></div>
-        <div class="fg"><label>Responsable</label><input type="text" id="tc_r${i}" placeholder="ex. Facility Manager" value="${prev?prev.responsable||t.intervenant||'':t.intervenant||''}"></div>
-      </div>
-      <div class="fr">
-        <div class="fg"><label>Date de résolution promise</label><input type="date" id="tc_rd${i}" value="${prev?prev.resolutionDate||t.resolution||'':t.resolution||''}"></div>
-        <div class="fg"><label>Nouveau statut</label>
-          <select id="tc_s${i}">
-            <option value="en-cours" ${(!prev||prev.newStatus!=='résolu')?'selected':''}>En cours</option>
-            <option value="résolu" ${prev&&prev.newStatus==='résolu'?'selected':''}>Résolu</option>
-          </select>
-        </div>
-      </div>`;
-    document.getElementById('dynPanels').appendChild(p);
-  });
-}
-
-function renderWizForm(){
-  const tidxs=wizTicketIdxs.length?wizTicketIdxs:selTickets();
-  wizTotal=1+tidxs.length+1;
-  // Steps bar
-  const bar=document.getElementById('wsteps');
-  const labels=['Infos',...tidxs.map((_,i)=>`T.${i+1}`),'Synthèse'];
-  bar.innerHTML=labels.map((_,i)=>`<div class="wstep ${i===wizStep?'active':i<wizStep?'done':''}"></div>`).join('');
-  document.getElementById('wstepLabel').textContent=`Étape ${wizStep+1}/${wizTotal} — ${labels[wizStep]}`;
-  // Show panels
-  document.getElementById('mwp0').classList.toggle('active',wizStep===0);
-  tidxs.forEach((_,i)=>{const p=document.getElementById(`mwpt${i}`);if(p)p.classList.toggle('active',wizStep===i+1);});
-  document.getElementById('mwpFinal').classList.toggle('active',wizStep===wizTotal-1);
-  // Nav
-  document.getElementById('mfBtnPrev').style.display=wizStep===0?'none':'';
-  document.getElementById('mfBtnNext').textContent=wizStep===wizTotal-1?'✔ Enregistrer':'Suivant →';
-}
-
-function wizNav(dir){
-  if(dir===1&&wizStep===wizTotal-1){saveMeeting();return;}
-  if(dir===1&&wizStep===0){
-    const idxs=selTickets();
-    if(!idxs.length){toast('Sélectionnez au moins un ticket');return;}
-    const existing=editMeetingIdx!==null?meetings[editMeetingIdx].ticketReviews:null;
-    buildDynPanels(idxs,existing);
-    wizTicketIdxs=idxs;wizTotal=1+idxs.length+1;
-  }
-  wizStep=Math.max(0,Math.min(wizTotal-1,wizStep+dir));
-  renderWizForm();
-}
-
-function saveMeeting(){
-  const title=document.getElementById('mTitle').value.trim();
-  if(!title){wizStep=0;renderWizForm();document.getElementById('mTitle').focus();toast('Titre requis');return;}
-  const mDate=document.getElementById('mDate').value;
-  const reviews=wizTicketIdxs.map((tidx,i)=>{
-    const ns=document.getElementById(`tc_s${i}`)?.value||tickets[tidx].status;
-    const rd=document.getElementById(`tc_rd${i}`)?.value||'';
-    const resp=document.getElementById(`tc_r${i}`)?.value.trim()||'';
-    tickets[tidx].status=ns;
-    if(rd)tickets[tidx].resolution=rd;
-    if(resp)tickets[tidx].intervenant=resp;
-    return{ticketIdx:tidx,statusAtTime:ns,newStatus:ns,
-      comment:document.getElementById(`tc_c${i}`)?.value.trim()||'',
-      decision:document.getElementById(`tc_d${i}`)?.value.trim()||'',
-      responsable:resp,resolutionDate:rd,meetingTitle:title,meetingDate:mDate};
-  });
-  const mtg={title,date:mDate,lieu:document.getElementById('mLieu').value.trim(),
-    participants:document.getElementById('mPart').value.trim(),
-    status:document.getElementById('mStatus').value,ticketReviews:reviews,
-    notes:document.getElementById('mNotes').value.trim(),nextDate:document.getElementById('mNextDate').value};
-  if(editMeetingIdx!==null){ mtg._dbId = meetings[editMeetingIdx]._dbId; meetings[editMeetingIdx]=mtg;activeMeetingIdx=editMeetingIdx;}
-  else{meetings.unshift(mtg);activeMeetingIdx=0;}
-  saveDataDebounced();
-  // Synchronise aussi chaque ticket modifié pendant la revue
-  wizTicketIdxs.forEach(tidx=>syncTicketToSupabase(tickets[tidx]));
-  syncMeetingToSupabase(mtg, editMeetingIdx===null);
-  closeMeetingForm();renderTimeline();renderTable();renderPendingBanner();toast('Réunion enregistrée ✓');
-}
-
-
-function delMeeting(mi){
-  if(!confirm('Supprimer cette réunion ?'))return;
-  const m=meetings[mi];
-  meetings.splice(mi,1);
-  if(activeMeetingIdx>=meetings.length)activeMeetingIdx=meetings.length-1;
-  if(activeMeetingIdx<0)activeMeetingIdx=null;
-  saveDataDebounced();
-  if(sb && m._dbId){ sb.from('reunions').delete().eq('id',m._dbId).then(r=>{ if(r.error) console.warn('Supabase delete réunion:',r.error); }); }
-  renderTimeline();toast('Réunion supprimée');
-}
-
-// ═══════════════ CR ═══════════════
-function viewCR(mi){
-  crMeetingIdx=mi;
-  document.getElementById('crContent').innerHTML=buildCRHTML(meetings[mi]);
-  document.getElementById('modalCR').classList.add('open');
-}
-function buildCRHTML(m){
-  return`<div class="crw">
-    <div class="cr-h1">Compte Rendu — ${m.title}</div>
-    <div class="crs">BuildDesk · Réunion de décision</div>
-    <div class="cr-sec"><h3>Informations générales</h3>
-      <div class="crr"><span class="crl">Date</span><span class="crv">${fmtDate(m.date)}</span></div>
-      ${m.lieu?`<div class="crr"><span class="crl">Lieu</span><span class="crv">${m.lieu}</span></div>`:''}
-      ${m.participants?`<div class="crr"><span class="crl">Participants</span><span class="crv">${m.participants}</span></div>`:''}
-      <div class="crr"><span class="crl">Statut</span><span class="crv">${m.status==='terminee'?'Terminée':'Planifiée'}</span></div>
-    </div>
-    <div class="cr-sec"><h3>Revue des tickets (${(m.ticketReviews||[]).length})</h3>
-      ${(m.ticketReviews||[]).map((r,i)=>{
-        const t=tickets[r.ticketIdx];if(!t)return'';
-        const hist=meetings.filter(mm=>mm!==m).flatMap(mm=>(mm.ticketReviews||[]).filter(rr=>rr.ticketIdx===r.ticketIdx));
-        return`<div class="crb">
-          <div class="crbt">${i+1}. ${t.title} </div>
-          <div class="crr"><span class="crl">Statut</span><span class="crv">${cap(r.newStatus||t.status)}</span></div>
-          ${r.responsable?`<div class="crr"><span class="crl">Responsable</span><span class="crv">${r.responsable}</span></div>`:''}
-          ${t.intervenant?`<div class="crr"><span class="crl">Intervenant</span><span class="crv">${t.intervenant}</span></div>`:''}
-          ${r.resolutionDate?`<div class="crr"><span class="crl">Résolution promise</span><span class="crv">${fmtDate(r.resolutionDate)}</span></div>`:''}
-          ${r.decision?`<div class="crr"><span class="crl">Décision</span><span class="crv"><strong>${r.decision}</strong></span></div>`:''}
-          ${r.comment?`<div class="crc">${r.comment}</div>`:''}
-          ${hist.length?`<div class="crh">Historique : ${hist.map(rr=>`${fmtDate(rr.meetingDate||'')} → ${cap(rr.newStatus||'')}${rr.decision?' · '+rr.decision:''}`).join(' | ')}</div>`:''}
-        </div>`;
-      }).join('')}
-    </div>
-    ${m.notes?`<div class="cr-sec"><h3>Notes & suivi</h3><p style="font-size:13px;color:var(--text2);white-space:pre-wrap">${m.notes}</p></div>`:''}
-    ${m.nextDate?`<div class="cr-sec"><h3>Prochaine réunion</h3><p style="font-size:13px;color:var(--brand);font-weight:600">📅 ${fmtDate(m.nextDate)}</p></div>`:''}
-    <div class="crft">Généré le ${fmtDate(today())} · BuildDesk</div>
-  </div>`;
-}
-function downloadCR(){if(crMeetingIdx!==null)dlCR(crMeetingIdx);}
-
-function dlCR(mi){
-  const m = meetings[mi];
-  if(!window.jspdf){ toast('jsPDF non chargé, essayez à nouveau'); return; }
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF({ orientation:'portrait', unit:'mm', format:'a4' });
-
-  const MARGIN = 18;
-  const PW = 210 - MARGIN*2; // page width usable
-  let y = MARGIN;
-  const SAGE = [58, 107, 90];
-  const INK  = [26, 25, 18];
-  const MUTED = [140, 135, 128];
-  const AMBER = [158, 92, 16];
-
-  function checkNewPage(needed=10){
-    if(y + needed > 280){ doc.addPage(); y = MARGIN; drawPageNum(); }
-  }
-  let pageNum = 1;
-  function drawPageNum(){
-    doc.setFontSize(8); doc.setTextColor(...MUTED);
-    doc.text(`BuildDesk — ${m.title} — p.${pageNum}`, MARGIN, 290);
-    pageNum++;
-  }
-
-  // ── HEADER ──
-  doc.setFillColor(...SAGE);
-  doc.rect(MARGIN, y, PW, 14, 'F');
-  doc.setFontSize(13); doc.setFont('helvetica','bold'); doc.setTextColor(255,255,255);
-  doc.text('BUILDDESK', MARGIN+4, y+6);
-  doc.setFontSize(8); doc.setFont('helvetica','normal');
-  doc.text('Compte Rendu de Réunion', MARGIN+4, y+11);
-  doc.setFontSize(12); doc.setFont('helvetica','bold'); doc.setTextColor(255,255,255);
-  doc.text(m.title, 210-MARGIN-2, y+9, {align:'right'});
-  y += 18;
-
-  // ── META ──
-  const metaRows = [
-    ['Date', fmtDate(m.date)],
-    m.lieu ? ['Lieu', m.lieu] : null,
-    m.participants ? ['Participants', m.participants] : null,
-    ['Statut', m.status==='terminee'?'Terminée':'Planifiée'],
-    [`Tickets examinés`, String((m.ticketReviews||[]).length)],
-  ].filter(Boolean);
-  metaRows.forEach(([l,v])=>{
-    doc.setFontSize(8); doc.setFont('helvetica','bold'); doc.setTextColor(...MUTED); doc.text(l.toUpperCase(), MARGIN, y);
-    doc.setFont('helvetica','normal'); doc.setTextColor(...INK); doc.text(v||'—', MARGIN+42, y);
-    y += 5.5;
-  });
-  y += 3;
-
-  // ── ACTIONS EN SUSPENS ──
-  const pending = (m.ticketReviews||[]).filter(r=>r.decision && tickets[r.ticketIdx] && tickets[r.ticketIdx].status!=='résolu');
-  if(pending.length){
-    checkNewPage(12+pending.length*8);
-    doc.setFillColor(250,236,216); doc.setDrawColor(...AMBER);
-    doc.roundedRect(MARGIN, y, PW, 8+pending.length*7, 2, 2, 'FD');
-    doc.setFontSize(8); doc.setFont('helvetica','bold'); doc.setTextColor(...AMBER);
-    doc.text(`⚠ ${pending.length} ACTION${pending.length>1?'S':''} EN SUSPENS`, MARGIN+3, y+5);
-    y += 9;
-    pending.forEach(r=>{
-      const t=tickets[r.ticketIdx];
-      doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(...INK);
-      const line = `• ${r.decision} — ${t.title}${r.responsable?' ('+r.responsable+')':''}`;
-      const lines = doc.splitTextToSize(line, PW-6);
-      doc.text(lines, MARGIN+3, y);
-      y += lines.length*4.5;
-    });
-    y += 4;
-  }
-
-  // ── SEPARATOR ──
-  doc.setDrawColor(...SAGE); doc.setLineWidth(0.5); doc.line(MARGIN, y, MARGIN+PW, y); y += 6;
-
-  // ── TICKETS ──
-  doc.setFontSize(9); doc.setFont('helvetica','bold'); doc.setTextColor(...INK);
-  doc.text(`REVUE DES TICKETS (${(m.ticketReviews||[]).length})`, MARGIN, y); y += 7;
-
-  (m.ticketReviews||[]).forEach((r, ri)=>{
-    const t = tickets[r.ticketIdx]; if(!t) return;
-    const hist = meetings.filter(mm=>mm!==m).flatMap(mm=>(mm.ticketReviews||[]).filter(rr=>rr.ticketIdx===r.ticketIdx));
-    const isResolu = r.newStatus==='résolu';
-
-    const blockLines = [
-      r.comment ? doc.splitTextToSize(r.comment, PW-20).length : 0,
-      r.decision ? 1 : 0,
-      hist.length ? 1 : 0,
-    ].reduce((a,b)=>a+b,0);
-    checkNewPage(22 + blockLines*5);
-
-    // Left accent bar
-    doc.setFillColor(...isResolu ? SAGE : AMBER);
-    doc.rect(MARGIN, y, 2.5, 14, 'F');
-
-    // Ticket title
-    doc.setFontSize(10); doc.setFont('helvetica','bold'); doc.setTextColor(...INK);
-    doc.text(`${ri+1}. ${t.title}`, MARGIN+6, y+5);
-
-    // Category + status badge
-    doc.setFontSize(7.5); doc.setFont('helvetica','normal'); doc.setTextColor(...MUTED);
-    
-    const statusTxt = isResolu ? 'Résolu' : 'En cours';
-    doc.setFillColor(...isResolu ? [224,237,232] : [250,236,216]);
-    doc.roundedRect(MARGIN+PW-22, y+1, 22, 6, 1.5, 1.5, 'F');
-    doc.setTextColor(...isResolu ? SAGE : AMBER);
-    doc.setFont('helvetica','bold'); doc.setFontSize(7);
-    doc.text(statusTxt, MARGIN+PW-11, y+5, {align:'center'});
-    y += 16;
-
-    // Fields row
-    const fields = [
-      r.responsable ? `Resp.: ${r.responsable}` : null,
-      t.intervenant ? `Interv.: ${t.intervenant}` : null,
-      t.soustraitant ? `ST: ${t.soustraitant}` : null,
-      r.resolutionDate ? `Résol.: ${fmtDate(r.resolutionDate)}` : null,
-    ].filter(Boolean);
-    if(fields.length){
-      doc.setFontSize(7.5); doc.setFont('helvetica','normal'); doc.setTextColor(...MUTED);
-      const cols = 2, colW = PW/cols;
-      fields.forEach((f,fi)=>{
-        doc.text(f, MARGIN+6+(fi%cols)*colW, y);
-        if(fi%cols===cols-1) y+=4.5;
-      });
-      if(fields.length%cols!==0) y+=4.5;
-      y+=1;
-    }
-
-    // Decision box
-    if(r.decision){
-      checkNewPage(10);
-      doc.setFillColor(224,237,232); doc.setDrawColor(...SAGE);
-      const dLines = doc.splitTextToSize(`✓ ${r.decision}`, PW-14);
-      doc.roundedRect(MARGIN+4, y, PW-4, dLines.length*4.5+4, 1.5, 1.5, 'FD');
-      doc.setFontSize(8); doc.setFont('helvetica','bold'); doc.setTextColor(...SAGE);
-      doc.text(dLines, MARGIN+7, y+4);
-      y += dLines.length*4.5+7;
-    }
-
-    // Comment
-    if(r.comment){
-      checkNewPage(10);
-      const cLines = doc.splitTextToSize(r.comment, PW-14);
-      doc.setFillColor(247,246,243); doc.roundedRect(MARGIN+4, y, PW-4, cLines.length*4.2+4, 1.5, 1.5, 'F');
-      doc.setFontSize(7.5); doc.setFont('helvetica','italic'); doc.setTextColor(...MUTED);
-      doc.text(cLines, MARGIN+7, y+4);
-      y += cLines.length*4.2+7;
-    }
-
-    // History
-    if(hist.length){
-      doc.setFontSize(7); doc.setFont('helvetica','normal'); doc.setTextColor(...MUTED);
-      const htxt = 'Hist.: '+hist.map(rr=>`${fmtDate(rr.meetingDate||'')} → ${cap(rr.newStatus||'')}${rr.decision?' · '+rr.decision:''}`).join(' | ');
-      const hLines = doc.splitTextToSize(htxt, PW-10);
-      doc.text(hLines, MARGIN+4, y);
-      y += hLines.length*3.5+2;
-    }
-    y += 5;
-  });
-
-  // ── NOTES ──
-  if(m.notes){
-    checkNewPage(20);
-    doc.setDrawColor(...SAGE); doc.line(MARGIN, y, MARGIN+PW, y); y+=5;
-    doc.setFontSize(9); doc.setFont('helvetica','bold'); doc.setTextColor(...INK); doc.text('NOTES & SUIVI', MARGIN, y); y+=5;
-    const nLines = doc.splitTextToSize(m.notes, PW);
-    doc.setFontSize(9); doc.setFont('helvetica','normal'); doc.setTextColor(...INK);
-    doc.text(nLines, MARGIN, y); y += nLines.length*4.5+4;
-  }
-
-  // ── NEXT MEETING ──
-  if(m.nextDate){
-    checkNewPage(14);
-    doc.setFillColor(...SAGE); doc.roundedRect(MARGIN, y, PW, 10, 2, 2, 'F');
-    doc.setFontSize(9); doc.setFont('helvetica','bold'); doc.setTextColor(255,255,255);
-    doc.text(`Prochaine réunion : ${fmtDate(m.nextDate)}`, MARGIN+4, y+6.5);
-    y += 14;
-  }
-
-  // Footer on last page
-  drawPageNum();
-
-  doc.save(`CR_${m.title.replace(/[^a-zA-Z0-9]/g,'_')}_${m.date}.pdf`);
-  toast('PDF téléchargé ✓');
-}
-
-function printCR(){ window.print(); }
-
-// ── COUNTDOWN ──
-function updateCountdown(){
-  const el = document.getElementById('nextMeetingCountdown');
-  const txt = document.getElementById('countdownText');
-  if(!el||!txt) return;
-  // Find the nearest future meeting date across all meetings
-  const today2 = new Date(); today2.setHours(0,0,0,0);
-  const upcoming = meetings
-    .filter(m=>m.nextDate)
-    .map(m=>({ title:m.title, date:new Date(m.nextDate) }))
-    .filter(m=>m.date>=today2)
-    .sort((a,b)=>a.date-b.date);
-  if(!upcoming.length){ el.style.display='none'; return; }
-  const next = upcoming[0];
-  const diff = Math.round((next.date - today2)/(1000*60*60*24));
-  let label;
-  if(diff===0) label = 'Réunion aujourd\'hui';
-  else if(diff===1) label = 'Réunion demain';
-  else label = `Réunion dans ${diff}j`;
-  txt.textContent = label;
-  el.style.display = 'flex';
-  el.classList.toggle('urgent', diff<=3);
-}
-
-// ═══════════════ MODALS ═══════════════
-function closeModal(id){document.getElementById(id).classList.remove('open');}
-['modal','modalRelance','modalCR'].forEach(id=>{
-  document.getElementById(id).addEventListener('click',e=>{if(e.target===document.getElementById(id))closeModal(id);});
-});
-
-// ═══════════════ UTILS ═══════════════
-function cap(s){return s?s.charAt(0).toUpperCase()+s.slice(1):'';}
-function today(){return new Date().toISOString().split('T')[0];}
-function fmtDate(d){if(!d)return'—';const[y,m,day]=d.split('-');return`${day}/${m}/${y}`;}
-function toast(msg){
-  const t=document.getElementById('toast');
-  t.innerHTML=`<svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="6" fill="var(--brand)"/><path d="M4.5 7l2 2 3-3" stroke="#fff" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>${msg}`;
-  t.style.transform='translateY(0)';t.style.opacity='1';
-  setTimeout(()=>{t.style.transform='translateY(60px)';t.style.opacity='0';},2500);
-}
-
-// ═══════════════ INIT ═══════════════
-document.getElementById('filterStatus').value='';
-renderTable();
-
-function setConnStatus_unused(state){
-  const el=document.getElementById('connStatus');
-  const dot=document.getElementById('connDot');
-  const lbl=document.getElementById('connLabel');
-  if(!el) return;
-  if(state==='connecting'){
-    el.style.display='flex'; dot.style.background='var(--amber)'; lbl.textContent='Connexion à Supabase…';
-  } else if(state==='connected'){
-    dot.style.background='var(--brand)'; lbl.textContent='Connecté à Supabase';
-    setTimeout(()=>{ el.style.display='none'; }, 2000);
-  } else if(state==='offline'){
-    dot.style.background='var(--red)'; lbl.textContent='Mode local (hors-ligne)';
-    setTimeout(()=>{ el.style.display='none'; }, 3500);
-  }
-}
-
-// Supabase désactivé - localStorage uniquement
+// ── INIT ──
+render();
+syncFromSupabase();
 </script>
 </body>
 </html>
