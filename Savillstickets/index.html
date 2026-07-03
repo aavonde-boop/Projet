@@ -620,13 +620,10 @@ function render(){
       </div>
     </td>
     <td>
-      <div style="position:relative;display:inline-block">
-        <div onclick="toggleSD(${t._i})">${chip(t.status)}</div>
-        <div id="sdm${t._i}" style="display:none;position:absolute;top:calc(100% + 4px);left:0;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);box-shadow:var(--sh2);z-index:50;min-width:130px;overflow:hidden">
-          <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;font-size:12.5px;font-weight:500;cursor:pointer;color:var(--text2)" onmouseover="this.style.background='var(--surface2)'" onmouseout="this.style.background=''" onclick="chStatus(${t._i},'en-cours')"><span style="width:7px;height:7px;border-radius:50%;background:var(--amber)"></span>En cours</div>
-          <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;font-size:12.5px;font-weight:500;cursor:pointer;color:var(--text2)" onmouseover="this.style.background='var(--surface2)'" onmouseout="this.style.background=''" onclick="chStatus(${t._i},'résolu')"><span style="width:7px;height:7px;border-radius:50%;background:var(--green)"></span>Résolu</div>
-        </div>
-      </div>
+      <select onchange="chStatus(${t._i},this.value)" style="border:1.5px solid var(--border);border-radius:18px;padding:3px 10px;font-size:11px;font-weight:700;cursor:pointer;outline:none;background:${t.status==='résolu'?'var(--green-dim)':'var(--amber-dim)'};color:${t.status==='résolu'?'var(--green)':'var(--amber)'};border-color:${t.status==='résolu'?'var(--green-mid)':'var(--amber-mid)'};font-family:var(--sans)">
+        <option value="en-cours" ${t.status!=='résolu'?'selected':''}>● En cours</option>
+        <option value="résolu" ${t.status==='résolu'?'selected':''}>✓ Résolu</option>
+      </select>
     </td>
     <td><div class="edcell" onclick="ed(this,${t._i},'intervenant')" style="font-size:12px;color:var(--text2)">${t.intervenant||'<em style="color:var(--muted);font-size:11px">—</em>'}</div></td>
     <td><div class="edcell" onclick="ed(this,${t._i},'soustraitant')" style="font-size:12px;color:var(--text2)">${t.soustraitant||'<em style="color:var(--muted);font-size:11px">—</em>'}</div></td>
