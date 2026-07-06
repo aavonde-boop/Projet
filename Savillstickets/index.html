@@ -878,7 +878,7 @@ function rlCol(rs){
     return '<div class="rl tip">'
       +'<span class="rl-d" style="background:'+colors[i%colors.length]+'"></span>'
       +'<span style="font-size:11px">'+fmt(r.date)+'</span>'
-      +(r.comment?'<span class="rl-cmt">'+( r.comment.length>22?r.comment.slice(0,22)+'…':r.comment)+'</span>':'')
+      +(r.comment?'':'')
       +'<div class="tip-box">'+tip+'</div>'
       +'</div>';
   }).join('');
