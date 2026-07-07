@@ -4,7 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>TicketingDesk</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
@@ -254,6 +253,48 @@ select:focus{border-color:var(--brand);box-shadow:0 0 0 3px var(--brand-dim)}
 #connBadge{position:fixed;bottom:20px;left:20px;background:var(--surface);border:1px solid var(--border);font-size:10.5px;font-family:var(--mono);padding:4px 12px;border-radius:18px;display:none;align-items:center;gap:6px;z-index:399;box-shadow:var(--sh1)}
 #toast{position:fixed;bottom:20px;right:20px;background:var(--text);color:#fff;font-size:13px;font-weight:600;padding:10px 16px;border-radius:var(--r);transform:translateY(60px);opacity:0;transition:all .28s;z-index:600;box-shadow:var(--sh2);display:flex;align-items:center;gap:7px}
 @media print{header,.btn,.toolbar,.stats,#toast,#saveInd,.pb,.fmo{display:none!important}body{background:#fff}}
+
+/* ══ RESPONSIVE ══ */
+@media(max-width:900px){
+  main{padding:16px}
+  .stats{gap:8px}
+}
+@media(max-width:768px){
+  header{padding:0 12px;gap:8px;height:48px}
+  .logo-text{display:none}
+  .hdr-sep{display:none}
+  main{padding:12px}
+  .stats{display:flex;overflow-x:auto;gap:8px;padding-bottom:4px;margin-bottom:14px;scrollbar-width:none}
+  .stats::-webkit-scrollbar{display:none}
+  .stat{min-width:130px;flex-shrink:0;padding:12px 14px}
+  .sval{font-size:20px}
+  #progressBar{margin-bottom:12px}
+  .qchips{flex-wrap:nowrap;overflow-x:auto;padding-bottom:4px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+  .qchips::-webkit-scrollbar{display:none}
+  .qchip{flex-shrink:0;font-size:10.5px;padding:3px 10px}
+  .toolbar-zone{padding:8px 10px}
+  .toolbar{gap:6px}
+  .srch{min-width:0}
+  .tbl{display:block;overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .tbl table{min-width:700px}
+  .tbl th,.tbl td{padding:9px 10px;white-space:nowrap}
+  .tt{font-size:12px}
+  .ta{opacity:1!important}
+  .pagination{flex-direction:column;gap:8px;align-items:flex-start}
+  #toast{right:12px;left:12px;justify-content:center}
+  .mo{width:95vw;padding:16px;max-height:88vh}
+  .fr{grid-template-columns:1fr}
+  #mtgPanel,.fmp{width:100vw}
+}
+@media(max-width:480px){
+  header{height:44px}
+  .stat{min-width:110px;padding:10px 12px}
+  .sval{font-size:18px}
+  .btn{padding:6px 10px;font-size:12px}
+  .tbl th{font-size:9px;padding:7px 8px}
+  .tbl td{padding:8px}
+  .ia{padding:3px 6px;font-size:10px}
+}
 
 /* ── MICRO-AMÉLIORATIONS PRO ── */
 
@@ -667,10 +708,44 @@ const fl=document.createElement('link');fl.rel='icon';fl.href=fc.toDataURL();doc
 
 <script>
 // ── SUPABASE ──
+// ── SUPABASE — fetch natif, sans CDN ──
 const SB_URL = "https://yvlcmdcnjeoiffrlawti.supabase.co";
 const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl2bGNtZGNuamVvaWZmcmxhd3RpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYyODYwNjEsImV4cCI6MjA5MTg2MjA2MX0.-ePViMbJVA0UhC4WY3fYciUcw0gP6yJWau_P1AspdlI";
-let sb = null;
-try{ if(window.supabase) sb = window.supabase.createClient(SB_URL, SB_KEY); }catch(e){}
+const SB_HEADERS = {
+  'apikey': SB_KEY,
+  'Authorization': 'Bearer ' + SB_KEY,
+  'Content-Type': 'application/json',
+  'Prefer': 'return=representation'
+};
+
+const sb = {
+  async select(table, query=''){
+    const r = await fetch(SB_URL+'/rest/v1/'+table+'?'+query+'&order=id', {headers: SB_HEADERS});
+    if(!r.ok) throw new Error('SELECT '+r.status+' '+await r.text());
+    return r.json();
+  },
+  async insert(table, row){
+    const r = await fetch(SB_URL+'/rest/v1/'+table, {
+      method:'POST', headers: SB_HEADERS, body: JSON.stringify(row)
+    });
+    if(!r.ok) throw new Error('INSERT '+r.status+' '+await r.text());
+    return r.json();
+  },
+  async update(table, row, id){
+    const r = await fetch(SB_URL+'/rest/v1/'+table+'?id=eq.'+id, {
+      method:'PATCH', headers:{...SB_HEADERS,'Prefer':'return=minimal'}, body: JSON.stringify(row)
+    });
+    if(!r.ok) throw new Error('UPDATE '+r.status+' '+await r.text());
+  },
+  async delete(table, id){
+    const r = await fetch(SB_URL+'/rest/v1/'+table+'?id=eq.'+id, {
+      method:'DELETE', headers: SB_HEADERS
+    });
+    if(!r.ok) throw new Error('DELETE '+r.status+' '+await r.text());
+  }
+};
+
+function initSb(){ return true; } // toujours prêt avec fetch natif
 
 // Mapping Supabase ↔ BuildDesk
 // date_creation  → ticket.date
@@ -770,23 +845,49 @@ function toast(msg){const t=document.getElementById('toast');if(!t)return;t.inne
 function resetApp(){if(confirm('Réinitialiser ?')){localStorage.removeItem(LS);location.reload();}}
 
 async function pushTicketToSb(t,isNew=false){
-  if(!sb)return;
-  const row=ticketToDb(t);
   try{
+    const row=ticketToDb(t);
     if(isNew||!t._dbId){
-      const {data,error}=await sb.from('tickets').insert(row).select().single();
-      if(error){console.error('SB insert:',error.message,error.details);return;}
-      if(data){t._dbId=data.id;saveLocal();}
+      const data=await sb.insert('tickets',row);
+      if(data&&data[0]){t._dbId=data[0].id;saveLocal();}
     } else {
-      const {error}=await sb.from('tickets').update(row).eq('id',t._dbId);
-      if(error)console.error('SB update:',error.message,error.details);
+      await sb.update('tickets',row,t._dbId);
     }
-  }catch(e){console.error('SB exception:',e);}
+  }catch(e){console.error('SB push error:',e.message);}
 }
 
 async function deleteTicketFromSb(t){
-  if(!sb||!t._dbId)return;
-  await sb.from('tickets').delete().eq('id',t._dbId);
+  if(!t._dbId)return;
+  try{await sb.delete('tickets',t._dbId);}catch(e){console.error('SB delete:',e.message);}
+}
+
+async function syncFromSupabase(){
+  setConn('sync');
+  const body=document.getElementById('tbody');
+  if(body&&!tickets.length){
+    body.innerHTML=Array(5).fill(0).map(()=>'<tr>'
+      +'<td><span class="skel" style="width:120px;display:inline-block;height:13px"></span></td>'
+      +'<td><span class="skel" style="width:55px;display:inline-block;height:13px"></span></td>'
+      +'<td><span class="skel" style="width:70px;display:inline-block;height:13px"></span></td>'
+      +'<td><span class="skel" style="width:70px;display:inline-block;height:13px"></span></td>'
+      +'<td><span class="skel" style="width:55px;display:inline-block;height:13px"></span></td>'
+      +'<td><span class="skel" style="width:40px;display:inline-block;height:13px"></span></td>'
+      +'<td><span class="skel" style="width:55px;display:inline-block;height:13px"></span></td>'
+      +'<td><span class="skel" style="width:55px;display:inline-block;height:13px"></span></td>'
+      +'</tr>').join('');
+  }
+  try{
+    const data=await sb.select('tickets');
+    if(data&&data.length>0){
+      tickets=data.map(dbToTicket);
+      saveLocal();render();setConn('ok',data.length);
+    } else {
+      setConn('empty');render();
+    }
+  }catch(e){
+    console.error('Supabase sync error:',e.message);
+    setConn('err');render();
+  }
 }
 function setConn(state, count){
   const badge=document.getElementById('syncBadge');
@@ -931,7 +1032,8 @@ function statusCell(t){
   const bg=ok?'var(--green-dim)':'var(--amber-dim)';
   const col=ok?'var(--green)':'var(--amber)';
   const bd=ok?'var(--green-mid)':'var(--amber-mid)';
-  return '<select onchange="chStatus('+t._i+',this.value)" style="border:1.5px solid '+bd+';border-radius:18px;padding:3px 10px;font-size:11px;font-weight:700;cursor:pointer;outline:none;background:'+bg+';color:'+col+';font-family:var(--sans)">'
+  // oninput + onchange pour compatibilité iOS/Android
+  return '<select oninput="chStatus('+t._i+',this.value)" onchange="chStatus('+t._i+',this.value)" style="border:1.5px solid '+bd+';border-radius:18px;padding:3px 12px;font-size:11.5px;font-weight:700;cursor:pointer;outline:none;background:'+bg+';color:'+col+';font-family:var(--sans);-webkit-appearance:none;appearance:none;min-width:100px">'
     +'<option value="en-cours"'+(ok?'':' selected')+'>● En cours</option>'
     +'<option value="résolu"'+(ok?' selected':'')+'>✓ Résolu</option>'
     +'</select>';
@@ -1065,7 +1167,13 @@ function edDate(el,i,field){
 }
 
 // ── TICKET ACTIONS ──
-function chStatus(i,s){const prev=tickets[i].status;tickets[i].status=s;saveLocal();pushTicketToSb(tickets[i]);closeAllSD();render();setTimeout(()=>flashRow(i,s),50);}
+function chStatus(i,s){
+  if(tickets[i].status===s)return; // éviter double appel iOS
+  const prev=tickets[i].status;
+  tickets[i].status=s;
+  saveLocal();pushTicketToSb(tickets[i]);closeAllSD();render();
+  setTimeout(()=>flashRow(i,s),50);
+}
 function delTicket(i){
   if(!confirm('Supprimer ce ticket ?'))return;
   deleteTicketFromSb(tickets[i]);
@@ -1601,7 +1709,8 @@ function updateTitle(){
 
 // ── INIT ──
 render();
-syncFromSupabase();
+startSync();
+function startSync(){syncFromSupabase();}
 </script>
 </body>
 </html>
