@@ -230,7 +230,7 @@ body.fullscreen .stats,body.fullscreen #progressBar{display:none}
       <svg viewBox="0 0 420 130" width="100%" style="max-width:380px;display:block;margin:0 auto" xmlns="http://www.w3.org/2000/svg">
         <line x1="10" y1="6" x2="10" y2="124" stroke="#c9b97e" stroke-width="2.5" opacity=".6"/>
         <line x1="410" y1="6" x2="410" y2="124" stroke="#c9b97e" stroke-width="2.5" opacity=".6"/>
-        <text x="210" y="44" text-anchor="middle" font-family="Georgia,serif" font-size="24" letter-spacing="3" fill="#c9b97e">ALLIANCE</text>
+        <text x="210" y="44" text-anchor="middle" font-family="Georgia,serif" font-size="24" letter-spacing="22" fill="#c9b97e">ALLIANCE</text>
         <text x="210" y="76" text-anchor="middle" font-family="Georgia,serif" font-size="24" letter-spacing="3" fill="#c9b97e">AUTOMOTIVE GROUP</text>
         <line x1="130" y1="88" x2="290" y2="88" stroke="#c9b97e" stroke-width="1"/>
         <text x="210" y="110" text-anchor="middle" font-family="Arial,sans-serif" font-size="12" letter-spacing="3" fill="#c9b97e" opacity=".8">A  GPC  COMPANY</text>
@@ -402,8 +402,8 @@ body.fullscreen .stats,body.fullscreen #progressBar{display:none}
     <div class="pg-controls">
       <span style="font-size:11px;color:var(--muted);font-family:var(--mono)">Afficher</span>
       <select id="pgSize" onchange="pgSzChg()" style="padding:3px 8px;font-size:12px;font-family:var(--mono)">
-        <option value="10">10</option><option value="20" selected>20</option>
-        <option value="50">50</option><option value="9999">Tous</option>
+        <option value="10">10</option><option value="20">20</option>
+        <option value="50">50</option><option value="9999" selected>Tous</option>
       </select>
       <button class="pg-btn" id="pgPrev" onclick="pgNav(-1)">←</button>
       <span id="pgNums" style="display:flex;gap:4px"></span>
@@ -461,17 +461,6 @@ body.fullscreen .stats,body.fullscreen #progressBar{display:none}
 <div id="saveInd"><svg width="10" height="10" viewBox="0 0 10 10" fill="none"><circle cx="5" cy="5" r="4" fill="var(--green)"/><path d="M3 5l1.5 1.5 2.5-2.5" stroke="#fff" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round"/></svg> Sauvegardé</div>
 <div id="toast"></div>
 
-<!-- LOGO AAG COIN -->
-<div style="position:fixed;bottom:16px;right:16px;z-index:50;opacity:.35;transition:opacity .2s;pointer-events:none" onmouseenter="this.style.opacity='.7'" onmouseleave="this.style.opacity='.35'">
-  <svg viewBox="0 0 200 88" width="140" height="62" xmlns="http://www.w3.org/2000/svg">
-    <line x1="8" y1="4" x2="8" y2="84" stroke="#1a2e5a" stroke-width="2" opacity=".5"/>
-    <line x1="192" y1="4" x2="192" y2="84" stroke="#1a2e5a" stroke-width="2" opacity=".5"/>
-    <text x="100" y="30" text-anchor="middle" font-family="Georgia,serif" font-size="17" font-weight="400" letter-spacing="3" fill="#1a2e5a">ALLIANCE</text>
-    <text x="100" y="50" text-anchor="middle" font-family="Georgia,serif" font-size="17" font-weight="400" letter-spacing="2" fill="#1a2e5a">AUTOMOTIVE GROUP</text>
-    <line x1="60" y1="58" x2="140" y2="58" stroke="#1a2e5a" stroke-width=".8"/>
-    <text x="100" y="74" text-anchor="middle" font-family="Arial,sans-serif" font-size="9" letter-spacing="2.5" fill="#1a2e5a" opacity=".8">A  GPC  COMPANY</text>
-  </svg>
-</div>
 
 <script>
 // ── ACCÈS ──
@@ -548,7 +537,7 @@ const _d=loadLocal();
 let tickets=[..._d.tickets];
 let editIdx=null,relTgt=null;
 let sCol='date',sDir='desc';
-let pgPage=0,pgSize=20;
+let pgPage=0,pgSize=9999;
 let activeQFilter=null;
 
 function saveLocal(){
