@@ -10,15 +10,16 @@
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
         :root {
-            --bg: #f0f0ea; --surface: #fafaf8; --white: #fff;
-            --border: #e8e5df; --border-light: #f0eeea;
-            --ink: #1a1916; --ink-soft: #9e9a93; --ink-mid: #7a7570;
+            --bg: #f8f7f4; --surface: #ffffff; --white: #fff;
+            --border: #ece8e1; --border-light: #f4f2ed;
+            --ink: #36322b; --ink-soft: #a8a29a; --ink-mid: #858075;
+            --accent: #2c5f85; --accent-soft: #e3edf3;
         }
         body { font-family:'DM Sans',sans-serif; background:var(--bg); overscroll-behavior:none; -webkit-font-smoothing:antialiased; min-height:100vh; }
         input,select,textarea,button { font-family:'DM Sans',sans-serif; }
 
         /* ─── TOAST ─── */
-        .toast { position:fixed; bottom:calc(80px + env(safe-area-inset-bottom,0px)); left:50%; transform:translateX(-50%); background:var(--ink); color:#fff; padding:12px 24px; border-radius:40px; font-size:14px; font-weight:600; z-index:9000; white-space:nowrap; box-shadow:0 4px 20px rgba(0,0,0,0.25); animation:toastIn 0.3s ease; }
+        .toast { position:fixed; bottom:calc(80px + env(safe-area-inset-bottom,0px)); left:50%; transform:translateX(-50%); background:var(--accent); color:#fff; padding:12px 24px; border-radius:40px; font-size:14px; font-weight:600; z-index:9000; white-space:nowrap; box-shadow:0 4px 20px rgba(0,0,0,0.25); animation:toastIn 0.3s ease; }
         @keyframes toastIn { from{opacity:0;transform:translateX(-50%) translateY(10px)} to{opacity:1;transform:translateX(-50%) translateY(0)} }
         @media(min-width:768px){ .toast{bottom:30px;} }
 
@@ -44,11 +45,11 @@
         .desktop-app { max-width:1400px;margin:0 auto;background:var(--surface);min-height:100vh; }
         .admin-grid { display:flex;flex-direction:column;gap:0;padding:20px; }
         .admin-sidebar { background:var(--white);border-radius:24px;padding:20px;height:fit-content;border:1px solid var(--border);position:sticky;top:20px; }
-        .admin-main { background:var(--white);border-radius:24px;padding:24px;border:1px solid var(--border);min-height:400px; }
+        .admin-main { background:var(--white);border-radius:24px;padding:16px;border:1px solid var(--border);min-height:400px; }
         @media(max-width:767px){ .admin-grid{flex-direction:column;padding:0;gap:0;} .admin-main{border-radius:0;border:none;border-top:1px solid var(--border);padding:16px;} }
 
         /* ─── BUTTONS ─── */
-        .btn-primary { background:var(--ink);color:#fff;border:none;border-radius:14px;padding:13px 20px;font-weight:600;cursor:pointer;transition:opacity 0.15s,transform 0.1s;font-size:15px; }
+        .btn-primary { background:var(--accent);color:#fff;border:none;border-radius:14px;padding:13px 20px;font-weight:600;cursor:pointer;transition:opacity 0.15s,transform 0.1s;font-size:15px; }
         .btn-primary:hover{opacity:0.88;} .btn-primary:active{transform:scale(0.97);}
         .btn-secondary { background:#f5f4f0;border:1px solid var(--border);border-radius:14px;padding:10px 18px;font-weight:500;cursor:pointer;transition:background 0.15s;font-size:14px; }
         .btn-secondary:hover{background:#ece9e3;}
@@ -59,24 +60,32 @@
         .form-group { margin-bottom:16px; }
         .form-label { display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--ink-soft);margin-bottom:6px; }
         .form-input { width:100%;border:1.5px solid var(--border);border-radius:14px;padding:13px 14px;font-size:15px;background:var(--white);transition:border 0.2s;-webkit-appearance:none; }
-        .form-input:focus{outline:none;border-color:var(--ink);}
+        .form-input:focus{outline:none;border-color:var(--accent);}
         .form-select { width:100%;border:1.5px solid var(--border);border-radius:14px;padding:13px 36px 13px 14px;font-size:15px;background:var(--white);cursor:pointer;-webkit-appearance:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='7' viewBox='0 0 12 7'%3E%3Cpath fill='%239e9a93' d='M6 7L0 0h12z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center; }
-        .form-select:focus{outline:none;border-color:var(--ink);}
+        .form-select:focus{outline:none;border-color:var(--accent);}
         .form-row-2 { display:grid;grid-template-columns:1fr 1fr;gap:14px; }
         @media(max-width:420px){ .form-row-2{grid-template-columns:1fr;} }
+
+        /* ─── GRID / CELLULES ÉDITABLES (style tableur) ─── */
+        .cell-input { transition:border-color 0.15s,background 0.15s; }
+        .cell-input:hover { border-color:var(--border) !important; }
+        .cell-input:focus { outline:none; border-color:var(--accent) !important; background:var(--white) !important; box-shadow:0 0 0 2px var(--accent-soft); }
+        table.grid-table th { position:sticky; top:0; z-index:2; }
+        table.grid-table td, table.grid-table th { border-right:1px solid var(--border-light); }
+        table.grid-table td:last-child, table.grid-table th:last-child { border-right:none; }
 
         /* ─── CHIPS ─── */
         .chip { display:inline-flex;align-items:center;gap:6px;border-radius:30px;padding:4px 12px;font-size:11px;font-weight:600; }
         .chips-group { display:flex;gap:8px;flex-wrap:wrap; }
         .chip-sel { padding:9px 16px;border-radius:30px;border:1.5px solid var(--border);background:var(--white);cursor:pointer;font-size:14px;font-weight:500;transition:all 0.15s;white-space:nowrap;color:var(--ink-mid); }
-        .chip-sel.active { background:var(--ink);color:#fff;border-color:var(--ink);font-weight:600; }
+        .chip-sel.active { background:var(--accent);color:#fff;border-color:var(--accent);font-weight:600; }
         .chip-sel:hover:not(.active){background:#f5f4f0;border-color:#d0ccc5;}
 
         /* ─── STEP DOTS ─── */
         .step-indicator { display:flex;align-items:center;gap:6px;margin-bottom:22px; }
         .step-dot { width:8px;height:8px;border-radius:50%;background:var(--border);transition:all 0.2s; }
-        .step-dot.active { background:var(--ink);width:24px;border-radius:4px; }
-        .step-dot.done { background:var(--ink);opacity:0.35; }
+        .step-dot.active { background:var(--accent);width:24px;border-radius:4px; }
+        .step-dot.done { background:var(--accent);opacity:0.35; }
 
         /* ─── COMMAND ITEMS ─── */
         .command-item { background:var(--white);border-radius:16px;padding:14px;margin-bottom:10px;border:1px solid var(--border);cursor:pointer;transition:all 0.18s; }
@@ -98,13 +107,13 @@
         @media(max-width:767px){ .mobile-nav{display:flex;} }
         .mobile-nav-items { display:flex;width:100%; }
         .mobile-nav-btn { flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;background:none;border:none;cursor:pointer;padding:4px 6px;color:var(--ink-soft);font-size:10px;font-weight:600;letter-spacing:0.3px;transition:color 0.15s; }
-        .mobile-nav-btn.active{color:var(--ink);}
+        .mobile-nav-btn.active{color:var(--accent);}
         .mobile-nav-btn .nav-icon{font-size:20px;}
-        .mobile-nav-btn .nav-dot{width:4px;height:4px;border-radius:50%;background:var(--ink);margin-top:-2px;opacity:0;transition:opacity 0.15s;}
+        .mobile-nav-btn .nav-dot{width:4px;height:4px;border-radius:50%;background:var(--accent);margin-top:-2px;opacity:0;transition:opacity 0.15s;}
         .mobile-nav-btn.active .nav-dot{opacity:1;}
 
         /* ─── MOBILE HEADER ─── */
-        .mobile-header { display:none;background:var(--ink);padding:calc(16px + env(safe-area-inset-top,0px)) 20px 20px; }
+        .mobile-header { display:none;background:var(--accent);padding:calc(16px + env(safe-area-inset-top,0px)) 20px 20px; }
         @media(max-width:767px){ .mobile-header{display:block;} }
 
         /* ─── DETAIL SLIDE ─── */
@@ -119,7 +128,7 @@
 
         /* ─── SEARCH ─── */
         .search-input { border:1.5px solid var(--border);border-radius:30px;padding:9px 18px;font-size:14px;width:100%;background:#f5f4f0;transition:all 0.2s;-webkit-appearance:none; }
-        .search-input:focus{outline:none;border-color:var(--ink);background:var(--white);}
+        .search-input:focus{outline:none;border-color:var(--accent);background:var(--white);}
 
         /* ─── FAB ─── */
         .fab-area { position:fixed;bottom:calc(72px + env(safe-area-inset-bottom,0px));right:16px;display:flex;flex-direction:column;gap:10px;align-items:flex-end;z-index:190; }
@@ -128,7 +137,7 @@
         @keyframes fabIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
         .fab-item { background:var(--white);border:1px solid var(--border);border-radius:30px;padding:10px 18px;font-size:14px;font-weight:600;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,0.1);display:flex;align-items:center;gap:8px;transition:all 0.15s; }
         .fab-item:active{transform:scale(0.96);}
-        .fab-main { width:52px;height:52px;border-radius:50%;background:var(--ink);color:#fff;border:none;cursor:pointer;font-size:24px;box-shadow:0 6px 20px rgba(0,0,0,0.25);transition:transform 0.25s;display:flex;align-items:center;justify-content:center; }
+        .fab-main { width:52px;height:52px;border-radius:50%;background:var(--accent);color:#fff;border:none;cursor:pointer;font-size:24px;box-shadow:0 6px 20px rgba(0,0,0,0.25);transition:transform 0.25s;display:flex;align-items:center;justify-content:center; }
         .fab-main.open{transform:rotate(45deg);}
 
         /* ─── SCROLL CONTENT ─── */
@@ -170,6 +179,7 @@ const DEFAULT_PREPAS      = ["Delicity","Uber eat","Deliveroo","Mimma","Mycarter
 const DEFAULT_TYPES_REPAS = ["Petit-déjeuner","Déjeuner","Goûter","Dîner","Cocktail","Plateau repas","Autre"];
 const DEFAULT_PTAXI       = ["Allocab","G7","Uber"];
 const DEFAULT_PCMD        = ["Nespresso","Monoprix","Lyreco","Bruneau","Kusme Tea","Carrefour","Amazon","Lavazza","Ups","Vinci"];
+const DEFAULT_PHOTEL       = ["Booking.com","Ibis","Novotel","Mercure","B&B Hotels"];
 // Emails des assistantes — clé = nom exact, valeur = adresse email
 const DEFAULT_EMAILS = {
     "Alexandra JULITTE":       "",
@@ -220,6 +230,7 @@ function loadSettingsLocal() {
         typesRepas:           JSON.parse(localStorage.getItem('settings_types_repas')            ||JSON.stringify(DEFAULT_TYPES_REPAS)),
         prestatairesTaxi:     JSON.parse(localStorage.getItem('settings_prestataires_taxi')    ||JSON.stringify(DEFAULT_PTAXI)),
         prestatairesCommande: JSON.parse(localStorage.getItem('settings_prestataires_commande')||JSON.stringify(DEFAULT_PCMD)),
+        prestatairesHotel:    JSON.parse(localStorage.getItem('settings_prestataires_hotel')    ||JSON.stringify(DEFAULT_PHOTEL)),
         emails:               JSON.parse(localStorage.getItem('settings_emails')               ||JSON.stringify(DEFAULT_EMAILS)),
         adminEmails:          JSON.parse(localStorage.getItem('settings_admin_emails')          ||JSON.stringify([])),
         yoozMap:              JSON.parse(localStorage.getItem('settings_yooz_map')              ||JSON.stringify({})),
@@ -233,6 +244,7 @@ function saveSettingsLocal(s) {
     localStorage.setItem('settings_types_repas',            JSON.stringify(s.typesRepas||DEFAULT_TYPES_REPAS));
     localStorage.setItem('settings_prestataires_taxi',    JSON.stringify(s.prestatairesTaxi));
     localStorage.setItem('settings_prestataires_commande',JSON.stringify(s.prestatairesCommande));
+    localStorage.setItem('settings_prestataires_hotel',    JSON.stringify(s.prestatairesHotel||DEFAULT_PHOTEL));
     localStorage.setItem('settings_emails',               JSON.stringify(s.emails));
     localStorage.setItem('settings_admin_emails',         JSON.stringify(s.adminEmails||[]));
     localStorage.setItem('settings_yooz_map',              JSON.stringify(s.yoozMap||{}));
@@ -256,6 +268,7 @@ async function loadSettingsFromDB() {
         if (map.typesRepas)           settings.typesRepas           = map.typesRepas;
         if (map.prestatairesTaxi)     settings.prestatairesTaxi     = map.prestatairesTaxi;
         if (map.prestatairesCommande) settings.prestatairesCommande = map.prestatairesCommande;
+        if (map.prestatairesHotel)    settings.prestatairesHotel    = map.prestatairesHotel;
         if (map.emails)               settings.emails               = map.emails;
         if (map.adminEmails)          settings.adminEmails          = map.adminEmails;
         if (map.yoozMap)              { settings.yoozMap = map.yoozMap; Object.assign(YOOZ_MAP, map.yoozMap); state.yoozMap = map.yoozMap; }
@@ -268,7 +281,7 @@ async function loadSettingsFromDB() {
 
 async function saveSettingsToDB(s) {
     saveSettingsLocal(s);
-    const keys = ['assistantes','directeurs','prestatairesRepas','typesRepas','prestatairesTaxi','prestatairesCommande','emails','adminEmails','yoozMap'];
+    const keys = ['assistantes','directeurs','prestatairesRepas','typesRepas','prestatairesTaxi','prestatairesCommande','prestatairesHotel','emails','adminEmails','yoozMap'];
     for (const cle of keys) {
         try {
             await fetch(`${SB_PARAMS}?cle=eq.${cle}`, {
@@ -292,8 +305,8 @@ function saveSettings(s) {
 }
 
 let settings = loadSettingsLocal();
-let P_REPAS=[...settings.prestatairesRepas], P_TAXI=[...settings.prestatairesTaxi], P_CMD=[...settings.prestatairesCommande], P_TYPES=[...(settings.typesRepas||DEFAULT_TYPES_REPAS)];
-function refreshGlobals(){ P_REPAS=[...settings.prestatairesRepas]; P_TAXI=[...settings.prestatairesTaxi]; P_CMD=[...settings.prestatairesCommande]; P_TYPES=[...(settings.typesRepas||DEFAULT_TYPES_REPAS)]; }
+let P_REPAS=[...settings.prestatairesRepas], P_TAXI=[...settings.prestatairesTaxi], P_CMD=[...settings.prestatairesCommande], P_HOTEL=[...(settings.prestatairesHotel||DEFAULT_PHOTEL)], P_TYPES=[...(settings.typesRepas||DEFAULT_TYPES_REPAS)];
+function refreshGlobals(){ P_REPAS=[...settings.prestatairesRepas]; P_TAXI=[...settings.prestatairesTaxi]; P_CMD=[...settings.prestatairesCommande]; P_HOTEL=[...(settings.prestatairesHotel||DEFAULT_PHOTEL)]; P_TYPES=[...(settings.typesRepas||DEFAULT_TYPES_REPAS)]; }
 
 /* ══════════════════════════════════════
    EMAILJS — envoi confirmation
@@ -310,7 +323,7 @@ async function sendConfirmationEmail(commande, opts={}) {
 
     const email = toOverride || settings.emails?.[commande.demandeur];
     if(!email) {
-        if(!toOverride) showToast("⚠️ Pas d'email pour "+commande.demandeur.split(" ")[0]);
+        if(!toOverride) showToast(`${icon('alert',13)} Pas d'email pour `+commande.demandeur.split(" ")[0]);
         return;
     }
 
@@ -372,10 +385,10 @@ async function sendConfirmationEmail(commande, opts={}) {
 
     try {
         await emailjs.send(EJS_SERVICE, template, params);
-        if(!toOverride) showToast(`📧 Email envoyé à ${prenom}`);
+        if(!toOverride) showToast(`${icon('mail',13)} Email envoyé à ${prenom}`);
     } catch(err) {
         console.error("EmailJS error:", err);
-        showToast("❌ Erreur envoi email");
+        showToast("Erreur envoi email");
     }
 }
 
@@ -389,8 +402,55 @@ const NBS=["1","2","3","4","5","6","7","8","10","12","15","20","25","30","37","4
 const ANNUAIRE=[{nom:"Nespresso",contact:"",tel:"07.86.15.98.33"},{nom:"Vinci",contact:"Malek",tel:"07.60.56.49.82"},{nom:"La vie Claire",contact:"",tel:"01.47.57.03.50"},{nom:"Ciboulette",contact:"",tel:"06.15.05.36.97"},{nom:"Namma Accueil",contact:"Kevin",tel:"01.47.75.38.92"},{nom:"Lavazza",contact:"Alain Trilleau",tel:"06.72.09.37.85"},{nom:"Urgence IT",contact:"",tel:"07.85.91.78.38"},{nom:"Salvills",contact:"Céline Gendre",tel:"06.31.27.52.37"},{nom:"Polpo",contact:"",tel:"01.41.34.32.86"},{nom:"Pc sécurité",contact:"",tel:"06.58.45.32.61"},{nom:"Jardin de Gally",contact:"",tel:"07.61.76.88.06"},{nom:"Machine à Eau",contact:"",tel:"07.55.52.08.89"}];
 
 const ST={"OUI":{label:"Validé",dot:"#22c55e",bg:"#f0fdf4",tx:"#15803d"},"En attente":{label:"En attente",dot:"#f59e0b",bg:"#fffbeb",tx:"#b45309"},"En cours":{label:"En cours",dot:"#3b82f6",bg:"#eff6ff",tx:"#1d4ed8"},"Annulé":{label:"Annulé",dot:"#ef4444",bg:"#fef2f2",tx:"#b91c1c"},"Reçu":{label:"Reçu",dot:"#0ea5e9",bg:"#f0f9ff",tx:"#0369a1"}};
-const TYPE_ICON={repas:"🍽",taxi:"🚕",commande:"📦",autre:"✦"};
-const TYPE_LABEL={repas:"Repas",taxi:"Taxi",commande:"Commande",autre:"Autre"};
+
+/* ══════════════════════════════════════
+   ICÔNES (SVG trait, remplacent les emojis dans l'UI d'administration)
+══════════════════════════════════════ */
+const ICON_PATHS = {
+    dashboard: '<line x1="5" y1="20" x2="5" y2="11"/><line x1="12" y1="20" x2="12" y2="5"/><line x1="19" y1="20" x2="19" y2="14"/>',
+    clipboard: '<rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4V3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1"/><line x1="8" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="16" y2="14"/><line x1="8" y1="18" x2="13" y2="18"/>',
+    sliders: '<line x1="4" y1="7" x2="20" y2="7"/><circle cx="9" cy="7" r="2" fill="currentColor" stroke="none"/><line x1="4" y1="12" x2="20" y2="12"/><circle cx="15" cy="12" r="2" fill="currentColor" stroke="none"/><line x1="4" y1="17" x2="20" y2="17"/><circle cx="7" cy="17" r="2" fill="currentColor" stroke="none"/>',
+    utensils: '<path d="M6 2v7a2 2 0 0 0 4 0V2"/><path d="M8 9v13"/><path d="M17 2c-1.7 0-3 2-3 5s1.3 5 3 5v9"/>',
+    box: '<path d="M3 8l9-5 9 5-9 5-9-5z"/><path d="M3 8v8l9 5 9-5V8"/><line x1="12" y1="13" x2="12" y2="21"/>',
+    clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l4 2"/>',
+    grid: '<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>',
+    trash: '<line x1="4" y1="7" x2="20" y2="7"/><path d="M10 11v6M14 11v6"/><path d="M6 7l1 13a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-13"/><path d="M9 7V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v3"/>',
+    home: '<path d="M3 11l9-8 9 8"/><path d="M5 10v10a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V10"/>',
+    logout: '<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><line x1="21" y1="12" x2="9" y2="12"/>',
+    lock: '<rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>',
+    shield: '<path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6l7-3z"/>',
+    car: '<path d="M3 13l1.5-4.5A2 2 0 0 1 6.4 7h11.2a2 2 0 0 1 1.9 1.5L21 13"/><rect x="3" y="13" width="18" height="5" rx="1"/><circle cx="7" cy="18" r="1.5"/><circle cx="17" cy="18" r="1.5"/>',
+    check: '<circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.5 2.5L16 9.5"/>',
+    hourglass: '<path d="M6 3h12"/><path d="M6 21h12"/><path d="M7 3v3.5a5 5 0 0 0 2 4l1.8 1.4a1 1 0 0 1 0 1.6L9 15.5a5 5 0 0 0-2 4V21"/><path d="M17 3v3.5a5 5 0 0 1-2 4l-1.8 1.4a1 1 0 0 0 0 1.6L15 15.5a5 5 0 0 1 2 4V21"/>',
+    calendar: '<rect x="3" y="5" width="18" height="16" rx="2"/><line x1="16" y1="3" x2="16" y2="7"/><line x1="8" y1="3" x2="8" y2="7"/><line x1="3" y1="10" x2="21" y2="10"/>',
+    wallet: '<path d="M3 7a2 2 0 0 1 2-2h13a1 1 0 0 1 1 1v3"/><path d="M3 7v11a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-7a1 1 0 0 0-1-1h-5a2.5 2.5 0 0 0 0 5h6"/>',
+    plus: '<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>',
+    arrow: '<line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>',
+    x: '<line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/>',
+    search: '<circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.4" y2="16.4"/>',
+    mail: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 6.5l9 6.5 9-6.5"/>',
+    save: '<path d="M5 3h11l3 3v13a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M8 3v5h7V3"/><path d="M7 21v-7h10v7"/>',
+    user: '<circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/>',
+    message: '<path d="M4 5h16a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H9l-5 4V6a1 1 0 0 1 1-1z"/>',
+    phone: '<path d="M6 3h3l1.5 5-2 1.5a12 12 0 0 0 6 6l1.5-2 5 1.5v3a1 1 0 0 1-1 1A16 16 0 0 1 5 4a1 1 0 0 1 1-1z"/>',
+    edit: '<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>',
+    plane: '<path d="M3 13l8-2 6-8 2 1-4 8 5 3v2l-5-1-3 5-2-1 1-5-6-1z"/>',
+    tool: '<path d="M14.7 6.3a4 4 0 0 1-5.4 5.4L4 17v3h3l5.3-5.3a4 4 0 0 1 5.4-5.4L15 12l-3-3 2.7-2.7z"/>',
+    alert: '<path d="M10.3 3.9L2.7 18a2 2 0 0 0 1.7 3h15.2a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>',
+    pin: '<path d="M12 21s7-7.1 7-12a7 7 0 0 0-14 0c0 4.9 7 12 7 12z"/><circle cx="12" cy="9" r="2.5"/>',
+    flag: '<path d="M5 21V4"/><path d="M5 4h13l-3 4 3 4H5"/>',
+    download: '<path d="M12 3v12"/><polyline points="7 10 12 15 17 10"/><path d="M5 21h14"/>',
+    bell: '<path d="M6 8a6 6 0 0 1 12 0c0 5 2 6 2 6H4s2-1 2-6"/><path d="M10 21a2 2 0 0 0 4 0"/>',
+    bed: '<path d="M3 18v-7a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v7"/><path d="M3 13h18"/><path d="M3 18v2"/><path d="M21 18v2"/><path d="M6 11V8a2 2 0 0 1 2-2h3a2 2 0 0 1 2 2v3"/>',
+};
+function icon(name, size){
+    size = size || 16;
+    const p = ICON_PATHS[name] || '';
+    return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;vertical-align:-3px;">${p}</svg>`;
+}
+
+const TYPE_ICON={repas:icon('utensils',13),taxi:icon('car',13),commande:icon('box',13),hotel:icon('bed',13),autre:icon('box',13)};
+const TYPE_LABEL={repas:"Repas",taxi:"Taxi",commande:"Commande",hotel:"Hôtel",autre:"Autre"};
 const AVC=["#0f172a","#1e3a5f","#3d1a6e","#6e1a1a","#1a4d2e","#1a4a6e","#4a1a6e","#6e4a1a"];
 const MONTHS=["","Jan","Fév","Mar","Avr","Mai","Jun","Jul","Aoû","Sep","Oct","Nov","Déc"];
 const ADMIN_CODE="AdminAAG";
@@ -408,6 +468,7 @@ function parseDate(str){
 }
 function daysLeft(str){ const d=parseDate(str); if(!d)return null; const t=new Date(); t.setHours(0,0,0,0); return Math.round((d-t)/(1000*60*60*24)); }
 function badgeColor(j){
+    if(j<0)   return {bg:"#fef2f2",border:"#fecaca",color:"#b91c1c",label:j===-1?"Hier":`Retard ${-j}j`};
     if(j===0) return {bg:"#fef2f2",border:"#fecaca",color:"#b91c1c",label:"Aujourd'hui"};
     if(j===1) return {bg:"#fff7ed",border:"#fed7aa",color:"#c2410c",label:"Demain"};
     if(j<=5)  return {bg:"#fefce8",border:"#fde68a",color:"#92400e",label:`J-${j}`};
@@ -446,6 +507,7 @@ function rowToApp(r) {
         code:      r.code      || '',
         vol:       r.vol       || '',
         tel:       r.tel       || '',
+        dateDepart:r.date_depart|| '',
     };
 }
 
@@ -471,6 +533,7 @@ function appToRow(c) {
         code:      c.code      || null,
         vol:       c.vol       || null,
         tel:       c.tel       || null,
+        date_depart:c.dateDepart|| null,
     };
 }
 
@@ -489,7 +552,7 @@ async function dbLoad() {
         return rows.map(rowToApp);
     } catch(e) {
         console.error('Supabase load:', e);
-        showToast('⚠️ Mode hors-ligne');
+        showToast(`${icon('alert',13)} Mode hors-ligne`);
         return JSON.parse(JSON.stringify(ALL_DATA));
     }
 }
@@ -563,12 +626,12 @@ let state = {
     detail:null, adminTab:"dashboard",
     search:"", filtre:"all", toast:"",
     saisieType:null, fabOpen:false, fabAdminOpen:false, trackMode:false, trackResult:null, trackCode:"" ,
-    resaFilter:"all", cmdFilter:"all", resaSort:"date", resaSortAsc:true, cmdSort:"date", cmdSortAsc:true, histSortAsc:true,
+    resaFilter:"all", cmdFilter:"all", hotelFilter:"all", resaSort:"date", resaSortAsc:true, cmdSort:"date", cmdSortAsc:true, hotelSort:"date", hotelSortAsc:true, histSortAsc:true,
     activiteTab:"reservations", histSort:"date", histPage:0, calMonth:null, colOrder:["date","code","type","desc","demandeur","pourQui","statut","prix"],
     deletedData:[], confirmRm:null, confirmDelete:null, yoozMap:null, settingsTab:null, adminForm:null,
     form:{ type:null, step:1, sent:false, code:null,
         dem:"", pourQui:[], pourQuiAutre:"", vol:"", tel:"", copyMail:false,
-        date:today(), heure:"12h00",
+        date:today(), dateDepart:"", heure:"12h00",
         lieu:"", de:"", vers:"",
         presta:"", desc:"", nb:"1", com:"" }
 };
@@ -589,10 +652,10 @@ function render(){
     const app=document.getElementById('app');
     if(!app)return;
     if(state.loading){
-        app.innerHTML=`<div style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#1a1916;gap:16px;">
-            <div style="font-size:48px;animation:spin 1.5s linear infinite;">⟳</div>
-            <div style="font-family:'DM Serif Display',serif;font-size:24px;color:#fff;">Chargement…</div>
-            <div style="font-size:13px;color:rgba(255,255,255,.4);">Connexion à la base de données</div>
+        app.innerHTML=`<div style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;background:var(--bg);gap:16px;">
+            <div style="font-size:48px;animation:spin 1.5s linear infinite;color:var(--accent);">⟳</div>
+            <div style="font-family:'DM Serif Display',serif;font-size:24px;color:var(--ink);">Chargement…</div>
+            <div style="font-size:13px;color:var(--ink-soft);">Connexion à la base de données</div>
             <style>@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}</style>
         </div>`;
         return;
@@ -612,8 +675,8 @@ function render(){
 ══════════════════════════════════════ */
 function renderTrackCode(m){
     const result = state.trackResult;
-    const ST_LABEL={'OUI':'✅ Validée','En attente':'⏳ En attente','En cours':'🔄 En cours','Annulé':'❌ Annulée','Reçu':'✓ Reçue'};
-    const typeIcon=t=>t==='taxi'?'🚕':t==='repas'?'🍽':'📦';
+    const ST_LABEL={'OUI':icon('check',13)+' Validée','En attente':icon('hourglass',13)+' En attente','En cours':icon('clock',13)+' En cours','Annulé':icon('x',13)+' Annulée','Reçu':icon('check',13)+' Reçue'};
+    const typeIcon=t=>icon(t==='taxi'?'car':t==='repas'?'utensils':t==='hotel'?'bed':'box',14);
 
     let resultHtml='';
     if(result===false){
@@ -621,7 +684,7 @@ function renderTrackCode(m){
     } else if(result){
         let cancelHtml='';
         if(result.pris==='En attente'){
-            cancelHtml='<button id="cancelTrackBtn" style="width:100%;margin-top:16px;background:#fef2f2;border:1px solid #fecaca;border-radius:12px;padding:10px;color:#b91c1c;cursor:pointer;font-size:13px;font-weight:600;">❌ Annuler cette demande</button>';
+            cancelHtml='<button id="cancelTrackBtn" style="width:100%;margin-top:16px;background:#fef2f2;border:1px solid #fecaca;border-radius:12px;padding:10px;color:#b91c1c;cursor:pointer;font-size:13px;font-weight:600;">Annuler cette demande</button>';
         }
         resultHtml='<div style="background:#f8fafc;border-radius:16px;padding:20px;border:1px solid #e2e8f0;margin-top:16px;">'
             +'<div style="font-size:20px;margin-bottom:8px;">'+typeIcon(result.type)+' <strong>'+(result.desc||'—')+'</strong></div>'
@@ -636,11 +699,11 @@ function renderTrackCode(m){
     return '<div style="min-height:100vh;background:var(--bg);padding:'+(m?'20px 16px':'40px')+';display:flex;align-items:center;justify-content:center;">'
         +'<div style="background:var(--white);border-radius:24px;padding:'+(m?'28px 20px':'40px')+';border:1px solid var(--border);width:100%;max-width:400px;">'
         +'<button id="closeTrackBtn" style="background:none;border:none;color:#94a3b8;cursor:pointer;font-size:13px;margin-bottom:16px;">← Retour</button>'
-        +'<div style="font-family:DM Serif Display,serif;font-size:22px;margin-bottom:6px;">🔍 Suivre ma demande</div>'
+        +'<div style="font-family:DM Serif Display,serif;font-size:22px;margin-bottom:6px;">'+icon('search',19)+' Suivre ma demande</div>'
         +'<div style="color:#9e9a93;font-size:13px;margin-bottom:20px;">Entrez votre code AAG-XXXXX</div>'
         +'<div style="display:flex;gap:8px;margin-bottom:4px;">'
         +'<input id="trackInput" type="text" value="'+code+'" placeholder="AAG-R2847" style="flex:1;border:1.5px solid var(--border);border-radius:12px;padding:12px;font-family:monospace;font-size:16px;letter-spacing:2px;">'
-        +'<button id="trackSearchBtn" style="background:var(--ink);color:#fff;border:none;border-radius:12px;padding:12px 16px;font-size:13px;font-weight:600;cursor:pointer;">OK</button>'
+        +'<button id="trackSearchBtn" style="background:var(--accent);color:#fff;border:none;border-radius:12px;padding:12px 16px;font-size:13px;font-weight:600;cursor:pointer;">OK</button>'
         +'</div>'
         +resultHtml
         +'</div></div>';
@@ -653,7 +716,7 @@ function renderHome(m){
     return `
     <div style="min-height:100vh;display:flex;flex-direction:column;">
         <!-- ── TOP BAR ── -->
-        <div style="background:var(--ink);padding:${m?'calc(16px + env(safe-area-inset-top,0px)) 20px 18px':'28px 40px'};">
+        <div style="background:var(--accent);padding:${m?'calc(16px + env(safe-area-inset-top,0px)) 20px 18px':'28px 40px'};">
             <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;">
                 <div>
                     <div style="font-size:10px;font-weight:600;letter-spacing:2px;color:rgba(255,255,255,.35);margin-bottom:5px;">GESTION DES COMMANDES</div>
@@ -661,7 +724,7 @@ function renderHome(m){
                 </div>
                 <div style="display:flex;align-items:center;gap:12px;">
                     <button data-action="admin" style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);border-radius:10px;padding:7px 13px;color:rgba(255,255,255,.65);cursor:pointer;font-size:13px;font-weight:600;display:flex;align-items:center;gap:5px;transition:background 0.2s;white-space:nowrap;" onmouseover="this.style.background='rgba(255,255,255,.18)'" onmouseout="this.style.background='rgba(255,255,255,.1)'">
-                        👑${m?'':' Admin'}${att>0?` <span style="background:#f59e0b;color:#fff;border-radius:50%;width:16px;height:16px;font-size:10px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;">${att}</span>`:''}
+                        ${icon('shield',15)}${m?'':' Admin'}${att>0?` <span style="background:#f59e0b;color:#fff;border-radius:50%;width:16px;height:16px;font-size:10px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;">${att}</span>`:''}
                     </button>
                 </div>
             </div>
@@ -697,7 +760,7 @@ function renderInlineForm(m){
 
         <div style="display:flex;flex-direction:column;gap:10px;max-width:280px;margin:0 auto;">
             <button data-reset-form class="btn-primary" style="width:100%;padding:14px;">+ Nouvelle demande</button>
-            <button id="goTrack" class="btn-secondary" style="width:100%;padding:12px;">🔍 Suivre ma demande</button>
+            <button id="goTrack" class="btn-secondary" style="width:100%;padding:12px;">${icon('search',14)} Suivre ma demande</button>
         </div>
     </div>`;
 
@@ -706,30 +769,36 @@ function renderInlineForm(m){
     <div>
         <div style="font-family:'DM Serif Display',serif;font-size:${m?'26px':'34px'};margin-bottom:6px;line-height:1.1;">Faire une<br>demande</div>
         <div style="color:var(--ink-soft);font-size:14px;margin-bottom:24px;">Choisissez le type</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
-            <div data-set-type="repas" style="background:var(--white);border:2px solid var(--border);border-radius:22px;padding:${m?'28px 16px':'36px 24px'};cursor:pointer;transition:all 0.2s;text-align:center;" onmouseover="this.style.borderColor='var(--ink)';this.style.boxShadow='0 8px 24px rgba(0,0,0,0.08)'" onmouseout="this.style.borderColor='var(--border)';this.style.boxShadow='none'">
-                <div style="font-size:${m?'52px':'64px'};margin-bottom:12px;">🍽</div>
-                <div style="font-size:${m?'17px':'19px'};font-weight:700;margin-bottom:4px;">Repas</div>
-                <div style="color:var(--ink-soft);font-size:12px;">Déjeuner, petit-dej, goûter</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:${m?'10px':'14px'};">
+            <div data-set-type="repas" style="background:var(--white);border:2px solid var(--border);border-radius:22px;padding:${m?'18px 10px':'36px 20px'};cursor:pointer;transition:all 0.2s;text-align:center;" onmouseover="this.style.borderColor='var(--accent)';this.style.boxShadow='0 8px 24px rgba(0,0,0,0.08)'" onmouseout="this.style.borderColor='var(--border)';this.style.boxShadow='none'">
+                <div style="color:var(--accent);margin-bottom:10px;">${icon('utensils',m?30:44)}</div>
+                <div style="font-size:${m?'14px':'17px'};font-weight:700;margin-bottom:4px;">Repas</div>
+                <div style="color:var(--ink-soft);font-size:11px;">Déjeuner, petit-dej, goûter</div>
             </div>
-            <div data-set-type="taxi" style="background:var(--white);border:2px solid var(--border);border-radius:22px;padding:${m?'28px 16px':'36px 24px'};cursor:pointer;transition:all 0.2s;text-align:center;" onmouseover="this.style.borderColor='var(--ink)';this.style.boxShadow='0 8px 24px rgba(0,0,0,0.08)'" onmouseout="this.style.borderColor='var(--border)';this.style.boxShadow='none'">
-                <div style="font-size:${m?'52px':'64px'};margin-bottom:12px;">🚕</div>
-                <div style="font-size:${m?'17px':'19px'};font-weight:700;margin-bottom:4px;">Taxi</div>
-                <div style="color:var(--ink-soft);font-size:12px;">Véhicule avec chauffeur</div>
+            <div data-set-type="taxi" style="background:var(--white);border:2px solid var(--border);border-radius:22px;padding:${m?'18px 10px':'36px 20px'};cursor:pointer;transition:all 0.2s;text-align:center;" onmouseover="this.style.borderColor='var(--accent)';this.style.boxShadow='0 8px 24px rgba(0,0,0,0.08)'" onmouseout="this.style.borderColor='var(--border)';this.style.boxShadow='none'">
+                <div style="color:var(--accent);margin-bottom:10px;">${icon('car',m?30:44)}</div>
+                <div style="font-size:${m?'14px':'17px'};font-weight:700;margin-bottom:4px;">Taxi</div>
+                <div style="color:var(--ink-soft);font-size:11px;">Véhicule avec chauffeur</div>
+            </div>
+            <div data-set-type="hotel" style="background:var(--white);border:2px solid var(--border);border-radius:22px;padding:${m?'18px 10px':'36px 20px'};cursor:pointer;transition:all 0.2s;text-align:center;" onmouseover="this.style.borderColor='var(--accent)';this.style.boxShadow='0 8px 24px rgba(0,0,0,0.08)'" onmouseout="this.style.borderColor='var(--border)';this.style.boxShadow='none'">
+                <div style="color:var(--accent);margin-bottom:10px;">${icon('bed',m?30:44)}</div>
+                <div style="font-size:${m?'14px':'17px'};font-weight:700;margin-bottom:4px;">Hôtel</div>
+                <div style="color:var(--ink-soft);font-size:11px;">Nuit(s) d'hôtel</div>
             </div>
         </div>
-    <button id="goTrackHome" style="width:100%;margin-top:14px;background:none;border:1.5px solid var(--border);border-radius:16px;padding:12px;font-size:13px;color:var(--ink-soft);cursor:pointer;">🔍 Suivre ou modifier ma demande</button>
+    <button id="goTrackHome" style="width:100%;margin-top:14px;background:none;border:1.5px solid var(--border);border-radius:16px;padding:12px;font-size:13px;color:var(--ink-soft);cursor:pointer;">${icon('search',14)} Suivre ou modifier ma demande</button>
     </div>`;
 
     const card = (inner) => `<div style="background:var(--white);border-radius:${m?'20px':'28px'};padding:${m?'20px 16px':'28px 32px'};border:1px solid var(--border);box-shadow:0 8px 32px rgba(0,0,0,0.05);">${inner}</div>`;
     const isRepas = f.type==='repas';
+    const isHotel = f.type==='hotel';
 
     /* ─ STEP 2 : DÉTAILS ─ */
     if(f.step===2) return card(`
         <button data-form-back-type class="back-btn-dark" style="margin-bottom:16px;">← Retour</button>
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:22px;">
-            <span style="font-size:26px;">${isRepas?'🍽':'🚕'}</span>
-            <div style="font-family:'DM Serif Display',serif;font-size:${m?'20px':'24px'};">${isRepas?'Commande repas':'Réservation taxi'}</div>
+            <span style="color:var(--accent);">${icon(isRepas?'utensils':isHotel?'bed':'car',24)}</span>
+            <div style="font-family:'DM Serif Display',serif;font-size:${m?'20px':'24px'};">${isRepas?'Commande repas':isHotel?'Réservation hôtel':'Réservation taxi'}</div>
         </div>
         <div class="step-indicator"><div class="step-dot done"></div><div class="step-dot active"></div><div class="step-dot"></div></div>
 
@@ -754,11 +823,11 @@ function renderInlineForm(m){
                 <div id="pqDropdown" style="display:none;position:absolute;top:calc(100% + 4px);left:0;right:0;background:var(--white);border:1.5px solid var(--border);border-radius:14px;box-shadow:0 8px 24px rgba(0,0,0,0.10);z-index:999;overflow:hidden;max-height:220px;overflow-y:auto;">
                     ${settings.directeurs.map(d=>`
                     <label style="display:flex;align-items:center;gap:12px;padding:11px 16px;cursor:pointer;border-bottom:1px solid var(--border-light);" onmouseover="this.style.background='#f5f4f0'" onmouseout="this.style.background=''">
-                        <input type="checkbox" class="pq-check" value="${d}" ${f.pourQui.includes(d)?'checked':''} style="width:17px;height:17px;accent-color:var(--ink);cursor:pointer;flex-shrink:0;">
+                        <input type="checkbox" class="pq-check" value="${d}" ${f.pourQui.includes(d)?'checked':''} style="width:17px;height:17px;accent-color:var(--accent);cursor:pointer;flex-shrink:0;">
                         <span style="font-size:14px;">${d}</span>
                     </label>`).join('')}
                     <label style="display:flex;align-items:center;gap:12px;padding:11px 16px;cursor:pointer;" onmouseover="this.style.background='#f5f4f0'" onmouseout="this.style.background=''">
-                        <input type="checkbox" class="pq-check" value="__autre__" ${f.pourQui.includes('__autre__')?'checked':''} style="width:17px;height:17px;accent-color:var(--ink);cursor:pointer;flex-shrink:0;">
+                        <input type="checkbox" class="pq-check" value="__autre__" ${f.pourQui.includes('__autre__')?'checked':''} style="width:17px;height:17px;accent-color:var(--accent);cursor:pointer;flex-shrink:0;">
                         <span style="font-size:14px;color:var(--ink-mid);">Autre…</span>
                     </label>
                 </div>
@@ -767,10 +836,17 @@ function renderInlineForm(m){
         </div>
         `}
         <!-- Date & Heure -->
+        ${isHotel?`
+        <div class="form-row-2">
+            <div class="form-group"><label class="form-label">${icon('calendar',13)} Arrivée</label><input type="date" id="formDate" value="${f.date}" class="form-input"></div>
+            <div class="form-group"><label class="form-label">${icon('calendar',13)} Départ</label><input type="date" id="formDateDepart" value="${f.dateDepart||''}" class="form-input"></div>
+        </div>
+        `:`
         <div class="form-row-2">
             <div class="form-group"><label class="form-label">Date</label><input type="date" id="formDate" value="${f.date}" class="form-input"></div>
 <div class="form-group"><label class="form-label">Heure</label><input id="formHeure" type="text" value="${f.heure||''}" placeholder="Ex: 08h30" class="form-input"></div>
         </div>
+        `}
 
         ${isRepas?`
         <div class="form-group"><label class="form-label">Type de repas</label><select id="formDesc" class="form-select"><option value="">— Choisir —</option>${["Petit-déjeuner","Déjeuner","Goûter","Dîner","Cocktail","Plateau repas"].map(o=>`<option ${f.desc===o?'selected':''}>${o}</option>`).join('')}</select></div>
@@ -779,26 +855,33 @@ function renderInlineForm(m){
             <div class="form-group"><label class="form-label">Nb personnes</label><select id="formNb" class="form-select">${NBS.map(n=>`<option ${f.nb===n?'selected':''}>${n}</option>`).join('')}</select></div>
             <div class="form-group"><label class="form-label">Type de repas souhaité</label><select id="formPresta" class="form-select"><option value="">— Choisir —</option>${P_REPAS.map(p=>`<option ${f.presta===p?"selected":""}>${p}</option>`).join("")}</select></div>
         </div>
+        `:isHotel?`
+        <div class="form-group"><label class="form-label">Voyageur(s)</label><input id="formDesc" type="text" value="${f.desc}" placeholder="Ex: Jean Dupont" class="form-input"></div>
+        <div class="form-group"><label class="form-label">${icon('pin',13)} Ville</label><input id="formLieu" type="text" value="${f.lieu}" placeholder="Ex: Lyon" class="form-input"></div>
+        <div class="form-row-2">
+            <div class="form-group"><label class="form-label">Nb personnes</label><select id="formNb" class="form-select">${NBS.map(n=>`<option ${f.nb===n?'selected':''}>${n}</option>`).join('')}</select></div>
+            <div class="form-group"><label class="form-label">${icon('bed',13)} Hôtel</label><select id="formPresta" class="form-select"><option value="">— Choisir —</option>${P_HOTEL.map(p=>`<option ${f.presta===p?'selected':''}>${p}</option>`).join('')}</select></div>
+        </div>
         `:`
         <div class="form-group">
-            <label class="form-label">📍 Adresse de départ</label>
+            <label class="form-label">${icon('pin',13)} Adresse de départ</label>
             <input id="formDe" type="text" value="${f.de}" placeholder="Saisissez l'adresse de départ…" class="form-input" autocomplete="off">
-            <div style="font-size:11px;color:var(--ink-soft);margin-top:5px;display:flex;align-items:center;gap:4px;"><span>🔍</span> Suggestions Google Maps actives</div>
+            <div style="font-size:11px;color:var(--ink-soft);margin-top:5px;display:flex;align-items:center;gap:4px;"><span>${icon('search',12)}</span> Suggestions Google Maps actives</div>
         </div>
         <div class="form-group">
-            <label class="form-label">🏁 Adresse d'arrivée</label>
+            <label class="form-label">${icon('flag',13)} Adresse d'arrivée</label>
             <input id="formVers" type="text" value="${f.vers}" placeholder="Saisissez la destination…" class="form-input" autocomplete="off">
-            <div style="font-size:11px;color:var(--ink-soft);margin-top:5px;display:flex;align-items:center;gap:4px;"><span>🔍</span> Suggestions Google Maps actives</div>
+            <div style="font-size:11px;color:var(--ink-soft);margin-top:5px;display:flex;align-items:center;gap:4px;"><span>${icon('search',12)}</span> Suggestions Google Maps actives</div>
         </div>
         <div class="form-group"><label class="form-label">Prestataire</label><select id="formPresta" class="form-select"><option value="">— Choisir —</option>${P_TAXI.map(p=>`<option ${f.presta===p?'selected':''}>${p}</option>`).join('')}</select></div>
         ${(()=>{ const dest=(f.vers||'').toLowerCase(); const isAero=dest.includes('aéroport')||dest.includes('aeroport')||dest.includes('cdg')||dest.includes('orly')||dest.includes('roissy')||dest.includes('beauvais'); const isGare=dest.includes('gare')||dest.includes('saint-lazare')||dest.includes('montparnasse')||dest.includes('lyon')||dest.includes('nord')||dest.includes('bercy'); const dep=(f.de||'').toLowerCase(); const isAeroDep=dep.includes('aéroport')||dep.includes('aeroport')||dep.includes('cdg')||dep.includes('orly')||dep.includes('roissy'); const isGareDep=dep.includes('gare'); return (isAero||isGare||isAeroDep||isGareDep)?`<div class="form-group"><label class="form-label" style="color:#b45309;">✈️ N° de vol / train *<span style="font-size:10px;font-weight:400;margin-left:6px;">(obligatoire pour gare/aéroport)</span></label><input id="formVol" type="text" value="${f.vol||''}" placeholder="Ex: AF1234, TGV 6201…" class="form-input" style="border-color:#f59e0b;"></div>`:''})()}
-        <div class="form-group"><label class="form-label">📱 Téléphone du passager * <span style="font-size:10px;font-weight:400;color:var(--ink-soft);">(pour le chauffeur)</span></label><input id="formTel" type="tel" value="${f.tel||''}" placeholder="Ex: 06 12 34 56 78" class="form-input"></div>
+        <div class="form-group"><label class="form-label">${icon('phone',13)} Téléphone du passager * <span style="font-size:10px;font-weight:400;color:var(--ink-soft);">(pour le chauffeur)</span></label><input id="formTel" type="tel" value="${f.tel||''}" placeholder="Ex: 06 12 34 56 78" class="form-input"></div>
         `}
 
         <div class="form-group"><label class="form-label">Commentaire (optionnel)</label><textarea id="formCom" class="form-input" style="min-height:72px;resize:vertical;" placeholder="Informations complémentaires...">${f.com}</textarea></div>
         <p style="font-size:13px;color:var(--ink-soft);text-align:center;margin-bottom:10px;">Lorsque votre demande sera prise en compte, vous recevrez une confirmation par email.</p>
         <label style="display:flex;align-items:center;gap:10px;padding:13px 16px;background:var(--white);border:1.5px solid var(--border);border-radius:14px;cursor:pointer;margin-bottom:10px;">
-            <input type="checkbox" id="formCopyMail" ${f.copyMail?'checked':''} style="width:18px;height:18px;accent-color:var(--ink);cursor:pointer;flex-shrink:0;">
+            <input type="checkbox" id="formCopyMail" ${f.copyMail?'checked':''} style="width:18px;height:18px;accent-color:var(--accent);cursor:pointer;flex-shrink:0;">
             <span style="font-size:14px;font-weight:500;">Recevoir une copie de ma demande par mail</span>
         </label>
         <button id="formNextStep" class="btn-primary" style="width:100%;padding:14px;font-size:16px;">Vérifier →</button>
@@ -807,7 +890,9 @@ function renderInlineForm(m){
     /* ─ STEP 3 : RÉCAP ─ */
     const pourQuiLabel = f.pourQui.includes('__autre__')
         ? (f.pourQuiAutre||'Autre') : f.pourQui.join(', ')||'—';
+    const nbNuits = isHotel && f.date && f.dateDepart ? Math.round((parseDate(f.dateDepart)-parseDate(f.date))/(1000*60*60*24)) : null;
     const descFinal = isRepas ? (f.desc||'Commande repas')
+        : isHotel ? (f.desc||`Hôtel ${f.lieu||'?'}`)
         : `Taxi ${(f.de||'?').split(',')[0]} → ${(f.vers||'?').split(',')[0]}`;
 
     return card(`
@@ -820,8 +905,10 @@ function renderInlineForm(m){
                 ["Type",`${TYPE_ICON[f.type]} ${TYPE_LABEL[f.type]}`],
                 ["Demandeur",f.dem||'—'],
                 ["Pour",pourQuiLabel],
-                ["Date & heure",`${$d(f.date)} à ${f.heure}`],
-                isRepas?["Lieu",f.lieu||'—']:["Trajet",`${(f.de||'?').split(',')[0]} → ${(f.vers||'?').split(',')[0]}`],
+                ...(isHotel
+                    ? [["Arrivée",$d(f.date)],["Départ",$d(f.dateDepart)],...(nbNuits!==null&&nbNuits>0?[["Durée",`${nbNuits} nuit${nbNuits>1?'s':''}`]]:[])]
+                    : [["Date & heure",`${$d(f.date)} à ${f.heure}`]]),
+                isRepas?["Lieu",f.lieu||'—']:isHotel?["Ville",f.lieu||'—']:["Trajet",`${(f.de||'?').split(',')[0]} → ${(f.vers||'?').split(',')[0]}`],
                 ["Prestataire",f.presta||'—'],
             ].map(([k,v],i,arr)=>`
                 <div style="display:flex;justify-content:space-between;align-items:flex-start;padding:10px 0;${i<arr.length-1?'border-bottom:1px solid #e8e5df;':''}gap:10px;">
@@ -830,7 +917,7 @@ function renderInlineForm(m){
                 </div>`).join('')}
         </div>
         <div style="background:#fffbeb;border-radius:12px;padding:12px 16px;margin-bottom:18px;">
-            <span style="color:#b45309;font-size:13px;">⏳ En attente de validation admin</span>
+            <span style="color:#b45309;font-size:13px;">En attente de validation admin</span>
         </div>
         <button id="formSubmit" class="btn-primary" style="width:100%;padding:14px;font-size:16px;">✓ Envoyer ma demande</button>
     `);
@@ -842,7 +929,7 @@ function renderInlineForm(m){
 function renderAdminLogin(){
     return `<div class="login-wrap">
         <div class="login-card">
-            <div style="width:64px;height:64px;border-radius:20px;background:var(--ink);display:flex;align-items:center;justify-content:center;font-size:28px;margin:0 auto 18px;">🔐</div>
+            <div style="width:64px;height:64px;border-radius:20px;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;margin:0 auto 18px;">${icon('lock',28)}</div>
             <div style="font-family:'DM Serif Display',serif;font-size:24px;margin-bottom:6px;">Accès Admin</div>
             <div style="color:#9e9a93;margin-bottom:22px;font-size:14px;">Saisissez votre code d'accès</div>
             <input type="password" id="adminCodeInput" class="form-input" style="font-size:22px;text-align:center;letter-spacing:8px;margin-bottom:10px;" placeholder="••••••••" autocomplete="current-password">
@@ -861,30 +948,10 @@ function renderAdminView(m){
     const attente=state.data.filter(c=>c.pris==="En attente"||c.pris==="En cours");
     if(state.detail) return renderDetail(state.detail,m);
 
-    const sidebar=!m?`<div style="background:var(--white);border:1px solid var(--border);padding:12px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:20px;border-radius:20px;box-shadow:0 1px 3px rgba(0,0,0,0.04);">
-        <div style="display:flex;align-items:center;gap:8px;">
-            <span style="font-size:20px;">👑</span>
-            <span style="font-family:'DM Serif Display',serif;font-size:16px;">Administration</span>
-        </div>
-        <nav style="display:flex;gap:4px;flex-wrap:wrap;">
-            ${[["dashboard","📊","Dashboard"],["activite","📋","Activité"],["settings","⚙️","Réglages"]].map(([tab,icon,label])=>`
-                <button data-admin-tab="${tab}" style="display:flex;align-items:center;gap:6px;padding:7px 14px;border-radius:30px;border:none;cursor:pointer;font-size:13px;font-weight:500;background:${state.adminTab===tab?'var(--ink)':'transparent'};color:${state.adminTab===tab?'#fff':'#5a5550'};transition:all 0.15s;white-space:nowrap;">
-                    ${icon} ${label}${tab==='activite'&&attente.length?` <span style="background:#f59e0b;color:#fff;border-radius:50%;width:16px;height:16px;font-size:10px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;margin-left:2px;">${attente.length}</span>`:''}
-                </button>`).join('')}
-        </nav>
-        <div style="display:flex;gap:8px;">
-            <button data-back-home style="padding:7px 14px;border-radius:30px;border:1px solid var(--border);cursor:pointer;font-size:13px;color:#9e9a93;background:transparent;">← Accueil</button>
-            <button data-admin-logout style="background:#fef2f2;border:1px solid #fecaca;border-radius:30px;padding:7px 14px;color:#b91c1c;cursor:pointer;font-size:13px;font-weight:600;">🔓 Déco</button>
-            <div style="position:relative;display:inline-block;">
-                <button id="fabAdminMain" style="width:36px;height:36px;border-radius:50%;background:var(--ink);color:#fff;border:none;font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;">+</button>
-                <div id="fabAdminMenu" style="display:none;position:absolute;top:44px;right:0;background:#fff;border:1.5px solid #e8e5df;border-radius:14px;box-shadow:0 8px 24px rgba(0,0,0,.12);padding:8px;z-index:9999;min-width:160px;flex-direction:column;gap:4px;">
-                    <button data-saisie-type="repas" style="background:none;border:none;border-radius:10px;padding:10px 14px;font-size:13px;cursor:pointer;text-align:left;width:100%;">🍽 Repas</button>
-                    <button data-saisie-type="taxi" style="background:none;border:none;border-radius:10px;padding:10px 14px;font-size:13px;cursor:pointer;text-align:left;width:100%;">🚕 Taxi</button>
-                    <button data-saisie-type="commande" style="background:none;border:none;border-radius:10px;padding:10px 14px;font-size:13px;cursor:pointer;text-align:left;width:100%;">📦 Commande</button>
-                </div>
-            </div>
-        </div>
-    </div>`:'';
+    const activiteSubTabs=[['reservations','utensils','Réservations'],['commandes','box','Commandes'],['hotels','bed','Hôtels'],['historique','clock','Historique'],['tout','grid','Tout'],['corbeille','trash','Corbeille']].map(([k,ic,label])=>{
+        const active=(state.activiteTab||'reservations')===k;
+        return `<button data-activite-tab="${k}" style="display:flex;align-items:center;gap:6px;padding:6px 12px;border-radius:30px;border:none;cursor:pointer;font-size:13px;font-weight:500;white-space:nowrap;background:${active?'#fff':'rgba(255,255,255,.14)'};color:${active?'var(--accent)':'rgba(255,255,255,.9)'};transition:all 0.15s;">${icon(ic,15)} ${label}</button>`;
+    }).join('');
 
     let main='';
     if(state.adminTab==='settings')        main=renderSettings();
@@ -897,9 +964,9 @@ function renderAdminView(m){
         <div style="display:flex;align-items:center;justify-content:space-between;">
             <div>
                 <div style="font-size:10px;font-weight:600;letter-spacing:2px;color:rgba(255,255,255,.35);margin-bottom:4px;">ADMIN</div>
-                <div style="font-family:'DM Serif Display',serif;font-size:19px;color:#fff;">${{dashboard:"📊 Dashboard",activite:"📋 Activité",settings:"⚙️ Réglages"}[state.adminTab]}</div>
+                <div style="font-family:'DM Serif Display',serif;font-size:19px;color:#fff;">${{dashboard:icon('dashboard',17)+" Dashboard",activite:icon('clipboard',17)+" Activité",settings:icon('sliders',17)+" Réglages"}[state.adminTab]}</div>
             </div>
-            <button data-admin-logout style="background:rgba(255,255,255,.1);border:none;border-radius:10px;padding:8px 13px;color:rgba(255,255,255,.7);cursor:pointer;font-size:13px;font-weight:600;">🔓</button>
+            <button data-admin-logout style="background:rgba(255,255,255,.1);border:none;border-radius:10px;padding:8px 13px;color:rgba(255,255,255,.7);cursor:pointer;display:flex;align-items:center;">${icon('logout',16)}</button>
         </div>
     </div>
     <div style="padding:16px;padding-bottom:calc(80px + env(safe-area-inset-bottom,0px) + 16px);">${main}</div>
@@ -907,29 +974,52 @@ function renderAdminView(m){
     ${state.toast?`<div class="toast">${state.toast}</div>`:''}
     <div class="fab-area">
         ${state.fabOpen?`<div class="fab-menu">
-            ${[["commande","📦","Commande"],["taxi","🚕","Taxi"],["repas","🍽","Repas"]].map(([t,i,l])=>`<button data-saisie-type="${t}" class="fab-item">${i} ${l}</button>`).join('')}
+            ${[["commande","box","Commande"],["taxi","car","Taxi"],["repas","utensils","Repas"],["hotel","bed","Hôtel"]].map(([t,ic,l])=>`<button data-saisie-type="${t}" class="fab-item">${icon(ic,15)} ${l}</button>`).join('')}
         </div>`:''}
         <button id="fabMain" class="fab-main ${state.fabOpen?'open':''}">+</button>
     </div>
     <nav class="mobile-nav"><div class="mobile-nav-items">
-        <button class="mobile-nav-btn" data-back-home><span class="nav-icon">🏠</span><span>Accueil</span></button>
-        ${[["dashboard","📊","Dash"],["activite","📋","Activité"],["settings","⚙️","Régl."]].map(([tab,icon,label])=>`
+        <button class="mobile-nav-btn" data-back-home><span class="nav-icon">${icon('home',18)}</span><span>Accueil</span></button>
+        ${[["dashboard","dashboard","Dash"],["activite","clipboard","Activité"],["settings","sliders","Régl."]].map(([tab,ic,label])=>`
             <button class="mobile-nav-btn ${state.adminTab===tab?'active':''}" data-admin-tab="${tab}">
-                <span class="nav-icon">${icon}</span><span>${label}</span><span class="nav-dot"></span>
+                <span class="nav-icon">${icon(ic,18)}</span><span>${label}</span><span class="nav-dot"></span>
             </button>`).join('')}
     </div></nav>`;
 
     return `
-    <div style="background:var(--ink);padding:24px 40px;">
-        <div style="max-width:1400px;margin:0 auto;display:flex;justify-content:space-between;align-items:center;">
-            <div>
-                <div style="font-size:10px;font-weight:600;letter-spacing:2px;color:rgba(255,255,255,.35);margin-bottom:6px;">ADMINISTRATION</div>
-                <div style="font-family:'DM Serif Display',serif;font-size:26px;color:#fff;">Gestion des commandes 2026</div>
+    <div style="background:var(--accent);padding:12px 32px;">
+        <div style="max-width:1400px;margin:0 auto;">
+            <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px 20px;">
+                <div style="display:flex;align-items:center;gap:10px;">
+                    <div>
+                        <div style="font-size:9px;font-weight:600;letter-spacing:2px;color:rgba(255,255,255,.4);margin-bottom:2px;">ADMINISTRATION</div>
+                        <div style="font-family:'DM Serif Display',serif;font-size:17px;color:#fff;white-space:nowrap;">Gestion des commandes 2026</div>
+                    </div>
+                </div>
+                <nav style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;">
+                    ${[["dashboard","dashboard","Dashboard"],["activite","clipboard","Activité"],["settings","sliders","Réglages"]].map(([tab,ic,label])=>`
+                        <button data-admin-tab="${tab}" style="display:flex;align-items:center;gap:6px;padding:6px 12px;border-radius:30px;border:none;cursor:pointer;font-size:13px;font-weight:500;white-space:nowrap;background:${state.adminTab===tab?'#fff':'transparent'};color:${state.adminTab===tab?'var(--accent)':'rgba(255,255,255,.9)'};transition:all 0.15s;">
+                            ${icon(ic,15)} ${label}${tab==='activite'&&attente.length?` <span style="background:#f59e0b;color:#fff;border-radius:50%;width:16px;height:16px;font-size:10px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;margin-left:2px;">${attente.length}</span>`:''}
+                        </button>`).join('')}
+                </nav>
+                <div style="display:flex;gap:8px;align-items:center;">
+                    <button data-back-home style="display:flex;align-items:center;gap:6px;padding:6px 12px;border-radius:30px;border:1px solid rgba(255,255,255,.35);cursor:pointer;font-size:13px;color:#fff;background:transparent;white-space:nowrap;">${icon('home',15)} Accueil</button>
+                    <button data-admin-logout style="display:flex;align-items:center;gap:6px;background:#fef2f2;border:1px solid #fecaca;border-radius:30px;padding:6px 12px;color:#b91c1c;cursor:pointer;font-size:13px;font-weight:600;white-space:nowrap;">${icon('logout',15)} Déco</button>
+                    <div style="position:relative;display:inline-block;">
+                        <button id="fabAdminMain" style="width:34px;height:34px;border-radius:50%;background:#fff;color:var(--accent);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;">${icon('plus',18)}</button>
+                        <div id="fabAdminMenu" style="display:none;position:absolute;top:42px;right:0;background:#fff;border:1.5px solid #e8e5df;border-radius:14px;box-shadow:0 8px 24px rgba(0,0,0,.12);padding:8px;z-index:9999;min-width:160px;flex-direction:column;gap:4px;">
+                            <button data-saisie-type="repas" style="display:flex;align-items:center;gap:8px;background:none;border:none;border-radius:10px;padding:10px 14px;font-size:13px;cursor:pointer;text-align:left;width:100%;color:var(--ink);">${icon('utensils',15)} Repas</button>
+                            <button data-saisie-type="taxi" style="display:flex;align-items:center;gap:8px;background:none;border:none;border-radius:10px;padding:10px 14px;font-size:13px;cursor:pointer;text-align:left;width:100%;color:var(--ink);">${icon('car',15)} Taxi</button>
+                            <button data-saisie-type="commande" style="display:flex;align-items:center;gap:8px;background:none;border:none;border-radius:10px;padding:10px 14px;font-size:13px;cursor:pointer;text-align:left;width:100%;color:var(--ink);">${icon('box',15)} Commande</button>
+                            <button data-saisie-type="hotel" style="display:flex;align-items:center;gap:8px;background:none;border:none;border-radius:10px;padding:10px 14px;font-size:13px;cursor:pointer;text-align:left;width:100%;color:var(--ink);">${icon('bed',15)} Hôtel</button>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <button data-back-home class="back-btn">← Accueil</button>
+            ${state.adminTab==='activite'?`<div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,.18);">${activiteSubTabs}</div>`:''}
         </div>
     </div>
-    <div class="admin-grid">${sidebar}<div class="admin-main">${main}${state.saisieType?renderSaisieModal():''}</div></div>
+    <div class="admin-grid"><div class="admin-main">${main}${state.saisieType?renderSaisieModal():''}</div></div>
 
     ${state.toast?`<div class="toast">${state.toast}</div>`:''}`;
 }
@@ -938,18 +1028,19 @@ function renderAdminView(m){
    DETAIL
 ══════════════════════════════════════ */
 function renderDetail(d,m){
-    const typeIcon=d.type==='taxi'?'🚕':d.type==='repas'?'🍽':'📦';
+    const typeIcon=icon(d.type==='taxi'?'car':d.type==='repas'?'utensils':d.type==='hotel'?'bed':'box',16);
     const isRepas=d.type==='repas';
     const isTaxi=d.type==='taxi';
     const isCmd=d.type==='commande';
+    const isHotel=d.type==='hotel';
 
     const pqHtml = isCmd
         ? '<label class="form-label">Fournisseur</label><select id="editPresta2" class="form-select"><option value="">—</option>'+(d.presta&&!P_CMD.includes(d.presta)?'<option selected>'+d.presta+'</option>':'')+P_CMD.map(p=>'<option '+(d.presta===p?'selected':'')+'>'+p+'</option>').join('')+'</select>'
-        : '<label class="form-label">Pour qui</label><div style="position:relative;" id="editPqWrapper"><button type="button" id="editPqToggle" style="width:100%;border:1.5px solid var(--border);border-radius:14px;padding:12px 14px;font-size:14px;background:var(--white);text-align:left;cursor:pointer;display:flex;justify-content:space-between;align-items:center;font-family:DM Sans,sans-serif;color:var(--ink);"><span id="editPqLabel">'+(d.pourQui||'— Choisir —')+'</span><span style="font-size:11px;color:var(--ink-soft);">▼</span></button><div id="editPqDropdown" style="display:none;position:absolute;top:calc(100% + 4px);left:0;right:0;background:var(--white);border:1.5px solid var(--border);border-radius:14px;box-shadow:0 8px 24px rgba(0,0,0,0.10);z-index:999;overflow:hidden;max-height:220px;overflow-y:auto;">'+settings.directeurs.map(dir=>'<label style="display:flex;align-items:center;gap:12px;padding:11px 16px;cursor:pointer;border-bottom:1px solid var(--border-light);"><input type="checkbox" class="edit-pq-check" value="'+dir+'" '+((d.pourQui||'').includes(dir)?'checked':'')+' style="width:17px;height:17px;accent-color:var(--ink);cursor:pointer;flex-shrink:0;"><span style="font-size:14px;">'+dir+'</span></label>').join('')+'<div style="padding:10px 16px;border-top:1px solid var(--border-light);"><input id="editPqAutre" type="text" placeholder="Autre nom..." value="'+(settings.directeurs.some(d2=>(d.pourQui||'').includes(d2))?'':d.pourQui||'')+'" class="form-input" style="font-size:13px;padding:7px 10px;"></div></div></div>';
+        : '<label class="form-label">Pour qui</label><div style="position:relative;" id="editPqWrapper"><button type="button" id="editPqToggle" style="width:100%;border:1.5px solid var(--border);border-radius:14px;padding:12px 14px;font-size:14px;background:var(--white);text-align:left;cursor:pointer;display:flex;justify-content:space-between;align-items:center;font-family:DM Sans,sans-serif;color:var(--ink);"><span id="editPqLabel">'+(d.pourQui||'— Choisir —')+'</span><span style="font-size:11px;color:var(--ink-soft);">▼</span></button><div id="editPqDropdown" style="display:none;position:absolute;top:calc(100% + 4px);left:0;right:0;background:var(--white);border:1.5px solid var(--border);border-radius:14px;box-shadow:0 8px 24px rgba(0,0,0,0.10);z-index:999;overflow:hidden;max-height:220px;overflow-y:auto;">'+settings.directeurs.map(dir=>'<label style="display:flex;align-items:center;gap:12px;padding:11px 16px;cursor:pointer;border-bottom:1px solid var(--border-light);"><input type="checkbox" class="edit-pq-check" value="'+dir+'" '+((d.pourQui||'').includes(dir)?'checked':'')+' style="width:17px;height:17px;accent-color:var(--accent);cursor:pointer;flex-shrink:0;"><span style="font-size:14px;">'+dir+'</span></label>').join('')+'<div style="padding:10px 16px;border-top:1px solid var(--border-light);"><input id="editPqAutre" type="text" placeholder="Autre nom..." value="'+(settings.directeurs.some(d2=>(d.pourQui||'').includes(d2))?'':d.pourQui||'')+'" class="form-input" style="font-size:13px;padding:7px 10px;"></div></div></div>';
 
     const editForm=`
     <div style="background:#fafaf8;border-radius:16px;padding:16px;margin-bottom:14px;">
-        <div style="font-weight:700;font-size:13px;margin-bottom:14px;color:var(--ink-soft);">✏️ Modifier la commande</div>
+        <div style="font-weight:700;font-size:13px;margin-bottom:14px;color:var(--ink-soft);">${icon('edit',13)} Modifier la commande</div>
 
         <div class="form-group"><label class="form-label">${isRepas?"Type de repas":"Description"}</label>
             ${isRepas
@@ -959,14 +1050,14 @@ function renderDetail(d,m){
         </div>
 
         ${isRepas?`
-        <div class="form-group"><label class="form-label">🍽 Type de repas souhaité</label><select id="editPresta" class="form-select"><option value="">—</option>${d.presta&&!P_REPAS.includes(d.presta)?`<option selected>${d.presta}</option>`:""  }${P_REPAS.map(p=>`<option ${d.presta===p?'selected':''}>${p}</option>`).join('')}</select></div>
+        <div class="form-group"><label class="form-label">${icon('utensils',13)} Type de repas souhaité</label><select id="editPresta" class="form-select"><option value="">—</option>${d.presta&&!P_REPAS.includes(d.presta)?`<option selected>${d.presta}</option>`:""  }${P_REPAS.map(p=>`<option ${d.presta===p?'selected':''}>${p}</option>`).join('')}</select></div>
         <div class="form-group"><label class="form-label">Lieu</label><input id="editLieu" type="text" value="${d.lieu||''}" class="form-input"></div>
         <div class="form-group"><label class="form-label">Nb personnes</label><select id="editNb" class="form-select">${['1','2','3','4','5','6','7','8','9','10+'].map(n=>`<option ${String(d.nb)===n?'selected':''}>${n}</option>`).join('')}</select></div>
         `:''}
 
         ${isTaxi?`
-        <div class="form-group"><label class="form-label">📍 Départ</label><input id="editDe" type="text" value="${d.depart||''}" class="form-input"></div>
-        <div class="form-group"><label class="form-label">🏁 Arrivée</label><input id="editVers" type="text" value="${d.arrivee||''}" class="form-input"></div>
+        <div class="form-group"><label class="form-label">${icon('pin',13)} Départ</label><input id="editDe" type="text" value="${d.depart||''}" class="form-input"></div>
+        <div class="form-group"><label class="form-label">${icon('flag',13)} Arrivée</label><input id="editVers" type="text" value="${d.arrivee||''}" class="form-input"></div>
         <div class="form-group"><label class="form-label">Prestataire</label><select id="editPresta" class="form-select"><option value="">—</option>${P_TAXI.map(p=>`<option ${d.presta===p?'selected':''}>${p}</option>`).join('')}</select></div>
         `:''}
 
@@ -975,13 +1066,20 @@ function renderDetail(d,m){
         <div class="form-group"><label class="form-label">Lieu livraison</label><input id="editLieu" type="text" value="${d.lieu||''}" class="form-input"></div>
         `:''}
 
+        ${isHotel?`
+        <div class="form-group"><label class="form-label">${icon('pin',13)} Ville</label><input id="editLieu" type="text" value="${d.lieu||''}" class="form-input"></div>
+        <div class="form-group"><label class="form-label">${icon('bed',13)} Hôtel</label><select id="editPresta" class="form-select"><option value="">—</option>${d.presta&&!P_HOTEL.includes(d.presta)?`<option selected>${d.presta}</option>`:''}${P_HOTEL.map(p=>`<option ${d.presta===p?'selected':''}>${p}</option>`).join('')}</select></div>
+        `:''}
+
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-            <div class="form-group"><label class="form-label">Date</label><input id="editDate" type="date" value="${d.date&&d.date.includes('-')?d.date:d.date?d.date.split('/').reverse().join('-'):''}" class="form-input"></div>
-            <div class="form-group"><label class="form-label">Heure</label><input id="editHeure" type="text" value="${d.heure||''}" placeholder="Ex: 08h30" class="form-input"></div>
+            <div class="form-group"><label class="form-label">${isHotel?icon('calendar',13)+' Arrivée':'Date'}</label><input id="editDate" type="date" value="${d.date&&d.date.includes('-')?d.date:d.date?d.date.split('/').reverse().join('-'):''}" class="form-input"></div>
+            ${isHotel
+                ?`<div class="form-group"><label class="form-label">${icon('calendar',13)} Départ</label><input id="editDateDepart" type="date" value="${d.dateDepart&&d.dateDepart.includes('-')?d.dateDepart:d.dateDepart?d.dateDepart.split('/').reverse().join('-'):''}" class="form-input"></div>`
+                :`<div class="form-group"><label class="form-label">Heure</label><input id="editHeure" type="text" value="${d.heure||''}" placeholder="Ex: 08h30" class="form-input"></div>`}
         </div>
 
         <div class="form-group">${pqHtml}</div>
-        ${d.type==='taxi'?`<div class="form-group"><label class="form-label">📱 Téléphone passager</label><input id="editTel" type="tel" value="${d.tel||''}" class="form-input"></div>`:''}
+        ${d.type==='taxi'?`<div class="form-group"><label class="form-label">${icon('phone',13)} Téléphone passager</label><input id="editTel" type="tel" value="${d.tel||''}" class="form-input"></div>`:''}
         <div class="form-group"><label class="form-label">Commentaire</label><textarea id="editComment" class="form-input" style="min-height:60px;resize:vertical;">${d.comment||''}</textarea></div>
 
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
@@ -989,11 +1087,11 @@ function renderDetail(d,m){
             <div class="form-group"><label class="form-label">Paiement</label><select id="editPaie" class="form-select"><option ${d.paie==='CB'?'selected':''}>CB</option><option ${d.paie==='Facturation'?'selected':''}>Facturation</option></select></div>
         </div>
 
-        <button id="saveEdit" class="btn-primary" style="width:100%;padding:12px;margin-top:4px;">💾 Sauvegarder les modifications</button>
+        <button id="saveEdit" class="btn-primary" style="width:100%;padding:12px;margin-top:4px;">${icon('save',14)} Sauvegarder les modifications</button>
     </div>`;
 
     const inner=`
-    ${m?`<div style="background:var(--ink);padding:calc(16px + env(safe-area-inset-top,0px)) 20px 20px;">
+    ${m?`<div style="background:var(--accent);padding:calc(16px + env(safe-area-inset-top,0px)) 20px 20px;">
         <button data-back-detail class="back-btn">← Retour</button>
         <div style="font-family:'DM Serif Display',serif;font-size:19px;color:#fff;margin-top:8px;">${typeIcon} ${d.desc}</div>
         <div style="color:rgba(255,255,255,.5);font-size:13px;margin-top:3px;">${d.demandeur}${d.pourQui?' · Pour '+d.pourQui:''}</div>
@@ -1008,23 +1106,23 @@ function renderDetail(d,m){
     <div style="margin-bottom:14px;">
         <div class="form-label" style="margin-bottom:10px;">Statut de la commande</div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
-            <button data-set-status='${JSON.stringify({id:d.id,status:"En cours"})}' style="padding:8px 16px;border-radius:20px;font-size:13px;border:1.5px solid ${d.pris==='En cours'?'var(--ink)':'var(--border)'};background:${d.pris==='En cours'?'var(--ink)':'#fff'};color:${d.pris==='En cours'?'#fff':'#5a5550'};cursor:pointer;">${ST['En cours'].label}</button>
-            <button data-set-status='${JSON.stringify({id:d.id,status:"OUI"})}' style="padding:9px 18px;border-radius:20px;font-size:13px;font-weight:700;border:1.5px solid ${d.pris==='OUI'?'var(--ink)':'#22c55e'};background:${d.pris==='OUI'?'var(--ink)':'#f0fdf4'};color:${d.pris==='OUI'?'#fff':'#15803d'};cursor:pointer;">✅ Commande validée</button>
+            <button data-set-status='${JSON.stringify({id:d.id,status:"En cours"})}' style="padding:8px 16px;border-radius:20px;font-size:13px;border:1.5px solid ${d.pris==='En cours'?'var(--accent)':'var(--border)'};background:${d.pris==='En cours'?'var(--accent)':'#fff'};color:${d.pris==='En cours'?'#fff':'#5a5550'};cursor:pointer;">${ST['En cours'].label}</button>
+            <button data-set-status='${JSON.stringify({id:d.id,status:"OUI"})}' style="padding:9px 18px;border-radius:20px;font-size:13px;font-weight:700;border:1.5px solid ${d.pris==='OUI'?'var(--accent)':'#22c55e'};background:${d.pris==='OUI'?'var(--accent)':'#f0fdf4'};color:${d.pris==='OUI'?'#fff':'#15803d'};cursor:pointer;">${icon('check',14)} Commande validée</button>
         </div>
     </div>
     ${state.confirmDelete===d.id?`
     <div style="background:#fef2f2;border:1.5px solid #fecaca;border-radius:14px;padding:14px 16px;margin-bottom:10px;">
-        <div style="font-weight:700;font-size:14px;color:#b91c1c;margin-bottom:10px;">⚠️ Confirmer la suppression ?</div>
+        <div style="font-weight:700;font-size:14px;color:#b91c1c;margin-bottom:10px;display:flex;align-items:center;gap:7px;">${icon('alert',15)} Confirmer la suppression ?</div>
         <div style="font-size:13px;color:#5a5550;margin-bottom:12px;">Cette commande sera déplacée dans la corbeille.</div>
         <div style="display:flex;gap:8px;">
-            <button id="confirmDeleteYes" style="flex:1;background:#b91c1c;color:#fff;border:none;border-radius:10px;padding:10px;font-weight:700;font-size:14px;cursor:pointer;">🗑 Oui, supprimer</button>
+            <button id="confirmDeleteYes" style="flex:1;background:#b91c1c;color:#fff;border:none;border-radius:10px;padding:10px;font-weight:700;font-size:14px;cursor:pointer;">${icon('trash',14)} Oui, supprimer</button>
             <button id="confirmDeleteNo" style="flex:1;background:#f1f5f9;color:#5a5550;border:none;border-radius:10px;padding:10px;font-weight:600;font-size:14px;cursor:pointer;">Annuler</button>
         </div>
     </div>`:`
-    <button data-delete-item="${d.id}" class="btn-danger" style="width:100%;padding:12px;border-radius:14px;">🗑 Supprimer la commande</button>`}
+    <button data-delete-item="${d.id}" class="btn-danger" style="width:100%;padding:12px;border-radius:14px;">${icon('trash',14)} Supprimer la commande</button>`}
     ${m?'</div>':''}`;
 
-    if(m) return `<div class="detail-view">${inner}</div>${state.toast?`<div class="toast">${state.toast}</div>`:''}<nav class="mobile-nav"><div class="mobile-nav-items"><button class="mobile-nav-btn" data-back-home><span class="nav-icon">🏠</span><span>Accueil</span></button>${[["dashboard","📊","Dash"],["activite","📋","Activité"],["settings","⚙️","Régl."]].map(([tab,icon,label])=>`<button class="mobile-nav-btn ${state.adminTab===tab?'active':''}" data-admin-tab="${tab}"><span class="nav-icon">${icon}</span><span>${label}</span><span class="nav-dot"></span></button>`).join('')}</div></nav>`;
+    if(m) return `<div class="detail-view">${inner}</div>${state.toast?`<div class="toast">${state.toast}</div>`:''}<nav class="mobile-nav"><div class="mobile-nav-items"><button class="mobile-nav-btn" data-back-home><span class="nav-icon">${icon('home',18)}</span><span>Accueil</span></button>${[["dashboard","dashboard","Dash"],["activite","clipboard","Activité"],["settings","sliders","Régl."]].map(([tab,ic,label])=>`<button class="mobile-nav-btn ${state.adminTab===tab?'active':''}" data-admin-tab="${tab}"><span class="nav-icon">${icon(ic,18)}</span><span>${label}</span><span class="nav-dot"></span></button>`).join('')}</div></nav>`;
     return inner;
 }
 
@@ -1046,13 +1144,21 @@ function renderDashboard(total,attente,m){
         .filter(c=>c.pris==='OUI'&&(daysLeft(c.date)??-1)>=0)
         .sort((a,b)=>(parseDate(a.date)||new Date(0))-(parseDate(b.date)||new Date(0)));
 
-    const totalMois = state.data.filter(c=>{
+    const validesMois = state.data.filter(c=>{
         if(c.pris!=='OUI') return false;
         const d=parseDate(c.date);
         return d && d.getMonth()===today2.getMonth() && d.getFullYear()===today2.getFullYear();
-    }).reduce((a,b)=>a+(b.prix||0),0);
+    });
+    const totalMois = validesMois.reduce((a,b)=>a+(b.prix||0),0);
 
     const nbAttente = enAttente.length;
+    const nbEnRetard = enAttente.filter(c=>{const j=daysLeft(c.date);return j!==null&&j<0;}).length;
+    const prochaine = aVenir.length ? $d(aVenir[0].date) : null;
+
+    // Répartition par type de demande
+    const nbRepas = state.data.filter(c=>c.type==='repas').length;
+    const nbTaxi  = state.data.filter(c=>c.type==='taxi').length;
+    const nbHotel = state.data.filter(c=>c.type==='hotel').length;
 
     function makeIcsSingle(c){
         if(!c.date) return null;
@@ -1067,14 +1173,14 @@ function renderDashboard(total,attente,m){
         const hm=(c.heure||'').match(/(\d{1,2})h(\d{2})/);
         if(hm){ const hh=parseInt(hm[1]),mm=parseInt(hm[2]); startDt=`${yr}${pad(mo)}${pad(dy)}T${pad(hh)}${pad(mm)}00`; const tot=hh*60+mm+30; endDt=`${yr}${pad(mo)}${pad(dy)}T${pad(Math.floor(tot/60)%24)}${pad(tot%60)}00`; }
         else { startDt=`${yr}${pad(mo)}${pad(dy)}T120000`; endDt=`${yr}${pad(mo)}${pad(dy)}T123000`; }
-        const evt=['BEGIN:VEVENT',`UID:${uid}`,`DTSTART:${startDt}`,`DTEND:${endDt}`,`SUMMARY:${c.type==='taxi'?'🚕':c.type==='repas'?'🍽':'📦'} ${desc}`,`DESCRIPTION:${c.demandeur||''} — ${c.pourQui||''} — ${c.presta||''}${c.tel?' — 📱 '+c.tel:''}`,loc?`LOCATION:${loc}`:'','END:VEVENT'].filter(Boolean).join('\r\n');
+        const evt=['BEGIN:VEVENT',`UID:${uid}`,`DTSTART:${startDt}`,`DTEND:${endDt}`,`SUMMARY:${c.type==='taxi'?'🚕':c.type==='repas'?'🍽':c.type==='hotel'?'🏨':'📦'} ${desc}`,`DESCRIPTION:${c.demandeur||''} — ${c.pourQui||''} — ${c.presta||''}${c.tel?' — 📱 '+c.tel:''}`,loc?`LOCATION:${loc}`:'','END:VEVENT'].filter(Boolean).join('\r\n');
         return ['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//GestionCommandes//FR','CALSCALE:GREGORIAN','METHOD:PUBLISH',evt,'END:VCALENDAR'].join('\r\n');
     }
 
     function dashCard(c, showValidateBtn){
         const j=daysLeft(c.date); const badge=j!==null&&j<=5?badgeColor(j):null;
         const icsData=makeIcsSingle(c);
-        const typeIcon=c.type==='taxi'?'🚕':c.type==='repas'?'🍽':'📦';
+        const typeIcon=icon(c.type==='taxi'?'car':c.type==='repas'?'utensils':c.type==='hotel'?'bed':'box',13);
         return `<div style="display:flex;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid #f0eeea;">
             <div data-open-detail='${JSON.stringify(c).replace(/'/g,"&apos;")}' style="display:flex;align-items:center;gap:10px;flex:1;min-width:0;cursor:pointer;">
                 ${avatar(c.demandeur,32)}
@@ -1085,57 +1191,107 @@ function renderDashboard(total,attente,m){
             </div>
             <div style="display:flex;gap:5px;align-items:center;flex-shrink:0;">
                 ${badge?`<span style="background:${badge.bg};border:1px solid ${badge.border};color:${badge.color};border-radius:20px;padding:3px 8px;font-size:11px;font-weight:700;">${badge.label}</span>`:''}
-                ${icsData?`<button data-ics-single="${encodeURIComponent(icsData).replace(/"/g,'&quot;')}" data-ics-name="${(c.desc||'commande').replace(/[^a-z0-9]/gi,'_')}" title="Ajouter au calendrier" style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:4px 9px;font-size:13px;cursor:pointer;">📆</button>`:''}
-                ${showValidateBtn?`<button data-set-status='${JSON.stringify({id:c.id,status:"OUI"})}' style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:4px 9px;font-size:12px;cursor:pointer;color:#15803d;font-weight:700;" title="Valider">✓</button>
-                <button data-set-status='${JSON.stringify({id:c.id,status:"Annulé"})}' style="background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:4px 9px;font-size:12px;cursor:pointer;color:#b91c1c;font-weight:700;" title="Annuler">✕</button>`:''}
+                ${icsData?`<button data-ics-single="${encodeURIComponent(icsData).replace(/"/g,'&quot;')}" data-ics-name="${(c.desc||'commande').replace(/[^a-z0-9]/gi,'_')}" title="Ajouter au calendrier" style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:5px 9px;cursor:pointer;display:flex;align-items:center;color:#1d4ed8;">${icon('calendar',13)}</button>`:''}
+                ${showValidateBtn?`<button data-set-status='${JSON.stringify({id:c.id,status:"OUI"})}' style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:5px 9px;cursor:pointer;color:#15803d;display:flex;align-items:center;" title="Valider">${icon('check',13)}</button>
+                <button data-set-status='${JSON.stringify({id:c.id,status:"Annulé"})}' style="background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:5px 9px;cursor:pointer;color:#b91c1c;display:flex;align-items:center;" title="Annuler">${icon('x',13)}</button>`:''}
             </div>
         </div>`;
     }
 
+    const sectionHead=(iconName,bg,fg,title,count)=>`
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
+            <div style="width:28px;height:28px;border-radius:9px;background:${bg};color:${fg};display:flex;align-items:center;justify-content:center;flex-shrink:0;">${icon(iconName,15)}</div>
+            <div style="font-weight:700;font-size:14px;color:var(--ink);">${title}</div>
+            ${count?`<span style="background:${fg};color:#fff;border-radius:20px;padding:1px 9px;font-size:11px;font-weight:700;">${count}</span>`:''}
+        </div>`;
+
     return `<div>
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
-        <div style="font-family:'DM Serif Display',serif;font-size:${m?'18px':'22px'};">📊 Dashboard</div>
+        <div style="font-family:'DM Serif Display',serif;font-size:${m?'18px':'22px'};display:flex;align-items:center;gap:9px;color:var(--ink);">${icon('dashboard',m?18:20)} Dashboard</div>
     </div>
 
     <!-- Chiffres clés -->
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px;">
-        <div class="stat-card" style="text-align:center;">
-            <div style="font-size:11px;color:#9e9a93;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">En attente</div>
-            <div style="font-family:'DM Serif Display',serif;font-size:32px;color:${nbAttente>0?'#f59e0b':'#22c55e'};">${nbAttente}</div>
-            <div style="font-size:11px;color:#9e9a93;margin-top:4px;">demande${nbAttente>1?'s':''}</div>
+    <div class="stats-3col" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:20px;">
+        <div class="stat-card" style="display:flex;align-items:center;gap:12px;padding:13px 15px;">
+            <div style="width:38px;height:38px;border-radius:11px;background:${nbAttente>0?'#fef3c7':'#dcfce7'};color:${nbAttente>0?'#b45309':'#15803d'};display:flex;align-items:center;justify-content:center;flex-shrink:0;">${icon('hourglass',18)}</div>
+            <div style="min-width:0;">
+                <div style="font-size:10px;color:#9e9a93;text-transform:uppercase;letter-spacing:.05em;">En attente</div>
+                <div style="font-family:'DM Serif Display',serif;font-size:22px;line-height:1.3;color:${nbAttente>0?'#b45309':'#15803d'};">${nbAttente}</div>
+                <div style="font-size:11px;color:${nbEnRetard>0?'#b91c1c':'#9e9a93'};font-weight:${nbEnRetard>0?'600':'400'};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${nbEnRetard>0?`${nbEnRetard} en retard`:(nbAttente>0?'à traiter':'à jour')}</div>
+            </div>
         </div>
-        <div class="stat-card" style="text-align:center;">
-            <div style="font-size:11px;color:#9e9a93;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">Ce mois</div>
-            <div style="font-family:'DM Serif Display',serif;font-size:${totalMois>=10000?'22px':'28px'};color:#15803d;">${$ms(totalMois)}</div>
-            <div style="font-size:11px;color:#9e9a93;margin-top:4px;">validé</div>
+        <div class="stat-card" style="display:flex;align-items:center;gap:12px;padding:13px 15px;">
+            <div style="width:38px;height:38px;border-radius:11px;background:#dbeafe;color:#1d4ed8;display:flex;align-items:center;justify-content:center;flex-shrink:0;">${icon('calendar',18)}</div>
+            <div style="min-width:0;">
+                <div style="font-size:10px;color:#9e9a93;text-transform:uppercase;letter-spacing:.05em;">À venir</div>
+                <div style="font-family:'DM Serif Display',serif;font-size:22px;line-height:1.3;color:#1d4ed8;">${aVenir.length}</div>
+                <div style="font-size:11px;color:#9e9a93;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${prochaine?`prochaine : ${prochaine}`:'aucune'}</div>
+            </div>
+        </div>
+        <div class="stat-card" style="display:flex;align-items:center;gap:12px;padding:13px 15px;">
+            <div style="width:38px;height:38px;border-radius:11px;background:#dcfce7;color:#15803d;display:flex;align-items:center;justify-content:center;flex-shrink:0;">${icon('wallet',18)}</div>
+            <div style="min-width:0;">
+                <div style="font-size:10px;color:#9e9a93;text-transform:uppercase;letter-spacing:.05em;">Ce mois</div>
+                <div style="font-family:'DM Serif Display',serif;font-size:${totalMois>=10000?'16px':'22px'};line-height:1.3;color:#15803d;">${$ms(totalMois)}</div>
+                <div style="font-size:11px;color:#9e9a93;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${validesMois.length} commande${validesMois.length>1?'s':''}</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Répartition par type -->
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:20px;">
+        <div style="background:var(--white);border:1px solid var(--border);border-radius:14px;padding:10px 14px;display:flex;align-items:center;gap:10px;">
+            <div style="width:28px;height:28px;border-radius:8px;background:#fff7ed;color:#c2410c;display:flex;align-items:center;justify-content:center;flex-shrink:0;">${icon('utensils',14)}</div>
+            <div style="min-width:0;"><div style="font-size:16px;font-weight:700;color:var(--ink);line-height:1.2;">${nbRepas}</div><div style="font-size:10px;color:#9e9a93;">Repas</div></div>
+        </div>
+        <div style="background:var(--white);border:1px solid var(--border);border-radius:14px;padding:10px 14px;display:flex;align-items:center;gap:10px;">
+            <div style="width:28px;height:28px;border-radius:8px;background:#eff6ff;color:#1e40af;display:flex;align-items:center;justify-content:center;flex-shrink:0;">${icon('car',14)}</div>
+            <div style="min-width:0;"><div style="font-size:16px;font-weight:700;color:var(--ink);line-height:1.2;">${nbTaxi}</div><div style="font-size:10px;color:#9e9a93;">Taxi</div></div>
+        </div>
+        <div style="background:var(--white);border:1px solid var(--border);border-radius:14px;padding:10px 14px;display:flex;align-items:center;gap:10px;">
+            <div style="width:28px;height:28px;border-radius:8px;background:#ecfeff;color:#0e7490;display:flex;align-items:center;justify-content:center;flex-shrink:0;">${icon('bed',14)}</div>
+            <div style="min-width:0;"><div style="font-size:16px;font-weight:700;color:var(--ink);line-height:1.2;">${nbHotel}</div><div style="font-size:10px;color:#9e9a93;">Hôtel</div></div>
         </div>
     </div>
 
     <!-- Section 1 : En attente de validation -->
     <div class="stat-card" style="margin-bottom:16px;">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
-            <div style="font-weight:700;font-size:14px;color:#b45309;">⏳ En attente de validation${enAttente.length?` <span style="background:#f59e0b;color:#fff;border-radius:20px;padding:1px 8px;font-size:11px;margin-left:4px;">${enAttente.length}</span>`:''}</div>
-        </div>
+        ${sectionHead('hourglass','#fef3c7','#b45309','En attente de validation',enAttente.length)}
         ${enAttente.length
             ? enAttente.map(c=>dashCard(c,true)).join('')
-            : `<div style="text-align:center;color:#9e9a93;padding:16px 0;font-size:13px;">✓ Aucune demande en attente</div>`}
+            : `<div style="text-align:center;color:#9e9a93;padding:16px 0;font-size:13px;display:flex;align-items:center;justify-content:center;gap:6px;">${icon('check',14)} Aucune demande en attente</div>`}
     </div>
 
     <!-- Section 2 : Validées à venir -->
     <div class="stat-card">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
-            <div style="font-weight:700;font-size:14px;color:#1d4ed8;">✅ À venir — validées${aVenir.length?` <span style="background:#3b82f6;color:#fff;border-radius:20px;padding:1px 8px;font-size:11px;margin-left:4px;">${aVenir.length}</span>`:''}</div>
-        </div>
+        ${sectionHead('calendar','#dbeafe','#1d4ed8','À venir — validées',aVenir.length)}
         ${aVenir.length
             ? aVenir.map(c=>dashCard(c,false)).join('')
             : `<div style="text-align:center;color:#9e9a93;padding:16px 0;font-size:13px;">Aucune commande à venir</div>`}
-        <button data-admin-tab="activite" style="display:block;width:100%;text-align:center;background:none;border:none;color:#9e9a93;cursor:pointer;font-size:12px;padding-top:10px;margin-top:4px;">Voir tout l'historique →</button>
+        <button data-admin-tab="activite" style="display:flex;align-items:center;justify-content:center;gap:5px;width:100%;text-align:center;background:none;border:none;color:#9e9a93;cursor:pointer;font-size:12px;padding-top:10px;margin-top:4px;">Voir tout l'historique ${icon('arrow',12)}</button>
     </div>
     </div>`;
 }
 
 
-function renderActivite(m){
+/* ─── CELLULES ÉDITABLES (façon tableur) : cliquer une ligne ouvre le détail,
+     mais ces deux cellules s'éditent directement, comme dans Excel ─── */
+const STATUS_MAP={'OUI':{bg:'#f0fdf4',color:'#15803d',label:'Validé'},'En attente':{bg:'#fffbeb',color:'#b45309',label:'En attente'},'En cours':{bg:'#eff6ff',color:'#1e40af',label:'En cours'},'Annulé':{bg:'#fef2f2',color:'#b91c1c',label:'Annulé'},'Reçu':{bg:'#f0f9ff',color:'#0369a1',label:'Reçu'}};
+function statusEditCell(c){
+    const st=STATUS_MAP[c.pris]||{bg:'#f1f5f9',color:'#5a6a85'};
+    const opts=Object.keys(STATUS_MAP).map(k=>`<option value="${k}" ${c.pris===k?'selected':''}>${STATUS_MAP[k].label}</option>`).join('');
+    return `<td style="padding:3px 8px;text-align:center;" onclick="event.stopPropagation()">
+        <select class="cell-input" data-inline-edit data-id="${c.id}" data-field="pris" style="width:100%;padding:2px 5px;border-radius:20px;font-size:11px;font-weight:600;background:${st.bg};color:${st.color};border:1px solid transparent;cursor:pointer;">${opts}</select>
+    </td>`;
+}
+function prixEditCell(c){
+    const val=c.prix?c.prix.toLocaleString('fr-FR',{minimumFractionDigits:2,maximumFractionDigits:2}):'';
+    return `<td style="padding:3px 8px;text-align:right;" onclick="event.stopPropagation()">
+        <input type="text" inputmode="decimal" class="cell-input" data-inline-edit data-id="${c.id}" data-field="prix" value="${val}" placeholder="—" style="width:84px;text-align:right;font-weight:700;font-family:monospace;font-size:13px;background:transparent;border:1px solid transparent;border-radius:6px;padding:3px 6px;color:${c.prix?'#16a34a':'#94a3b8'};">
+    </td>`;
+}
+
+function renderActiviteTout(m){
     const search=(state.search||'').toLowerCase();
     const today2=new Date(); today2.setHours(0,0,0,0);
     const filter=state.resaFilter||'all';
@@ -1161,19 +1317,19 @@ function renderActivite(m){
     });
 
     const statusBadge=s=>{
-        const map={'OUI':{bg:'#f0fdf4',color:'#15803d',label:'✅ Validé'},'En attente':{bg:'#fffbeb',color:'#b45309',label:'⏳ En attente'},'En cours':{bg:'#eff6ff',color:'#1e40af',label:'🔄 En cours'},'Annulé':{bg:'#fef2f2',color:'#b91c1c',label:'❌ Annulé'},'Reçu':{bg:'#f0f9ff',color:'#0369a1',label:'✓ Reçu'}};
+        const map={'OUI':{bg:'#f0fdf4',color:'#15803d',label:'Validé'},'En attente':{bg:'#fffbeb',color:'#b45309',label:'En attente'},'En cours':{bg:'#eff6ff',color:'#1e40af',label:'En cours'},'Annulé':{bg:'#fef2f2',color:'#b91c1c',label:'Annulé'},'Reçu':{bg:'#f0f9ff',color:'#0369a1',label:'Reçu'}};
         const st=map[s]||{bg:'#f1f5f9',color:'#5a6a85',label:s};
         return `<span style="padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;background:${st.bg};color:${st.color};">${st.label}</span>`;
     };
 
-    const typeIcon=t=>t==='taxi'?'🚕':t==='repas'?'🍽':'📦';
+    const typeIcon=t=>icon(t==='taxi'?'car':t==='repas'?'utensils':t==='hotel'?'bed':'box',14);
 
     const nbAvenir=state.data.filter(c=>{const d=parseDate(c.date);return c.pris==='OUI'&&d&&d>=today2;}).length;
 
     // Filtres : uniquement Tout et À venir
-    const FILTERS=[['all','Tout',0],['avenir','📅 À venir',nbAvenir]];
+    const FILTERS=[['all','Tout',0],['avenir','À venir',nbAvenir]];
     const filterBtns = FILTERS.map(([k,l,n])=>
-        '<button id="f-'+k+'" style="padding:6px 16px;border:none;border-radius:24px;font-size:13px;font-weight:500;cursor:pointer;background:'+(filter===k?'var(--ink)':'#f0eeea')+';color:'+(filter===k?'#fff':'#7a7570')+';transition:all 0.15s;">'+l+(n?' <span style="background:#22c55e;color:#fff;border-radius:50%;min-width:16px;height:16px;font-size:10px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;padding:0 3px;">'+n+'</span>':'')+'</button>'
+        '<button id="f-'+k+'" style="padding:6px 16px;border:none;border-radius:24px;font-size:13px;font-weight:500;cursor:pointer;background:'+(filter===k?'var(--accent)':'#f0eeea')+';color:'+(filter===k?'#fff':'#7a7570')+';transition:all 0.15s;">'+l+(n?' <span style="background:#22c55e;color:#fff;border-radius:50%;min-width:16px;height:16px;font-size:10px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;padding:0 3px;">'+n+'</span>':'')+'</button>'
     ).join('');
 
     // En-têtes triables
@@ -1181,22 +1337,20 @@ function renderActivite(m){
         const active=sortCol===col;
         const arrow=active?(sortAsc?' ↑':' ↓'):'';
         const a=align||'left';
-        return `<th id="th-${col}" style="text-align:${a};padding:10px 14px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:${active?'#1a1f36':'#64748b'};cursor:pointer;user-select:none;white-space:nowrap;background:${active?'#f0f4ff':'#f8fafc'};">${label}${arrow}</th>`;
+        return `<th id="th-${col}" style="text-align:${a};padding:7px 10px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:${active?'#1a1f36':'#64748b'};cursor:pointer;user-select:none;white-space:nowrap;background:${active?'#f0f4ff':'#f8fafc'};">${label}${arrow}</th>`;
     }
 
     return `<div>
-    <div style="font-family:'DM Serif Display',serif;font-size:${m?'18px':'22px'};margin-bottom:14px;">📋 Activité <span style="font-size:13px;color:#94a3b8;font-weight:400;">${all.length} entrée${all.length>1?'s':''}</span></div>
-
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;align-items:center;">
-        <input id="adminSearch" type="text" placeholder="🔍 Rechercher..." value="${state.search||''}" class="search-input" style="flex:1;min-width:140px;margin-bottom:0;">
+        <input id="adminSearch" type="text" placeholder="Rechercher..." value="${state.search||''}" class="search-input" style="flex:1;min-width:140px;margin-bottom:0;">
         <div style="display:flex;gap:4px;background:#f0eeea;border-radius:30px;padding:3px;" id="filterBtns">
             ${filterBtns}
         </div>
     </div>
 
     <div style="background:#fff;border-radius:16px;border:1px solid #e4e7ec;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.04);">
-        <div style="overflow-x:auto;">
-            <table style="width:100%;border-collapse:collapse;font-size:13px;min-width:${m?'480px':'600px'};">
+        <div style="overflow:auto;max-height:65vh;">
+            <table class="grid-table" style="width:100%;border-collapse:collapse;font-size:13px;min-width:${m?'480px':'600px'};">
                 <thead>
                     <tr style="border-bottom:2px solid #e2e8f0;">
                         ${th('date','Date')}
@@ -1211,23 +1365,44 @@ function renderActivite(m){
                 <tbody>
                     ${all.length?all.map((c,i)=>`
                     <tr data-open-detail='${JSON.stringify(c).replace(/'/g,"&apos;")}' style="border-bottom:1px solid #f1f5f9;cursor:pointer;background:${i%2===0?'#fff':'#fafafa'};" onmouseover="this.style.background='#eff6ff'" onmouseout="this.style.background='${i%2===0?'#fff':'#fafafa'}'">
-                        <td style="padding:11px 14px;color:#64748b;white-space:nowrap;font-size:12px;">${$d(c.date)}</td>
-                        <td style="padding:11px 14px;text-align:center;font-size:16px;">${typeIcon(c.type)}</td>
-                        <td style="padding:11px 14px;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+                        <td style="padding:7px 10px;color:#64748b;white-space:nowrap;font-size:12px;">${$d(c.date)}</td>
+                        <td style="padding:7px 10px;text-align:center;font-size:16px;">${typeIcon(c.type)}</td>
+                        <td style="padding:7px 10px;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
                             <span style="font-weight:600;color:#1a1f36;">${c.type==='commande'?'Commande':c.desc||'—'}</span>
-                            ${c.vol?`<span style="font-size:10px;color:#6366f1;margin-left:5px;">✈️ ${c.vol}</span>`:''}
-                            ${c.comment?`<span style="font-size:10px;color:#94a3b8;margin-left:4px;" title="${c.comment}">💬</span>`:''}
+                            ${c.vol?`<span style="font-size:10px;color:#6366f1;margin-left:5px;">${icon('plane',11)} ${c.vol}</span>`:''}
+                            ${c.comment?`<span style="color:#94a3b8;margin-left:4px;vertical-align:-2px;" title="${c.comment}">${icon('message',12)}</span>`:''}
                         </td>
-                        <td style="padding:11px 14px;color:#1a1f36;font-weight:500;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${c.type==='commande'?(c.presta||c.pourQui||'—'):(c.pourQui||'—')}</td>
-                        <td style="padding:11px 14px;color:#64748b;white-space:nowrap;">${c.demandeur||'—'}${c.type==='repas'&&c.nb>1?` <span style="font-size:10px;color:#94a3b8;">(${c.nb}p)</span>`:''}</td>
-                        <td style="padding:11px 14px;text-align:center;">${statusBadge(c.pris)}</td>
-                        <td style="padding:11px 14px;text-align:right;font-weight:700;color:${c.prix?'#16a34a':'#94a3b8'};">${c.prix?$m(c.prix):'—'}</td>
+                        <td style="padding:7px 10px;color:#1a1f36;font-weight:500;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${c.type==='commande'?(c.presta||c.pourQui||'—'):(c.pourQui||'—')}</td>
+                        <td style="padding:7px 10px;color:#64748b;white-space:nowrap;">${c.demandeur||'—'}${c.type==='repas'&&c.nb>1?` <span style="font-size:10px;color:#94a3b8;">(${c.nb}p)</span>`:''}</td>
+                        ${statusEditCell(c)}
+                        ${prixEditCell(c)}
                     </tr>`).join(''):`<tr><td colspan="7" style="text-align:center;padding:40px;color:#94a3b8;">Aucune entrée</td></tr>`}
                 </tbody>
             </table>
         </div>
     </div>
     </div>`;
+}
+
+/* Dispatcher : l'onglet "Activité" se divise en sous-onglets, chacun déjà
+   codé (Réservations, Commandes, Historique + export Excel, Corbeille) mais
+   qui n'étaient reliés à aucune navigation avant cette mise à jour. */
+function renderActivite(m){
+    const tab=state.activiteTab||'reservations';
+    const TABS=[['reservations','utensils','Réservations'],['commandes','box','Commandes'],['hotels','bed','Hôtels'],['historique','clock','Historique'],['tout','grid','Tout'],['corbeille','trash','Corbeille']];
+    const subNav=`<div style="display:flex;gap:4px;flex-wrap:wrap;background:var(--border-light);padding:4px;border-radius:30px;width:fit-content;margin-bottom:10px;">
+        ${TABS.map(([k,ic,l])=>`<button data-activite-tab="${k}" style="display:flex;align-items:center;gap:6px;padding:6px 13px;border:none;border-radius:24px;font-size:13px;font-weight:500;cursor:pointer;white-space:nowrap;background:${tab===k?'var(--white)':'transparent'};color:${tab===k?'var(--ink)':'var(--ink-soft)'};box-shadow:${tab===k?'0 1px 3px rgba(0,0,0,0.08)':'none'};transition:all 0.15s;">${icon(ic,14)} ${l}</button>`).join('')}
+    </div>`;
+    let body;
+    if(tab==='commandes') body=renderCommandes(m);
+    else if(tab==='hotels') body=renderHotels(m);
+    else if(tab==='historique') body=renderHistorique(m);
+    else if(tab==='corbeille') body=renderCorbeille(m);
+    else if(tab==='tout') body=renderActiviteTout(m);
+    else body=renderReservations(m);
+    // Sur desktop, les icônes de sous-onglets sont déjà dans la barre du haut (voir renderAdminView) :
+    // pas besoin de les répéter ici. Sur mobile, il n'y a pas de barre du haut équivalente.
+    return `<div>${m?subNav:''}${body}</div>`;
 }
 
 
@@ -1239,7 +1414,7 @@ function renderReservations(m){
     const sortAsc=state.resaSortAsc!==false;
 
     let all=state.data.filter(c=>{
-        if(c.type==='commande') return false;
+        if(c.type==='commande'||c.type==='hotel') return false;
         if(search && !`${c.desc} ${c.presta} ${c.demandeur} ${c.pourQui}`.toLowerCase().includes(search)) return false;
         if(filter==='attente') return c.pris==='En attente'||c.pris==='En cours';
         if(filter==='avenir') return c.pris==='OUI'&&parseDate(c.date)>=today2;
@@ -1259,7 +1434,7 @@ function renderReservations(m){
     });
 
     const statusBadge=s=>{
-        const map={'OUI':{bg:'#f0fdf4',color:'#15803d',label:'✅ Validé'},'En attente':{bg:'#fffbeb',color:'#b45309',label:'⏳ En attente'},'En cours':{bg:'#eff6ff',color:'#1e40af',label:'🔄 En cours'},'Annulé':{bg:'#fef2f2',color:'#b91c1c',label:'❌ Annulé'},'Reçu':{bg:'#f0f9ff',color:'#0369a1',label:'✓ Reçu'}};
+        const map={'OUI':{bg:'#f0fdf4',color:'#15803d',label:'Validé'},'En attente':{bg:'#fffbeb',color:'#b45309',label:'En attente'},'En cours':{bg:'#eff6ff',color:'#1e40af',label:'En cours'},'Annulé':{bg:'#fef2f2',color:'#b91c1c',label:'Annulé'},'Reçu':{bg:'#f0f9ff',color:'#0369a1',label:'Reçu'}};
         const st=map[s]||{bg:'#f1f5f9',color:'#5a6a85',label:s};
         return `<span style="padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;background:${st.bg};color:${st.color};">${st.label}</span>`;
     };
@@ -1267,7 +1442,7 @@ function renderReservations(m){
     function th(col, label){
         const active=sortCol===col;
         const arrow=active?(sortAsc?'↑':'↓'):'';
-        return `<th data-resa-sort="${col}" style="text-align:${col==='prix'?'right':'left'};padding:10px 14px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:${active?'#1a1f36':'#64748b'};white-space:nowrap;cursor:pointer;user-select:none;" onmouseover="this.style.color='#1a1f36'" onmouseout="this.style.color='${active?'#1a1f36':'#64748b'}'">
+        return `<th data-resa-sort="${col}" style="text-align:${col==='prix'?'right':'left'};padding:7px 10px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:${active?'#1a1f36':'#64748b'};white-space:nowrap;cursor:pointer;user-select:none;" onmouseover="this.style.color='#1a1f36'" onmouseout="this.style.color='${active?'#1a1f36':'#64748b'}'">
             ${label} ${arrow}
         </th>`;
     }
@@ -1275,17 +1450,17 @@ function renderReservations(m){
     const today3=new Date(); today3.setHours(0,0,0,0);
     const nbAttente=state.data.filter(c=>c.type!=='commande'&&(c.pris==='En attente'||c.pris==='En cours')).length;
     const nbAvenir=state.data.filter(c=>c.type!=='commande'&&c.pris==='OUI'&&parseDate(c.date)&&parseDate(c.date)>=today3).length;
-    const FILTERS=[['all','Tout',0],['attente','⏳ En attente',nbAttente],['avenir','📅 À venir',nbAvenir],['passees','🗂 Passées',0]];
+    const FILTERS=[['all','Tout',0],['attente','En attente',nbAttente],['avenir','À venir',nbAvenir],['passees','Passées',0]];
 
     return `<div>
-    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:16px;">
-        <div style="font-family:'DM Serif Display',serif;font-size:${m?'18px':'22px'};">🍽 Réservations <span style="font-size:13px;color:#94a3b8;font-weight:400;">${all.length} entrée${all.length>1?'s':''}</span></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:10px;">
+        <div style="font-family:'DM Serif Display',serif;font-size:${m?'18px':'22px'};">${icon('utensils',m?16:19)} Réservations <span style="font-size:13px;color:#94a3b8;font-weight:400;">${all.length} entrée${all.length>1?'s':''}</span></div>
 
     </div>
 
     <!-- Barre filtres + recherche -->
-    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:16px;">
-        <input type="text" id="adminSearch" placeholder="🔍 Rechercher..." value="${search}" class="search-input" style="flex:1;min-width:160px;margin-bottom:0;">
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
+        <input type="text" id="adminSearch" placeholder="Rechercher..." value="${search}" class="search-input" style="flex:1;min-width:160px;margin-bottom:0;">
         <div style="display:flex;gap:4px;background:#f1f5f9;border-radius:30px;padding:3px;">
             ${FILTERS.filter(([k])=>k==='all'||k==='passees'||(k==='attente'&&nbAttente>0)||(k==='avenir'&&nbAvenir>0)).map(([k,l,count])=>`<button data-resa-filter="${k}" style="display:flex;align-items:center;gap:5px;padding:5px 12px;border:none;border-radius:24px;font-size:12px;font-weight:500;cursor:pointer;background:${filter===k?'#fff':'transparent'};color:${filter===k?'#1a1f36':'#64748b'};box-shadow:${filter===k?'0 1px 3px rgba(0,0,0,0.1)':'none'};white-space:nowrap;transition:all 0.15s;">${l}${count?`<span style="background:${k==='attente'?'#f59e0b':'#22c55e'};color:#fff;border-radius:50%;min-width:16px;height:16px;font-size:10px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;padding:0 3px;">${count}</span>`:''}</button>`).join('')}
         </div>
@@ -1293,8 +1468,8 @@ function renderReservations(m){
 
     <!-- Tableau unique -->
     <div style="background:#fff;border-radius:16px;border:1px solid #e4e7ec;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.04);">
-        <div style="overflow-x:auto;">
-            <table style="width:100%;border-collapse:collapse;font-size:13px;min-width:${m?'480px':'560px'};">
+        <div style="overflow:auto;max-height:65vh;">
+            <table class="grid-table" style="width:100%;border-collapse:collapse;font-size:13px;min-width:${m?'480px':'560px'};">
                 <thead>
                     <tr style="background:#f8fafc;border-bottom:2px solid #e2e8f0;">
                         ${th('date','Date')}
@@ -1308,15 +1483,15 @@ function renderReservations(m){
                 <tbody>
                     ${all.length?all.map((c,i)=>`
                     <tr data-open-detail='${JSON.stringify(c).replace(/'/g,"&apos;")}' style="border-bottom:1px solid #f1f5f9;cursor:pointer;background:${i%2===0?'#fff':'#fafafa'};" onmouseover="this.style.background='#eff6ff'" onmouseout="this.style.background='${i%2===0?'#fff':'#fafafa'}'">
-                        <td style="padding:11px 14px;color:#64748b;white-space:nowrap;font-size:12px;">${$d(c.date)}</td>
-                        <td style="padding:11px 14px;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
-                            <span style="margin-right:6px;">${c.type==='taxi'?'🚕':'🍽'}</span>
+                        <td style="padding:7px 10px;color:#64748b;white-space:nowrap;font-size:12px;">${$d(c.date)}</td>
+                        <td style="padding:7px 10px;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+                            <span style="margin-right:6px;color:var(--ink-mid);">${icon(c.type==='taxi'?'car':'utensils',14)}</span>
                             <span style="font-weight:600;color:#1a1f36;">${c.desc||'—'}</span>
                         </td>
-                        <td style="padding:11px 14px;color:#1a1f36;font-weight:500;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${c.pourQui||'—'}</td>
-                        <td style="padding:11px 14px;color:#64748b;white-space:nowrap;">${c.demandeur||'—'}</td>
-                        <td style="padding:11px 14px;text-align:center;">${statusBadge(c.pris)}</td>
-                        <td style="padding:11px 14px;text-align:right;font-weight:700;color:${c.prix?'#16a34a':'#94a3b8'};">${c.prix?$m(c.prix):'—'}</td>
+                        <td style="padding:7px 10px;color:#1a1f36;font-weight:500;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${c.pourQui||'—'}</td>
+                        <td style="padding:7px 10px;color:#64748b;white-space:nowrap;">${c.demandeur||'—'}</td>
+                        ${statusEditCell(c)}
+                        ${prixEditCell(c)}
                     </tr>`).join(''):`<tr><td colspan="6" style="text-align:center;padding:40px;color:#94a3b8;">Aucune réservation</td></tr>`}
                 </tbody>
             </table>
@@ -1354,7 +1529,7 @@ function renderCommandes(m){
     });
 
     const statusBadge=s=>{
-        const map={'OUI':{bg:'#f0fdf4',color:'#15803d',label:'✅ Validé'},'En attente':{bg:'#fffbeb',color:'#b45309',label:'⏳ En attente'},'En cours':{bg:'#eff6ff',color:'#1e40af',label:'🔄 En cours'},'Annulé':{bg:'#fef2f2',color:'#b91c1c',label:'❌ Annulé'},'Reçu':{bg:'#f0f9ff',color:'#0369a1',label:'✓ Reçu'}};
+        const map={'OUI':{bg:'#f0fdf4',color:'#15803d',label:'Validé'},'En attente':{bg:'#fffbeb',color:'#b45309',label:'En attente'},'En cours':{bg:'#eff6ff',color:'#1e40af',label:'En cours'},'Annulé':{bg:'#fef2f2',color:'#b91c1c',label:'Annulé'},'Reçu':{bg:'#f0f9ff',color:'#0369a1',label:'Reçu'}};
         const st=map[s]||{bg:'#f1f5f9',color:'#5a6a85',label:s};
         return `<span style="padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;background:${st.bg};color:${st.color};">${st.label}</span>`;
     };
@@ -1362,32 +1537,32 @@ function renderCommandes(m){
     function thc(col,label){
         const active=sortCol===col;
         const arrow=active?(sortAsc?'↑':'↓'):'';
-        return `<th data-cmd-sort="${col}" style="text-align:${col==='prix'?'right':'left'};padding:10px 14px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:${active?'#1a1f36':'#64748b'};white-space:nowrap;cursor:pointer;user-select:none;">
+        return `<th data-cmd-sort="${col}" style="text-align:${col==='prix'?'right':'left'};padding:7px 10px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:${active?'#1a1f36':'#64748b'};white-space:nowrap;cursor:pointer;user-select:none;">
             ${label} ${arrow}
         </th>`;
     }
 
     const today3=new Date(); today3.setHours(0,0,0,0);
-    const nbAttente=state.data.filter(c=>c.type!=='commande'&&(c.pris==='En attente'||c.pris==='En cours')).length;
-    const nbAvenir=state.data.filter(c=>c.type!=='commande'&&c.pris==='OUI'&&parseDate(c.date)&&parseDate(c.date)>=today3).length;
-    const FILTERS=[['all','Tout',0],['attente','⏳ En attente',nbAttente],['avenir','📅 À venir',nbAvenir],['passees','🗂 Passées',0]];
+    const nbAttente=state.data.filter(c=>c.type==='commande'&&(c.pris==='En attente'||c.pris==='En cours')).length;
+    const nbAvenir=state.data.filter(c=>c.type==='commande'&&c.pris==='OUI'&&parseDate(c.date)&&parseDate(c.date)>=today3).length;
+    const FILTERS=[['all','Tout',0],['attente','En attente',nbAttente],['avenir','À venir',nbAvenir],['passees','Passées',0]];
 
     return `<div>
-    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:16px;">
-        <div style="font-family:'DM Serif Display',serif;font-size:${m?'18px':'22px'};">📦 Commandes <span style="font-size:13px;color:#94a3b8;font-weight:400;">${all.length} entrée${all.length>1?'s':''}</span></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:10px;">
+        <div style="font-family:'DM Serif Display',serif;font-size:${m?'18px':'22px'};">${icon('box',m?16:19)} Commandes <span style="font-size:13px;color:#94a3b8;font-weight:400;">${all.length} entrée${all.length>1?'s':''}</span></div>
 
     </div>
 
-    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:16px;">
-        <input type="text" id="adminSearch" placeholder="🔍 Rechercher..." value="${search}" class="search-input" style="flex:1;min-width:160px;margin-bottom:0;">
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
+        <input type="text" id="adminSearch" placeholder="Rechercher..." value="${search}" class="search-input" style="flex:1;min-width:160px;margin-bottom:0;">
         <div style="display:flex;gap:4px;background:#f1f5f9;border-radius:30px;padding:3px;">
-            ${FILTERS.filter(([k])=>k==='all'||k==='passees'||(k==='attente'&&nbAttenteCmd>0)||(k==='avenir'&&nbAvenirCmd>0)).map(([k,l,count])=>`<button data-cmd-filter="${k}" style="display:flex;align-items:center;gap:5px;padding:5px 12px;border:none;border-radius:24px;font-size:12px;font-weight:500;cursor:pointer;background:${filter===k?'#fff':'transparent'};color:${filter===k?'#1a1f36':'#64748b'};box-shadow:${filter===k?'0 1px 3px rgba(0,0,0,0.1)':'none'};white-space:nowrap;transition:all 0.15s;">${l}${count?`<span style="background:${k==='attente'?'#f59e0b':'#22c55e'};color:#fff;border-radius:50%;min-width:16px;height:16px;font-size:10px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;padding:0 3px;">${count}</span>`:''}</button>`).join('')}
+            ${FILTERS.filter(([k])=>k==='all'||k==='passees'||(k==='attente'&&nbAttente>0)||(k==='avenir'&&nbAvenir>0)).map(([k,l,count])=>`<button data-cmd-filter="${k}" style="display:flex;align-items:center;gap:5px;padding:5px 12px;border:none;border-radius:24px;font-size:12px;font-weight:500;cursor:pointer;background:${filter===k?'#fff':'transparent'};color:${filter===k?'#1a1f36':'#64748b'};box-shadow:${filter===k?'0 1px 3px rgba(0,0,0,0.1)':'none'};white-space:nowrap;transition:all 0.15s;">${l}${count?`<span style="background:${k==='attente'?'#f59e0b':'#22c55e'};color:#fff;border-radius:50%;min-width:16px;height:16px;font-size:10px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;padding:0 3px;">${count}</span>`:''}</button>`).join('')}
         </div>
     </div>
 
     <div style="background:#fff;border-radius:16px;border:1px solid #e4e7ec;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.04);">
-        <div style="overflow-x:auto;">
-            <table style="width:100%;border-collapse:collapse;font-size:13px;min-width:${m?'480px':'560px'};">
+        <div style="overflow:auto;max-height:65vh;">
+            <table class="grid-table" style="width:100%;border-collapse:collapse;font-size:13px;min-width:${m?'480px':'560px'};">
                 <thead>
                     <tr style="background:#f8fafc;border-bottom:2px solid #e2e8f0;">
                         ${thc('date','Date')}
@@ -1401,15 +1576,104 @@ function renderCommandes(m){
                 <tbody>
                     ${all.length?all.map((c,i)=>`
                     <tr data-open-detail='${JSON.stringify(c).replace(/'/g,"&apos;")}' style="border-bottom:1px solid #f1f5f9;cursor:pointer;background:${i%2===0?'#fff':'#fafafa'};" onmouseover="this.style.background='#eff6ff'" onmouseout="this.style.background='${i%2===0?'#fff':'#fafafa'}'">
-                        <td style="padding:11px 14px;color:#64748b;white-space:nowrap;font-size:12px;">${$d(c.date)}</td>
-                        <td style="padding:11px 14px;font-weight:600;color:#1a1f36;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
-                                📦 ${c.desc||'—'}${c.comment?` <span style="font-size:10px;color:#94a3b8;" title="${c.comment}">💬</span>`:''}
+                        <td style="padding:7px 10px;color:#64748b;white-space:nowrap;font-size:12px;">${$d(c.date)}</td>
+                        <td style="padding:7px 10px;font-weight:600;color:#1a1f36;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+                                <span style="color:var(--ink-mid);margin-right:4px;">${icon('box',13)}</span>${c.desc||'—'}${c.comment?` <span style="color:#94a3b8;vertical-align:-2px;" title="${c.comment}">${icon('message',12)}</span>`:''}
                             </td>
-                        <td style="padding:11px 14px;color:#5a6a85;white-space:nowrap;">${c.presta||'—'}</td>
-                        <td style="padding:11px 14px;color:#64748b;white-space:nowrap;">${c.demandeur||'—'}</td>
-                        <td style="padding:11px 14px;text-align:center;">${statusBadge(c.pris)}</td>
-                        <td style="padding:11px 14px;text-align:right;font-weight:700;color:${c.prix?'#16a34a':'#94a3b8'};">${c.prix?$m(c.prix):'—'}</td>
+                        <td style="padding:7px 10px;color:#5a6a85;white-space:nowrap;">${c.presta||'—'}</td>
+                        <td style="padding:7px 10px;color:#64748b;white-space:nowrap;">${c.demandeur||'—'}</td>
+                        ${statusEditCell(c)}
+                        ${prixEditCell(c)}
                     </tr>`).join(''):`<tr><td colspan="6" style="text-align:center;padding:40px;color:#94a3b8;">Aucune commande</td></tr>`}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    </div>`;
+}
+
+function renderHotels(m){
+    const search=(state.search||'').toLowerCase();
+    const today2=new Date(); today2.setHours(0,0,0,0);
+    const filter=state.hotelFilter||'all';
+    const sortCol=state.hotelSort||'date';
+    const sortAsc=state.hotelSortAsc!==false;
+
+    let all=state.data.filter(c=>{
+        if(c.type!=='hotel') return false;
+        if(search && !`${c.desc} ${c.presta} ${c.demandeur} ${c.lieu}`.toLowerCase().includes(search)) return false;
+        if(filter==='attente') return c.pris==='En attente'||c.pris==='En cours';
+        if(filter==='avenir') return c.pris==='OUI'&&parseDate(c.date)>=today2;
+        if(filter==='passees') return c.pris==='Annulé'||c.pris==='Reçu'||(c.pris==='OUI'&&parseDate(c.date)<today2);
+        return true;
+    }).sort((a,b)=>{
+        let va,vb;
+        if(sortCol==='date'){va=parseDate(a.date)||new Date(0);vb=parseDate(b.date)||new Date(0);}
+        else if(sortCol==='prix'){va=a.prix||0;vb=b.prix||0;}
+        else if(sortCol==='statut'){va=a.pris||'';vb=b.pris||'';}
+        else if(sortCol==='presta'){va=a.presta||'';vb=b.presta||'';}
+        else if(sortCol==='lieu'){va=a.lieu||'';vb=b.lieu||'';}
+        else{va=a.demandeur||'';vb=b.demandeur||'';}
+        if(va<vb) return sortAsc?-1:1;
+        if(va>vb) return sortAsc?1:-1;
+        return 0;
+    });
+
+    function thh(col,label,align){
+        const active=sortCol===col;
+        const arrow=active?(sortAsc?'↑':'↓'):'';
+        return `<th data-hotel-sort="${col}" style="text-align:${align||(col==='prix'?'right':'left')};padding:7px 10px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:${active?'#1a1f36':'#64748b'};white-space:nowrap;cursor:pointer;user-select:none;">
+            ${label} ${arrow}
+        </th>`;
+    }
+
+    const today3=new Date(); today3.setHours(0,0,0,0);
+    const nbAttente=state.data.filter(c=>c.type==='hotel'&&(c.pris==='En attente'||c.pris==='En cours')).length;
+    const nbAvenir=state.data.filter(c=>c.type==='hotel'&&c.pris==='OUI'&&parseDate(c.date)&&parseDate(c.date)>=today3).length;
+    const FILTERS=[['all','Tout',0],['attente','En attente',nbAttente],['avenir','À venir',nbAvenir],['passees','Passées',0]];
+
+    return `<div>
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:10px;">
+        <div style="font-family:'DM Serif Display',serif;font-size:${m?'18px':'22px'};">${icon('bed',m?16:19)} Hôtels <span style="font-size:13px;color:#94a3b8;font-weight:400;">${all.length} entrée${all.length>1?'s':''}</span></div>
+
+    </div>
+
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
+        <input type="text" id="adminSearch" placeholder="Rechercher..." value="${search}" class="search-input" style="flex:1;min-width:160px;margin-bottom:0;">
+        <div style="display:flex;gap:4px;background:#f1f5f9;border-radius:30px;padding:3px;">
+            ${FILTERS.filter(([k])=>k==='all'||k==='passees'||(k==='attente'&&nbAttente>0)||(k==='avenir'&&nbAvenir>0)).map(([k,l,count])=>`<button data-hotel-filter="${k}" style="display:flex;align-items:center;gap:5px;padding:5px 12px;border:none;border-radius:24px;font-size:12px;font-weight:500;cursor:pointer;background:${filter===k?'#fff':'transparent'};color:${filter===k?'#1a1f36':'#64748b'};box-shadow:${filter===k?'0 1px 3px rgba(0,0,0,0.1)':'none'};white-space:nowrap;transition:all 0.15s;">${l}${count?`<span style="background:${k==='attente'?'#f59e0b':'#22c55e'};color:#fff;border-radius:50%;min-width:16px;height:16px;font-size:10px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;padding:0 3px;">${count}</span>`:''}</button>`).join('')}
+        </div>
+    </div>
+
+    <div style="background:#fff;border-radius:16px;border:1px solid #e4e7ec;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.04);">
+        <div style="overflow:auto;max-height:65vh;">
+            <table class="grid-table" style="width:100%;border-collapse:collapse;font-size:13px;min-width:${m?'560px':'680px'};">
+                <thead>
+                    <tr style="background:#f8fafc;border-bottom:2px solid #e2e8f0;">
+                        ${thh('date','Arrivée')}
+                        ${thh('desc','Voyageur(s)')}
+                        ${thh('lieu','Ville')}
+                        ${thh('presta','Hôtel')}
+                        ${thh('demandeur','Demandeur')}
+                        ${thh('statut','Statut')}
+                        ${thh('prix','Prix')}
+                    </tr>
+                </thead>
+                <tbody>
+                    ${all.length?all.map((c,i)=>{
+                        const nuits=c.date&&c.dateDepart?Math.round((parseDate(c.dateDepart)-parseDate(c.date))/(1000*60*60*24)):null;
+                        return `
+                    <tr data-open-detail='${JSON.stringify(c).replace(/'/g,"&apos;")}' style="border-bottom:1px solid #f1f5f9;cursor:pointer;background:${i%2===0?'#fff':'#fafafa'};" onmouseover="this.style.background='#eff6ff'" onmouseout="this.style.background='${i%2===0?'#fff':'#fafafa'}'">
+                        <td style="padding:7px 10px;color:#64748b;white-space:nowrap;font-size:12px;">${$d(c.date)}${c.dateDepart?` → ${$d(c.dateDepart)}`:''}${nuits&&nuits>0?` <span style="color:#94a3b8;">(${nuits}n)</span>`:''}</td>
+                        <td style="padding:7px 10px;font-weight:600;color:#1a1f36;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+                                <span style="color:var(--ink-mid);margin-right:4px;">${icon('bed',13)}</span>${c.desc||'—'}${c.comment?` <span style="color:#94a3b8;vertical-align:-2px;" title="${c.comment}">${icon('message',12)}</span>`:''}
+                            </td>
+                        <td style="padding:7px 10px;color:#5a6a85;white-space:nowrap;">${c.lieu||'—'}</td>
+                        <td style="padding:7px 10px;color:#5a6a85;white-space:nowrap;">${c.presta||'—'}</td>
+                        <td style="padding:7px 10px;color:#64748b;white-space:nowrap;">${c.demandeur||'—'}</td>
+                        ${statusEditCell(c)}
+                        ${prixEditCell(c)}
+                    </tr>`;}).join(''):`<tr><td colspan="7" style="text-align:center;padding:40px;color:#94a3b8;">Aucune réservation d'hôtel</td></tr>`}
                 </tbody>
             </table>
         </div>
@@ -1422,20 +1686,20 @@ function renderCommandes(m){
 
 function renderCorbeille(m){
     const deleted = state.deletedData||[];
-    const typeIcon=t=>t==='taxi'?'🚕':t==='repas'?'🍽':'📦';
+    const typeIcon=t=>icon(t==='taxi'?'car':t==='repas'?'utensils':t==='hotel'?'bed':'box',14);
 
     return `<div>
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:10px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:10px;">
         <div>
-            <div style="font-family:'DM Serif Display',serif;font-size:${m?'18px':'22px'};">🗑 Corbeille</div>
+            <div style="font-family:'DM Serif Display',serif;font-size:${m?'18px':'22px'};">${icon('trash',m?16:19)} Corbeille</div>
             <div style="font-size:12px;color:#9e9a93;margin-top:3px;">${deleted.length} élément${deleted.length>1?'s':''} supprimé${deleted.length>1?'s':''}</div>
         </div>
-        ${deleted.length?`<button id="emptyTrash" style="background:#fef2f2;border:1px solid #fecaca;border-radius:30px;padding:7px 16px;color:#b91c1c;cursor:pointer;font-size:13px;font-weight:600;">🗑 Vider la corbeille</button>`:''}
+        ${deleted.length?`<button id="emptyTrash" style="display:flex;align-items:center;gap:6px;background:#fef2f2;border:1px solid #fecaca;border-radius:30px;padding:7px 16px;color:#b91c1c;cursor:pointer;font-size:13px;font-weight:600;">${icon('trash',14)} Vider la corbeille</button>`:''}
     </div>
 
     ${deleted.length===0?`
     <div style="text-align:center;padding:48px;color:#9e9a93;">
-        <div style="font-size:48px;margin-bottom:12px;">🗑</div>
+        <div style="color:#d4d0c8;margin-bottom:12px;display:flex;justify-content:center;">${icon('trash',44)}</div>
         <div style="font-size:15px;">La corbeille est vide</div>
     </div>`:`
     <div style="background:#fff;border-radius:20px;border:1px solid #e4e7ec;overflow:hidden;">
@@ -1453,10 +1717,10 @@ function renderCorbeille(m){
 }
 
 function renderHistorique(m){
-    const typeIcon=t=>t==='taxi'?'🚕':t==='repas'?'🍽':'📦';
-    const typeLabel=t=>t==='taxi'?'Taxi':t==='repas'?'Repas':'Commande';
+    const typeIcon=t=>icon(t==='taxi'?'car':t==='repas'?'utensils':t==='hotel'?'bed':'box',14);
+    const typeLabel=t=>t==='taxi'?'Taxi':t==='repas'?'Repas':t==='hotel'?'Hôtel':'Commande';
     const typeBadge=t=>{
-        const map={repas:{bg:'linear-gradient(135deg,#fff7ed,#fed7aa)',color:'#c2410c',border:'#fdba74'},taxi:{bg:'linear-gradient(135deg,#dbeafe,#bfdbfe)',color:'#1e40af',border:'#93c5fd'},commande:{bg:'linear-gradient(135deg,#f3e8ff,#e9d5ff)',color:'#6b21a5',border:'#d8b4fe'}};
+        const map={repas:{bg:'linear-gradient(135deg,#fff7ed,#fed7aa)',color:'#c2410c',border:'#fdba74'},taxi:{bg:'linear-gradient(135deg,#dbeafe,#bfdbfe)',color:'#1e40af',border:'#93c5fd'},commande:{bg:'linear-gradient(135deg,#f3e8ff,#e9d5ff)',color:'#6b21a5',border:'#d8b4fe'},hotel:{bg:'linear-gradient(135deg,#ecfeff,#a5f3fc)',color:'#0e7490',border:'#67e8f9'}};
         const s=map[t]||{bg:'#f1f5f9',color:'#5a6a85',border:'#e4e7ec'};
         return `<span style="display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:30px;font-size:11px;font-weight:600;background:${s.bg};color:${s.color};border:1px solid ${s.border};">${typeIcon(t)} ${typeLabel(t)}</span>`;
     };
@@ -1471,9 +1735,8 @@ function renderHistorique(m){
     const allSorted=[...state.data].sort((a,b)=>{
         const k=state.histSort||'date';
         if(k==='date'){
-            const pa=(a.date||'').split('/');const pb=(b.date||'').split('/');
-            const da=new Date(parseInt(pa[2]),parseInt(pa[1])-1,parseInt(pa[0]));
-            const db=new Date(parseInt(pb[2]),parseInt(pb[1])-1,parseInt(pb[0]));
+            const da=parseDate(a.date)||new Date(0);
+            const db=parseDate(b.date)||new Date(0);
             return db-da;
         }
         if(k==='prix') return (b.prix||0)-(a.prix||0);
@@ -1484,35 +1747,35 @@ function renderHistorique(m){
 
     return `<div>
     <!-- Header -->
-    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:20px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:10px;">
         <div>
-            <div style="font-family:'DM Serif Display',serif;font-size:${m?'18px':'22px'};">🗂 Historique</div>
+            <div style="font-family:'DM Serif Display',serif;font-size:${m?'18px':'22px'};">${icon('clock',m?16:19)} Historique</div>
             <div style="font-size:12px;color:#7f8c9b;margin-top:3px;">${allSorted.length} entrée${allSorted.length>1?'s':''} au total</div>
         </div>
         <button id="exportExcel" style="background:#1d6f42;color:#fff;border:none;border-radius:30px;padding:9px 20px;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:7px;box-shadow:0 2px 8px rgba(29,111,66,0.2);">
-            📥 Exporter Excel
+            ${icon('download',14)} Exporter Excel
         </button>
     </div>
 
     <!-- Filtres tri -->
-    <div style="background:#fff;border-radius:16px;padding:14px 18px;margin-bottom:20px;border:1px solid #e4e7ec;box-shadow:0 1px 2px rgba(0,0,0,0.04);">
+    <div style="background:#fff;border-radius:16px;padding:9px 14px;margin-bottom:10px;border:1px solid #e4e7ec;box-shadow:0 1px 2px rgba(0,0,0,0.04);">
         <div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;">
             <span style="font-size:12px;color:#7f8c9b;font-weight:500;margin-right:4px;">Trier par</span>
-            ${[['date','📅 Date'],['demandeur','👤 Demandeur'],['desc','📝 Titre'],['prix','💶 Prix'],['type','🏷 Type']].map(([k,l])=>`
-            <button data-hist-sort="${k}" style="display:inline-flex;align-items:center;gap:5px;padding:6px 14px;background:${(state.histSort||'date')===k?'#1a1f36':'#f1f5f9'};color:${(state.histSort||'date')===k?'#fff':'#5a6a85'};border:1px solid ${(state.histSort||'date')===k?'transparent':'transparent'};border-radius:30px;font-size:12px;font-weight:500;cursor:pointer;transition:all 0.15s;">${l}${(state.histSort||'date')===k?' ↓':''}</button>`).join('')}
+            ${[['date','Date'],['demandeur','Demandeur'],['desc','Titre'],['prix','Prix'],['type','Type']].map(([k,l])=>`
+            <button data-hist-sort="${k}" style="display:inline-flex;align-items:center;gap:5px;padding:6px 14px;background:${(state.histSort||'date')===k?'var(--accent)':'#f1f5f9'};color:${(state.histSort||'date')===k?'#fff':'#5a6a85'};border:1px solid ${(state.histSort||'date')===k?'transparent':'transparent'};border-radius:30px;font-size:12px;font-weight:500;cursor:pointer;transition:all 0.15s;">${l}${(state.histSort||'date')===k?' ↓':''}</button>`).join('')}
         </div>
     </div>
 
     <!-- Tableau moderne -->
     <div style="background:#fff;border-radius:20px;border:1px solid #e4e7ec;overflow:hidden;box-shadow:0 1px 2px rgba(0,0,0,0.04);">
-        <div style="overflow-x:auto;">
-            <table style="width:100%;border-collapse:collapse;font-size:13px;min-width:700px;">
+        <div style="overflow:auto;max-height:65vh;">
+            <table class="grid-table" style="width:100%;border-collapse:collapse;font-size:13px;min-width:700px;">
                 <thead id="histTableHead">
                     <tr style="background:#f8fafc;">
                         ${(state.colOrder||["date","code","type","desc","demandeur","pourQui","statut","prix"]).map(col=>{
-                            const labels={date:'📅 Date',code:'🔖 Code',type:'🏷 Type',desc:'📝 Description',demandeur:'👤 Demandeur',pourQui:'👥 Pour qui',statut:'Statut',prix:'💶 Montant'};
+                            const labels={date:'Date',code:'Code',type:'Type',desc:'Description',demandeur:'Demandeur',pourQui:'Pour qui',statut:'Statut',prix:'Montant'};
                             const align=col==='prix'?'right':col==='statut'?'center':'left';
-                            return `<th data-col="${col}" style="text-align:${align};padding:14px 16px;font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#64748b;border-bottom:2px solid #e2e8f0;cursor:grab;user-select:none;" title="Glisser pour réorganiser">${labels[col]||col}</th>`;
+                            return `<th data-col="${col}" style="text-align:${align};padding:9px 12px;font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#64748b;border-bottom:2px solid #e2e8f0;cursor:grab;user-select:none;" title="Glisser pour réorganiser">${labels[col]||col}</th>`;
                         }).join('')}
                     </tr>
                 </thead>
@@ -1521,14 +1784,14 @@ function renderHistorique(m){
                         const j=daysLeft(c.date);
                         const urgent=j!==null&&j>=0&&j<=1&&c.pris==='OUI';
                         const cellMap={
-                            date:`<td style="padding:14px 16px;color:#64748b;white-space:nowrap;font-size:12px;">${$d(c.date)}</td>`,
-                            code:`<td style="padding:14px 16px;font-family:monospace;font-size:11px;font-weight:700;color:#6366f1;white-space:nowrap;">${c.code||'—'}</td>`,
-                            type:`<td style="padding:14px 16px;">${typeBadge(c.type)}</td>`,
-                            desc:`<td style="padding:14px 16px;color:#1a1f36;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:500;">${c.desc||'—'}</td>`,
-                            demandeur:`<td style="padding:14px 16px;font-weight:600;white-space:nowrap;color:#1a1f36;">${c.demandeur||'—'}</td>`,
-                            pourQui:`<td style="padding:14px 16px;color:#5a6a85;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${c.pourQui||'—'}</td>`,
-                            statut:`<td style="padding:14px 16px;text-align:center;">${statusBadge(c.pris)}</td>`,
-                            prix:`<td style="padding:14px 16px;text-align:right;font-weight:700;font-family:monospace;font-size:13px;color:${c.prix?'#16a34a':'#94a3b8'};">${c.prix?$m(c.prix):'—'}</td>`,
+                            date:`<td style="padding:9px 12px;color:#64748b;white-space:nowrap;font-size:12px;">${$d(c.date)}</td>`,
+                            code:`<td style="padding:9px 12px;font-family:monospace;font-size:11px;font-weight:700;color:#6366f1;white-space:nowrap;">${c.code||'—'}</td>`,
+                            type:`<td style="padding:9px 12px;">${typeBadge(c.type)}</td>`,
+                            desc:`<td style="padding:9px 12px;color:#1a1f36;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:500;">${c.desc||'—'}</td>`,
+                            demandeur:`<td style="padding:9px 12px;font-weight:600;white-space:nowrap;color:#1a1f36;">${c.demandeur||'—'}</td>`,
+                            pourQui:`<td style="padding:9px 12px;color:#5a6a85;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${c.pourQui||'—'}</td>`,
+                            statut:statusEditCell(c),
+                            prix:prixEditCell(c),
                         };
                         return `<tr data-open-detail='${JSON.stringify(c).replace(/'/g,"&apos;")}' style="border-bottom:1px solid #f1f5f9;cursor:pointer;transition:background 0.15s;${urgent?'background:#fffbeb;border-left:3px solid #f59e0b;':''}" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='${urgent?'#fffbeb':''}'">
                             ${(state.colOrder||["date","code","type","desc","demandeur","pourQui","statut","prix"]).map(col=>cellMap[col]||'').join('')}
@@ -1537,8 +1800,8 @@ function renderHistorique(m){
                 </tbody>
                 <tfoot>
                     <tr style="background:#f8fafc;border-top:2px solid #e2e8f0;">
-                        <td colspan="6" style="padding:14px 16px;font-weight:700;font-size:13px;color:#1a1f36;">Total validé</td>
-                        <td style="padding:14px 16px;text-align:right;font-weight:800;font-size:15px;color:#16a34a;font-family:monospace;">
+                        <td colspan="6" style="padding:9px 12px;font-weight:700;font-size:13px;color:#1a1f36;">Total validé</td>
+                        <td style="padding:9px 12px;text-align:right;font-weight:800;font-size:15px;color:#16a34a;font-family:monospace;">
                             ${$ms(allSorted.filter(c=>c.pris==='OUI').reduce((a,b)=>a+(b.prix||0),0))}
                         </td>
                     </tr>
@@ -1548,9 +1811,9 @@ function renderHistorique(m){
 
         ${totalPages>1?`
         <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-top:2px solid #e2e8f0;background:#f8fafc;">
-            <button data-hist-prev style="background:${page===0?'#e2e8f0':'#1a1f36'};color:${page===0?'#9e9a93':'#fff'};border:none;border-radius:30px;padding:7px 18px;font-size:13px;font-weight:600;cursor:${page===0?'default':'pointer'};">← Précédent</button>
+            <button data-hist-prev style="background:${page===0?'#e2e8f0':'var(--accent)'};color:${page===0?'#9e9a93':'#fff'};border:none;border-radius:30px;padding:7px 18px;font-size:13px;font-weight:600;cursor:${page===0?'default':'pointer'};">← Précédent</button>
             <span style="font-size:13px;color:#64748b;font-weight:500;">Page ${page+1} / ${totalPages}</span>
-            <button data-hist-next style="background:${page>=totalPages-1?'#e2e8f0':'#1a1f36'};color:${page>=totalPages-1?'#9e9a93':'#fff'};border:none;border-radius:30px;padding:7px 18px;font-size:13px;font-weight:600;cursor:${page>=totalPages-1?'default':'pointer'};">Suivant →</button>
+            <button data-hist-next style="background:${page>=totalPages-1?'#e2e8f0':'var(--accent)'};color:${page>=totalPages-1?'#9e9a93':'#fff'};border:none;border-radius:30px;padding:7px 18px;font-size:13px;font-weight:600;cursor:${page>=totalPages-1?'default':'pointer'};">Suivant →</button>
         </div>`:''}
 
         ${allSorted.length===0?'<div style="text-align:center;color:#94a3b8;padding:48px;font-size:14px;">Aucune entrée</div>':''}
@@ -1559,26 +1822,27 @@ function renderHistorique(m){
 }
 function renderSettings(){
     const secs=[
-        {title:"Assistantes",      key:"assistantes",           icon:"👩‍💼",badge:"assistant",inputId:"newAssistante",btnId:"addAssistante",rm:"remove-assistante",ph:"Prénom NOM"},
-        {title:"Directeurs",       key:"directeurs",            icon:"👨‍💼",badge:"director", inputId:"newDirecteur", btnId:"addDirecteur", rm:"remove-directeur", ph:"Prénom NOM"},
-        {title:"Types de repas",       key:"prestatairesRepas",   icon:"🍽",badge:null,inputId:"newPrepas",btnId:"addPrepas",rm:"remove-prepas",ph:"Ex: Sushi, Burger..."},
-        {title:"Prestataires Taxi",    key:"prestatairesTaxi",    icon:"🚕",badge:null,inputId:"newPtaxi", btnId:"addPtaxi", rm:"remove-ptaxi", ph:"Nouveau prestataire"},
-        {title:"Prestataires Commande",key:"prestatairesCommande",icon:"📦",badge:null,inputId:"newPcmd",  btnId:"addPcmd",  rm:"remove-pcmd",  ph:"Nouveau prestataire"},
+        {title:"Assistantes",      key:"assistantes",           icon:"user",badge:"assistant",inputId:"newAssistante",btnId:"addAssistante",rm:"remove-assistante",ph:"Prénom NOM"},
+        {title:"Directeurs",       key:"directeurs",            icon:"user",badge:"director", inputId:"newDirecteur", btnId:"addDirecteur", rm:"remove-directeur", ph:"Prénom NOM"},
+        {title:"Types de repas",       key:"prestatairesRepas",   icon:"utensils",badge:null,inputId:"newPrepas",btnId:"addPrepas",rm:"remove-prepas",ph:"Ex: Sushi, Burger..."},
+        {title:"Prestataires Taxi",    key:"prestatairesTaxi",    icon:"car",badge:null,inputId:"newPtaxi", btnId:"addPtaxi", rm:"remove-ptaxi", ph:"Nouveau prestataire"},
+        {title:"Prestataires Commande",key:"prestatairesCommande",icon:"box",badge:null,inputId:"newPcmd",  btnId:"addPcmd",  rm:"remove-pcmd",  ph:"Nouveau prestataire"},
+        {title:"Prestataires Hôtel",   key:"prestatairesHotel",   icon:"bed",badge:null,inputId:"newPhotel",btnId:"addPhotel",rm:"remove-photel",ph:"Nouvel hôtel"},
     ];
     return `<div>
-    <div style="font-size:13px;font-weight:700;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.08em;margin-bottom:14px;">⚙️ Réglages</div>
+    <div style="font-size:13px;font-weight:700;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.08em;margin-bottom:14px;display:flex;align-items:center;gap:7px;">${icon('sliders',14)} Réglages</div>
     <div class="settings-section" style="border:2px solid #e0f2fe;background:#f0f9ff;">
-        <div style="font-weight:700;margin-bottom:14px;font-size:14px;">📧 Emails assistantes</div>
+        <div style="font-weight:700;margin-bottom:14px;font-size:14px;display:flex;align-items:center;gap:7px;">${icon('mail',14)} Emails assistantes</div>
         ${Object.entries(settings.emails||{}).map(([nom,email])=>`
         <div class="settings-item">
             <span style="font-size:13px;font-weight:500;min-width:120px;">${nom}</span>
             <input class="email-input form-input" data-nom="${nom}" value="${email}" placeholder="email@example.com" style="flex:1;padding:6px 10px;font-size:13px;">
             <button data-rm-email="${nom}" style="background:none;border:none;font-size:16px;cursor:pointer;color:#ccc;padding:4px 8px;flex-shrink:0;">✕</button>
         </div>`).join('')}
-        <button id="saveAllEmails" class="btn-primary" style="width:100%;margin-top:14px;padding:12px;">💾 Sauvegarder les emails</button>
+        <button id="saveAllEmails" class="btn-primary" style="width:100%;margin-top:14px;padding:12px;display:flex;align-items:center;justify-content:center;gap:7px;">${icon('save',14)} Sauvegarder les emails</button>
     </div>
     <div class="settings-section" style="margin-top:18px;">
-        <div style="font-size:13px;font-weight:700;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.08em;margin-bottom:14px;">📩 Emails Admin</div>
+        <div style="font-size:13px;font-weight:700;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.08em;margin-bottom:14px;display:flex;align-items:center;gap:7px;">${icon('mail',14)} Emails Admin</div>
         <div id="adminEmailsList">
             ${(settings.adminEmails||[]).map((em,i)=>`
             <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;">
@@ -1587,10 +1851,10 @@ function renderSettings(){
             </div>`).join('')}
         </div>
         <button id="addAdminEmail" style="background:none;border:1.5px dashed var(--border);border-radius:12px;width:100%;padding:10px;font-size:14px;color:var(--ink-soft);cursor:pointer;margin-bottom:10px;">+ Ajouter un email admin</button>
-        <button id="saveAdminEmails" class="btn-primary" style="width:100%;padding:12px;">💾 Sauvegarder</button>
+        <button id="saveAdminEmails" class="btn-primary" style="width:100%;padding:12px;display:flex;align-items:center;justify-content:center;gap:7px;">${icon('save',14)} Sauvegarder</button>
     </div>
     ${secs.map(s=>`<div class="settings-section">
-        <div style="font-weight:600;margin-bottom:12px;display:flex;align-items:center;gap:8px;">${s.icon} ${s.title}</div>
+        <div style="font-weight:600;margin-bottom:12px;display:flex;align-items:center;gap:8px;color:var(--ink);">${icon(s.icon,15)} ${s.title}</div>
         <div style="display:flex;flex-direction:column;gap:4px;margin-bottom:12px;">
             ${(settings[s.key]||[]).map((item,i)=>`
             <div class="settings-item">
@@ -1610,7 +1874,7 @@ function renderSettings(){
     </div>`).join('')}
     <!-- N° Yooz par prestataire -->
     <div class="settings-section" style="margin-top:18px;">
-        <div style="font-weight:700;margin-bottom:14px;font-size:14px;">🔖 N° Yooz par fournisseur</div>
+        <div style="font-weight:700;margin-bottom:14px;font-size:14px;">N° Yooz par fournisseur</div>
         <div style="font-size:12px;color:#9e9a93;margin-bottom:12px;">Associez un N° Yooz à chaque fournisseur. Il sera rempli automatiquement dans les commandes.</div>
         <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:12px;">
             ${Object.entries(state.yoozMap||YOOZ_MAP).map(([presta,num])=>`
@@ -1620,33 +1884,33 @@ function renderSettings(){
             </div>`).join('')}
         </div>
         <button id="addYoozPresta" style="background:none;border:1.5px dashed var(--border);border-radius:12px;width:100%;padding:9px;font-size:13px;color:var(--ink-soft);cursor:pointer;margin-bottom:8px;">+ Ajouter un fournisseur</button>
-        <button id="saveYooz" class="btn-primary" style="width:100%;padding:11px;">💾 Sauvegarder les N° Yooz</button>
+        <button id="saveYooz" class="btn-primary" style="width:100%;padding:11px;display:flex;align-items:center;justify-content:center;gap:7px;">${icon('save',14)} Sauvegarder les N° Yooz</button>
     </div>
 
     <!-- Corbeille -->
     <div class="settings-section" style="margin-top:18px;border:1.5px solid #fecaca;background:#fef2f2;">
-        <div style="font-weight:700;margin-bottom:4px;font-size:14px;">🗑 Corbeille <span style="background:#ef4444;color:#fff;border-radius:20px;padding:1px 7px;font-size:11px;margin-left:6px;">${(state.deletedData||[]).length}</span></div>
+        <div style="font-weight:700;margin-bottom:4px;font-size:14px;display:flex;align-items:center;gap:7px;">${icon('trash',14)} Corbeille <span style="background:#ef4444;color:#fff;border-radius:20px;padding:1px 7px;font-size:11px;">${(state.deletedData||[]).length}</span></div>
         <div style="font-size:12px;color:#9e9a93;margin-bottom:12px;">${(state.deletedData||[]).length} commande${(state.deletedData||[]).length>1?'s':''} supprimée${(state.deletedData||[]).length>1?'s':''}</div>
         ${(state.deletedData||[]).length?`
         <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:12px;">
             ${(state.deletedData||[]).map((c,i)=>`
             <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:#fff;border-radius:10px;border:1px solid #fecaca;">
-                <span style="font-size:13px;font-weight:500;">${c.type==='taxi'?'🚕':c.type==='repas'?'🍽':'📦'} ${c.desc||'—'} · ${$d(c.date)}</span>
+                <span style="font-size:13px;font-weight:500;display:flex;align-items:center;gap:6px;"><span style="color:var(--ink-mid);">${icon(c.type==='taxi'?'car':c.type==='repas'?'utensils':c.type==='hotel'?'bed':'box',13)}</span> ${c.desc||'—'} · ${$d(c.date)}</span>
                 <button data-restore="${i}" style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:4px 10px;font-size:12px;font-weight:600;color:#15803d;cursor:pointer;">↩</button>
             </div>`).join('')}
         </div>
-        <button id="emptyTrash" style="width:100%;background:#fef2f2;border:1px solid #fecaca;border-radius:12px;padding:10px;color:#b91c1c;cursor:pointer;font-size:13px;font-weight:600;">🗑 Vider la corbeille</button>
+        <button id="emptyTrash" style="width:100%;background:#fef2f2;border:1px solid #fecaca;border-radius:12px;padding:10px;color:#b91c1c;cursor:pointer;font-size:13px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:7px;">${icon('trash',14)} Vider la corbeille</button>
         `:'<div style="text-align:center;color:#9e9a93;padding:16px;font-size:13px;">La corbeille est vide</div>'}
     </div>
 
     <!-- Outil correction données -->
     <div class="settings-section" style="margin-top:18px;border:1.5px solid #e0e7ff;background:#f5f3ff;">
-        <div style="font-weight:700;margin-bottom:4px;font-size:14px;">🔧 Correction des descriptions</div>
+        <div style="font-weight:700;margin-bottom:4px;font-size:14px;display:flex;align-items:center;gap:7px;">${icon('tool',14)} Correction des descriptions</div>
         <div style="font-size:12px;color:#9e9a93;margin-bottom:14px;">Séparez les descriptions mixtes (ex: "Repas Franck" → Description + Pour qui)</div>
-        <button id="showCorrector" style="background:var(--ink);color:#fff;border:none;border-radius:12px;padding:10px 16px;font-size:13px;font-weight:600;cursor:pointer;width:100%;">🔧 Ouvrir l'outil de correction</button>
+        <button id="showCorrector" style="background:var(--accent);color:#fff;border:none;border-radius:12px;padding:10px 16px;font-size:13px;font-weight:600;cursor:pointer;width:100%;display:flex;align-items:center;justify-content:center;gap:7px;">${icon('tool',14)} Ouvrir l'outil de correction</button>
         <div id="correctorPanel" style="display:none;margin-top:14px;">
             <div id="correctorList"></div>
-            <button id="saveCorrections" style="background:#16a34a;color:#fff;border:none;border-radius:12px;padding:11px;font-size:13px;font-weight:700;cursor:pointer;width:100%;margin-top:12px;">💾 Sauvegarder toutes les corrections</button>
+            <button id="saveCorrections" style="background:#16a34a;color:#fff;border:none;border-radius:12px;padding:11px;font-size:13px;font-weight:700;cursor:pointer;width:100%;margin-top:12px;display:flex;align-items:center;justify-content:center;gap:7px;">${icon('save',14)} Sauvegarder toutes les corrections</button>
         </div>
     </div>
 
@@ -1655,7 +1919,7 @@ function renderSettings(){
 }
 function renderSaisieModal(){
     const t=state.saisieType;
-    const title=t==='repas'?'🍽 Ajouter un repas':t==='taxi'?'🚕 Ajouter un taxi':'📦 Ajouter une commande';
+    const title=(t==='repas'?icon('utensils',16):t==='taxi'?icon('car',16):t==='hotel'?icon('bed',16):icon('box',16))+' '+(t==='repas'?'Ajouter un repas':t==='taxi'?'Ajouter un taxi':t==='hotel'?'Ajouter une nuit d\'hôtel':'Ajouter une commande');
     const f=state.form;
 
     // Réutiliser renderInlineForm mais dans la modale, on affiche step 1 et 2
@@ -1664,7 +1928,7 @@ function renderSaisieModal(){
 
     const af=state.adminForm||(state.adminForm={
         dem:'', pourQui:[], pourQuiAutre:'', vol:'',
-        date:today(), heure:'12h00',
+        date:today(), dateDepart:'', heure:'12h00',
         lieu:'', de:'', vers:'',
         presta:'', desc:'', nb:'1', com:'',
         step:1
@@ -1688,24 +1952,31 @@ function renderSaisieModal(){
                 </button>
                 <div id="afPqDropdown" style="display:none;position:absolute;top:calc(100% + 4px);left:0;right:0;background:var(--white);border:1.5px solid var(--border);border-radius:14px;box-shadow:0 8px 24px rgba(0,0,0,0.10);z-index:999;overflow:hidden;max-height:220px;overflow-y:auto;">
                     ${t==='commande'
-                        ? P_CMD.map(p=>`<label style="display:flex;align-items:center;gap:12px;padding:11px 16px;cursor:pointer;border-bottom:1px solid var(--border-light);" onmouseover="this.style.background='#f5f4f0'" onmouseout="this.style.background=''"><input type="checkbox" class="af-pq-check" value="${p}" ${af.pourQui.includes(p)?'checked':''} style="width:17px;height:17px;accent-color:var(--ink);cursor:pointer;flex-shrink:0;"><span style="font-size:14px;">${p}</span></label>`).join('')
+                        ? P_CMD.map(p=>`<label style="display:flex;align-items:center;gap:12px;padding:11px 16px;cursor:pointer;border-bottom:1px solid var(--border-light);" onmouseover="this.style.background='#f5f4f0'" onmouseout="this.style.background=''"><input type="checkbox" class="af-pq-check" value="${p}" ${af.pourQui.includes(p)?'checked':''} style="width:17px;height:17px;accent-color:var(--accent);cursor:pointer;flex-shrink:0;"><span style="font-size:14px;">${p}</span></label>`).join('')
                         : settings.directeurs.map(d=>`
                     <label style="display:flex;align-items:center;gap:12px;padding:11px 16px;cursor:pointer;border-bottom:1px solid var(--border-light);" onmouseover="this.style.background='#f5f4f0'" onmouseout="this.style.background=''">
-                        <input type="checkbox" class="af-pq-check" value="${d}" ${af.pourQui.includes(d)?'checked':''} style="width:17px;height:17px;accent-color:var(--ink);cursor:pointer;flex-shrink:0;">
+                        <input type="checkbox" class="af-pq-check" value="${d}" ${af.pourQui.includes(d)?'checked':''} style="width:17px;height:17px;accent-color:var(--accent);cursor:pointer;flex-shrink:0;">
                         <span style="font-size:14px;">${d}</span>
                     </label>`).join('')}
                     <label style="display:flex;align-items:center;gap:12px;padding:11px 16px;cursor:pointer;" onmouseover="this.style.background='#f5f4f0'" onmouseout="this.style.background=''">
-                        <input type="checkbox" class="af-pq-check" value="__autre__" ${af.pourQui.includes('__autre__')?'checked':''} style="width:17px;height:17px;accent-color:var(--ink);cursor:pointer;flex-shrink:0;">
+                        <input type="checkbox" class="af-pq-check" value="__autre__" ${af.pourQui.includes('__autre__')?'checked':''} style="width:17px;height:17px;accent-color:var(--accent);cursor:pointer;flex-shrink:0;">
                         <span style="font-size:14px;color:var(--ink-mid);">Autre…</span>
                     </label>
                 </div>
             </div>
             ${af.pourQui.includes('__autre__')?`<input id="afPqAutre" type="text" class="form-input" style="margin-top:10px;" placeholder="Préciser le nom..." value="${af.pourQuiAutre}">`:''}
         </div>
+        ${t==='hotel'?`
+        <div class="form-row-2">
+            <div class="form-group"><label class="form-label">${icon('calendar',13)} Arrivée</label><input type="date" id="afDate" value="${af.date}" class="form-input"></div>
+            <div class="form-group"><label class="form-label">${icon('calendar',13)} Départ</label><input type="date" id="afDateDepart" value="${af.dateDepart||''}" class="form-input"></div>
+        </div>
+        `:`
         <div class="form-row-2">
             <div class="form-group"><label class="form-label">Date</label><input type="date" id="afDate" value="${af.date}" class="form-input"></div>
 <div class="form-group"><label class="form-label">Heure</label><input id="afHeure" type="text" value="${af.heure||''}" placeholder="Ex: 08h30" class="form-input"></div>
         </div>
+        `}
         ${t==='repas'?`
         <div class="form-group"><label class="form-label">Description</label><input id="afDesc" type="text" placeholder="Déjeuner…" value="${af.desc}" class="form-input"></div>
         <div class="form-group"><label class="form-label">Lieu</label><input id="afLieu" type="text" value="${af.lieu}" class="form-input"></div>
@@ -1715,17 +1986,21 @@ function renderSaisieModal(){
         </div>
         `:t==='taxi'?`
         <div class="form-group"><label class="form-label">Voyageur</label><input id="afDesc" type="text" value="${af.desc}" class="form-input"></div>
-        <div class="form-group"><label class="form-label">📍 Départ</label><input id="afDe" type="text" value="${af.de}" class="form-input" autocomplete="off" placeholder="Adresse de départ…"></div>
-        <div class="form-group"><label class="form-label">🏁 Arrivée</label><input id="afVers" type="text" value="${af.vers}" class="form-input" autocomplete="off" placeholder="Destination…"></div>
+        <div class="form-group"><label class="form-label">${icon('pin',13)} Départ</label><input id="afDe" type="text" value="${af.de}" class="form-input" autocomplete="off" placeholder="Adresse de départ…"></div>
+        <div class="form-group"><label class="form-label">${icon('flag',13)} Arrivée</label><input id="afVers" type="text" value="${af.vers}" class="form-input" autocomplete="off" placeholder="Destination…"></div>
         ${(()=>{const dest=(af.vers||'').toLowerCase();const dep=(af.de||'').toLowerCase();const need=dest.includes('aéroport')||dest.includes('aeroport')||dest.includes('cdg')||dest.includes('orly')||dest.includes('gare')||dep.includes('aéroport')||dep.includes('aeroport')||dep.includes('gare');return need?`<div class="form-group"><label class="form-label" style="color:#b45309;">✈️ N° de vol / train *</label><input id="afVol" type="text" value="${af.vol||''}" placeholder="Ex: AF1234…" class="form-input" style="border-color:#f59e0b;"></div>`:'';})()}
-        <div class="form-group"><label class="form-label">📱 Téléphone du passager *</label><input id="afTel" type="tel" value="${af.tel||''}" placeholder="Ex: 06 12 34 56 78" class="form-input"></div>
+        <div class="form-group"><label class="form-label">${icon('phone',13)} Téléphone du passager *</label><input id="afTel" type="tel" value="${af.tel||''}" placeholder="Ex: 06 12 34 56 78" class="form-input"></div>
         <div class="form-group"><label class="form-label">✈️ N° vol / train</label><input id="afVol" type="text" value="${af.vol||''}" placeholder="Ex: AF1234, TGV 6201…" class="form-input"></div>
         <div class="form-group"><label class="form-label">Prestataire</label><select id="afPresta" class="form-select"><option value="">—</option>${P_TAXI.map(p=>`<option ${af.presta===p?'selected':''}>${p}</option>`).join('')}</select></div>
+        `:t==='hotel'?`
+        <div class="form-group"><label class="form-label">Voyageur(s)</label><input id="afDesc" type="text" placeholder="Ex: Jean Dupont" value="${af.desc}" class="form-input"></div>
+        <div class="form-group"><label class="form-label">${icon('pin',13)} Ville</label><input id="afLieu" type="text" value="${af.lieu}" class="form-input" placeholder="Ex: Lyon"></div>
+        <div class="form-group"><label class="form-label">${icon('bed',13)} Hôtel</label><select id="afPresta" class="form-select"><option value="">—</option>${(af.presta&&!P_HOTEL.includes(af.presta)?[af.presta]:[]).concat(P_HOTEL).map(p=>`<option ${af.presta===p?'selected':''}>${p}</option>`).join('')}</select></div>
         `:`
         <div class="form-group"><label class="form-label">Fournisseur</label><select id="afPresta" class="form-select"><option value="">—</option>${P_CMD.map(p=>`<option ${af.presta===p?'selected':''}>${p}</option>`).join('')}</select></div>
         <div class="form-group"><label class="form-label">N° Yooz <span style="font-size:11px;color:var(--ink-soft);">(auto)</span></label><input id="afYooz" type="text" value="${af.yooz||YOOZ_MAP[af.presta]||''}" placeholder="AAF-PO-26-XXXXXX" class="form-input"></div>
         <div class="form-group"><label class="form-label">Lieu livraison</label><input id="afLieu" type="text" value="${af.lieu}" class="form-input"></div>
-        
+
         `}
         <div class="form-group"><label class="form-label">Commentaire (optionnel)</label><textarea id="afCom" class="form-input" style="min-height:72px;resize:vertical;" placeholder="Informations complémentaires...">${af.com}</textarea></div>
         <div class="form-row-2">
@@ -1812,6 +2087,29 @@ function initAutocomplete(){
 function attachEvents(){
     // Nav
     document.querySelectorAll('[data-back-home]').forEach(el=>el.onclick=()=>setState({vue:"select",detail:null,authed:false,fabOpen:false,adminTab:"dashboard"}));
+
+    // Cellules éditables façon tableur (Statut, Prix) dans les tableaux admin
+    document.querySelectorAll('[data-inline-edit]').forEach(el=>{
+        const evtName = el.tagName==='SELECT' ? 'change' : 'blur';
+        el.addEventListener(evtName, async()=>{
+            const id=el.getAttribute('data-id');
+            const field=el.getAttribute('data-field');
+            let value=el.value;
+            if(field==='prix'){
+                value=parseFloat(value.replace(/\s/g,'').replace(',','.').replace('€',''))||0;
+            }
+            const current=state.data.find(c=>String(c.id)===String(id));
+            if(!current || current[field]===value) return; // rien à sauvegarder
+            state.data=state.data.map(c=>String(c.id)===String(id)?{...c,[field]:value}:c);
+            if(state.detail && String(state.detail.id)===String(id)) state.detail={...state.detail,[field]:value};
+            showToast('✓ Sauvegardé');
+            render();
+            await dbUpdate(id,{[field]:value});
+        });
+        if(el.tagName==='INPUT'){
+            el.addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); el.blur(); } });
+        }
+    });
     // Save prix dans le détail
     // Sauvegarder modifications complètes
     document.getElementById('saveEdit')?.addEventListener('click', async()=>{
@@ -1822,6 +2120,7 @@ function attachEvents(){
         const updates={
             desc:  document.getElementById('editDesc')?.value||d.desc,
             date:  document.getElementById('editDate')?.value||d.date,
+            dateDepart: document.getElementById('editDateDepart')?.value||d.dateDepart||'',
             heure: document.getElementById('editHeure')?.value||d.heure,
             pourQui: (()=>{
                 const checked=[...document.querySelectorAll('.edit-pq-check:checked')].map(c=>c.value);
@@ -1875,11 +2174,12 @@ function attachEvents(){
     document.querySelectorAll('[data-admin-tab]').forEach(el=>el.onclick=()=>setState({vue:"admin",adminTab:el.getAttribute('data-admin-tab'),search:"",filtre:"all",detail:null,fabOpen:false}));
     // Export Excel
     document.getElementById('exportExcel')?.addEventListener('click',()=>{
-        if(typeof XLSX==='undefined'){showToast('⚠️ Export non disponible');return;}
-        const typeLabel=t=>t==='taxi'?'Taxi':t==='repas'?'Repas':'Commande';
+        if(typeof XLSX==='undefined'){showToast(`${icon('alert',13)} Export non disponible`);return;}
+        const typeLabel=t=>t==='taxi'?'Taxi':t==='repas'?'Repas':t==='hotel'?'Hôtel':'Commande';
         const statusLabel=s=>s==='OUI'?'Validé':s==='En attente'?'En attente':s==='Annulé'?'Annulé':s||'';
         const rows=state.data.map(c=>({
             'Date':c.date||'',
+            'Date départ':c.dateDepart||'',
             'Demandeur':c.demandeur||'',
             'Pour qui':c.pourQui||'',
             'Titre':c.desc||'',
@@ -1896,7 +2196,7 @@ function attachEvents(){
         }));
         const ws=XLSX.utils.json_to_sheet(rows);
         // Largeurs colonnes
-        ws['!cols']=[{wch:12},{wch:22},{wch:22},{wch:30},{wch:12},{wch:12},{wch:20},{wch:20},{wch:10},{wch:12},{wch:10},{wch:12},{wch:30}];
+        ws['!cols']=[{wch:12},{wch:12},{wch:22},{wch:22},{wch:30},{wch:12},{wch:12},{wch:20},{wch:20},{wch:10},{wch:12},{wch:10},{wch:12},{wch:30}];
         const wb=XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb,ws,'Historique');
         const now=new Date();
@@ -1995,7 +2295,7 @@ function attachEvents(){
     document.getElementById('emptyTrash')?.addEventListener('click',()=>{
         state.deletedData=[];
         render();
-        showToast('🗑 Corbeille vidée');
+        showToast('Corbeille vidée');
     });
     document.querySelectorAll('[data-restore]').forEach(btn=>{
         btn.onclick=()=>{
@@ -2004,7 +2304,7 @@ function attachEvents(){
             if(!item) return;
             state.data=[item,...state.data];
             state.deletedData=state.deletedData.filter((_,i)=>i!==idx);
-            showToast('✅ Commande restaurée');
+            showToast('Commande restaurée');
             render();
         };
     });
@@ -2023,7 +2323,7 @@ function attachEvents(){
             a.href = url; a.download = `${name}.ics`;
             document.body.appendChild(a); a.click();
             document.body.removeChild(a); URL.revokeObjectURL(url);
-            showToast('📆 Ajouté au calendrier');
+            showToast(`${icon('calendar',13)} Ajouté au calendrier`);
         });
     });
 
@@ -2055,7 +2355,7 @@ function attachEvents(){
     });
     function doTrackSearch(){
         const code=(state.trackCode||document.getElementById('trackInput')?.value||'').trim().toUpperCase();
-        if(!code){showToast('⚠️ Entrez un code');return;}
+        if(!code){showToast(`${icon('alert',13)} Entrez un code`);return;}
         const found=state.data.find(c=>c.code&&c.code.toUpperCase()===code);
         state.trackResult=found||false;
         render();
@@ -2097,6 +2397,8 @@ function attachEvents(){
             if(rf){setState({resaFilter:rf.getAttribute('data-resa-filter')});return;}
             const cf=e.target.closest('[data-cmd-filter]');
             if(cf){setState({cmdFilter:cf.getAttribute('data-cmd-filter')});return;}
+            const hf=e.target.closest('[data-hotel-filter]');
+            if(hf){setState({hotelFilter:hf.getAttribute('data-hotel-filter')});return;}
             const hs=e.target.closest('[data-hist-sort]');
             if(hs){
                 const col=hs.getAttribute('data-hist-sort');
@@ -2116,6 +2418,13 @@ function attachEvents(){
                 const col=cs.getAttribute('data-cmd-sort');
                 if(state.cmdSort===col) setState({cmdSortAsc:!state.cmdSortAsc});
                 else setState({cmdSort:col,cmdSortAsc:true});
+                return;
+            }
+            const hos=e.target.closest('[data-hotel-sort]');
+            if(hos){
+                const col=hos.getAttribute('data-hotel-sort');
+                if(state.hotelSort===col) setState({hotelSortAsc:!state.hotelSortAsc});
+                else setState({hotelSort:col,hotelSortAsc:true});
                 return;
             }
             const st=e.target.closest('[data-settings-tab]');
@@ -2205,7 +2514,7 @@ function attachEvents(){
         state.data=state.data.filter(c=>c.id!==id);
         state.detail=null;
         state.confirmDelete=null;
-        showToast('🗑 Déplacée dans la corbeille');
+        showToast('Déplacée dans la corbeille');
         render();
         try{ await dbDelete(id); }catch(e){}
     });
@@ -2253,6 +2562,7 @@ function attachEvents(){
             state.form.vers=document.getElementById('formVers')?.value||state.form.vers;
             state.form.com=document.getElementById('formCom')?.value||state.form.com;
             state.form.date=document.getElementById('formDate')?.value||state.form.date;
+            state.form.dateDepart=document.getElementById('formDateDepart')?.value||state.form.dateDepart;
             state.form.heure=document.getElementById('formHeure')?.value||state.form.heure;
             const lbl=document.getElementById('pqLabel');
             if(lbl){const names=state.form.pourQui.filter(v=>v!=='__autre__');const hasAutre=state.form.pourQui.includes('__autre__');lbl.textContent=names.join(', ')+(hasAutre?(names.length?', Autre':'Autre'):'') || '— Choisir —';}
@@ -2265,7 +2575,8 @@ function attachEvents(){
     if(nextBtn)nextBtn.onclick=()=>{
         const f=state.form;
         f.dem=document.getElementById('formDem')?.value||'';
-        f.date=document.getElementById('formDate')?.value||today();
+        f.date=document.getElementById('formDate')?.value||'';
+        f.dateDepart=document.getElementById('formDateDepart')?.value||'';
         f.heure=document.getElementById('formHeure')?.value||'12h00';
         f.pourQui=[...document.querySelectorAll('.pq-check:checked')].map(c=>c.value);
         f.pourQuiAutre=document.getElementById('pourQuiAutreInput')?.value||'';
@@ -2273,25 +2584,31 @@ function attachEvents(){
         f.tel=document.getElementById('formTel')?.value||'';
         f.copyMail=document.getElementById('formCopyMail')?.checked||false;
         if(f.type==='repas'){f.desc=document.getElementById('formDesc')?.value||'';f.lieu=document.getElementById('formLieu')?.value||'';f.nb=document.getElementById('formNb')?.value||'1';f.presta=document.getElementById('formPresta')?.value||'';}
+        else if(f.type==='hotel'){f.desc=document.getElementById('formDesc')?.value||'';f.lieu=document.getElementById('formLieu')?.value||'';f.nb=document.getElementById('formNb')?.value||'1';f.presta=document.getElementById('formPresta')?.value||'';}
         else{f.de=document.getElementById('formDe')?.value||'';f.vers=document.getElementById('formVers')?.value||'';f.presta=document.getElementById('formPresta')?.value||'';}
         f.com=document.getElementById('formCom')?.value||'';
         // Validation champs obligatoires
-        if(!f.dem){showToast('⚠️ Votre nom est obligatoire');return;}
-        if(!f.pourQui.length){showToast('⚠️ Veuillez indiquer pour qui');return;}
-        if(!f.date){showToast('⚠️ La date est obligatoire');return;}
-        if(!f.heure){showToast('⚠️ L\'heure est obligatoire');return;}
+        if(!f.dem){showToast(`${icon('alert',13)} Votre nom est obligatoire`);return;}
+        if(!f.pourQui.length){showToast(`${icon('alert',13)} Veuillez indiquer pour qui`);return;}
+        if(!f.date){showToast(`${icon('alert',13)} La date est obligatoire`);return;}
+        if(f.type!=='hotel' && !f.heure){showToast(`${icon('alert',13)} L'heure est obligatoire`);return;}
         if(f.type==='repas'){
-            if(!f.presta){showToast('⚠️ Le type de repas est obligatoire');return;}
-            if(!f.lieu){showToast('⚠️ Le lieu est obligatoire');return;}
+            if(!f.presta){showToast(`${icon('alert',13)} Le type de repas est obligatoire`);return;}
+            if(!f.lieu){showToast(`${icon('alert',13)} Le lieu est obligatoire`);return;}
+        }
+        if(f.type==='hotel'){
+            if(!f.lieu){showToast(`${icon('alert',13)} La ville est obligatoire`);return;}
+            if(!f.dateDepart){showToast(`${icon('alert',13)} La date de départ est obligatoire`);return;}
+            if(parseDate(f.dateDepart)<=parseDate(f.date)){showToast(`${icon('alert',13)} La date de départ doit être après l'arrivée`);return;}
         }
         if(f.type==='taxi'){
-            if(!f.de){showToast('⚠️ L\'adresse de départ est obligatoire');return;}
-            if(!f.vers){showToast('⚠️ L\'adresse d\'arrivée est obligatoire');return;}
-            if(!f.tel){showToast('⚠️ Le téléphone du passager est obligatoire');return;}
+            if(!f.de){showToast(`${icon('alert',13)} L'adresse de départ est obligatoire`);return;}
+            if(!f.vers){showToast(`${icon('alert',13)} L'adresse d'arrivée est obligatoire`);return;}
+            if(!f.tel){showToast(`${icon('alert',13)} Le téléphone du passager est obligatoire`);return;}
             const dest=(f.vers||'').toLowerCase();
             const dep=(f.de||'').toLowerCase();
             const needsVol=dest.includes('aéroport')||dest.includes('aeroport')||dest.includes('cdg')||dest.includes('orly')||dest.includes('roissy')||dest.includes('beauvais')||dest.includes('gare')||dep.includes('aéroport')||dep.includes('aeroport')||dep.includes('gare');
-            if(needsVol && !f.vol){showToast('⚠️ N° de vol/train obligatoire');return;}
+            if(needsVol && !f.vol){showToast(`${icon('alert',13)} N° de vol/train obligatoire`);return;}
         }
         f.step=3;render();
     };
@@ -2301,9 +2618,9 @@ function attachEvents(){
     if(sb)sb.onclick=async()=>{
         const f=state.form;
         const pourQuiLabel=f.pourQui.includes('__autre__')?(f.pourQuiAutre||'Autre'):f.pourQui.join(', ');
-        const descFinal=f.type==='taxi'?`Taxi ${(f.de||'?').split(',')[0]} → ${(f.vers||'?').split(',')[0]}`:(f.desc||'Commande repas');
+        const descFinal=f.type==='taxi'?`Taxi ${(f.de||'?').split(',')[0]} → ${(f.vers||'?').split(',')[0]}`:f.type==='hotel'?(f.desc||`Hôtel ${f.lieu||'?'}`):(f.desc||'Commande repas');
         const code=genCode(f.type);
-        const newItem={id:Date.now(),code,pris:"En attente",demandeur:f.dem,pourQui:pourQuiLabel,date:f.date,desc:descFinal,lieu:f.type==='taxi'?f.de:f.lieu,heure:f.heure,presta:f.presta,prix:0,paie:"",nb:parseInt(f.nb)||1,comment:f.com,type:f.type,depart:f.de,arrivee:f.vers,vol:f.vol||'',tel:f.tel||''};
+        const newItem={id:Date.now(),code,pris:"En attente",demandeur:f.dem,pourQui:pourQuiLabel,date:f.date,dateDepart:f.type==='hotel'?f.dateDepart:'',desc:descFinal,lieu:f.type==='taxi'?f.de:f.lieu,heure:f.heure,presta:f.presta,prix:0,paie:"",nb:parseInt(f.nb)||1,comment:f.com,type:f.type,depart:f.de,arrivee:f.vers,vol:f.vol||'',tel:f.tel||''};
         state.data=[newItem,...state.data];
         state.form.sent=true;state.form.code=code;render();
         console.log('newItem code:', newItem.code, 'appToRow:', JSON.stringify(appToRow(newItem)));
@@ -2325,7 +2642,7 @@ function attachEvents(){
         }
     };
 
-    document.querySelectorAll('[data-reset-form]').forEach(el=>el.onclick=()=>setState({form:{type:null,step:1,sent:false,dem:"",pourQui:[],pourQuiAutre:"",vol:"",copyMail:false,date:today(),heure:"12h00",lieu:"",de:"",vers:"",presta:"",desc:"",nb:"1",com:""}}));
+    document.querySelectorAll('[data-reset-form]').forEach(el=>el.onclick=()=>setState({form:{type:null,step:1,sent:false,dem:"",pourQui:[],pourQuiAutre:"",vol:"",copyMail:false,date:today(),dateDepart:"",heure:"12h00",lieu:"",de:"",vers:"",presta:"",desc:"",nb:"1",com:""}}));
 
     // Saisie save
     // Admin form dropdown
@@ -2338,6 +2655,16 @@ function attachEvents(){
     document.querySelectorAll('.af-pq-check').forEach(cb=>{
         cb.onchange=()=>{
             if(!state.adminForm)state.adminForm={};
+            const af2=state.adminForm;
+            // Préserver les champs déjà saisis avant le re-render (sinon une date tapée avant de cocher "pour qui" serait perdue)
+            af2.date=document.getElementById('afDate')?.value||af2.date;
+            af2.dateDepart=document.getElementById('afDateDepart')?.value||af2.dateDepart;
+            af2.heure=document.getElementById('afHeure')?.value||af2.heure;
+            af2.desc=document.getElementById('afDesc')?.value||af2.desc;
+            af2.lieu=document.getElementById('afLieu')?.value||af2.lieu;
+            af2.de=document.getElementById('afDe')?.value||af2.de;
+            af2.vers=document.getElementById('afVers')?.value||af2.vers;
+            af2.com=document.getElementById('afCom')?.value||af2.com;
             state.adminForm.pourQui=[...document.querySelectorAll('.af-pq-check:checked')].map(c=>c.value);
             const lbl=document.getElementById('afPqLabel');
             if(lbl){const names=state.adminForm.pourQui.filter(v=>v!=='__autre__');const hasAutre=state.adminForm.pourQui.includes('__autre__');lbl.textContent=names.join(', ')+(hasAutre?(names.length?', Autre':'Autre'):'') || '— Choisir —';}
@@ -2367,6 +2694,8 @@ function attachEvents(){
         const pourQuiLabel=af.pourQui.includes('__autre__')?(af.pourQuiAutre||'Autre'):af.pourQui.join(', ');
         const rawDate=document.getElementById('afDate')?.value||today();
         const date=rawDate.includes('-')?rawDate.split('-').reverse().join('/'):rawDate;
+        const rawDateDepart=document.getElementById('afDateDepart')?.value||'';
+        const dateDepart=rawDateDepart?(rawDateDepart.includes('-')?rawDateDepart.split('-').reverse().join('/'):rawDateDepart):'';
         const heure=document.getElementById('afHeure')?.value||'12h00';
         const com=document.getElementById('afCom')?.value||'';
         const prix=parseFloat(document.getElementById('afPrix')?.value)||0;
@@ -2386,14 +2715,19 @@ function attachEvents(){
             vol=document.getElementById('afVol')?.value||'';
             presta=document.getElementById('afPresta')?.value||'';
             lieu=depart;
+        } else if(t==='hotel'){
+            desc=document.getElementById('afDesc')?.value||'';
+            lieu=document.getElementById('afLieu')?.value||'';
+            presta=document.getElementById('afPresta')?.value||'';
+            if(!dateDepart){showToast(`${icon('alert',13)} La date de départ est obligatoire`);return;}
         } else {
             presta=document.getElementById('afPresta')?.value||'';
             lieu=document.getElementById('afLieu')?.value||'';
             desc=document.getElementById('afDesc')?.value||'';
         }
         yooz=document.getElementById('afYooz')?.value||YOOZ_MAP[presta]||'';
-        if(!dem){showToast('⚠️ Choisir une assistante');return;}
-        const newCmd={id:Date.now(),pris:"OUI",demandeur:dem,pourQui:pourQuiLabel,date,desc,lieu,heure,presta,prix,paie,nb,comment:com,type:t,depart,arrivee,vol,yooz,tel};
+        if(!dem){showToast(`${icon('alert',13)} Choisir une assistante`);return;}
+        const newCmd={id:Date.now(),pris:"OUI",demandeur:dem,pourQui:pourQuiLabel,date,dateDepart,desc,lieu,heure,presta,prix,paie,nb,comment:com,type:t,depart,arrivee,vol,yooz,tel};
         state.data=[newCmd,...state.data];
         state.saisieType=null;
         state.adminForm=null;
@@ -2408,7 +2742,7 @@ function attachEvents(){
 
     // Settings helpers
     function updS(ns){settings=ns;saveSettings(settings);refreshGlobals();showToast("✓ Réglages sauvegardés");render();}
-    document.getElementById('reset-settings')?.addEventListener('click',()=>updS({assistantes:[...DEFAULT_ASSISTANTES],directeurs:[...DEFAULT_DIRECTEURS],prestatairesRepas:[...DEFAULT_PREPAS],prestatairesTaxi:[...DEFAULT_PTAXI],prestatairesCommande:[...DEFAULT_PCMD],emails:{...DEFAULT_EMAILS}}));
+    document.getElementById('reset-settings')?.addEventListener('click',()=>updS({assistantes:[...DEFAULT_ASSISTANTES],directeurs:[...DEFAULT_DIRECTEURS],prestatairesRepas:[...DEFAULT_PREPAS],prestatairesTaxi:[...DEFAULT_PTAXI],prestatairesCommande:[...DEFAULT_PCMD],prestatairesHotel:[...DEFAULT_PHOTEL],emails:{...DEFAULT_EMAILS}}));
 
     // Save all emails
     // Admin emails handlers
@@ -2460,13 +2794,13 @@ function attachEvents(){
         saveSettings(settings);
         showToast(`✓ ${count} email${count>1?'s':''} sauvegardé${count>1?'s':''}`);
     });
-    const addMap=[['addAssistante','newAssistante','assistantes'],['addDirecteur','newDirecteur','directeurs'],['addPrepas','newPrepas','prestatairesRepas'],['addTaxi','newTaxi','prestatairesTaxi'],['addCmd','newCmd','prestatairesCommande']];
+    const addMap=[['addAssistante','newAssistante','assistantes'],['addDirecteur','newDirecteur','directeurs'],['addPrepas','newPrepas','prestatairesRepas'],['addPtaxi','newPtaxi','prestatairesTaxi'],['addPcmd','newPcmd','prestatairesCommande'],['addPhotel','newPhotel','prestatairesHotel']];
     addMap.forEach(([btnId,inputId,key])=>document.getElementById(btnId)?.addEventListener('click',()=>{const i=document.getElementById(inputId);const v=i?.value.trim();if(v&&!settings[key].includes(v))updS({...settings,[key]:[...settings[key],v]});if(i)i.value='';}));
-    const rmMap=[['remove-assistante','assistantes'],['remove-directeur','directeurs'],['remove-typerepas','typesRepas'],['remove-prepas','prestatairesRepas'],['remove-taxi','prestatairesTaxi'],['remove-cmd','prestatairesCommande']];
+    const rmMap=[['remove-assistante','assistantes'],['remove-directeur','directeurs'],['remove-typerepas','typesRepas'],['remove-prepas','prestatairesRepas'],['remove-ptaxi','prestatairesTaxi'],['remove-pcmd','prestatairesCommande'],['remove-photel','prestatairesHotel']];
     // Handler suppression réglages via délégation
     if(!window._rmHandlerSet){
         window._rmHandlerSet = true;
-        const keyMap={'remove-assistante':'assistantes','remove-directeur':'directeurs','remove-typerepas':'typesRepas','remove-prepas':'prestatairesRepas','remove-taxi':'prestatairesTaxi','remove-cmd':'prestatairesCommande'};
+        const keyMap={'remove-assistante':'assistantes','remove-directeur':'directeurs','remove-typerepas':'typesRepas','remove-prepas':'prestatairesRepas','remove-ptaxi':'prestatairesTaxi','remove-pcmd':'prestatairesCommande','remove-photel':'prestatairesHotel'};
         document.addEventListener('click', e=>{
             // Confirmation suppression réglages
             if(e.target.closest('[data-confirm-rm-yes]')){
@@ -2530,7 +2864,7 @@ window.addEventListener('resize',()=>{clearTimeout(_rt);_rt=setTimeout(render,12
             render();
             if(state.vue==='admin' && state.authed && newAttente>prevAttente){
                 const diff=newAttente-prevAttente;
-                showToast(`🔔 ${diff} nouvelle${diff>1?'s':''} demande${diff>1?'s':''} !`);
+                showToast(`${icon('bell',13)} ${diff} nouvelle${diff>1?'s':''} demande${diff>1?'s':''} !`);
                 if(Notification.permission==='granted'){
                     new Notification('Nouvelle demande',{
                         body:`${diff} nouvelle${diff>1?'s':''} demande${diff>1?'s':''} en attente`,
