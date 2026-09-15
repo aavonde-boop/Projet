@@ -630,7 +630,7 @@ let state = {
     activiteTab:"reservations", histSort:"date", histPage:0, calMonth:null, colOrder:["date","code","type","desc","demandeur","pourQui","statut","prix"],
     deletedData:[], confirmRm:null, confirmDelete:null, yoozMap:null, settingsTab:null, adminForm:null,
     form:{ type:null, step:1, sent:false, code:null,
-        dem:"", pourQui:[], pourQuiAutre:"", vol:"", tel:"", copyMail:false,
+        dem:"", pourQui:[], pourQuiAutre:"", participants:"", vol:"", tel:"", copyMail:false,
         date:today(), dateDepart:"", heure:"12h00",
         lieu:"", de:"", vers:"",
         presta:"", desc:"", nb:"1", com:"" }
@@ -811,7 +811,13 @@ function renderInlineForm(m){
             </select>
         </div>
 
-        ${f.type==='commande'?'':`
+        ${f.type==='commande'?'':isRepas?`
+        <!-- Participants du repas -->
+        <div class="form-group">
+            <label class="form-label">Participants du repas *</label>
+            <input id="formParticipants" type="text" class="form-input" value="${f.participants||''}" placeholder="Ex: Jean Dupont, Marie Martin...">
+        </div>
+        `:`
         <!-- Pour qui -->
         <div class="form-group">
             <label class="form-label">Pour qui ? *</label>
@@ -888,8 +894,9 @@ function renderInlineForm(m){
     `);
 
     /* ─ STEP 3 : RÉCAP ─ */
-    const pourQuiLabel = f.pourQui.includes('__autre__')
-        ? (f.pourQuiAutre||'Autre') : f.pourQui.join(', ')||'—';
+    const pourQuiLabel = isRepas
+        ? (f.participants||'—')
+        : (f.pourQui.includes('__autre__') ? (f.pourQuiAutre||'Autre') : f.pourQui.join(', ')||'—');
     const nbNuits = isHotel && f.date && f.dateDepart ? Math.round((parseDate(f.dateDepart)-parseDate(f.date))/(1000*60*60*24)) : null;
     const descFinal = isRepas ? (f.desc||'Commande repas')
         : isHotel ? (f.desc||`Hôtel ${f.lieu||'?'}`)
@@ -904,7 +911,7 @@ function renderInlineForm(m){
             ${[
                 ["Type",`${TYPE_ICON[f.type]} ${TYPE_LABEL[f.type]}`],
                 ["Demandeur",f.dem||'—'],
-                ["Pour",pourQuiLabel],
+                [isRepas?"Participants":"Pour",pourQuiLabel],
                 ...(isHotel
                     ? [["Arrivée",$d(f.date)],["Départ",$d(f.dateDepart)],...(nbNuits!==null&&nbNuits>0?[["Durée",`${nbNuits} nuit${nbNuits>1?'s':''}`]]:[])]
                     : [["Date & heure",`${$d(f.date)} à ${f.heure}`]]),
@@ -2580,6 +2587,7 @@ function attachEvents(){
         f.heure=document.getElementById('formHeure')?.value||'12h00';
         f.pourQui=[...document.querySelectorAll('.pq-check:checked')].map(c=>c.value);
         f.pourQuiAutre=document.getElementById('pourQuiAutreInput')?.value||'';
+        f.participants=document.getElementById('formParticipants')?.value||'';
         f.vol=document.getElementById('formVol')?.value||'';
         f.tel=document.getElementById('formTel')?.value||'';
         f.copyMail=document.getElementById('formCopyMail')?.checked||false;
@@ -2589,7 +2597,9 @@ function attachEvents(){
         f.com=document.getElementById('formCom')?.value||'';
         // Validation champs obligatoires
         if(!f.dem){showToast(`${icon('alert',13)} Votre nom est obligatoire`);return;}
-        if(!f.pourQui.length){showToast(`${icon('alert',13)} Veuillez indiquer pour qui`);return;}
+        if(f.type==='repas'){
+            if(!f.participants||!f.participants.trim()){showToast(`${icon('alert',13)} Les participants du repas sont obligatoires`);return;}
+        } else if(!f.pourQui.length){showToast(`${icon('alert',13)} Veuillez indiquer pour qui`);return;}
         if(!f.date){showToast(`${icon('alert',13)} La date est obligatoire`);return;}
         if(f.type!=='hotel' && !f.heure){showToast(`${icon('alert',13)} L'heure est obligatoire`);return;}
         if(f.type==='repas'){
@@ -2617,7 +2627,7 @@ function attachEvents(){
     const sb=document.getElementById('formSubmit');
     if(sb)sb.onclick=async()=>{
         const f=state.form;
-        const pourQuiLabel=f.pourQui.includes('__autre__')?(f.pourQuiAutre||'Autre'):f.pourQui.join(', ');
+        const pourQuiLabel=f.type==='repas'?(f.participants||''):(f.pourQui.includes('__autre__')?(f.pourQuiAutre||'Autre'):f.pourQui.join(', '));
         const descFinal=f.type==='taxi'?`Taxi ${(f.de||'?').split(',')[0]} → ${(f.vers||'?').split(',')[0]}`:f.type==='hotel'?(f.desc||`Hôtel ${f.lieu||'?'}`):(f.desc||'Commande repas');
         const code=genCode(f.type);
         const newItem={id:Date.now(),code,pris:"En attente",demandeur:f.dem,pourQui:pourQuiLabel,date:f.date,dateDepart:f.type==='hotel'?f.dateDepart:'',desc:descFinal,lieu:f.type==='taxi'?f.de:f.lieu,heure:f.heure,presta:f.presta,prix:0,paie:"",nb:parseInt(f.nb)||1,comment:f.com,type:f.type,depart:f.de,arrivee:f.vers,vol:f.vol||'',tel:f.tel||''};
@@ -2642,7 +2652,7 @@ function attachEvents(){
         }
     };
 
-    document.querySelectorAll('[data-reset-form]').forEach(el=>el.onclick=()=>setState({form:{type:null,step:1,sent:false,dem:"",pourQui:[],pourQuiAutre:"",vol:"",copyMail:false,date:today(),dateDepart:"",heure:"12h00",lieu:"",de:"",vers:"",presta:"",desc:"",nb:"1",com:""}}));
+    document.querySelectorAll('[data-reset-form]').forEach(el=>el.onclick=()=>setState({form:{type:null,step:1,sent:false,dem:"",pourQui:[],pourQuiAutre:"",participants:"",vol:"",copyMail:false,date:today(),dateDepart:"",heure:"12h00",lieu:"",de:"",vers:"",presta:"",desc:"",nb:"1",com:""}}));
 
     // Saisie save
     // Admin form dropdown
