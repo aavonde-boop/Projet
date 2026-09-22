@@ -716,10 +716,41 @@ const DEFAULTS=[
   {title:'Ampoule couloir B',desc:'',status:'en-cours',date:'2026-06-24',intervenant:'',soustraitant:'',criticite:1,engagement:'',resolution:'',relances:[]},
 ];
 
+/* Tickets issus du constat d'huissier du 17/09/2026 */
+const CONSTAT_TICKETS=[
+  {title:'ASCENSEUR GAUCHE BÂT A 7E HORS SERVICE',desc:'Afficheur éteint — ascenseur non fonctionnel. Constaté par huissier le 17/09/2026.',status:'en-cours',date:'2026-09-17',intervenant:'',soustraitant:'',criticite:5,engagement:'',resolution:'',relances:[],commentaires:[{date:'17/09/2026 00:00',text:'CONSTATÉ PAR HUISSIER (MAÎTRE DAGUIN) — AFFICHEUR ÉTEINT.'}]},
+  {title:'ASCENSEUR DROIT BÂT A 7E HORS SERVICE',desc:'Afficheur affiche deux traits — ascenseur non fonctionnel. Constaté par huissier le 17/09/2026.',status:'en-cours',date:'2026-09-17',intervenant:'',soustraitant:'',criticite:5,engagement:'',resolution:'',relances:[],commentaires:[{date:'17/09/2026 00:00',text:'CONSTATÉ PAR HUISSIER — AFFICHEUR = DEUX TRAITS.'}]},
+  {title:'DÉGÂT DES EAUX FAUX PLAFOND PASSERELLE',desc:'Zone non repeinte après dégât des eaux en faux plafond au niveau de la passerelle. Constaté par huissier le 17/09/2026.',status:'en-cours',date:'2026-09-17',intervenant:'',soustraitant:'',criticite:3,engagement:'',resolution:'',relances:[],commentaires:[{date:'17/09/2026 00:00',text:'CONSTATÉ PAR HUISSIER — ZONE NON REPEINTE.'}]},
+  {title:'EMPOUSSIÉRAGE CAGE ESCALIER PALIER 6E',desc:'Cage d\'escalier, palier 6e étage empoussiéré. Constaté par huissier le 17/09/2026.',status:'en-cours',date:'2026-09-17',intervenant:'',soustraitant:'',criticite:2,engagement:'',resolution:'',relances:[],commentaires:[{date:'17/09/2026 00:00',text:'CONSTATÉ PAR HUISSIER — PALIER 6E ÉTAGE.'}]},
+  {title:'EMPOUSSIÉRAGE + BARRE SEUIL DÉFIXÉE PALIER 5E',desc:'Cage d\'escalier, palier 5e étage : empoussiéré + barre de seuil défixée et tordue. Constaté par huissier le 17/09/2026.',status:'en-cours',date:'2026-09-17',intervenant:'',soustraitant:'',criticite:3,engagement:'',resolution:'',relances:[],commentaires:[{date:'17/09/2026 00:00',text:'CONSTATÉ PAR HUISSIER — BARRE DE SEUIL DÉFIXÉE ET TORDUE.'}]},
+  {title:'NOIRCISSEMENTS MUR + PLINTHES RDC BÂT A',desc:'Palier ascenseur côté Bât A (av. Georges-Pompidou, RdC) : noircissements sur mur face aux ascenseurs, plinthes noircies, épaufrures/manques de matière. Constaté par huissier le 17/09/2026.',status:'en-cours',date:'2026-09-17',intervenant:'',soustraitant:'',criticite:3,engagement:'',resolution:'',relances:[],commentaires:[{date:'17/09/2026 00:00',text:'CONSTATÉ PAR HUISSIER — ÉPAUFRURES ET MANQUES DE MATIÈRE.'}]},
+  {title:'CHÂSSIS VITRÉ RUBAN JAUNE/NOIR HALL RDC',desc:'Hall RdC : châssis vitré avec ruban jaune et noir en soubassement. Constaté par huissier le 17/09/2026.',status:'en-cours',date:'2026-09-17',intervenant:'',soustraitant:'',criticite:2,engagement:'',resolution:'',relances:[],commentaires:[{date:'17/09/2026 00:00',text:'CONSTATÉ PAR HUISSIER — HALL RDC.'}]},
+  {title:'CHÂSSIS VITRÉ FÊLÉ HALL RDC',desc:'Hall RdC : châssis vitré fêlé. Constaté par huissier le 17/09/2026.',status:'en-cours',date:'2026-09-17',intervenant:'',soustraitant:'',criticite:4,engagement:'',resolution:'',relances:[],commentaires:[{date:'17/09/2026 00:00',text:'CONSTATÉ PAR HUISSIER — HALL RDC.'}]},
+  {title:'PAVAGE IRRÉGULIER COUR INTÉRIEURE',desc:'Cour intérieure : pavage irrégulier, pavés affaissés/descellés avec jeu. Constaté par huissier le 17/09/2026.',status:'en-cours',date:'2026-09-17',intervenant:'',soustraitant:'',criticite:3,engagement:'',resolution:'',relances:[],commentaires:[{date:'17/09/2026 00:00',text:'CONSTATÉ PAR HUISSIER — RISQUE DE CHUTE.'}]},
+  {title:'PORTE CONDAMNÉE CÔTÉ RIE',desc:'Côté RIE : porte condamnée. Constaté par huissier le 17/09/2026.',status:'en-cours',date:'2026-09-17',intervenant:'',soustraitant:'',criticite:2,engagement:'',resolution:'',relances:[],commentaires:[{date:'17/09/2026 00:00',text:'CONSTATÉ PAR HUISSIER.'}]},
+  {title:'REPRISES RUBAN ADHÉSIF GARDE-CORPS SALLE SPORT',desc:'Accès escalier salle de sport : reprises au ruban adhésif sur garde-corps. Constaté par huissier le 17/09/2026.',status:'en-cours',date:'2026-09-17',intervenant:'',soustraitant:'',criticite:3,engagement:'',resolution:'',relances:[],commentaires:[{date:'17/09/2026 00:00',text:'CONSTATÉ PAR HUISSIER — GARDE-CORPS.'}]},
+  {title:'ADHÉSIFS + RESTES MATIÈRE FAÇADE PARKING POMPIER',desc:'Accès parking pompier : adhésifs sur dalle murale + restes de matière adhésive sur façade. Constaté par huissier le 17/09/2026.',status:'en-cours',date:'2026-09-17',intervenant:'',soustraitant:'',criticite:2,engagement:'',resolution:'',relances:[],commentaires:[{date:'17/09/2026 00:00',text:'CONSTATÉ PAR HUISSIER.'}]},
+  {title:'TRACES SUR SOL PARKING POMPIER',desc:'Accès parking pompier : traces visibles sur sol. Constaté par huissier le 17/09/2026.',status:'en-cours',date:'2026-09-17',intervenant:'',soustraitant:'',criticite:1,engagement:'',resolution:'',relances:[],commentaires:[{date:'17/09/2026 00:00',text:'CONSTATÉ PAR HUISSIER.'}]},
+  {title:'POTELETS TORDUS ET ÉRAFLÉS PARKING POMPIER',desc:'Accès parking pompier : potelets tordus et éraflés. Constaté par huissier le 17/09/2026.',status:'en-cours',date:'2026-09-17',intervenant:'',soustraitant:'',criticite:2,engagement:'',resolution:'',relances:[],commentaires:[{date:'17/09/2026 00:00',text:'CONSTATÉ PAR HUISSIER.'}]},
+  {title:'TOITURE VERRE VÉRANDA COWORKING SALE',desc:'Espace véranda coworking : toiture vitrée sale. Constaté par huissier le 17/09/2026.',status:'en-cours',date:'2026-09-17',intervenant:'',soustraitant:'',criticite:2,engagement:'',resolution:'',relances:[],commentaires:[{date:'17/09/2026 00:00',text:'CONSTATÉ PAR HUISSIER.'}]},
+  {title:'ASCENSEUR KA258 HORS SERVICE',desc:'Ascenseur KA258 non fonctionnel, porte ne s\'ouvrant pas entièrement. Constaté par huissier le 17/09/2026.',status:'en-cours',date:'2026-09-17',intervenant:'',soustraitant:'',criticite:5,engagement:'',resolution:'',relances:[],commentaires:[{date:'17/09/2026 00:00',text:'CONSTATÉ PAR HUISSIER — PORTE NE S\'OUVRE PAS ENTIÈREMENT.'}]},
+  {title:'ASCENSEUR KA252 HORS SERVICE',desc:'Ascenseur KA252 non fonctionnel. Constaté par huissier le 17/09/2026.',status:'en-cours',date:'2026-09-17',intervenant:'',soustraitant:'',criticite:5,engagement:'',resolution:'',relances:[],commentaires:[{date:'17/09/2026 00:00',text:'CONSTATÉ PAR HUISSIER (MAÎTRE DAGUIN).'}]},
+];
+
 function loadLocal(){
-  try{const r=JSON.parse(localStorage.getItem(LS)||'{}');
-    return{tickets:r.tickets&&r.tickets.length?r.tickets:DEFAULTS};
-  }catch(e){return{tickets:DEFAULTS};}
+  try{
+    const r=JSON.parse(localStorage.getItem(LS)||'{}');
+    let base=r.tickets&&r.tickets.length?r.tickets:[...DEFAULTS];
+    /* Ajouter les tickets du constat qui ne sont pas encore présents (par titre) */
+    const existingTitles=new Set(base.map(t=>(t.title||'').trim().toUpperCase()));
+    const toAdd=CONSTAT_TICKETS.filter(t=>!existingTitles.has((t.title||'').trim().toUpperCase()));
+    if(toAdd.length){
+      base=[...base,...toAdd];
+      /* Sauvegarder immédiatement pour que les prochains rechargements ne re-ajoutent pas */
+      try{localStorage.setItem(LS,JSON.stringify({tickets:base,t:Date.now()}));}catch(e){}
+    }
+    return{tickets:base};
+  }catch(e){return{tickets:[...DEFAULTS,...CONSTAT_TICKETS]};}
 }
 const _d=loadLocal();
 let tickets=[..._d.tickets];
