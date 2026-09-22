@@ -429,7 +429,7 @@ body.fullscreen .stats,body.fullscreen #progressBar{display:none}
         <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M6.5 1v8M4 7l2.5 3L9 7M2 11.5h9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
         PDF
       </button>
-      <button onclick="openModal()" style="display:flex;align-items:center;gap:6px;background:#c9b97e;border:none;color:#1a2e5a;border-radius:7px;padding:8px 16px;font-size:9px;font-weight:700;cursor:pointer;transition:all .15s;font-family:var(--sans)" onmouseover="this.style.background='#ddd0a0'" onmouseout="this.style.background='#c9b97e'">
+<button onclick="openModal()" style="display:flex;align-items:center;gap:6px;background:#c9b97e;border:none;color:#1a2e5a;border-radius:7px;padding:8px 16px;font-size:9px;font-weight:700;cursor:pointer;transition:all .15s;font-family:var(--sans)" onmouseover="this.style.background='#ddd0a0'" onmouseout="this.style.background='#c9b97e'">
         <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 1v10M1 6h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
         Nouveau ticket
       </button>
@@ -769,6 +769,16 @@ function saveLocal(){
   clearTimeout(el._t);el._t=setTimeout(()=>{el.style.opacity='0';el.style.transform='translateY(10px)';},1800);
 }
 function today(){return new Date().toISOString().split('T')[0];}
+
+function importConstat(){
+  const existingTitles=new Set(tickets.map(t=>(t.title||'').trim().toUpperCase()));
+  const toAdd=CONSTAT_TICKETS.filter(t=>!existingTitles.has((t.title||'').trim().toUpperCase()));
+  if(toAdd.length===0){toast('✓ Tickets du constat déjà présents ('+CONSTAT_TICKETS.length+')');return;}
+  tickets=[...tickets,...toAdd];
+  saveLocal();
+  render();
+  toast('✓ '+toAdd.length+' tickets importés depuis le constat d\'huissier du 17/09/2026');
+}
 function fmt(d){if(!d||d==='—')return'—';try{const[y,m,day]=d.split('-');return day+'/'+m+'/'+y;}catch(e){return d;}}
 function isLate(t){return t.status!=='résolu'&&t.resolution&&new Date(t.resolution)<new Date();}
 function isEngLate(t){return t.status!=='résolu'&&t.engagement&&new Date(t.engagement)<new Date();}
