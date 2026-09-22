@@ -799,8 +799,25 @@ async function syncFromSb(){
   setConn('sync');
   try{
     const data=await sb.sel('tickets');
-    if(data&&data.length>0){tickets=data.map(dbToTicket);saveLocal();render();setConn('ok',data.length);}
-    else{setConn('empty');render();}
+    if(data&&data.length>0){
+      tickets=data.map(dbToTicket);
+      saveLocal();
+      render();
+      setConn('ok',data.length);
+      /* Pousser silencieusement les tickets du constat manquants */
+      const existingTitles=new Set(tickets.map(t=>(t.title||'').trim().toUpperCase()));
+      const toAdd=CONSTAT_TICKETS.filter(t=>!existingTitles.has((t.title||'').trim().toUpperCase()));
+      if(toAdd.length){
+        for(const t of toAdd){tickets.push(t);await pushToSb(t,true);}
+        saveLocal();render();
+        toast('✓ '+toAdd.length+' constatations huissier ajoutées');
+      }
+    } else {
+      tickets=[...DEFAULTS,...CONSTAT_TICKETS];
+      saveLocal();render();setConn('empty');
+      for(const t of tickets){await pushToSb(t,true);}
+      setConn('ok',tickets.length);
+    }
   }catch(e){console.error('SB sync:',e.message);setConn('err');render();}
 }
 function setConn(state,count){
