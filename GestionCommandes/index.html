@@ -1829,7 +1829,6 @@ function renderHistorique(m){
 }
 function renderSettings(){
     const secs=[
-        {title:"Assistantes",      key:"assistantes",           icon:"user",badge:"assistant",inputId:"newAssistante",btnId:"addAssistante",rm:"remove-assistante",ph:"Prénom NOM"},
         {title:"Directeurs",       key:"directeurs",            icon:"user",badge:"director", inputId:"newDirecteur", btnId:"addDirecteur", rm:"remove-directeur", ph:"Prénom NOM"},
         {title:"Types de repas",       key:"prestatairesRepas",   icon:"utensils",badge:null,inputId:"newPrepas",btnId:"addPrepas",rm:"remove-prepas",ph:"Ex: Sushi, Burger..."},
         {title:"Prestataires Taxi",    key:"prestatairesTaxi",    icon:"car",badge:null,inputId:"newPtaxi", btnId:"addPtaxi", rm:"remove-ptaxi", ph:"Nouveau prestataire"},
@@ -1839,14 +1838,30 @@ function renderSettings(){
     return `<div>
     <div style="font-size:13px;font-weight:700;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.08em;margin-bottom:14px;display:flex;align-items:center;gap:7px;">${icon('sliders',14)} Réglages</div>
     <div class="settings-section" style="border:2px solid #e0f2fe;background:#f0f9ff;">
-        <div style="font-weight:700;margin-bottom:14px;font-size:14px;display:flex;align-items:center;gap:7px;">${icon('mail',14)} Emails assistantes</div>
-        ${Object.entries(settings.emails||{}).map(([nom,email])=>`
-        <div class="settings-item">
-            <span style="font-size:13px;font-weight:500;min-width:120px;">${nom}</span>
-            <input class="email-input form-input" data-nom="${nom}" value="${email}" placeholder="email@example.com" style="flex:1;padding:6px 10px;font-size:13px;">
-            <button data-rm-email="${nom}" style="background:none;border:none;font-size:16px;cursor:pointer;color:#ccc;padding:4px 8px;flex-shrink:0;">✕</button>
-        </div>`).join('')}
-        <button id="saveAllEmails" class="btn-primary" style="width:100%;margin-top:14px;padding:12px;display:flex;align-items:center;justify-content:center;gap:7px;">${icon('save',14)} Sauvegarder les emails</button>
+        <div style="font-weight:700;margin-bottom:14px;font-size:14px;display:flex;align-items:center;gap:7px;">${icon('user',14)} Assistantes de direction</div>
+        <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:14px;">
+            ${settings.assistantes.map((nom,i)=>`
+            <div class="settings-item" style="align-items:flex-start;">
+                <div style="display:flex;flex-direction:column;gap:6px;flex:1;">
+                    <span style="font-size:13px;font-weight:600;display:flex;align-items:center;gap:7px;"><span class="badge-assistant">Assistante</span>${nom}</span>
+                    <input class="email-input form-input" data-nom="${nom}" value="${settings.emails&&settings.emails[nom]||''}" placeholder="email@example.com" style="padding:7px 10px;font-size:13px;">
+                </div>
+                ${state.confirmRm&&state.confirmRm.attr==='remove-assistante'&&state.confirmRm.idx===i?`
+                <div style="display:flex;gap:4px;align-items:center;padding-top:4px;">
+                    <button data-confirm-rm-yes style="background:#b91c1c;color:#fff;border:none;border-radius:8px;padding:4px 8px;font-size:11px;font-weight:700;cursor:pointer;">Oui</button>
+                    <button data-confirm-rm-no style="background:#f1f5f9;color:#5a5550;border:none;border-radius:8px;padding:4px 8px;font-size:11px;cursor:pointer;">Non</button>
+                </div>`:`
+                <button data-rm="remove-assistante" data-idx="${i}" style="background:none;border:none;font-size:18px;cursor:pointer;color:#ccc;flex-shrink:0;width:24px;text-align:center;">✕</button>`}
+            </div>`).join('')}
+        </div>
+        <button id="saveAllEmails" class="btn-primary" style="width:100%;margin-bottom:16px;padding:12px;display:flex;align-items:center;justify-content:center;gap:7px;">${icon('save',14)} Sauvegarder les emails</button>
+        <div style="border-top:1px solid #bae6fd;padding-top:14px;">
+            <div style="display:flex;flex-direction:column;gap:8px;">
+                <input type="text" id="newAssistante" placeholder="Prénom NOM" class="form-input">
+                <input type="email" id="newAssistanteEmail" placeholder="email@example.com" class="form-input">
+            </div>
+            <button id="addAssistante" class="btn-primary" style="width:100%;margin-top:10px;">+ Ajouter une assistante</button>
+        </div>
     </div>
     <div class="settings-section" style="margin-top:18px;">
         <div style="font-size:13px;font-weight:700;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.08em;margin-bottom:14px;display:flex;align-items:center;gap:7px;">${icon('mail',14)} Emails Admin</div>
@@ -2775,21 +2790,11 @@ function attachEvents(){
         showToast('✓ Emails admin sauvegardés');
     });
 
-        // Suppression email assistante
-    document.querySelectorAll('[data-rm-email]').forEach(btn=>{
-        btn.onclick=()=>{
-            const nom=btn.getAttribute('data-rm-email');
-            delete settings.emails[nom];
-            updS({...settings});
-            showToast('✓ Email supprimé');
-        };
-    });
-
     document.getElementById('saveAllEmails')?.addEventListener('click',()=>{
         const newEmails={...settings.emails};
         let count=0;
         document.querySelectorAll('.email-input').forEach(input=>{
-            const name=input.getAttribute('data-email-for');
+            const name=input.getAttribute('data-nom');
             const val=input.value.trim();
             newEmails[name]=val;
             // Visual feedback
@@ -2804,8 +2809,30 @@ function attachEvents(){
         saveSettings(settings);
         showToast(`✓ ${count} email${count>1?'s':''} sauvegardé${count>1?'s':''}`);
     });
-    const addMap=[['addAssistante','newAssistante','assistantes'],['addDirecteur','newDirecteur','directeurs'],['addPrepas','newPrepas','prestatairesRepas'],['addPtaxi','newPtaxi','prestatairesTaxi'],['addPcmd','newPcmd','prestatairesCommande'],['addPhotel','newPhotel','prestatairesHotel']];
-    addMap.forEach(([btnId,inputId,key])=>document.getElementById(btnId)?.addEventListener('click',()=>{const i=document.getElementById(inputId);const v=i?.value.trim();if(v&&!settings[key].includes(v))updS({...settings,[key]:[...settings[key],v]});if(i)i.value='';}));
+    document.getElementById('addAssistante')?.addEventListener('click',()=>{
+        const ni=document.getElementById('newAssistante');
+        const ei=document.getElementById('newAssistanteEmail');
+        const v=ni?.value.trim();
+        const email=ei?.value.trim()||'';
+        if(v && !settings.assistantes.includes(v)){
+            updS({...settings,assistantes:[...settings.assistantes,v],emails:{...(settings.emails||{}),[v]:email}});
+        }
+        if(ni)ni.value='';
+        if(ei)ei.value='';
+    });
+    const addMap=[['addDirecteur','newDirecteur','directeurs'],['addPrepas','newPrepas','prestatairesRepas'],['addPtaxi','newPtaxi','prestatairesTaxi'],['addPcmd','newPcmd','prestatairesCommande'],['addPhotel','newPhotel','prestatairesHotel']];
+    addMap.forEach(([btnId,inputId,key])=>document.getElementById(btnId)?.addEventListener('click',()=>{
+        const i=document.getElementById(inputId);
+        const v=i?.value.trim();
+        if(v&&!settings[key].includes(v)){
+            const ns={...settings,[key]:[...settings[key],v]};
+            if(key==='assistantes' && !Object.prototype.hasOwnProperty.call(settings.emails||{},v)){
+                ns.emails={...(settings.emails||{}),[v]:''};
+            }
+            updS(ns);
+        }
+        if(i)i.value='';
+    }));
     const rmMap=[['remove-assistante','assistantes'],['remove-directeur','directeurs'],['remove-typerepas','typesRepas'],['remove-prepas','prestatairesRepas'],['remove-ptaxi','prestatairesTaxi'],['remove-pcmd','prestatairesCommande'],['remove-photel','prestatairesHotel']];
     // Handler suppression réglages via délégation
     if(!window._rmHandlerSet){
@@ -2817,7 +2844,13 @@ function attachEvents(){
                 const {attr,idx}=state.confirmRm||{};
                 const key=keyMap[attr];
                 if(key&&!isNaN(idx)){
+                    const removed=settings[key][idx];
                     settings[key]=settings[key].filter((_,i)=>i!==idx);
+                    if(key==='assistantes' && settings.emails && Object.prototype.hasOwnProperty.call(settings.emails,removed)){
+                        const ne={...settings.emails};
+                        delete ne[removed];
+                        settings.emails=ne;
+                    }
                     updS({...settings});
                 }
                 state.confirmRm=null;
