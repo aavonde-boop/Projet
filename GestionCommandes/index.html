@@ -4,6 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Gestion des commandes — 2026</title>
+    <!-- Appli installable (écran d'accueil) -->
+    <link rel="manifest" href="manifest.webmanifest">
+    <meta name="theme-color" content="#2c5f85">
+    <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+    <link rel="apple-touch-icon" href="apple-touch-icon.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="Commandes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
     <script>emailjs.init("n04JbAxmU3mf9UuXz"); /* Public Key OK */</script>
@@ -981,6 +990,33 @@ function renderTrackCode(m){
 }
 
 
+/* ── Installation sur l'écran d'accueil ── */
+let _installPrompt = null;
+window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); _installPrompt = e; render(); });
+window.addEventListener('appinstalled', () => { _installPrompt = null; lsSet('install_hint_off', '1'); render(); });
+const isStandalone = () => window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+const isIOS = () => /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+function installHintHtml(){
+    if (isStandalone() || lsGet('install_hint_off')) return '';
+    const how = _installPrompt
+        ? `<button id="installAppBtn" style="background:var(--accent);color:#fff;border:none;border-radius:20px;padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;">Installer</button>`
+        : '';
+    const txt = _installPrompt
+        ? 'Ajoutez l’appli sur votre écran d’accueil pour l’ouvrir en un geste.'
+        : isIOS()
+            ? `Dans Safari, touchez <b>Partager</b> <span style="display:inline-block;vertical-align:-2px;">⬆︎</span> puis <b>« Sur l’écran d’accueil »</b>.`
+            : `Ouvrez le menu <b>⋮</b> du navigateur puis <b>« Ajouter à l’écran d’accueil »</b>.`;
+    return `<div style="display:flex;align-items:center;gap:12px;background:#fff;border:1px solid var(--border);border-radius:16px;padding:12px 12px 12px 14px;margin-bottom:16px;">
+        <img src="icon-192.png" alt="" style="width:40px;height:40px;border-radius:10px;flex-shrink:0;">
+        <div style="flex:1;min-width:0;">
+            <div style="font-weight:700;font-size:14px;color:var(--ink);">Installer l’appli</div>
+            <div style="font-size:12px;color:#7a7570;line-height:1.4;margin-top:1px;">${txt}</div>
+        </div>
+        ${how}
+        <button id="installHintClose" aria-label="Fermer" style="background:none;border:none;color:#b0aba2;cursor:pointer;padding:4px;display:flex;flex-shrink:0;">${icon('x',16)}</button>
+    </div>`;
+}
+
 function renderHome(m){
     const total=state.data.filter(c=>c.pris==="OUI").reduce((a,b)=>a+(b.prix||0),0);
     const att=state.data.filter(c=>c.pris==="En attente").length;
@@ -1003,6 +1039,7 @@ function renderHome(m){
 
         <!-- ── FORM AREA ── -->
         <div style="flex:1;padding:${m?'20px 16px calc(20px + env(safe-area-inset-bottom,0px))':'32px 40px'};max-width:${m?'100%':'860px'};margin:0 auto;width:100%;">
+            ${m?installHintHtml():''}
             ${renderInlineForm(m)}
         </div>
     </div>
@@ -3056,6 +3093,13 @@ function attachEvents(){
     });
 
     // Login
+    document.getElementById('installHintClose')?.addEventListener('click',()=>{ lsSet('install_hint_off','1'); render(); });
+    document.getElementById('installAppBtn')?.addEventListener('click',async()=>{
+        if(!_installPrompt) return;
+        _installPrompt.prompt();
+        try{ await _installPrompt.userChoice; }catch(e){}
+        _installPrompt=null; render();
+    });
     const lb=document.getElementById('adminLoginBtn');
     if(lb)lb.onclick=()=>{
         const code=document.getElementById('adminCodeInput')?.value;
@@ -3424,6 +3468,11 @@ function attachEvents(){
 
 let _rt;
 window.addEventListener('resize',()=>{clearTimeout(_rt);_rt=setTimeout(render,120);});
+
+// ── Service worker (appli installable). Ignoré en local (file://). ──
+if ('serviceWorker' in navigator && location.protocol === 'https:') {
+    window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(e => console.warn('SW:', e)));
+}
 
 // ── INIT : chargement depuis Supabase ──
 (async () => {
