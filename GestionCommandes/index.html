@@ -412,6 +412,7 @@ const ICON_PATHS = {
     sliders: '<line x1="4" y1="7" x2="20" y2="7"/><circle cx="9" cy="7" r="2" fill="currentColor" stroke="none"/><line x1="4" y1="12" x2="20" y2="12"/><circle cx="15" cy="12" r="2" fill="currentColor" stroke="none"/><line x1="4" y1="17" x2="20" y2="17"/><circle cx="7" cy="17" r="2" fill="currentColor" stroke="none"/>',
     utensils: '<path d="M6 2v7a2 2 0 0 0 4 0V2"/><path d="M8 9v13"/><path d="M17 2c-1.7 0-3 2-3 5s1.3 5 3 5v9"/>',
     box: '<path d="M3 8l9-5 9 5-9 5-9-5z"/><path d="M3 8v8l9 5 9-5V8"/><line x1="12" y1="13" x2="12" y2="21"/>',
+    chart: '<path d="M3 3v18h18"/><rect x="7" y="12" width="3" height="6"/><rect x="12" y="8" width="3" height="10"/><rect x="17" y="5" width="3" height="13"/>',
     clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l4 2"/>',
     grid: '<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>',
     trash: '<line x1="4" y1="7" x2="20" y2="7"/><path d="M10 11v6M14 11v6"/><path d="M6 7l1 13a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-13"/><path d="M9 7V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v3"/>',
@@ -508,6 +509,7 @@ function rowToApp(r) {
         vol:       r.vol       || '',
         tel:       r.tel       || '',
         dateDepart:r.date_depart|| '',
+        createdAt: r.created_at || '',
     };
 }
 
@@ -593,9 +595,10 @@ async function dbUpdate(id, fields) {
         if (fields.pourQui   !== undefined) row.pour_qui  = fields.pourQui;
         if (fields.desc      !== undefined) row.descr     = fields.desc;
         if (fields.prix      !== undefined) row.prix      = fields.prix;
+        if (fields.dateDepart!== undefined) row.date_depart = fields.dateDepart || null;
         // add more fields as needed
         Object.keys(fields).forEach(k => {
-            if (!['pris','pourQui','desc','prix'].includes(k)) row[k] = fields[k];
+            if (!['pris','pourQui','desc','prix','dateDepart','createdAt','id'].includes(k)) row[k] = fields[k];
         });
         await fetch(`${SB_TABLE}?id=eq.${id}`, {
             method: 'PATCH',
@@ -618,6 +621,250 @@ async function dbDelete(id) {
 function dbSaveDebounced() {} // non utilisé avec Supabase (opérations atomiques)
 
 /* ══════════════════════════════════════
+   PARAMÈTRES CLÉ/VALEUR (corbeille, journal)
+   Stockés dans la table "parametres" existante : aucune modification
+   de structure de la base n'est nécessaire.
+══════════════════════════════════════ */
+async function paramGet(cle) {
+    const r = await fetch(`${SB_PARAMS}?cle=eq.${cle}&select=valeur`, { headers: SB_HDR });
+    if (!r.ok) throw new Error(await r.text());
+    const rows = await r.json();
+    return rows && rows[0] ? rows[0].valeur : null;
+}
+async function paramSet(cle, valeur) {
+    // 1) mise à jour en place ; 2) si la clé n'existe pas encore, création.
+    const r = await fetch(`${SB_PARAMS}?cle=eq.${cle}`, {
+        method: 'PATCH',
+        headers: { ...SB_HDR, 'Prefer': 'return=representation' },
+        body: JSON.stringify({ valeur })
+    });
+    if (r.ok) {
+        const rows = await r.json();
+        if (rows && rows.length) return true;
+    }
+    const r2 = await fetch(SB_PARAMS, {
+        method: 'POST',
+        headers: { ...SB_HDR, 'Prefer': 'return=minimal' },
+        body: JSON.stringify({ cle, valeur })
+    });
+    if (!r2.ok) throw new Error(await r2.text());
+    return true;
+}
+
+const esc = s => String(s ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+
+/* ── Session admin persistante ── */
+const SESSION_KEY = 'admin_session';
+const SESSION_DAYS = 30;
+function lsGet(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } }
+function lsSet(k,v){ try{ localStorage.setItem(k,v); }catch(e){} }
+function sessionValid(){
+    try{
+        const s = JSON.parse(localStorage.getItem(SESSION_KEY) || sessionStorage.getItem(SESSION_KEY) || 'null');
+        return !!(s && s.exp > Date.now());
+    }catch(e){ return false; }
+}
+function sessionStart(remember){
+    const s = JSON.stringify({ exp: Date.now() + (remember ? SESSION_DAYS*864e5 : 12*36e5) });
+    try{
+        if(remember){ localStorage.setItem(SESSION_KEY, s); sessionStorage.removeItem(SESSION_KEY); }
+        else { sessionStorage.setItem(SESSION_KEY, s); localStorage.removeItem(SESSION_KEY); }
+    }catch(e){}
+}
+function sessionEnd(){
+    try{ localStorage.removeItem(SESSION_KEY); sessionStorage.removeItem(SESSION_KEY); localStorage.removeItem('last_vue'); }catch(e){}
+}
+const adminName = () => (lsGet('admin_nom') || 'Admin');
+
+/* ── Journal des modifications ── */
+const JOURNAL_MAX = 500;
+let _journalChain = Promise.resolve();
+function logAction(action, items, detail) {
+    const list = Array.isArray(items) ? items : [items];
+    const t = new Date().toISOString();
+    const qui = state.vue === 'admin' ? adminName() : 'Demandeur';
+    const entries = list.filter(Boolean).map(c => ({
+        t, qui, action,
+        id: c.id, code: c.code || '', type: c.type || '', desc: c.desc || '',
+        detail: typeof detail === 'function' ? detail(c) : (detail || '')
+    }));
+    if (!entries.length) return;
+    state.journal = [...entries, ...(state.journal || [])].slice(0, JOURNAL_MAX);
+    // Écritures en série : on relit la version en base pour ne pas écraser
+    // les entrées ajoutées depuis un autre poste.
+    _journalChain = _journalChain.then(async () => {
+        try {
+            const cur = (await paramGet('journal')) || [];
+            const merged = [...entries, ...cur].slice(0, JOURNAL_MAX);
+            await paramSet('journal', merged);
+            state.journal = merged;
+        } catch (e) { console.error('Journal:', e); }
+    });
+}
+async function loadJournal() {
+    try { state.journal = (await paramGet('journal')) || []; } catch (e) { console.error('Journal load:', e); }
+}
+
+/* ── Corbeille persistante (purge auto après 30 jours) ── */
+const TRASH_DAYS = 30;
+async function loadTrash() {
+    try {
+        const all = (await paramGet('corbeille')) || [];
+        const limit = Date.now() - TRASH_DAYS*864e5;
+        const kept = all.filter(c => !c.deletedAt || new Date(c.deletedAt).getTime() > limit);
+        state.deletedData = kept;
+        if (kept.length !== all.length) await paramSet('corbeille', kept);
+    } catch (e) { console.error('Corbeille load:', e); }
+}
+async function moveToTrash(ids) {
+    const items = state.data.filter(c => ids.includes(c.id));
+    if (!items.length) return false;
+    const stamped = items.map(c => ({ ...c, deletedAt: new Date().toISOString(), deletedBy: adminName() }));
+    try {
+        // On sécurise d'abord la copie dans la corbeille, puis on supprime.
+        const cur = (await paramGet('corbeille')) || [];
+        await paramSet('corbeille', [...stamped, ...cur]);
+        state.deletedData = [...stamped, ...cur];
+    } catch (e) {
+        console.error('Corbeille save:', e);
+        showToast(`${icon('alert',13)} Suppression annulée : corbeille injoignable`);
+        return false;
+    }
+    state.data = state.data.filter(c => !ids.includes(c.id));
+    state.sel = (state.sel || []).filter(id => !ids.includes(id));
+    if (state.detail && ids.includes(state.detail.id)) state.detail = null;
+    logAction('Suppression', items);
+    render();
+    for (const id of ids) await dbDelete(id);
+    return true;
+}
+async function restoreFromTrash(idx) {
+    const item = (state.deletedData || [])[idx];
+    if (!item) return;
+    const { deletedAt, deletedBy, ...clean } = item;
+    const saved = await dbInsert(clean);
+    state.data = [saved, ...state.data];
+    state.deletedData = state.deletedData.filter((_, i) => i !== idx);
+    try { await paramSet('corbeille', state.deletedData); } catch (e) { console.error(e); }
+    logAction('Restauration', saved);
+    showToast('Commande restaurée');
+    render();
+}
+async function emptyTrash() {
+    const n = (state.deletedData || []).length;
+    if (!n || !confirm(`Supprimer définitivement ${n} élément${n>1?'s':''} ? Cette action est irréversible.`)) return;
+    state.deletedData = [];
+    try { await paramSet('corbeille', []); } catch (e) { console.error(e); }
+    logAction('Corbeille vidée', [{ id: null, desc: `${n} élément${n>1?'s':''}` }]);
+    showToast('Corbeille vidée');
+    render();
+}
+
+/* ── Changement de statut (unitaire ou groupé) ── */
+async function applyStatus(ids, status, { silent = false } = {}) {
+    const before = {};
+    state.data.forEach(c => { if (ids.includes(c.id)) before[c.id] = c.pris; });
+    const changed = ids.filter(id => before[id] !== undefined && before[id] !== status);
+    if (!changed.length) return;
+    state.data = state.data.map(c => changed.includes(c.id) ? { ...c, pris: status } : c);
+    if (state.detail && changed.includes(state.detail.id)) state.detail = { ...state.detail, pris: status };
+    const items = state.data.filter(c => changed.includes(c.id));
+    logAction('Statut', items, c => `${ST[before[c.id]]?.label || before[c.id]} → ${ST[status]?.label || status}`);
+    render();
+    for (const id of changed) await dbUpdate(id, { pris: status });
+    for (const c of items) {
+        if (status === 'OUI') sendConfirmationEmail(c);
+        else if (status === 'Annulé') sendConfirmationEmail(c, { isAnnulation: true });
+    }
+    if (!silent && status !== 'OUI' && status !== 'Annulé') showToast(`Statut : ${ST[status]?.label || status}`);
+}
+
+/* ── Sélection multiple ── */
+function selCell(c) {
+    const on = (state.sel || []).includes(c.id);
+    return `<td style="padding:3px 4px 3px 10px;width:28px;" onclick="event.stopPropagation()"><input type="checkbox" class="sel-box" data-sel-id="${c.id}" ${on?'checked':''} style="width:16px;height:16px;accent-color:var(--accent);cursor:pointer;"></td>`;
+}
+function selHead(list) {
+    const ids = list.map(c => c.id);
+    const all = ids.length && ids.every(id => (state.sel || []).includes(id));
+    return `<th style="padding:7px 4px 7px 10px;width:28px;" onclick="event.stopPropagation()"><input type="checkbox" class="sel-all" data-sel-all="${ids.join(',')}" ${all?'checked':''} title="Tout sélectionner" style="width:16px;height:16px;accent-color:var(--accent);cursor:pointer;"></th>`;
+}
+function bulkBarHtml() {
+    const n = (state.sel || []).length;
+    if (!n) return '';
+    const m = isMobile();
+    const b = (act, bg, bd, col, ic, label) => `<button data-bulk="${act}" style="display:flex;align-items:center;gap:5px;background:${bg};border:1px solid ${bd};color:${col};border-radius:20px;padding:7px ${m?'10px':'14px'};font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;">${icon(ic,14)}${m?'':' '+label}</button>`;
+    return `<div style="position:fixed;left:50%;transform:translateX(-50%);bottom:${m?'calc(84px + env(safe-area-inset-bottom,0px))':'24px'};z-index:9000;background:#1a1f36;color:#fff;border-radius:30px;padding:8px 10px 8px 18px;display:flex;align-items:center;gap:8px;box-shadow:0 10px 30px rgba(0,0,0,.25);max-width:calc(100vw - 24px);">
+        <span style="font-size:13px;font-weight:600;white-space:nowrap;">${n} sélectionnée${n>1?'s':''}</span>
+        ${b('OUI','#f0fdf4','#bbf7d0','#15803d','check','Valider')}
+        ${b('Annulé','#fff7ed','#fed7aa','#c2410c','x','Annuler')}
+        ${b('delete','#fef2f2','#fecaca','#b91c1c','trash','Supprimer')}
+        <button data-bulk="clear" title="Désélectionner" style="background:none;border:none;color:rgba(255,255,255,.6);cursor:pointer;padding:6px;display:flex;">${icon('x',16)}</button>
+    </div>`;
+}
+function refreshBulkBar() {
+    const slot = document.getElementById('bulkBarSlot');
+    if (slot) { slot.innerHTML = bulkBarHtml(); bindBulkBar(); }
+    document.querySelectorAll('.sel-all').forEach(el => {
+        const ids = (el.getAttribute('data-sel-all') || '').split(',').filter(Boolean).map(Number);
+        el.checked = ids.length > 0 && ids.every(id => state.sel.includes(id));
+    });
+}
+function bindBulkBar() {
+    document.querySelectorAll('[data-bulk]').forEach(btn => btn.onclick = async () => {
+        const act = btn.getAttribute('data-bulk');
+        const ids = [...(state.sel || [])];
+        if (act === 'clear') { state.sel = []; render(); return; }
+        if (!ids.length) return;
+        if (act === 'delete') {
+            if (!confirm(`Déplacer ${ids.length} élément${ids.length>1?'s':''} dans la corbeille ?`)) return;
+            if (await moveToTrash(ids)) showToast(`${ids.length} élément${ids.length>1?'s':''} dans la corbeille`);
+            return;
+        }
+        const label = act === 'OUI' ? 'Valider' : 'Annuler';
+        if (!confirm(`${label} ${ids.length} demande${ids.length>1?'s':''} ? Un email sera envoyé pour chacune.`)) return;
+        state.sel = [];
+        await applyStatus(ids, act, { silent: true });
+        showToast(`✓ ${ids.length} demande${ids.length>1?'s':''} ${act==='OUI'?'validée':'annulée'}${ids.length>1?'s':''}`);
+    });
+}
+
+/* ── Alertes ── */
+const ALERT_AGE_H = 48;
+function pendingSince(c) {
+    if (c.createdAt) return new Date(c.createdAt).getTime();
+    // Repli si la colonne created_at n'existe pas : première fois que ce poste a vu la demande
+    let seen = {};
+    try { seen = JSON.parse(lsGet('first_seen') || '{}'); } catch (e) {}
+    return seen[c.id] ? new Date(seen[c.id]).getTime() : null;
+}
+function trackFirstSeen(data) {
+    if (data.some(c => c.createdAt)) return;
+    let seen = {};
+    try { seen = JSON.parse(lsGet('first_seen') || '{}'); } catch (e) {}
+    const now = new Date().toISOString(); const next = {};
+    data.filter(c => c.pris === 'En attente' || c.pris === 'En cours').forEach(c => { next[c.id] = seen[c.id] || now; });
+    lsSet('first_seen', JSON.stringify(next));
+}
+function computeAlerts() {
+    const pend = state.data.filter(c => c.pris === 'En attente' || c.pris === 'En cours');
+    const proche = pend.filter(c => { const j = daysLeft(c.date); return j !== null && j <= 2; })
+        .sort((a, b) => (parseDate(a.date) || 0) - (parseDate(b.date) || 0));
+    const ids = new Set(proche.map(c => c.id));
+    const vieilles = pend.filter(c => {
+        if (ids.has(c.id)) return false;
+        const t = pendingSince(c);
+        return t && (Date.now() - t) > ALERT_AGE_H * 36e5;
+    }).sort((a, b) => pendingSince(a) - pendingSince(b));
+    return { proche, vieilles, total: proche.length + vieilles.length };
+}
+function ageLabel(c) {
+    const t = pendingSince(c); if (!t) return '';
+    const h = Math.floor((Date.now() - t) / 36e5);
+    return h >= 48 ? `en attente depuis ${Math.floor(h/24)} j` : `en attente depuis ${h} h`;
+}
+
+/* ══════════════════════════════════════
    STATE
 ══════════════════════════════════════ */
 let state = {
@@ -628,7 +875,7 @@ let state = {
     saisieType:null, fabOpen:false, fabAdminOpen:false, trackMode:false, trackResult:null, trackCode:"" ,
     resaFilter:"all", cmdFilter:"all", hotelFilter:"all", resaSort:"date", resaSortAsc:true, cmdSort:"date", cmdSortAsc:true, hotelSort:"date", hotelSortAsc:true, histSortAsc:true,
     activiteTab:"reservations", histSort:"date", histPage:0, calMonth:null, colOrder:["date","code","type","desc","demandeur","pourQui","statut","prix"],
-    deletedData:[], confirmRm:null, confirmDelete:null, yoozMap:null, settingsTab:null, adminForm:null,
+    deletedData:[], journal:[], sel:[], statsPeriod:'annee', statsFrom:'', statsTo:'', journalSearch:'', confirmRm:null, confirmDelete:null, yoozMap:null, settingsTab:null, adminForm:null,
     form:{ type:null, step:1, sent:false, code:null,
         dem:"", pourQui:[], pourQuiAutre:"", participants:"", vol:"", tel:"", copyMail:false,
         date:today(), dateDepart:"", heure:"12h00",
@@ -662,6 +909,8 @@ function render(){
     }
     const m=isMobile();
     let html='';
+    lsSet('last_vue', state.vue==='admin'&&state.authed?'admin':'');
+    if(state.vue==='admin'&&state.authed) lsSet('last_admin_tab', state.adminTab||'dashboard');
     if(state.vue==="admin") html=state.authed?renderAdminView(m):renderAdminLogin();
     else if(state.trackMode) html=renderTrackCode(m);
     else html=renderHome(m);
@@ -940,6 +1189,8 @@ function renderAdminLogin(){
             <div style="font-family:'DM Serif Display',serif;font-size:24px;margin-bottom:6px;">Accès Admin</div>
             <div style="color:#9e9a93;margin-bottom:22px;font-size:14px;">Saisissez votre code d'accès</div>
             <input type="password" id="adminCodeInput" class="form-input" style="font-size:22px;text-align:center;letter-spacing:8px;margin-bottom:10px;" placeholder="••••••••" autocomplete="current-password">
+            <input type="text" id="adminNameInput" class="form-input" style="text-align:center;margin-bottom:10px;" placeholder="Votre prénom (pour le journal)" value="${esc(lsGet('admin_nom')||'')}" autocomplete="given-name">
+            <label style="display:flex;align-items:center;justify-content:center;gap:8px;font-size:13px;color:#7a7570;margin-bottom:12px;cursor:pointer;"><input type="checkbox" id="adminRemember" checked style="width:16px;height:16px;accent-color:var(--accent);"> Rester connecté ${SESSION_DAYS} jours</label>
             <div id="loginError" style="color:#ef4444;font-size:13px;margin-bottom:10px;display:none;">Code incorrect</div>
             <button id="adminLoginBtn" class="btn-primary" style="width:100%;padding:14px;">Accéder →</button>
             <button data-back-home style="background:none;border:none;color:#9e9a93;cursor:pointer;margin-top:14px;font-size:14px;display:block;width:100%;padding:8px;">← Retour</button>
@@ -955,7 +1206,7 @@ function renderAdminView(m){
     const attente=state.data.filter(c=>c.pris==="En attente"||c.pris==="En cours");
     if(state.detail) return renderDetail(state.detail,m);
 
-    const activiteSubTabs=[['reservations','utensils','Réservations'],['commandes','box','Commandes'],['hotels','bed','Hôtels'],['historique','clock','Historique'],['tout','grid','Tout'],['corbeille','trash','Corbeille']].map(([k,ic,label])=>{
+    const activiteSubTabs=[['reservations','utensils','Réservations'],['commandes','box','Commandes'],['hotels','bed','Hôtels'],['historique','clock','Historique'],['tout','grid','Tout'],['journal','edit','Journal'],['corbeille','trash','Corbeille']].map(([k,ic,label])=>{
         const active=(state.activiteTab||'reservations')===k;
         return `<button data-activite-tab="${k}" style="display:flex;align-items:center;gap:6px;padding:6px 12px;border-radius:30px;border:none;cursor:pointer;font-size:13px;font-weight:500;white-space:nowrap;background:${active?'#fff':'rgba(255,255,255,.14)'};color:${active?'var(--accent)':'rgba(255,255,255,.9)'};transition:all 0.15s;">${icon(ic,15)} ${label}</button>`;
     }).join('');
@@ -963,6 +1214,7 @@ function renderAdminView(m){
     let main='';
     if(state.adminTab==='settings')        main=renderSettings();
     else if(state.adminTab==='activite')     main=renderActivite(m);
+    else if(state.adminTab==='stats')        main=renderStats(m);
 
     else main=renderDashboard(total,attente,m);
 
@@ -971,13 +1223,14 @@ function renderAdminView(m){
         <div style="display:flex;align-items:center;justify-content:space-between;">
             <div>
                 <div style="font-size:10px;font-weight:600;letter-spacing:2px;color:rgba(255,255,255,.35);margin-bottom:4px;">ADMIN</div>
-                <div style="font-family:'DM Serif Display',serif;font-size:19px;color:#fff;">${{dashboard:icon('dashboard',17)+" Dashboard",activite:icon('clipboard',17)+" Activité",settings:icon('sliders',17)+" Réglages"}[state.adminTab]}</div>
+                <div style="font-family:'DM Serif Display',serif;font-size:19px;color:#fff;">${{dashboard:icon('dashboard',17)+" Dashboard",activite:icon('clipboard',17)+" Activité",stats:icon('chart',17)+" Statistiques",settings:icon('sliders',17)+" Réglages"}[state.adminTab]}</div>
             </div>
             <button data-admin-logout style="background:rgba(255,255,255,.1);border:none;border-radius:10px;padding:8px 13px;color:rgba(255,255,255,.7);cursor:pointer;display:flex;align-items:center;">${icon('logout',16)}</button>
         </div>
     </div>
     <div style="padding:16px;padding-bottom:calc(80px + env(safe-area-inset-bottom,0px) + 16px);">${main}</div>
     ${state.saisieType?renderSaisieModal():''}
+    <div id="bulkBarSlot">${bulkBarHtml()}</div>
     ${state.toast?`<div class="toast">${state.toast}</div>`:''}
     <div class="fab-area">
         ${state.fabOpen?`<div class="fab-menu">
@@ -987,7 +1240,7 @@ function renderAdminView(m){
     </div>
     <nav class="mobile-nav"><div class="mobile-nav-items">
         <button class="mobile-nav-btn" data-back-home><span class="nav-icon">${icon('home',18)}</span><span>Accueil</span></button>
-        ${[["dashboard","dashboard","Dash"],["activite","clipboard","Activité"],["settings","sliders","Régl."]].map(([tab,ic,label])=>`
+        ${[["dashboard","dashboard","Dash"],["activite","clipboard","Activité"],["stats","chart","Stats"],["settings","sliders","Régl."]].map(([tab,ic,label])=>`
             <button class="mobile-nav-btn ${state.adminTab===tab?'active':''}" data-admin-tab="${tab}">
                 <span class="nav-icon">${icon(ic,18)}</span><span>${label}</span><span class="nav-dot"></span>
             </button>`).join('')}
@@ -1004,7 +1257,7 @@ function renderAdminView(m){
                     </div>
                 </div>
                 <nav style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;">
-                    ${[["dashboard","dashboard","Dashboard"],["activite","clipboard","Activité"],["settings","sliders","Réglages"]].map(([tab,ic,label])=>`
+                    ${[["dashboard","dashboard","Dashboard"],["activite","clipboard","Activité"],["stats","chart","Statistiques"],["settings","sliders","Réglages"]].map(([tab,ic,label])=>`
                         <button data-admin-tab="${tab}" style="display:flex;align-items:center;gap:6px;padding:6px 12px;border-radius:30px;border:none;cursor:pointer;font-size:13px;font-weight:500;white-space:nowrap;background:${state.adminTab===tab?'#fff':'transparent'};color:${state.adminTab===tab?'var(--accent)':'rgba(255,255,255,.9)'};transition:all 0.15s;">
                             ${icon(ic,15)} ${label}${tab==='activite'&&attente.length?` <span style="background:#f59e0b;color:#fff;border-radius:50%;width:16px;height:16px;font-size:10px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;margin-left:2px;">${attente.length}</span>`:''}
                         </button>`).join('')}
@@ -1027,6 +1280,7 @@ function renderAdminView(m){
         </div>
     </div>
     <div class="admin-grid"><div class="admin-main">${main}${state.saisieType?renderSaisieModal():''}</div></div>
+    <div id="bulkBarSlot">${bulkBarHtml()}</div>
 
     ${state.toast?`<div class="toast">${state.toast}</div>`:''}`;
 }
@@ -1129,7 +1383,7 @@ function renderDetail(d,m){
     <button data-delete-item="${d.id}" class="btn-danger" style="width:100%;padding:12px;border-radius:14px;">${icon('trash',14)} Supprimer la commande</button>`}
     ${m?'</div>':''}`;
 
-    if(m) return `<div class="detail-view">${inner}</div>${state.toast?`<div class="toast">${state.toast}</div>`:''}<nav class="mobile-nav"><div class="mobile-nav-items"><button class="mobile-nav-btn" data-back-home><span class="nav-icon">${icon('home',18)}</span><span>Accueil</span></button>${[["dashboard","dashboard","Dash"],["activite","clipboard","Activité"],["settings","sliders","Régl."]].map(([tab,ic,label])=>`<button class="mobile-nav-btn ${state.adminTab===tab?'active':''}" data-admin-tab="${tab}"><span class="nav-icon">${icon(ic,18)}</span><span>${label}</span><span class="nav-dot"></span></button>`).join('')}</div></nav>`;
+    if(m) return `<div class="detail-view">${inner}</div>${state.toast?`<div class="toast">${state.toast}</div>`:''}<nav class="mobile-nav"><div class="mobile-nav-items"><button class="mobile-nav-btn" data-back-home><span class="nav-icon">${icon('home',18)}</span><span>Accueil</span></button>${[["dashboard","dashboard","Dash"],["activite","clipboard","Activité"],["stats","chart","Stats"],["settings","sliders","Régl."]].map(([tab,ic,label])=>`<button class="mobile-nav-btn ${state.adminTab===tab?'active':''}" data-admin-tab="${tab}"><span class="nav-icon">${icon(ic,18)}</span><span>${label}</span><span class="nav-dot"></span></button>`).join('')}</div></nav>`;
     return inner;
 }
 
@@ -1189,11 +1443,12 @@ function renderDashboard(total,attente,m){
         const icsData=makeIcsSingle(c);
         const typeIcon=icon(c.type==='taxi'?'car':c.type==='repas'?'utensils':c.type==='hotel'?'bed':'box',13);
         return `<div style="display:flex;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid #f0eeea;">
+            ${showValidateBtn==='sel'?`<input type="checkbox" class="sel-box" data-sel-id="${c.id}" ${(state.sel||[]).includes(c.id)?'checked':''} style="width:16px;height:16px;accent-color:var(--accent);cursor:pointer;flex-shrink:0;">`:''}
             <div data-open-detail='${JSON.stringify(c).replace(/'/g,"&apos;")}' style="display:flex;align-items:center;gap:10px;flex:1;min-width:0;cursor:pointer;">
                 ${avatar(c.demandeur,32)}
                 <div style="flex:1;min-width:0;">
                     <div style="font-weight:600;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${typeIcon} ${c.desc||'—'}</div>
-                    <div style="font-size:11px;color:#9e9a93;">${c.demandeur}${c.pourQui?' · '+c.pourQui:''} · ${$d(c.date)}${c.heure?' · '+c.heure:''}</div>
+                    <div style="font-size:11px;color:#9e9a93;">${c.demandeur}${c.pourQui?' · '+c.pourQui:''} · ${$d(c.date)}${c.heure?' · '+c.heure:''}${showValidateBtn&&ageLabel(c)?` · <span style="color:${(Date.now()-pendingSince(c))>ALERT_AGE_H*36e5?'#b45309':'#9e9a93'};">${ageLabel(c)}</span>`:''}</div>
                 </div>
             </div>
             <div style="display:flex;gap:5px;align-items:center;flex-shrink:0;">
@@ -1261,11 +1516,25 @@ function renderDashboard(total,attente,m){
         </div>
     </div>
 
+    ${(()=>{
+        const al=computeAlerts();
+        if(!al.total) return '';
+        const grp=(titre,list,col)=>list.length?`<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:${col};margin:6px 0 2px;">${titre} · ${list.length}</div>${list.map(c=>dashCard(c,true)).join('')}`:'';
+        return `<div class="stat-card" style="margin-bottom:16px;border:1.5px solid #fecaca;background:#fffafa;">
+            ${sectionHead('alert','#fee2e2','#b91c1c','À traiter en priorité',al.total)}
+            ${grp('Date proche ou dépassée, non validée',al.proche,'#b91c1c')}
+            ${grp(`En attente depuis plus de ${ALERT_AGE_H} h`,al.vieilles,'#b45309')}
+        </div>`;
+    })()}
+
     <!-- Section 1 : En attente de validation -->
     <div class="stat-card" style="margin-bottom:16px;">
-        ${sectionHead('hourglass','#fef3c7','#b45309','En attente de validation',enAttente.length)}
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;">
+            ${sectionHead('hourglass','#fef3c7','#b45309','En attente de validation',enAttente.length)}
+            ${enAttente.length>1?`<label style="display:flex;align-items:center;gap:6px;font-size:12px;color:#9e9a93;cursor:pointer;white-space:nowrap;margin-top:5px;"><input type="checkbox" class="sel-all" data-sel-all="${enAttente.map(c=>c.id).join(',')}" ${enAttente.every(c=>(state.sel||[]).includes(c.id))?'checked':''} style="width:15px;height:15px;accent-color:var(--accent);"> Tout</label>`:''}
+        </div>
         ${enAttente.length
-            ? enAttente.map(c=>dashCard(c,true)).join('')
+            ? enAttente.map(c=>dashCard(c,'sel')).join('')
             : `<div style="text-align:center;color:#9e9a93;padding:16px 0;font-size:13px;display:flex;align-items:center;justify-content:center;gap:6px;">${icon('check',14)} Aucune demande en attente</div>`}
     </div>
 
@@ -1280,6 +1549,152 @@ function renderDashboard(total,attente,m){
     </div>`;
 }
 
+
+/* ══════════════════════════════════════
+   STATISTIQUES PAR PÉRIODE
+══════════════════════════════════════ */
+function statsRange(period){
+    const t=new Date(); t.setHours(0,0,0,0);
+    const y=t.getFullYear(), mo=t.getMonth();
+    const iso=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    const R=(a,b)=>({from:a,to:b,label:`${a.toLocaleDateString('fr-FR')} – ${b.toLocaleDateString('fr-FR')}`});
+    switch(period){
+        case 'mois':      return {...R(new Date(y,mo,1),new Date(y,mo+1,0)), prev:R(new Date(y,mo-1,1),new Date(y,mo,0))};
+        case 'moisPrec':  return {...R(new Date(y,mo-1,1),new Date(y,mo,0)), prev:R(new Date(y,mo-2,1),new Date(y,mo-1,0))};
+        case 'trim':      return {...R(new Date(y,mo-2,1),new Date(y,mo+1,0)), prev:R(new Date(y,mo-5,1),new Date(y,mo-2,0))};
+        case 'annee':     return {...R(new Date(y,0,1),new Date(y,11,31)), prev:R(new Date(y-1,0,1),new Date(y-1,11,31))};
+        case 'anneePrec': return {...R(new Date(y-1,0,1),new Date(y-1,11,31)), prev:R(new Date(y-2,0,1),new Date(y-2,11,31))};
+        case 'perso': {
+            const a=parseDate(state.statsFrom)||new Date(y,0,1), b=parseDate(state.statsTo)||t;
+            return {...R(a,b), from:a, to:b, fromIso:iso(a), toIso:iso(b)};
+        }
+        default: return {from:null,to:null,label:'Toutes les dates'};
+    }
+}
+function renderStats(m){
+    const period=state.statsPeriod||'annee';
+    const rg=statsRange(period);
+    const inRange=(c,r)=>{ if(!r||!r.from) return true; const d=parseDate(c.date); return d && d>=r.from && d<=r.to; };
+    const scope=state.data.filter(c=>inRange(c,rg));
+    const valid=scope.filter(c=>c.pris==='OUI');
+    const total=valid.reduce((a,c)=>a+(c.prix||0),0);
+    const avecPrix=valid.filter(c=>c.prix>0);
+    const sansPrix=valid.length-avecPrix.length;
+    const annul=scope.filter(c=>c.pris==='Annulé').length;
+    const prevTotal=rg.prev?state.data.filter(c=>c.pris==='OUI'&&inRange(c,rg.prev)).reduce((a,c)=>a+(c.prix||0),0):null;
+    const delta=prevTotal?Math.round((total-prevTotal)/prevTotal*100):null;
+
+    // Agrégations
+    const agg=(keyFn)=>{ const mp={}; valid.forEach(c=>{ const keys=keyFn(c); const part=(c.prix||0)/keys.length; keys.forEach(k=>{ if(!mp[k]) mp[k]={total:0,n:0}; mp[k].total+=part; mp[k].n++; }); }); return Object.entries(mp).sort((a,b)=>b[1].total-a[1].total||b[1].n-a[1].n); };
+    const top=(arr,n=8)=>{ if(arr.length<=n) return arr; const rest=arr.slice(n).reduce((a,[,v])=>({total:a.total+v.total,n:a.n+v.n}),{total:0,n:0}); return [...arr.slice(0,n),[`Autres (${arr.length-n})`,rest]]; };
+    const parPresta=top(agg(c=>[c.presta||'Non renseigné']));
+    const parDirecteur=top(agg(c=>{ const l=(c.pourQui||'').split(/\s*,\s*/).filter(Boolean); return l.length?l:['Non renseigné']; }));
+    const parDemandeur=top(agg(c=>[c.demandeur||'Non renseigné']));
+    const parType=agg(c=>[TYPE_LABEL[c.type]||c.type||'Autre']);
+
+    // Évolution mensuelle
+    let start=rg.from, end=rg.to;
+    if(!start){ const ds=valid.map(c=>parseDate(c.date)).filter(Boolean).sort((a,b)=>a-b); start=ds[0]||new Date(); end=ds[ds.length-1]||new Date(); }
+    const months=[]; let cur=new Date(start.getFullYear(),start.getMonth(),1);
+    while(cur<=end && months.length<36){ months.push(new Date(cur)); cur=new Date(cur.getFullYear(),cur.getMonth()+1,1); }
+    const monthly=months.map(d=>{ const l=valid.filter(c=>{const x=parseDate(c.date);return x&&x.getMonth()===d.getMonth()&&x.getFullYear()===d.getFullYear();}); return {d,total:l.reduce((a,c)=>a+(c.prix||0),0),n:l.length}; });
+    const maxM=Math.max(1,...monthly.map(x=>x.total));
+
+    const PERIODS=[['mois','Ce mois'],['moisPrec','Mois dernier'],['trim','3 mois'],['annee','Cette année'],['anneePrec','Année dernière'],['tout','Tout'],['perso','Personnalisé']];
+    const kpi=(label,val,sub,col)=>`<div class="stat-card" style="padding:13px 15px;min-width:0;"><div style="font-size:10px;color:#9e9a93;text-transform:uppercase;letter-spacing:.05em;">${label}</div><div style="font-family:'DM Serif Display',serif;font-size:22px;line-height:1.3;color:${col||'var(--ink)'};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${val}</div><div style="font-size:11px;color:#9e9a93;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${sub||'&nbsp;'}</div></div>`;
+    const hbars=(titre,ic,rows,col)=>{
+        const mx=Math.max(1,...rows.map(([,v])=>v.total));
+        return `<div class="stat-card" style="min-width:0;">
+            <div style="font-weight:700;font-size:14px;margin-bottom:12px;display:flex;align-items:center;gap:8px;">${icon(ic,15)} ${titre}</div>
+            ${rows.length?rows.map(([k,v])=>`<div style="margin-bottom:9px;">
+                <div style="display:flex;justify-content:space-between;gap:8px;font-size:12px;margin-bottom:3px;"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--ink);">${esc(k)}</span><span style="white-space:nowrap;color:#7a7570;"><b style="color:var(--ink);">${$m(v.total)}</b> · ${v.n}</span></div>
+                <div style="height:8px;background:#f0eeea;border-radius:6px;overflow:hidden;"><div style="height:100%;width:${Math.max(2,v.total/mx*100)}%;background:${col};border-radius:6px;"></div></div>
+            </div>`).join(''):'<div style="color:#9e9a93;font-size:13px;padding:10px 0;">Aucune donnée sur la période</div>'}
+        </div>`;
+    };
+
+    return `<div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px;">
+        <div style="font-family:'DM Serif Display',serif;font-size:${m?'18px':'22px'};display:flex;align-items:center;gap:9px;">${icon('chart',m?18:20)} Statistiques</div>
+        <div style="font-size:12px;color:#9e9a93;">${rg.label}</div>
+    </div>
+    <div style="display:flex;gap:4px;flex-wrap:wrap;background:#f0eeea;border-radius:20px;padding:4px;margin-bottom:${period==='perso'?'10px':'16px'};">
+        ${PERIODS.map(([k,l])=>`<button data-stats-period="${k}" style="padding:6px 12px;border:none;border-radius:16px;font-size:12px;font-weight:500;cursor:pointer;background:${period===k?'var(--accent)':'transparent'};color:${period===k?'#fff':'#7a7570'};">${l}</button>`).join('')}
+    </div>
+    ${period==='perso'?`<div style="display:flex;gap:8px;align-items:center;margin-bottom:16px;flex-wrap:wrap;font-size:13px;color:#7a7570;">Du <input type="date" id="statsFrom" class="form-input" value="${rg.fromIso||''}" style="width:auto;padding:7px 10px;"> au <input type="date" id="statsTo" class="form-input" value="${rg.toIso||''}" style="width:auto;padding:7px 10px;"></div>`:''}
+
+    <div style="display:grid;grid-template-columns:${m?'1fr 1fr':'repeat(4,1fr)'};gap:12px;margin-bottom:16px;">
+        ${kpi('Dépenses validées',total?$m(total):'0 €',delta===null?'':`${delta>=0?'+':''}${delta} % vs période préc.`,'#15803d')}
+        ${kpi('Commandes validées',valid.length,`${scope.length} demandes au total`)}
+        ${kpi('Coût moyen',avecPrix.length?$m(total/avecPrix.length):'—',`sur ${avecPrix.length} avec prix`)}
+        ${kpi('Annulées',annul,scope.length?`${Math.round(annul/scope.length*100)} % des demandes`:'','#b91c1c')}
+    </div>
+    ${sansPrix?`<div style="background:#fffbeb;border:1px solid #fde68a;color:#92400e;border-radius:12px;padding:9px 12px;font-size:12px;margin-bottom:16px;display:flex;gap:7px;align-items:center;">${icon('alert',14)} ${sansPrix} commande${sansPrix>1?'s':''} validée${sansPrix>1?'s':''} sans prix saisi : non comptée${sansPrix>1?'s':''} dans les montants.</div>`:''}
+
+    <div class="stat-card" style="margin-bottom:16px;">
+        <div style="font-weight:700;font-size:14px;margin-bottom:12px;display:flex;align-items:center;gap:8px;">${icon('calendar',15)} Dépenses par mois</div>
+        <div style="overflow-x:auto;">
+            <div style="display:flex;align-items:flex-end;gap:${months.length>18?4:8}px;height:170px;min-width:${months.length*(m?34:28)}px;padding-top:18px;">
+                ${monthly.map(x=>`<div title="${MONTHS[x.d.getMonth()+1]} ${x.d.getFullYear()} : ${$m(x.total)} (${x.n} commande${x.n>1?'s':''})" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;min-width:0;">
+                    <div style="font-size:10px;color:#7a7570;margin-bottom:3px;white-space:nowrap;">${x.total?$ms(x.total):''}</div>
+                    <div style="width:100%;max-width:38px;height:${x.total?Math.max(3,x.total/maxM*120):0}px;background:var(--accent);border-radius:6px 6px 2px 2px;"></div>
+                    <div style="font-size:10px;color:#9e9a93;margin-top:5px;white-space:nowrap;">${MONTHS[x.d.getMonth()+1]}${months.length>12||x.d.getMonth()===0?` ${String(x.d.getFullYear()).slice(2)}`:''}</div>
+                </div>`).join('')}
+            </div>
+        </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:${m?'1fr':'1fr 1fr'};gap:16px;">
+        ${hbars('Par prestataire','box',parPresta,'#1d4ed8')}
+        ${hbars('Par directeur','user',parDirecteur,'#7c3aed')}
+        ${hbars('Par demandeur','clipboard',parDemandeur,'#0e7490')}
+        ${hbars('Par type','grid',parType,'#c2410c')}
+    </div>
+    <div style="font-size:11px;color:#b0aba2;margin-top:12px;">Montants des commandes validées, selon la date de la prestation. Une commande pour plusieurs directeurs est répartie à parts égales.</div>
+    </div>`;
+}
+
+/* ══════════════════════════════════════
+   JOURNAL DES MODIFICATIONS
+══════════════════════════════════════ */
+function renderJournal(m){
+    const q=(state.journalSearch||'').toLowerCase();
+    const all=(state.journal||[]).filter(e=>!q||`${e.qui} ${e.action} ${e.code} ${e.desc} ${e.detail}`.toLowerCase().includes(q));
+    const list=all.slice(0,300);
+    const COL={'Statut':['#eff6ff','#1e40af'],'Prix':['#f0fdf4','#15803d'],'Modification':['#f5f3ff','#6d28d9'],'Suppression':['#fef2f2','#b91c1c'],'Restauration':['#ecfeff','#0e7490'],'Création':['#fff7ed','#c2410c'],'Corbeille vidée':['#fef2f2','#b91c1c']};
+    let lastDay='';
+    const rows=list.map(e=>{
+        const d=new Date(e.t);
+        const day=d.toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+        const head=day!==lastDay?`<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#9e9a93;padding:12px 16px 6px;background:#fafaf8;border-bottom:1px solid #f1f5f9;">${day}</div>`:'';
+        lastDay=day;
+        const [bg,fg]=COL[e.action]||['#f1f5f9','#5a6a85'];
+        const item=e.id!=null?state.data.find(c=>c.id===e.id):null;
+        const typeIc=e.type?icon(e.type==='taxi'?'car':e.type==='repas'?'utensils':e.type==='hotel'?'bed':'box',12):'';
+        return head+`<div ${item?`data-open-detail='${JSON.stringify(item).replace(/'/g,"&apos;")}'`:''} style="display:flex;gap:10px;align-items:flex-start;padding:10px 16px;border-bottom:1px solid #f1f5f9;${item?'cursor:pointer;':''}">
+            <div style="font-size:12px;color:#9e9a93;min-width:38px;padding-top:2px;">${d.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})}</div>
+            ${avatar(e.qui,26)}
+            <div style="flex:1;min-width:0;">
+                <div style="font-size:13px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;"><b>${esc(e.qui)}</b><span style="background:${bg};color:${fg};border-radius:12px;padding:1px 8px;font-size:11px;font-weight:600;">${esc(e.action)}</span>${e.code?`<span style="font-family:monospace;font-size:11px;color:#7a7570;">${esc(e.code)}</span>`:''}</div>
+                <div style="font-size:12px;color:#5a5650;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:${m?'normal':'nowrap'};">${typeIc} ${esc(e.desc||'—')}${e.detail?` <span style="color:#9e9a93;">· ${esc(e.detail)}</span>`:''}</div>
+            </div>
+        </div>`;
+    }).join('');
+    return `<div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:10px;">
+        <div>
+            <div style="font-family:'DM Serif Display',serif;font-size:${m?'18px':'22px'};display:flex;align-items:center;gap:8px;">${icon('edit',m?16:19)} Journal</div>
+            <div style="font-size:12px;color:#9e9a93;margin-top:3px;">Qui a modifié quoi, et quand · ${JOURNAL_MAX} dernières actions conservées</div>
+        </div>
+        <button id="journalRefresh" style="background:#f0eeea;border:none;border-radius:20px;padding:7px 14px;font-size:12px;font-weight:600;color:#5a5650;cursor:pointer;">Actualiser</button>
+    </div>
+    <input id="journalSearch" type="text" placeholder="Rechercher (nom, code, action…)" value="${esc(state.journalSearch||'')}" class="search-input" style="margin-bottom:12px;">
+    <div style="background:#fff;border-radius:16px;border:1px solid #e4e7ec;overflow:hidden;">
+        ${rows||`<div style="text-align:center;padding:40px;color:#9e9a93;font-size:14px;">${q?'Aucun résultat':'Aucune action enregistrée pour l’instant.<br><span style="font-size:12px;">Les validations, annulations, changements de prix et suppressions apparaîtront ici.</span>'}</div>`}
+    </div>
+    ${all.length>list.length?`<div style="text-align:center;font-size:12px;color:#9e9a93;margin-top:8px;">${all.length-list.length} actions plus anciennes masquées : affinez la recherche.</div>`:''}
+    </div>`;
+}
 
 /* ─── CELLULES ÉDITABLES (façon tableur) : cliquer une ligne ouvre le détail,
      mais ces deux cellules s'éditent directement, comme dans Excel ─── */
@@ -1360,6 +1775,7 @@ function renderActiviteTout(m){
             <table class="grid-table" style="width:100%;border-collapse:collapse;font-size:13px;min-width:${m?'480px':'600px'};">
                 <thead>
                     <tr style="border-bottom:2px solid #e2e8f0;">
+                        ${selHead(all)}
                         ${th('date','Date')}
                         ${th('type','Type')}
                         ${th('desc','Description')}
@@ -1372,6 +1788,7 @@ function renderActiviteTout(m){
                 <tbody>
                     ${all.length?all.map((c,i)=>`
                     <tr data-open-detail='${JSON.stringify(c).replace(/'/g,"&apos;")}' style="border-bottom:1px solid #f1f5f9;cursor:pointer;background:${i%2===0?'#fff':'#fafafa'};" onmouseover="this.style.background='#eff6ff'" onmouseout="this.style.background='${i%2===0?'#fff':'#fafafa'}'">
+                        ${selCell(c)}
                         <td style="padding:7px 10px;color:#64748b;white-space:nowrap;font-size:12px;">${$d(c.date)}</td>
                         <td style="padding:7px 10px;text-align:center;font-size:16px;">${typeIcon(c.type)}</td>
                         <td style="padding:7px 10px;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
@@ -1383,7 +1800,7 @@ function renderActiviteTout(m){
                         <td style="padding:7px 10px;color:#64748b;white-space:nowrap;">${c.demandeur||'—'}${c.type==='repas'&&c.nb>1?` <span style="font-size:10px;color:#94a3b8;">(${c.nb}p)</span>`:''}</td>
                         ${statusEditCell(c)}
                         ${prixEditCell(c)}
-                    </tr>`).join(''):`<tr><td colspan="7" style="text-align:center;padding:40px;color:#94a3b8;">Aucune entrée</td></tr>`}
+                    </tr>`).join(''):`<tr><td colspan="8" style="text-align:center;padding:40px;color:#94a3b8;">Aucune entrée</td></tr>`}
                 </tbody>
             </table>
         </div>
@@ -1396,7 +1813,7 @@ function renderActiviteTout(m){
    qui n'étaient reliés à aucune navigation avant cette mise à jour. */
 function renderActivite(m){
     const tab=state.activiteTab||'reservations';
-    const TABS=[['reservations','utensils','Réservations'],['commandes','box','Commandes'],['hotels','bed','Hôtels'],['historique','clock','Historique'],['tout','grid','Tout'],['corbeille','trash','Corbeille']];
+    const TABS=[['reservations','utensils','Réservations'],['commandes','box','Commandes'],['hotels','bed','Hôtels'],['historique','clock','Historique'],['tout','grid','Tout'],['journal','edit','Journal'],['corbeille','trash','Corbeille']];
     const subNav=`<div style="display:flex;gap:4px;flex-wrap:wrap;background:var(--border-light);padding:4px;border-radius:30px;width:fit-content;margin-bottom:10px;">
         ${TABS.map(([k,ic,l])=>`<button data-activite-tab="${k}" style="display:flex;align-items:center;gap:6px;padding:6px 13px;border:none;border-radius:24px;font-size:13px;font-weight:500;cursor:pointer;white-space:nowrap;background:${tab===k?'var(--white)':'transparent'};color:${tab===k?'var(--ink)':'var(--ink-soft)'};box-shadow:${tab===k?'0 1px 3px rgba(0,0,0,0.08)':'none'};transition:all 0.15s;">${icon(ic,14)} ${l}</button>`).join('')}
     </div>`;
@@ -1405,6 +1822,7 @@ function renderActivite(m){
     else if(tab==='hotels') body=renderHotels(m);
     else if(tab==='historique') body=renderHistorique(m);
     else if(tab==='corbeille') body=renderCorbeille(m);
+    else if(tab==='journal') body=renderJournal(m);
     else if(tab==='tout') body=renderActiviteTout(m);
     else body=renderReservations(m);
     // Sur desktop, les icônes de sous-onglets sont déjà dans la barre du haut (voir renderAdminView) :
@@ -1479,6 +1897,7 @@ function renderReservations(m){
             <table class="grid-table" style="width:100%;border-collapse:collapse;font-size:13px;min-width:${m?'480px':'560px'};">
                 <thead>
                     <tr style="background:#f8fafc;border-bottom:2px solid #e2e8f0;">
+                        ${selHead(all)}
                         ${th('date','Date')}
                         ${th('desc','Type / Description')}
                         ${th('pourQui','Pour qui')}
@@ -1490,6 +1909,7 @@ function renderReservations(m){
                 <tbody>
                     ${all.length?all.map((c,i)=>`
                     <tr data-open-detail='${JSON.stringify(c).replace(/'/g,"&apos;")}' style="border-bottom:1px solid #f1f5f9;cursor:pointer;background:${i%2===0?'#fff':'#fafafa'};" onmouseover="this.style.background='#eff6ff'" onmouseout="this.style.background='${i%2===0?'#fff':'#fafafa'}'">
+                        ${selCell(c)}
                         <td style="padding:7px 10px;color:#64748b;white-space:nowrap;font-size:12px;">${$d(c.date)}</td>
                         <td style="padding:7px 10px;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
                             <span style="margin-right:6px;color:var(--ink-mid);">${icon(c.type==='taxi'?'car':'utensils',14)}</span>
@@ -1499,7 +1919,7 @@ function renderReservations(m){
                         <td style="padding:7px 10px;color:#64748b;white-space:nowrap;">${c.demandeur||'—'}</td>
                         ${statusEditCell(c)}
                         ${prixEditCell(c)}
-                    </tr>`).join(''):`<tr><td colspan="6" style="text-align:center;padding:40px;color:#94a3b8;">Aucune réservation</td></tr>`}
+                    </tr>`).join(''):`<tr><td colspan="7" style="text-align:center;padding:40px;color:#94a3b8;">Aucune réservation</td></tr>`}
                 </tbody>
             </table>
         </div>
@@ -1572,6 +1992,7 @@ function renderCommandes(m){
             <table class="grid-table" style="width:100%;border-collapse:collapse;font-size:13px;min-width:${m?'480px':'560px'};">
                 <thead>
                     <tr style="background:#f8fafc;border-bottom:2px solid #e2e8f0;">
+                        ${selHead(all)}
                         ${thc('date','Date')}
                         ${thc('desc','Description')}
                         ${thc('presta','Fournisseur')}
@@ -1583,6 +2004,7 @@ function renderCommandes(m){
                 <tbody>
                     ${all.length?all.map((c,i)=>`
                     <tr data-open-detail='${JSON.stringify(c).replace(/'/g,"&apos;")}' style="border-bottom:1px solid #f1f5f9;cursor:pointer;background:${i%2===0?'#fff':'#fafafa'};" onmouseover="this.style.background='#eff6ff'" onmouseout="this.style.background='${i%2===0?'#fff':'#fafafa'}'">
+                        ${selCell(c)}
                         <td style="padding:7px 10px;color:#64748b;white-space:nowrap;font-size:12px;">${$d(c.date)}</td>
                         <td style="padding:7px 10px;font-weight:600;color:#1a1f36;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
                                 <span style="color:var(--ink-mid);margin-right:4px;">${icon('box',13)}</span>${c.desc||'—'}${c.comment?` <span style="color:#94a3b8;vertical-align:-2px;" title="${c.comment}">${icon('message',12)}</span>`:''}
@@ -1591,7 +2013,7 @@ function renderCommandes(m){
                         <td style="padding:7px 10px;color:#64748b;white-space:nowrap;">${c.demandeur||'—'}</td>
                         ${statusEditCell(c)}
                         ${prixEditCell(c)}
-                    </tr>`).join(''):`<tr><td colspan="6" style="text-align:center;padding:40px;color:#94a3b8;">Aucune commande</td></tr>`}
+                    </tr>`).join(''):`<tr><td colspan="7" style="text-align:center;padding:40px;color:#94a3b8;">Aucune commande</td></tr>`}
                 </tbody>
             </table>
         </div>
@@ -1657,6 +2079,7 @@ function renderHotels(m){
             <table class="grid-table" style="width:100%;border-collapse:collapse;font-size:13px;min-width:${m?'560px':'680px'};">
                 <thead>
                     <tr style="background:#f8fafc;border-bottom:2px solid #e2e8f0;">
+                        ${selHead(all)}
                         ${thh('date','Arrivée')}
                         ${thh('desc','Voyageur(s)')}
                         ${thh('lieu','Ville')}
@@ -1671,6 +2094,7 @@ function renderHotels(m){
                         const nuits=c.date&&c.dateDepart?Math.round((parseDate(c.dateDepart)-parseDate(c.date))/(1000*60*60*24)):null;
                         return `
                     <tr data-open-detail='${JSON.stringify(c).replace(/'/g,"&apos;")}' style="border-bottom:1px solid #f1f5f9;cursor:pointer;background:${i%2===0?'#fff':'#fafafa'};" onmouseover="this.style.background='#eff6ff'" onmouseout="this.style.background='${i%2===0?'#fff':'#fafafa'}'">
+                        ${selCell(c)}
                         <td style="padding:7px 10px;color:#64748b;white-space:nowrap;font-size:12px;">${$d(c.date)}${c.dateDepart?` → ${$d(c.dateDepart)}`:''}${nuits&&nuits>0?` <span style="color:#94a3b8;">(${nuits}n)</span>`:''}</td>
                         <td style="padding:7px 10px;font-weight:600;color:#1a1f36;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
                                 <span style="color:var(--ink-mid);margin-right:4px;">${icon('bed',13)}</span>${c.desc||'—'}${c.comment?` <span style="color:#94a3b8;vertical-align:-2px;" title="${c.comment}">${icon('message',12)}</span>`:''}
@@ -1680,7 +2104,7 @@ function renderHotels(m){
                         <td style="padding:7px 10px;color:#64748b;white-space:nowrap;">${c.demandeur||'—'}</td>
                         ${statusEditCell(c)}
                         ${prixEditCell(c)}
-                    </tr>`;}).join(''):`<tr><td colspan="7" style="text-align:center;padding:40px;color:#94a3b8;">Aucune réservation d'hôtel</td></tr>`}
+                    </tr>`;}).join(''):`<tr><td colspan="8" style="text-align:center;padding:40px;color:#94a3b8;">Aucune réservation d'hôtel</td></tr>`}
                 </tbody>
             </table>
         </div>
@@ -1715,7 +2139,8 @@ function renderCorbeille(m){
             <div style="font-size:24px;">${typeIcon(c.type)}</div>
             <div style="flex:1;min-width:0;">
                 <div style="font-weight:600;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${c.desc||'—'}</div>
-                <div style="font-size:11px;color:#9e9a93;margin-top:2px;">${c.demandeur||'—'} · ${$d(c.date)}</div>
+                <div style="font-size:11px;color:#9e9a93;margin-top:2px;">${c.demandeur||'—'} · ${$d(c.date)}${c.prix?' · '+$m(c.prix):''}</div>
+                ${c.deletedAt?`<div style="font-size:11px;color:#b0aba2;margin-top:1px;">Supprimée le ${new Date(c.deletedAt).toLocaleDateString('fr-FR')}${c.deletedBy?' par '+esc(c.deletedBy):''} · effacée définitivement dans ${Math.max(0,TRASH_DAYS-Math.floor((Date.now()-new Date(c.deletedAt).getTime())/864e5))} j</div>`:''}
             </div>
             <button data-restore="${i}" style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:6px 12px;font-size:12px;font-weight:600;color:#15803d;cursor:pointer;white-space:nowrap;">↩ Restaurer</button>
         </div>`).join('')}
@@ -2126,6 +2551,8 @@ function attachEvents(){
             if(state.detail && String(state.detail.id)===String(id)) state.detail={...state.detail,[field]:value};
             showToast('✓ Sauvegardé');
             render();
+            const fmt=v=>field==='prix'?$m(v):(ST[v]?.label||v||'—');
+            logAction(field==='prix'?'Prix':'Statut', {...current,[field]:value}, `${fmt(current[field])} → ${fmt(value)}`);
             await dbUpdate(id,{[field]:value});
         });
         if(el.tagName==='INPUT'){
@@ -2159,10 +2586,13 @@ function attachEvents(){
             nb:    document.getElementById('editNb')?.value||d.nb||1,
         };
         const updated={...d,...updates};
+        const LBL={desc:'description',date:'date',dateDepart:'date de départ',heure:'heure',pourQui:'pour qui',comment:'commentaire',prix:'prix',paie:'paiement',lieu:'lieu',presta:'prestataire',depart:'départ',arrivee:'arrivée',nb:'nb'};
+        const changes=Object.keys(updates).filter(k=>String(d[k]??'')!==String(updates[k]??'')).map(k=>k==='prix'?`prix ${$m(d.prix)} → ${$m(updates.prix)}`:LBL[k]||k);
         state.data=state.data.map(c=>c.id===d.id?updated:c);
         state.detail=updated;
         showToast('✓ Modifications sauvegardées');
         render();
+        if(changes.length) logAction('Modification', updated, changes.join(', '));
         await dbUpdate(d.id, updates);
     });
 
@@ -2171,11 +2601,13 @@ function attachEvents(){
         const raw=(document.getElementById('detailPrix')?.value||'').replace(/\s/g,'').replace(',','.');const val=parseFloat(raw)||0;
         const id=state.detail?.id;
         if(!id)return;
+        const oldPrix=state.data.find(c=>c.id===id)?.prix||0;
         state.data=state.data.map(c=>c.id===id?{...c,prix:val}:c);
         state.detail={...state.detail,prix:val};
         showToast('✓ Prix mis à jour');
         render();
-        await dbUpdate({...state.detail,prix:val});
+        if(oldPrix!==val) logAction('Prix', state.detail, `${$m(oldPrix)} → ${$m(val)}`);
+        await dbUpdate(id,{prix:val});
     };
     const prixInput=document.getElementById('detailPrix');
     if(prixInput){
@@ -2191,9 +2623,34 @@ function attachEvents(){
     }
 
         document.querySelectorAll('[data-back-detail]').forEach(el=>el.onclick=()=>setState({detail:null}));
-    document.querySelectorAll('[data-admin-logout]').forEach(el=>el.onclick=()=>setState({vue:"select",authed:false,adminTab:"dashboard",fabOpen:false}));
-    document.querySelectorAll('[data-action="admin"]').forEach(el=>el.onclick=()=>setState({vue:"admin",authed:false}));
-    document.querySelectorAll('[data-admin-tab]').forEach(el=>el.onclick=()=>setState({vue:"admin",adminTab:el.getAttribute('data-admin-tab'),search:"",filtre:"all",detail:null,fabOpen:false}));
+    document.querySelectorAll('[data-admin-logout]').forEach(el=>el.onclick=()=>{sessionEnd();setState({vue:"select",authed:false,adminTab:"dashboard",fabOpen:false,sel:[]});});
+    document.querySelectorAll('[data-action="admin"]').forEach(el=>el.onclick=()=>setState({vue:"admin",authed:sessionValid()}));
+    document.querySelectorAll('[data-admin-tab]').forEach(el=>el.onclick=()=>setState({vue:"admin",adminTab:el.getAttribute('data-admin-tab'),search:"",filtre:"all",detail:null,fabOpen:false,sel:[]}));
+
+    // Sélection multiple (sans re-rendu complet, pour garder le défilement)
+    document.querySelectorAll('.sel-box').forEach(el=>el.addEventListener('change',()=>{
+        const id=Number(el.getAttribute('data-sel-id'));
+        state.sel=el.checked?[...new Set([...(state.sel||[]),id])]:(state.sel||[]).filter(x=>x!==id);
+        document.querySelectorAll(`.sel-box[data-sel-id="${id}"]`).forEach(o=>o.checked=el.checked);
+        refreshBulkBar();
+    }));
+    document.querySelectorAll('.sel-all').forEach(el=>el.addEventListener('change',()=>{
+        const ids=(el.getAttribute('data-sel-all')||'').split(',').filter(Boolean).map(Number);
+        state.sel=el.checked?[...new Set([...(state.sel||[]),...ids])]:(state.sel||[]).filter(x=>!ids.includes(x));
+        document.querySelectorAll('.sel-box').forEach(o=>{ if(ids.includes(Number(o.getAttribute('data-sel-id')))) o.checked=el.checked; });
+        refreshBulkBar();
+    }));
+    bindBulkBar();
+
+    // Statistiques : période
+    document.querySelectorAll('[data-stats-period]').forEach(el=>el.onclick=()=>setState({statsPeriod:el.getAttribute('data-stats-period')}));
+    document.getElementById('statsFrom')?.addEventListener('change',e=>setState({statsFrom:e.target.value,statsPeriod:'perso'}));
+    document.getElementById('statsTo')?.addEventListener('change',e=>setState({statsTo:e.target.value,statsPeriod:'perso'}));
+
+    // Journal : recherche
+    const js=document.getElementById('journalSearch');
+    if(js){ js.addEventListener('input',e=>{ state.journalSearch=e.target.value; const pos=e.target.selectionStart; render(); const n=document.getElementById('journalSearch'); if(n){n.focus();n.setSelectionRange(pos,pos);} }); }
+    document.getElementById('journalRefresh')?.addEventListener('click',async()=>{ await loadJournal(); showToast('Journal actualisé'); });
     // Export Excel
     document.getElementById('exportExcel')?.addEventListener('click',()=>{
         if(typeof XLSX==='undefined'){showToast(`${icon('alert',13)} Export non disponible`);return;}
@@ -2314,21 +2771,9 @@ function attachEvents(){
     });
 
     // Corbeille
-    document.getElementById('emptyTrash')?.addEventListener('click',()=>{
-        state.deletedData=[];
-        render();
-        showToast('Corbeille vidée');
-    });
+    document.querySelectorAll('#emptyTrash').forEach(el=>el.onclick=emptyTrash);
     document.querySelectorAll('[data-restore]').forEach(btn=>{
-        btn.onclick=()=>{
-            const idx=parseInt(btn.getAttribute('data-restore'));
-            const item=state.deletedData[idx];
-            if(!item) return;
-            state.data=[item,...state.data];
-            state.deletedData=state.deletedData.filter((_,i)=>i!==idx);
-            showToast('Commande restaurée');
-            render();
-        };
+        btn.onclick=()=>restoreFromTrash(parseInt(btn.getAttribute('data-restore')));
     });
 
 
@@ -2392,6 +2837,7 @@ function attachEvents(){
         state.trackResult={...r,pris:'Annulé'};
         showToast('✓ Demande annulée');
         render();
+        logAction('Statut', {...r,pris:'Annulé'}, `${ST[r.pris]?.label||r.pris} → Annulé (par le demandeur)`);
         await dbUpdate(r.id,{pris:'Annulé'});
     });
 
@@ -2414,7 +2860,7 @@ function attachEvents(){
         window._globalDelegSet=true;
         document.addEventListener('click',e=>{
             const at=e.target.closest('[data-activite-tab]');
-            if(at){setState({activiteTab:at.getAttribute('data-activite-tab')});return;}
+            if(at){setState({activiteTab:at.getAttribute('data-activite-tab'),sel:[]});return;}
             const rf=e.target.closest('[data-resa-filter]');
             if(rf){setState({resaFilter:rf.getAttribute('data-resa-filter')});return;}
             const cf=e.target.closest('[data-cmd-filter]');
@@ -2508,20 +2954,7 @@ function attachEvents(){
     document.querySelectorAll('[data-set-status]').forEach(el=>el.onclick=async e=>{
         e.stopPropagation();
         const {id,status}=JSON.parse(el.getAttribute('data-set-status'));
-        const wasNotOUI = state.data.find(c=>c.id===id)?.pris !== "OUI";
-        state.data=state.data.map(c=>c.id===id?{...c,pris:status}:c);
-        if(state.detail?.id===id)state.detail={...state.detail,pris:status};
-        await dbUpdate(id, {pris: status});
-        if(status==="OUI" && wasNotOUI){
-            const commande=state.data.find(c=>c.id===id);
-            if(commande) sendConfirmationEmail(commande);
-        } else if(status==="Annulé"){
-            const commande=state.data.find(c=>c.id===id);
-            if(commande) sendConfirmationEmail(commande, {isAnnulation:true});
-        } else {
-            showToast(`Statut : ${ST[status]?.label||status}`);
-        }
-        render();
+        await applyStatus([id], status);
     });
     document.querySelectorAll('[data-delete-item]').forEach(el=>el.onclick=e=>{
         e.stopPropagation();
@@ -2531,14 +2964,9 @@ function attachEvents(){
     });
     document.getElementById('confirmDeleteYes')?.addEventListener('click', async()=>{
         const id=state.confirmDelete;
-        const item=state.data.find(c=>c.id===id);
-        if(item) state.deletedData=[item,...(state.deletedData||[])];
-        state.data=state.data.filter(c=>c.id!==id);
-        state.detail=null;
         state.confirmDelete=null;
-        showToast('Déplacée dans la corbeille');
-        render();
-        try{ await dbDelete(id); }catch(e){}
+        if(await moveToTrash([id])) showToast('Déplacée dans la corbeille');
+        else render();
     });
     document.getElementById('confirmDeleteNo')?.addEventListener('click',()=>{
         state.confirmDelete=null;
@@ -2547,7 +2975,16 @@ function attachEvents(){
 
     // Login
     const lb=document.getElementById('adminLoginBtn');
-    if(lb)lb.onclick=()=>{const code=document.getElementById('adminCodeInput')?.value;if(code===ADMIN_CODE){setState({authed:true,adminTab:"dashboard"});}else{const err=document.getElementById('loginError');if(err){err.style.display='block';setTimeout(()=>{err.style.display='none';},1800);}}};
+    if(lb)lb.onclick=()=>{
+        const code=document.getElementById('adminCodeInput')?.value;
+        if(code===ADMIN_CODE){
+            const nom=(document.getElementById('adminNameInput')?.value||'').trim();
+            if(nom) lsSet('admin_nom',nom);
+            sessionStart(!!document.getElementById('adminRemember')?.checked);
+            setState({authed:true,adminTab:"dashboard"});
+            loadTrash().then(render); loadJournal();
+        }else{const err=document.getElementById('loginError');if(err){err.style.display='block';setTimeout(()=>{err.style.display='none';},1800);}}
+    };
     const ci=document.getElementById('adminCodeInput');
     if(ci)ci.onkeydown=e=>{if(e.key==='Enter')lb?.click();};
 
@@ -2761,6 +3198,7 @@ function attachEvents(){
         render();
         const savedCmd=await dbInsert(newCmd);
         if(savedCmd.id!==newCmd.id){state.data=state.data.map(c=>c.id===newCmd.id?savedCmd:c);}
+        logAction('Création', savedCmd, 'saisie admin');
         // Notifier les admins
         (settings.adminEmails||[]).forEach(email=>{ if(email) sendConfirmationEmail(savedCmd.id!==newCmd.id?savedCmd:newCmd,{to:email}); });
     };
@@ -2888,6 +3326,12 @@ window.addEventListener('resize',()=>{clearTimeout(_rt);_rt=setTimeout(render,12
         loadSettingsFromDB()
     ]);
     state.data = data;
+    trackFirstSeen(data);
+    // Session admin encore valide → on revient directement dans l'admin
+    if (sessionValid()) {
+        await Promise.all([loadTrash(), loadJournal()]);
+        if (lsGet('last_vue') === 'admin') { state.vue = 'admin'; state.authed = true; state.adminTab = lsGet('last_admin_tab') || 'dashboard'; }
+    }
     state.loading = false;
     render();
 
@@ -2904,6 +3348,8 @@ window.addEventListener('resize',()=>{clearTimeout(_rt);_rt=setTimeout(render,12
             const fresh=await dbLoad();
             const newAttente=fresh.filter(c=>c.pris==='En attente').length;
             state.data=fresh;
+            trackFirstSeen(fresh);
+            if(state.vue==='admin' && state.authed){ await Promise.all([loadTrash(), loadJournal()]); }
             render();
             if(state.vue==='admin' && state.authed && newAttente>prevAttente){
                 const diff=newAttente-prevAttente;
