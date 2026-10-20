@@ -993,7 +993,7 @@ let state = {
     saisieType:null, fabOpen:false, fabAdminOpen:false, trackMode:false, trackResult:null, trackCode:"" ,
     resaFilter:"all", cmdFilter:"all", hotelFilter:"all", resaSort:"date", resaSortAsc:true, cmdSort:"date", cmdSortAsc:true, hotelSort:"date", hotelSortAsc:true, histSortAsc:true,
     activiteTab:"tout", histSort:"date", histPage:0, calMonth:null, colOrder:["date","code","type","desc","demandeur","pourQui","statut","prix"],
-    deletedData:[], journal:[], sel:[], statsPeriod:'annee', statsFrom:'', statsTo:'', journalSearch:'', confirmRm:null, confirmDelete:null, yoozMap:null, settingsTab:null, adminForm:null,
+    deletedData:[], journal:[], sel:[], suivi:{}, suiviStage:null, suiviType:'all', moreOpen:false, calDay:null, statsPeriod:'annee', statsFrom:'', statsTo:'', journalSearch:'', confirmRm:null, confirmDelete:null, yoozMap:null, settingsTab:null, adminForm:null,
     form:{ type:null, step:1, sent:false, code:null,
         dem:"", pourQui:[], pourQuiAutre:"", participants:"", vol:"", tel:"", copyMail:false,
         date:today(), dateDepart:"", heure:"12h00",
@@ -1057,6 +1057,7 @@ function renderTrackCode(m){
         resultHtml='<div style="background:#f8fafc;border-radius:16px;padding:20px;border:1px solid #e2e8f0;margin-top:16px;">'
             +'<div style="font-size:20px;margin-bottom:8px;">'+typeIcon(result.type)+' <strong>'+(result.desc||'—')+'</strong></div>'
             +'<div style="font-size:12px;color:#94a3b8;margin-bottom:14px;">'+result.code+'</div>'
+            +trackSteps(state.data.find(c=>c.id===result.id)||result)
             +'<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #f0eeea;font-size:13px;"><span style="color:#94a3b8;">Statut</span><span style="font-weight:600;">'+(ST_LABEL[result.pris]||result.pris)+'</span></div>'
             +'<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #f0eeea;font-size:13px;"><span style="color:#94a3b8;">Date</span><span>'+$d(result.date)+'</span></div>'
             +'<div style="display:flex;justify-content:space-between;padding:6px 0;font-size:13px;"><span style="color:#94a3b8;">Pour qui</span><span>'+(result.pourQui||'—')+'</span></div>'
@@ -1366,6 +1367,8 @@ function renderAdminView(m){
     if(state.adminTab==='settings')        main=renderSettings();
     else if(state.adminTab==='activite')     main=renderActivite(m);
     else if(state.adminTab==='stats')        main=renderStats(m);
+    else if(state.adminTab==='suivi')        main=renderSuivi(m);
+    else if(state.adminTab==='calendrier')   main=renderCalendrier(m);
 
     else main=renderDashboard(total,attente,m);
 
@@ -1374,7 +1377,7 @@ function renderAdminView(m){
         <div style="display:flex;align-items:center;justify-content:space-between;">
             <div>
                 <div style="font-size:10px;font-weight:600;letter-spacing:2px;color:rgba(255,255,255,.35);margin-bottom:4px;">ADMIN</div>
-                <div style="font-family:'DM Serif Display',serif;font-size:19px;color:#fff;">${{dashboard:icon('dashboard',17)+" Dashboard",activite:icon('clipboard',17)+" Activité",stats:icon('chart',17)+" Statistiques",settings:icon('sliders',17)+" Réglages"}[state.adminTab]}</div>
+                <div style="font-family:'DM Serif Display',serif;font-size:19px;color:#fff;">${{dashboard:icon('dashboard',17)+" Dashboard",suivi:icon('clipboard',17)+" Suivi",calendrier:icon('calendar',17)+" Calendrier",activite:icon('grid',17)+" Tableaux",stats:icon('chart',17)+" Statistiques",settings:icon('sliders',17)+" Réglages"}[state.adminTab]}</div>
             </div>
             <div style="display:flex;gap:8px;">
                 <button data-activate-notifs aria-label="Notifications" style="background:${notifsReady()?'rgba(255,255,255,.1)':'#f59e0b'};border:none;border-radius:10px;padding:8px 11px;color:#fff;cursor:pointer;display:flex;align-items:center;">${icon('bell',16)}</button>
@@ -1392,13 +1395,7 @@ function renderAdminView(m){
         </div>`:''}
         <button id="fabMain" class="fab-main ${state.fabOpen?'open':''}">+</button>
     </div>
-    <nav class="mobile-nav"><div class="mobile-nav-items">
-        <button class="mobile-nav-btn" data-back-home><span class="nav-icon">${icon('home',18)}</span><span>Accueil</span></button>
-        ${[["dashboard","dashboard","Dash"],["activite","clipboard","Activité"],["stats","chart","Stats"],["settings","sliders","Régl."]].map(([tab,ic,label])=>`
-            <button class="mobile-nav-btn ${state.adminTab===tab?'active':''}" data-admin-tab="${tab}">
-                <span class="nav-icon">${icon(ic,18)}</span><span>${label}</span><span class="nav-dot"></span>
-            </button>`).join('')}
-    </div></nav>`;
+    ${mobileNavHtml()}`;
 
     return `
     <div style="background:var(--accent);padding:12px 32px;">
@@ -1411,9 +1408,9 @@ function renderAdminView(m){
                     </div>
                 </div>
                 <nav style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;">
-                    ${[["dashboard","dashboard","Dashboard"],["activite","clipboard","Activité"],["stats","chart","Statistiques"],["settings","sliders","Réglages"]].map(([tab,ic,label])=>`
+                    ${[["dashboard","dashboard","Dashboard"],["suivi","clipboard","Suivi"],["calendrier","calendar","Calendrier"],["activite","grid","Tableaux"],["stats","chart","Statistiques"],["settings","sliders","Réglages"]].map(([tab,ic,label])=>`
                         <button data-admin-tab="${tab}" style="display:flex;align-items:center;gap:6px;padding:6px 12px;border-radius:30px;border:none;cursor:pointer;font-size:13px;font-weight:500;white-space:nowrap;background:${state.adminTab===tab?'#fff':'transparent'};color:${state.adminTab===tab?'var(--accent)':'rgba(255,255,255,.9)'};transition:all 0.15s;">
-                            ${icon(ic,15)} ${label}${tab==='activite'&&attente.length?` <span style="background:#f59e0b;color:#fff;border-radius:50%;width:16px;height:16px;font-size:10px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;margin-left:2px;">${attente.length}</span>`:''}
+                            ${icon(ic,15)} ${label}${tab==='suivi'&&aFaireCount()?` <span style="background:#f59e0b;color:#fff;border-radius:10px;min-width:16px;height:16px;padding:0 4px;font-size:10px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;margin-left:2px;">${aFaireCount()}</span>`:''}
                         </button>`).join('')}
                 </nav>
                 <div style="display:flex;gap:8px;align-items:center;">
@@ -1439,6 +1436,450 @@ function renderAdminView(m){
 
     ${state.toast?`<div class="toast">${state.toast}</div>`:''}`;
 }
+
+/* ══════════════════════════════════════
+   SUIVI : demande → réponse → commande → fait
+   Les étapes « commandée » et « faite » sont stockées dans la table
+   parametres (clé « suivi ») : aucune colonne à ajouter, aucun email
+   supplémentaire. Valider / refuser passent par applyStatus (emails inchangés).
+══════════════════════════════════════ */
+const STAGES = {
+    avalider:   { label:'À valider',   court:'À valider',  color:'#b45309', bg:'#fffbeb', border:'#fde68a', icon:'hourglass' },
+    acommander: { label:'À commander', court:'À commander',color:'#1d4ed8', bg:'#eff6ff', border:'#bfdbfe', icon:'box' },
+    commandee:  { label:'Commandé',    court:'Commandé',   color:'#0e7490', bg:'#ecfeff', border:'#a5f3fc', icon:'check' },
+    fait:       { label:'Fait',        court:'Fait',       color:'#15803d', bg:'#f0fdf4', border:'#bbf7d0', icon:'check' },
+    refusee:    { label:'Refusé',      court:'Refusé',     color:'#b91c1c', bg:'#fef2f2', border:'#fecaca', icon:'x' },
+};
+const STAGE_ORDER = ['avalider','acommander','commandee','fait'];
+const JOURS = ['dimanche','lundi','mardi','mercredi','jeudi','vendredi','samedi'];
+const JOURS_C = ['dim.','lun.','mar.','mer.','jeu.','ven.','sam.'];
+const MOIS = ['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
+
+function isoDay(d){ return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
+function cDay(c){ const d=parseDate(c.date); return d?isoDay(d):''; }
+function heureMin(h){ const m=(h||'').match(/(\d{1,2})\s*h\s*(\d{0,2})/i); return m?(+m[1])*60+(+(m[2]||0)):9999; }
+function dateCourte(c){ const d=parseDate(c.date); if(!d) return '—'; return `${JOURS_C[d.getDay()]} ${d.getDate()} ${MONTHS[d.getMonth()+1]}`; }
+function dateLongue(d){ const j=JOURS[d.getDay()]; return `${j[0].toUpperCase()+j.slice(1)} ${d.getDate()} ${MOIS[d.getMonth()]}`; }
+const moisAn=(mo,y)=>`${MOIS[mo][0].toUpperCase()+MOIS[mo].slice(1)} ${y}`;
+function suiviOf(c){ return (state.suivi||{})[c.id]||{}; }
+function stageOf(c){
+    if(c.pris==='Annulé') return 'refusee';
+    if(c.pris==='En attente'||c.pris==='En cours') return 'avalider';
+    const s=suiviOf(c), j=daysLeft(c.date);
+    if(s.fait) return 'fait';
+    if(s.cmd) return (j!==null&&j<0)?'fait':'commandee';
+    if(c.pris==='Reçu') return 'fait';
+    if(j!==null&&j<0) return 'fait';          // prestations passées : historique
+    return 'acommander';
+}
+function titreDe(c){ return c.type==='commande' ? (c.presta||c.desc||'Commande') : (c.desc||TYPE_LABEL[c.type]||'—'); }
+function typeIc(t,s=14){ return icon(t==='taxi'?'car':t==='repas'?'utensils':t==='hotel'?'bed':'box',s); }
+function stagePill(st){ const S=STAGES[st]; return `<span style="display:inline-flex;align-items:center;gap:4px;background:${S.bg};color:${S.color};border:1px solid ${S.border};border-radius:20px;padding:2px 9px;font-size:11px;font-weight:700;white-space:nowrap;">${icon(S.icon,11)} ${S.court}</span>`; }
+function countStages(list){ const n={avalider:0,acommander:0,commandee:0,fait:0,refusee:0}; (list||state.data).forEach(c=>n[stageOf(c)]++); return n; }
+function aFaireCount(){ const n=countStages(); return n.avalider+n.acommander; }
+
+async function loadSuivi(){ try{ state.suivi=(await paramGet('suivi'))||{}; }catch(e){ console.error('Suivi load:',e); } }
+let _suiviChain=Promise.resolve();
+function setSuivi(ids, patchFn){
+    ids=[].concat(ids);
+    const next={...(state.suivi||{})};
+    ids.forEach(id=>{
+        const cur={...(next[id]||{})}; const p=patchFn(cur);
+        Object.entries(p).forEach(([k,v])=>{ if(v===null||v===undefined||v==='') delete cur[k]; else cur[k]=v; });
+        if(Object.keys(cur).length) next[id]=cur; else delete next[id];
+    });
+    state.suivi=next; render();
+    const snapshot=Object.fromEntries(ids.map(id=>[id,next[id]]));
+    _suiviChain=_suiviChain.then(async()=>{
+        try{
+            const db=(await paramGet('suivi'))||{};
+            Object.entries(snapshot).forEach(([id,v])=>{ if(v) db[id]=v; else delete db[id]; });
+            await paramSet('suivi',db);
+            state.suivi={...db,...Object.fromEntries(Object.entries(state.suivi).filter(([k])=>!(k in db)&&snapshot[k]))};
+        }catch(e){ console.error('Suivi save:',e); showToast(`${icon('alert',13)} Suivi non enregistré, réessayez`); }
+    });
+}
+function itemsById(ids){ return state.data.filter(c=>ids.map(String).includes(String(c.id))); }
+function markCommande(ids){ const now=new Date().toISOString(), who=adminName(); setSuivi(ids,()=>({cmd:now,cmdBy:who,fait:null,faitBy:null})); logAction('Commandée',itemsById(ids)); showToast(`✓ Marqué${ids.length>1?'s':''} commandé${ids.length>1?'s':''}`); }
+function unmarkCommande(ids){ setSuivi(ids,()=>({cmd:null,cmdBy:null,fait:null,faitBy:null})); logAction('Commande annulée',itemsById(ids)); showToast('Remis « à commander »'); }
+function markFait(ids){ const now=new Date().toISOString(), who=adminName(); setSuivi(ids,c=>({fait:now,faitBy:who,cmd:c.cmd||now,cmdBy:c.cmdBy||who})); logAction('Terminée',itemsById(ids)); showToast('✓ Terminé'); }
+function unmarkFait(ids){ setSuivi(ids,()=>({fait:null,faitBy:null})); showToast('Remis en cours'); }
+function saveNote(id,text){ setSuivi([id],()=>({note:(text||'').trim()||null})); showToast(text&&text.trim()?'✓ Note enregistrée':'Note supprimée'); }
+
+/* Message prêt à envoyer au prestataire */
+function orderMessage(c){
+    const d=parseDate(c.date), L=[];
+    const quand=d?`${dateLongue(d)} ${d.getFullYear()}${c.heure?` à ${c.heure}`:''}`:'—';
+    L.push('Bonjour,','');
+    if(c.type==='taxi'){
+        L.push('Je souhaiterais réserver un taxi :', `- Date : ${quand}`, `- Départ : ${c.depart||c.lieu||'—'}`, `- Arrivée : ${c.arrivee||'—'}`);
+        if(c.pourQui) L.push(`- Passager : ${c.pourQui}`);
+        if(c.tel) L.push(`- Téléphone du passager : ${c.tel}`);
+        if(c.vol) L.push(`- Vol / train : ${c.vol}`);
+    } else if(c.type==='hotel'){
+        const dd=parseDate(c.dateDepart);
+        L.push('Je souhaiterais réserver :', `- Arrivée : ${d?dateLongue(d)+' '+d.getFullYear():'—'}`, `- Départ : ${dd?dateLongue(dd)+' '+dd.getFullYear():'—'}`);
+        if(c.lieu) L.push(`- Ville : ${c.lieu}`);
+        L.push(`- Personnes : ${c.nb||1}`);
+        if(c.pourQui) L.push(`- Au nom de : ${c.pourQui}`);
+    } else if(c.type==='repas'){
+        L.push('Je souhaiterais passer la commande suivante :', `- Date : ${quand}`, `- Salle / lieu de livraison : ${c.lieu||'à préciser'}`, `- Nombre de personnes : ${c.nb||1}`);
+        if(c.desc) L.push(`- Repas : ${c.desc}`);
+    } else {
+        L.push('Je souhaiterais passer la commande suivante :');
+        if(c.desc && c.desc!=='Commande') L.push(`- Articles : ${c.desc}`);
+        L.push(`- Livraison : ${quand}`);
+        if(c.lieu) L.push(`- Lieu de livraison : ${c.lieu}`);
+    }
+    if(c.comment) L.push(`- Précisions : ${c.comment}`);
+    L.push('','Merci de me confirmer la prise en compte.','','Cordialement,', adminName()==='Admin'?'':adminName());
+    return L.join('\n').trim();
+}
+async function copyText(t){
+    try{ await navigator.clipboard.writeText(t); return true; }catch(e){}
+    try{ const ta=document.createElement('textarea'); ta.value=t; ta.style.position='fixed'; ta.style.opacity='0'; document.body.appendChild(ta); ta.select(); const ok=document.execCommand('copy'); ta.remove(); return ok; }catch(e){ return false; }
+}
+
+/* ── Rappels agenda (.ics, s'ouvre dans Outlook, Google Agenda, iPhone…) ──
+   1) « Commander » : la veille de la prestation à 10h (ou dans l'heure si c'est déjà passé)
+   2) « Mise en place » : 30 min avant l'heure de la prestation, avec le lieu et toutes les infos */
+function icsDate(d){ const p=n=>String(n).padStart(2,'0'); return `${d.getFullYear()}${p(d.getMonth()+1)}${p(d.getDate())}T${p(d.getHours())}${p(d.getMinutes())}00`; }
+function icsText(t){ return String(t||'').replace(/\\/g,'\\\\').replace(/;/g,'\\;').replace(/,/g,'\\,').replace(/\r?\n/g,'\\n'); }
+function icsFold(line){ const out=[]; let l=line; while(l.length>73){ out.push(l.slice(0,73)); l=' '+l.slice(73); } out.push(l); return out.join('\r\n'); }
+function prestationStart(c){
+    const d=parseDate(c.date); if(!d) return null;
+    const mn=heureMin(c.heure); const s=new Date(d);
+    if(mn<9999) s.setHours(Math.floor(mn/60), mn%60, 0, 0); else s.setHours(9,0,0,0);
+    return s;
+}
+function rappelEvents(c, which){
+    const start=prestationStart(c); if(!start) return [];
+    const ev=[], now=new Date(), titre=titreDe(c);
+    const lieu=c.type==='taxi'?(c.depart||c.lieu||''):(c.lieu||'');
+    const quand=`${dateLongue(start)}${c.heure?' à '+c.heure:''}`;
+    const infos=[
+        `${TYPE_LABEL[c.type]||''} : ${titre}`, `Quand : ${quand}`,
+        c.type==='taxi'?`Trajet : ${c.depart||'—'} → ${c.arrivee||'—'}`:(lieu?`Lieu / salle : ${lieu}`:''),
+        (c.type==='repas'||c.type==='hotel')?`Personnes : ${c.nb||1}`:'',
+        c.presta?`Prestataire : ${c.presta}`:'', `Demandé par : ${c.demandeur||'—'}`, c.pourQui?`Pour : ${c.pourQui}`:'',
+        c.tel?`Téléphone : ${c.tel}`:'', c.vol?`Vol / train : ${c.vol}`:'', c.comment?`Commentaire : ${c.comment}`:'',
+        suiviOf(c).note?`Note interne : ${suiviOf(c).note}`:'', c.code?`Code : ${c.code}`:''
+    ].filter(Boolean).join('\n');
+    if(which!=='mep'){
+        let r=new Date(start); r.setDate(r.getDate()-1); r.setHours(10,0,0,0);
+        if(r<now){ r=new Date(now.getTime()+60*60000); r.setMinutes(0,0,0); }
+        if(r>start) r=new Date(start.getTime()-60*60000);
+        ev.push({uid:`${c.id}-commande`, start:r, min:15, title:`Commander · ${titre} (${dateCourte(c)})`, location:'',
+            desc:`À commander auprès de ${c.presta||'du prestataire'}.\n\n${infos}\n\n——— Message prêt à envoyer ———\n${orderMessage(c)}`, alarm:0});
+    }
+    if(which!=='cmd'){
+        const mepMin=c.type==='taxi'?15:30;
+        const r=new Date(start.getTime()-mepMin*60000);
+        const lbl=c.type==='taxi'?'Taxi':c.type==='hotel'?'Arrivée hôtel':c.type==='commande'?'Livraison':'Mise en place';
+        ev.push({uid:`${c.id}-miseenplace`, start:r, min:mepMin+(c.type==='repas'?30:0), title:`${lbl} · ${titre}${lieu?' — '+lieu:''}`, location:lieu, desc:infos, alarm:15});
+    }
+    return ev;
+}
+function buildIcs(events){
+    const stamp=icsDate(new Date());
+    const L=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Gestion des commandes//FR','CALSCALE:GREGORIAN','METHOD:PUBLISH'];
+    events.forEach(e=>{
+        const end=new Date(e.start.getTime()+e.min*60000);
+        L.push('BEGIN:VEVENT',`UID:${e.uid}@gestioncommandes`,`DTSTAMP:${stamp}`,`DTSTART:${icsDate(e.start)}`,`DTEND:${icsDate(end)}`,
+            icsFold(`SUMMARY:${icsText(e.title)}`), e.location?icsFold(`LOCATION:${icsText(e.location)}`):'', icsFold(`DESCRIPTION:${icsText(e.desc)}`),
+            'BEGIN:VALARM','ACTION:DISPLAY',`TRIGGER:-PT${e.alarm}M`,icsFold(`DESCRIPTION:${icsText(e.title)}`),'END:VALARM','END:VEVENT');
+    });
+    L.push('END:VCALENDAR');
+    return L.filter(Boolean).join('\r\n');
+}
+function downloadRappels(c, which){
+    const ev=rappelEvents(c, which);
+    if(!ev.length){ showToast('Date manquante : impossible de créer le rappel'); return; }
+    const blob=new Blob([buildIcs(ev)],{type:'text/calendar;charset=utf-8'});
+    const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+    a.download=`${which==='cmd'?'rappel-commande':which==='mep'?'rappel-mise-en-place':'rappels'}-${(c.code||c.id)}.ics`;
+    document.body.appendChild(a); a.click(); setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); },1000);
+    showToast(`✓ ${ev.length>1?'Rappels créés':'Rappel créé'} : ouvrez le fichier pour l’ajouter à votre agenda`);
+    logAction('Rappel agenda', c, which==='cmd'?'commande':which==='mep'?'mise en place':'commande + mise en place');
+}
+
+/* Carte d'une demande, avec les actions de son étape */
+function suiviCard(c,{compact=false,showStage=false,select=false}={}){
+    const st=stageOf(c), s=suiviOf(c), j=daysLeft(c.date);
+    const urg=(st==='avalider'||st==='acommander')&&j!==null&&j<=2?badgeColor(j):null;
+    const meta=[`${dateCourte(c)}${c.heure?' · '+c.heure:''}`];
+    if(c.type==='repas'){ if(c.lieu) meta.push(esc(c.lieu)); meta.push(`${c.nb||1} pers.`); }
+    if(c.type==='taxi') meta.push(`${esc(c.depart||'—')} → ${esc(c.arrivee||'—')}`);
+    if(c.type==='hotel'){ if(c.lieu) meta.push(esc(c.lieu)); if(c.dateDepart) meta.push(`→ ${dateCourte({date:c.dateDepart})}`); }
+    if(c.type==='commande' && c.lieu) meta.push(esc(c.lieu));
+    const btn=(act,label,ic,style)=>`<button data-suivi-act="${act}" data-id="${c.id}" style="display:inline-flex;align-items:center;gap:5px;border-radius:10px;padding:6px 10px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;${style}">${icon(ic,12)} ${label}</button>`;
+    const B={
+        valider: btn('valider','Valider','check','background:#f0fdf4;border:1px solid #bbf7d0;color:#15803d;'),
+        refuser: btn('refuser','Refuser','x','background:#fff;border:1px solid #fecaca;color:#b91c1c;'),
+        copier:  btn('copier','Message','mail','background:#fff;border:1px solid var(--border);color:var(--ink);'),
+        commande:btn('commande','Commandé','check','background:#1d4ed8;border:1px solid #1d4ed8;color:#fff;'),
+        fait:    btn('fait','Fait','check','background:#fff;border:1px solid #a5f3fc;color:#0e7490;'),
+        agenda:  btn('agenda','Agenda','calendar','background:#fff;border:1px solid var(--border);color:var(--ink);'),
+    };
+    let actions='', info='';
+    if(st==='avalider') actions=B.valider+B.refuser+B.agenda;
+    else if(st==='acommander') actions=B.copier+B.commande+B.agenda;
+    else if(st==='commandee'){ actions=B.copier+B.fait+B.agenda; info=`Commandé le ${new Date(s.cmd).toLocaleDateString('fr-FR')}${s.cmdBy&&s.cmdBy!=='Admin'?' par '+esc(s.cmdBy):''} · <a href="#" data-suivi-act="uncommande" data-id="${c.id}" style="color:#9e9a93;">annuler</a>`; }
+    else if(st==='fait'){ info=s.fait?`Terminé le ${new Date(s.fait).toLocaleDateString('fr-FR')}${s.cmd?'':''} · <a href="#" data-suivi-act="unfait" data-id="${c.id}" style="color:#9e9a93;">rouvrir</a>`:'Prestation passée'; }
+    const sel=select?`<input type="checkbox" class="sel-box" data-sel-id="${c.id}" ${(state.sel||[]).includes(c.id)?'checked':''} style="width:16px;height:16px;accent-color:var(--accent);cursor:pointer;flex-shrink:0;margin-top:3px;">`:'';
+    return `<div class="suivi-card" style="background:#fff;border:1px solid var(--border);border-left:3px solid ${STAGES[st].color};border-radius:14px;padding:${compact?'10px 12px':'12px 14px'};display:flex;gap:10px;align-items:flex-start;">
+        ${sel}
+        <div style="flex:1;min-width:0;">
+            <div data-open-detail='${JSON.stringify(c).replace(/'/g,"&apos;")}' style="cursor:pointer;">
+                <div style="display:flex;align-items:center;gap:6px;min-width:0;">
+                    <span style="color:var(--ink-mid);flex-shrink:0;">${typeIc(c.type,13)}</span>
+                    <span style="font-weight:700;font-size:13px;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0;">${esc(titreDe(c))}</span>
+                    ${urg?`<span style="background:${urg.bg};border:1px solid ${urg.border};color:${urg.color};border-radius:20px;padding:1px 7px;font-size:10px;font-weight:700;white-space:nowrap;">${urg.label}</span>`:''}
+                    ${showStage?stagePill(st):''}
+                </div>
+                <div style="font-size:12px;color:#5a5650;margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${meta.join(' · ')}</div>
+                <div style="font-size:11px;color:#9e9a93;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(c.demandeur||'—')}${c.pourQui?' · pour '+esc(c.pourQui):''}${c.presta&&c.type!=='commande'?' · '+esc(c.presta):''}</div>
+                ${s.note?`<div style="font-size:11px;color:#92400e;background:#fffbeb;border-radius:8px;padding:4px 8px;margin-top:6px;display:flex;gap:5px;align-items:flex-start;">${icon('message',11)} <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(s.note)}</span></div>`:''}
+            </div>
+            ${info?`<div style="font-size:11px;color:#9e9a93;margin-top:6px;">${info}</div>`:''}
+            ${actions?`<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;">${actions}</div>`:''}
+        </div>
+    </div>`;
+}
+
+function filtreSuivi(list){
+    const q=(state.search||'').toLowerCase(), t=state.suiviType||'all';
+    return list.filter(c=>(t==='all'||c.type===t)&&(!q||`${c.desc} ${c.presta} ${c.demandeur} ${c.pourQui} ${c.lieu} ${c.code}`.toLowerCase().includes(q)));
+}
+function byDateAsc(a,b){ return ((parseDate(a.date)||0)-(parseDate(b.date)||0))||(heureMin(a.heure)-heureMin(b.heure)); }
+
+function renderSuivi(m){
+    const lim=new Date(); lim.setHours(0,0,0,0); lim.setDate(lim.getDate()-14);
+    const all=filtreSuivi(state.data);
+    const cols={};
+    STAGE_ORDER.forEach(k=>cols[k]=all.filter(c=>stageOf(c)===k));
+    cols.fait=cols.fait.filter(c=>{ const s=suiviOf(c); return (s.fait&&new Date(s.fait)>=lim)||((parseDate(c.date)||0)>=lim); }).sort((a,b)=>byDateAsc(b,a));
+    ['avalider','acommander','commandee'].forEach(k=>cols[k].sort(byDateAsc));
+    const types=[['all','Tout'],['repas','Repas'],['taxi','Taxi'],['hotel','Hôtel'],['commande','Commande']];
+    const head=`<div style="display:flex;justify-content:space-between;align-items:flex-end;gap:10px;flex-wrap:wrap;margin-bottom:14px;">
+        <div>
+            <div style="font-family:'DM Serif Display',serif;font-size:${m?'18px':'22px'};display:flex;align-items:center;gap:9px;">${icon('clipboard',m?17:20)} Suivi</div>
+            <div style="font-size:12px;color:#9e9a93;margin-top:3px;">Demande reçue → Réponse → Commande → Fait</div>
+        </div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;">${types.map(([k,l])=>`<button data-nav='{"suiviType":"${k}"}' style="padding:6px 12px;border:none;border-radius:16px;font-size:12px;font-weight:600;cursor:pointer;background:${(state.suiviType||'all')===k?'var(--accent)':'#f0eeea'};color:${(state.suiviType||'all')===k?'#fff':'#5a5650'};">${l}</button>`).join('')}</div>
+    </div>
+    <input id="adminSearch" type="text" placeholder="Rechercher (nom, salle, prestataire, code…)" value="${esc(state.search||'')}" class="search-input" style="margin-bottom:14px;">`;
+    const colHead=(k)=>{ const S=STAGES[k]; return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+        <span style="width:26px;height:26px;border-radius:8px;background:${S.bg};color:${S.color};display:flex;align-items:center;justify-content:center;">${icon(S.icon,14)}</span>
+        <span style="font-weight:700;font-size:14px;color:var(--ink);">${k==='fait'?'Fait (14 derniers jours)':S.label}</span>
+        <span style="background:${S.color};color:#fff;border-radius:20px;padding:0 8px;font-size:11px;font-weight:700;line-height:18px;">${cols[k].length}</span></div>`; };
+    const empty=k=>`<div style="text-align:center;color:#b0aba2;font-size:12px;padding:18px 8px;border:1.5px dashed var(--border);border-radius:14px;">${k==='avalider'?'Aucune demande à valider':k==='acommander'?'Rien à commander':k==='commandee'?'Aucune commande en cours':'Rien de terminé récemment'}</div>`;
+    const list=k=>cols[k].length?`<div style="display:flex;flex-direction:column;gap:8px;">${cols[k].map(c=>suiviCard(c,{select:k==='avalider'})).join('')}</div>`:empty(k);
+    if(m){
+        const cur=state.suiviStage||STAGE_ORDER.find(k=>cols[k].length)||'avalider';
+        return `<div>${head}
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px;background:#f0eeea;border-radius:14px;padding:4px;margin-bottom:12px;">
+            ${STAGE_ORDER.map(k=>`<button data-nav='{"suiviStage":"${k}"}' style="border:none;border-radius:10px;padding:7px 2px;cursor:pointer;background:${cur===k?'#fff':'transparent'};box-shadow:${cur===k?'0 1px 3px rgba(0,0,0,.08)':'none'};">
+                <div style="font-size:16px;font-weight:700;color:${STAGES[k].color};line-height:1.1;">${cols[k].length}</div><div style="font-size:10px;font-weight:600;color:#5a5650;">${STAGES[k].court}</div></button>`).join('')}
+        </div>
+        ${list(cur)}</div>`;
+    }
+    return `<div>${head}
+    <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;align-items:start;">
+        ${STAGE_ORDER.map(k=>`<div style="background:#faf9f7;border:1px solid var(--border);border-radius:18px;padding:12px;min-height:200px;">${colHead(k)}${list(k)}</div>`).join('')}
+    </div></div>`;
+}
+
+/* ══════════════════════════════════════
+   CALENDRIER
+══════════════════════════════════════ */
+function eventsByDay(){
+    const map={};
+    state.data.forEach(c=>{ if(c.pris==='Annulé') return; const k=cDay(c); if(!k) return; (map[k]=map[k]||[]).push(c); });
+    Object.values(map).forEach(l=>l.sort((a,b)=>heureMin(a.heure)-heureMin(b.heure)));
+    return map;
+}
+function monthGrid(y,mo){
+    const first=new Date(y,mo,1), start=new Date(first); start.setDate(1-((first.getDay()+6)%7));
+    const days=[]; for(let i=0;i<42;i++){ const d=new Date(start); d.setDate(start.getDate()+i); days.push(d); }
+    while(days.length>35 && days.slice(-7).every(d=>d.getMonth()!==mo)) days.splice(-7);
+    return days;
+}
+function calState(){
+    const t=new Date();
+    const [y,mo]=(state.calMonth||`${t.getFullYear()}-${t.getMonth()}`).split('-').map(Number);
+    return {y,mo,sel:state.calDay||isoDay(t),today:isoDay(t)};
+}
+function miniCalendar(){
+    const {y,mo,today}=calState(), ev=eventsByDay(), days=monthGrid(y,mo);
+    return `<div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+            <button data-cal-nav="-1" style="background:none;border:none;cursor:pointer;color:#7a7570;font-size:16px;padding:2px 8px;">‹</button>
+            <span style="font-weight:700;font-size:13px;">${moisAn(mo,y)}</span>
+            <button data-cal-nav="1" style="background:none;border:none;cursor:pointer;color:#7a7570;font-size:16px;padding:2px 8px;">›</button>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;text-align:center;">
+            ${['L','M','M','J','V','S','D'].map(d=>`<div style="font-size:10px;color:#b0aba2;font-weight:700;padding:2px 0;">${d}</div>`).join('')}
+            ${days.map(d=>{ const k=isoDay(d), l=ev[k]||[], out=d.getMonth()!==mo, isT=k===today;
+                const dots=[...new Set(l.map(stageOf))].slice(0,3).map(st=>`<span style="width:5px;height:5px;border-radius:50%;background:${STAGES[st].color};display:inline-block;"></span>`).join('');
+                return `<button data-cal-day="${k}" data-goto-cal="1" style="border:none;background:${isT?'var(--accent)':'transparent'};color:${isT?'#fff':out?'#cfcac2':'var(--ink)'};border-radius:8px;padding:4px 0 3px;cursor:pointer;font-size:12px;font-weight:${l.length?700:400};">
+                    ${d.getDate()}<div style="height:6px;display:flex;gap:2px;justify-content:center;margin-top:1px;">${dots}</div></button>`; }).join('')}
+        </div></div>`;
+}
+function renderCalendrier(m){
+    const {y,mo,sel,today}=calState(), ev=eventsByDay(), days=monthGrid(y,mo);
+    const inMonth=Object.entries(ev).filter(([k])=>k.startsWith(`${y}-${String(mo+1).padStart(2,'0')}`)).reduce((n,[,l])=>n+l.length,0);
+    const selD=parseDate(sel), selList=ev[sel]||[];
+    const cell=d=>{
+        const k=isoDay(d), l=ev[k]||[], out=d.getMonth()!==mo, isT=k===today, isS=k===sel, we=d.getDay()===0||d.getDay()===6;
+        const chips=m
+            ? `<div style="display:flex;gap:2px;justify-content:center;flex-wrap:wrap;margin-top:3px;">${l.slice(0,4).map(c=>`<span style="width:6px;height:6px;border-radius:50%;background:${STAGES[stageOf(c)].color};"></span>`).join('')}</div>`
+            : l.slice(0,3).map(c=>{ const S=STAGES[stageOf(c)]; return `<div style="font-size:11px;background:${S.bg};color:${S.color};border-left:2px solid ${S.color};border-radius:4px;padding:1px 5px;margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:left;">${c.heure?`<b>${esc(c.heure)}</b> `:''}${esc(titreDe(c))}</div>`; }).join('')+(l.length>3?`<div style="font-size:10px;color:#9e9a93;margin-top:2px;text-align:left;">+${l.length-3} autre${l.length-3>1?'s':''}</div>`:'');
+        return `<button data-cal-day="${k}" style="display:block;width:100%;text-align:${m?'center':'left'};vertical-align:top;min-height:${m?'48px':'96px'};border:1px solid ${isS?'var(--accent)':'#efece7'};outline:${isS?'1px solid var(--accent)':'none'};background:${out?'#fbfaf8':we?'#fcfbf9':'#fff'};border-radius:10px;padding:${m?'5px 2px':'6px 7px'};cursor:pointer;color:${out?'#c9c4bb':'var(--ink)'};">
+            <span style="display:inline-flex;align-items:center;justify-content:center;min-width:22px;height:22px;border-radius:11px;font-size:12px;font-weight:700;background:${isT?'var(--accent)':'transparent'};color:${isT?'#fff':'inherit'};">${d.getDate()}</span>${chips}</button>`;
+    };
+    const legend=STAGE_ORDER.map(k=>`<span style="display:inline-flex;align-items:center;gap:5px;font-size:11px;color:#5a5650;"><span style="width:8px;height:8px;border-radius:50%;background:${STAGES[k].color};"></span>${STAGES[k].label}</span>`).join('');
+    const dayPanel=`<div style="background:#fff;border:1px solid var(--border);border-radius:18px;padding:14px;${m?'margin-top:14px;':'position:sticky;top:16px;'}">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px;">
+            <div><div style="font-family:'DM Serif Display',serif;font-size:18px;">${selD?dateLongue(selD):''}</div>
+            <div style="font-size:12px;color:#9e9a93;">${selList.length?`${selList.length} prestation${selList.length>1?'s':''}`:'Rien de prévu'}</div></div>
+            ${selList.length?`<button data-print-day="${sel}" style="background:#f0eeea;border:none;border-radius:16px;padding:6px 12px;font-size:12px;font-weight:600;color:#5a5650;cursor:pointer;display:flex;align-items:center;gap:5px;">${icon('download',12)} Feuille du jour</button>`:''}
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px;">${selList.map(c=>suiviCard(c,{compact:true,showStage:true})).join('')||`<div style="text-align:center;color:#b0aba2;font-size:12px;padding:20px 0;">${icon('calendar',22)}<br>Journée libre</div>`}</div>
+    </div>`;
+    return `<div>
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px;">
+        <div style="font-family:'DM Serif Display',serif;font-size:${m?'18px':'22px'};display:flex;align-items:center;gap:9px;">${icon('calendar',m?17:20)} Calendrier</div>
+        <div style="display:flex;align-items:center;gap:6px;">
+            <button data-cal-nav="-1" style="width:32px;height:32px;border-radius:50%;border:1px solid var(--border);background:#fff;cursor:pointer;font-size:16px;">‹</button>
+            <div style="min-width:${m?'120px':'150px'};text-align:center;font-weight:700;font-size:15px;">${moisAn(mo,y)}</div>
+            <button data-cal-nav="1" style="width:32px;height:32px;border-radius:50%;border:1px solid var(--border);background:#fff;cursor:pointer;font-size:16px;">›</button>
+            <button data-cal-nav="0" style="border:1px solid var(--border);background:#fff;border-radius:16px;padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer;">Aujourd’hui</button>
+        </div>
+    </div>
+    <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:10px;">${legend}<span style="font-size:11px;color:#9e9a93;margin-left:auto;">${inMonth} prestation${inMonth>1?'s':''} ce mois</span></div>
+    <div style="${m?'':'display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:16px;align-items:start;'}">
+        <div>
+            <div style="display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;margin-bottom:4px;">${(m?['L','M','M','J','V','S','D']:['Lun.','Mar.','Mer.','Jeu.','Ven.','Sam.','Dim.']).map(d=>`<div style="text-align:center;font-size:11px;font-weight:700;color:#9e9a93;padding:4px 0;">${d}</div>`).join('')}</div>
+            <div style="display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;">${days.map(cell).join('')}</div>
+        </div>
+        ${dayPanel}
+    </div></div>`;
+}
+
+/* Feuille du jour imprimable */
+function printDay(day){
+    const d=parseDate(day), list=(eventsByDay()[day]||[]);
+    const rows=list.map(c=>`<tr><td>${esc(c.heure||'')}</td><td>${TYPE_LABEL[c.type]||''}</td><td><b>${esc(titreDe(c))}</b><br><small>${c.type==='taxi'?esc((c.depart||'')+' → '+(c.arrivee||'')):esc(c.lieu||'')}</small></td><td>${c.type==='repas'||c.type==='hotel'?(c.nb||1):''}</td><td>${esc(c.demandeur||'')}<br><small>${esc(c.pourQui||'')}</small></td><td>${esc(c.presta||'')}</td><td>${STAGES[stageOf(c)].label}</td><td>${esc(c.comment||'')}${suiviOf(c).note?`<br><small>Note : ${esc(suiviOf(c).note)}</small>`:''}</td></tr>`).join('');
+    const html=`<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>Feuille du ${day}</title><style>
+        body{font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:#1a1f36;margin:28px;} h1{font-size:20px;margin:0 0 2px;} p{color:#7a7570;margin:0 0 16px;font-size:12px;}
+        table{width:100%;border-collapse:collapse;font-size:12px;} th{text-align:left;border-bottom:2px solid #2c5f85;padding:6px;color:#2c5f85;font-size:11px;text-transform:uppercase;} td{border-bottom:1px solid #e8e5df;padding:7px 6px;vertical-align:top;} small{color:#7a7570;}
+    </style></head><body><h1>${d?dateLongue(d)+' '+d.getFullYear():day}</h1><p>Gestion des commandes · ${list.length} prestation${list.length>1?'s':''} · imprimé le ${new Date().toLocaleString('fr-FR')}</p>
+    <table><thead><tr><th>Heure</th><th>Type</th><th>Prestation</th><th>Pers.</th><th>Demandeur / pour</th><th>Prestataire</th><th>Étape</th><th>Remarques</th></tr></thead><tbody>${rows}</tbody></table>
+    <script>window.onload=()=>{window.print();}<\/script></body></html>`;
+    const w=window.open('','_blank'); if(!w){ showToast('Autorisez les fenêtres pop-up pour imprimer'); return; }
+    w.document.open(); w.document.write(html); w.document.close();
+}
+
+/* Bloc de suivi dans la fiche détail */
+function suiviBlock(d){
+    const st=stageOf(d), s=suiviOf(d);
+    const steps=[['Reçue',true],['Validée',['acommander','commandee','fait'].includes(st)],['Commandée',['commandee','fait'].includes(st)],['Faite',st==='fait']];
+    const stepper=st==='refusee'
+        ? `<div style="background:#fef2f2;color:#b91c1c;border-radius:12px;padding:10px 12px;font-weight:700;font-size:13px;">${icon('x',13)} Demande refusée / annulée</div>`
+        : `<div style="display:flex;align-items:center;gap:0;">${steps.map(([l,ok],i)=>`<div style="display:flex;align-items:center;${i<steps.length-1?'flex:1;':''}">
+            <div style="display:flex;flex-direction:column;align-items:center;gap:4px;min-width:62px;">
+                <span style="width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:${ok?STAGES.fait.color:'#fff'};border:2px solid ${ok?STAGES.fait.color:'#d9d4cc'};color:#fff;">${ok?icon('check',13):''}</span>
+                <span style="font-size:11px;font-weight:${ok?700:500};color:${ok?'var(--ink)':'#9e9a93'};">${l}</span></div>
+            ${i<steps.length-1?`<div style="flex:1;height:2px;background:${steps[i+1][1]?STAGES.fait.color:'#e4e0d9'};margin:0 2px 18px;"></div>`:''}</div>`).join('')}</div>`;
+    const btn=(act,label,ic,style)=>`<button data-suivi-act="${act}" data-id="${d.id}" style="display:inline-flex;align-items:center;gap:6px;border-radius:12px;padding:10px 14px;font-size:13px;font-weight:700;cursor:pointer;${style}">${icon(ic,14)} ${label}</button>`;
+    let actions='';
+    if(st==='avalider') actions=btn('valider','Valider la demande','check','background:#15803d;border:1px solid #15803d;color:#fff;')+btn('refuser','Refuser','x','background:#fff;border:1px solid #fecaca;color:#b91c1c;');
+    else if(st==='acommander') actions=btn('copier','Copier le message de commande','mail','background:#fff;border:1px solid var(--border);color:var(--ink);')+btn('commande','Marquer comme commandé','check','background:#1d4ed8;border:1px solid #1d4ed8;color:#fff;');
+    else if(st==='commandee') actions=btn('copier','Copier le message','mail','background:#fff;border:1px solid var(--border);color:var(--ink);')+btn('fait','Marquer comme fait','check','background:#0e7490;border:1px solid #0e7490;color:#fff;')+btn('uncommande','Annuler « commandé »','x','background:#fff;border:1px solid var(--border);color:#7a7570;');
+    else if(st==='fait'&&s.fait) actions=btn('unfait','Rouvrir','arrow','background:#fff;border:1px solid var(--border);color:#7a7570;');
+    const histo=[s.cmd?`Commandé le ${new Date(s.cmd).toLocaleString('fr-FR',{dateStyle:'short',timeStyle:'short'})}${s.cmdBy&&s.cmdBy!=='Admin'?' par '+esc(s.cmdBy):''}`:'', s.fait?`Terminé le ${new Date(s.fait).toLocaleString('fr-FR',{dateStyle:'short',timeStyle:'short'})}${s.faitBy&&s.faitBy!=='Admin'?' par '+esc(s.faitBy):''}`:''].filter(Boolean).join(' · ');
+    return `<div style="background:#fff;border:1px solid var(--border);border-radius:16px;padding:16px;margin-bottom:14px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:14px;"><div style="font-weight:700;font-size:13px;color:var(--ink-soft);">${icon('clipboard',13)} Suivi</div>${stagePill(st)}</div>
+        ${stepper}
+        ${histo?`<div style="font-size:11px;color:#9e9a93;margin-top:10px;">${histo}</div>`:''}
+        ${actions?`<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;">${actions}</div>`:''}
+        ${st!=='refusee'&&st!=='fait'?`<div style="margin-top:14px;background:#faf9f7;border:1px solid var(--border);border-radius:12px;padding:12px;">
+            <div style="font-size:12px;font-weight:700;color:var(--ink);display:flex;align-items:center;gap:6px;margin-bottom:8px;">${icon('calendar',13)} Rappels dans mon agenda <span style="font-weight:400;color:#9e9a93;">(Outlook, Google, iPhone)</span></div>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                <button data-suivi-act="agenda" data-id="${d.id}" class="btn-primary" style="padding:8px 14px;font-size:12px;">${icon('calendar',12)} Les 2 rappels</button>
+                <button data-suivi-act="agenda-cmd" data-id="${d.id}" style="background:#fff;border:1px solid var(--border);border-radius:12px;padding:8px 12px;font-size:12px;font-weight:600;cursor:pointer;">Commander · veille 10h</button>
+                <button data-suivi-act="agenda-mep" data-id="${d.id}" style="background:#fff;border:1px solid var(--border);border-radius:12px;padding:8px 12px;font-size:12px;font-weight:600;cursor:pointer;">${d.type==='taxi'?'Taxi · 15 min avant':d.type==='commande'?'Livraison · 30 min avant':d.type==='hotel'?'Arrivée · 30 min avant':'Mise en place · 30 min avant'}</button>
+            </div></div>`:''}
+        <div style="margin-top:14px;">
+            <label class="form-label" style="display:flex;align-items:center;gap:6px;">${icon('message',13)} Note interne <span style="font-weight:400;color:#b0aba2;">(visible seulement par l’admin)</span></label>
+            <div style="display:flex;gap:8px;align-items:flex-start;">
+                <textarea id="suiviNote" class="form-input" style="min-height:44px;resize:vertical;font-size:13px;" placeholder="Ex : commandé par téléphone, confirmation n° 1234…">${esc(s.note||'')}</textarea>
+                <button data-suivi-act="note" data-id="${d.id}" class="btn-primary" style="padding:11px 14px;font-size:13px;">${icon('save',13)}</button>
+            </div>
+        </div>
+    </div>`;
+}
+
+/* Étapes côté assistante (« Suivre ma demande ») */
+function trackSteps(c){
+    const st=stageOf(c);
+    if(st==='refusee') return `<div style="background:#fef2f2;color:#b91c1c;border-radius:12px;padding:10px 12px;font-weight:700;font-size:13px;margin:4px 0 12px;">${icon('x',13)} Demande annulée</div>`;
+    const steps=[['Reçue',true],['Validée',st!=='avalider'],['Commandée',st==='commandee'||st==='fait'],['Faite',st==='fait']];
+    return `<div style="display:flex;align-items:center;margin:4px 0 14px;">${steps.map(([l,ok],i)=>`<div style="display:flex;align-items:center;${i<steps.length-1?'flex:1;':''}">
+        <div style="display:flex;flex-direction:column;align-items:center;gap:3px;min-width:56px;">
+            <span style="width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:${ok?'#15803d':'#fff'};border:2px solid ${ok?'#15803d':'#d9d4cc'};color:#fff;">${ok?icon('check',11):''}</span>
+            <span style="font-size:10px;font-weight:${ok?700:500};color:${ok?'#1a1f36':'#9e9a93'};">${l}</span></div>
+        ${i<steps.length-1?`<div style="flex:1;height:2px;background:${steps[i+1][1]?'#15803d':'#e4e0d9'};margin:0 2px 16px;"></div>`:''}</div>`).join('')}</div>`;
+}
+
+/* Navigation mobile commune */
+function mobileNavHtml(){
+    const items=[["dashboard","dashboard","Dash"],["suivi","clipboard","Suivi"],["calendrier","calendar","Agenda"],["activite","grid","Tableaux"]];
+    const n=aFaireCount();
+    return `<nav class="mobile-nav"><div class="mobile-nav-items">
+        ${items.map(([tab,ic,label])=>`<button class="mobile-nav-btn ${state.adminTab===tab&&!state.detail?'active':''}" data-admin-tab="${tab}" style="position:relative;">
+            <span class="nav-icon">${icon(ic,18)}</span><span>${label}</span><span class="nav-dot"></span>
+            ${tab==='suivi'&&n?`<span style="position:absolute;top:2px;left:calc(50% + 6px);background:#ef4444;color:#fff;border-radius:10px;min-width:16px;height:16px;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0 4px;">${n}</span>`:''}
+        </button>`).join('')}
+        <button class="mobile-nav-btn ${['stats','settings'].includes(state.adminTab)&&!state.detail?'active':''}" data-nav='{"moreOpen":true}'><span class="nav-icon">${icon('sliders',18)}</span><span>Plus</span><span class="nav-dot"></span></button>
+    </div></nav>
+    ${state.moreOpen?`<div data-nav='{"moreOpen":false}' style="position:fixed;inset:0;background:rgba(15,23,42,.35);z-index:9500;display:flex;align-items:flex-end;">
+        <div style="background:#fff;width:100%;border-radius:20px 20px 0 0;padding:14px 14px calc(14px + env(safe-area-inset-bottom,0px));">
+            ${[["stats","chart","Statistiques"],["settings","sliders","Réglages"]].map(([t,ic,l])=>`<button data-admin-tab="${t}" style="display:flex;align-items:center;gap:12px;width:100%;background:none;border:none;padding:14px 8px;font-size:15px;font-weight:600;color:var(--ink);cursor:pointer;border-bottom:1px solid #f1efeb;">${icon(ic,18)} ${l}</button>`).join('')}
+            <button data-back-home style="display:flex;align-items:center;gap:12px;width:100%;background:none;border:none;padding:14px 8px;font-size:15px;font-weight:600;color:var(--ink);cursor:pointer;border-bottom:1px solid #f1efeb;">${icon('home',18)} Formulaire de demande</button>
+            <button data-admin-logout style="display:flex;align-items:center;gap:12px;width:100%;background:none;border:none;padding:14px 8px;font-size:15px;font-weight:600;color:#b91c1c;cursor:pointer;">${icon('logout',18)} Se déconnecter</button>
+        </div></div>`:''}`;
+}
+
+/* Clics délégués (installés une seule fois) */
+document.addEventListener('click', async e=>{
+    const nav=e.target.closest('[data-nav]');
+    if(nav){ try{ setState(JSON.parse(nav.getAttribute('data-nav'))); }catch(_){} return; }
+    const day=e.target.closest('[data-cal-day]');
+    if(day){ const k=day.getAttribute('data-cal-day'); const d=parseDate(k); const upd={calDay:k,calMonth:`${d.getFullYear()}-${d.getMonth()}`}; if(day.hasAttribute('data-goto-cal')) upd.adminTab='calendrier'; setState(upd); return; }
+    const cn=e.target.closest('[data-cal-nav]');
+    if(cn){ const v=+cn.getAttribute('data-cal-nav'); const {y,mo}=calState(); if(v===0){ const t=new Date(); setState({calMonth:`${t.getFullYear()}-${t.getMonth()}`,calDay:isoDay(t)}); } else { const d=new Date(y,mo+v,1); setState({calMonth:`${d.getFullYear()}-${d.getMonth()}`}); } return; }
+    const pr=e.target.closest('[data-print-day]');
+    if(pr){ printDay(pr.getAttribute('data-print-day')); return; }
+    const a=e.target.closest('[data-suivi-act]');
+    if(!a) return;
+    e.preventDefault();
+    const act=a.getAttribute('data-suivi-act'), id=a.getAttribute('data-id');
+    const c=state.data.find(x=>String(x.id)===String(id)); if(!c) return;
+    if(act==='valider'){ await applyStatus([c.id],'OUI'); }
+    else if(act==='refuser'){ if(confirm(`Refuser « ${titreDe(c)} » ? ${c.demandeur||'La demandeuse'} recevra l’email d’annulation.`)) await applyStatus([c.id],'Annulé'); }
+    else if(act==='copier'){ const ok=await copyText(orderMessage(c)); showToast(ok?'✓ Message copié : collez-le dans votre email au prestataire':`${icon('alert',13)} Copie impossible`); }
+    else if(act==='commande') markCommande([c.id]);
+    else if(act==='uncommande') unmarkCommande([c.id]);
+    else if(act==='fait') markFait([c.id]);
+    else if(act==='unfait') unmarkFait([c.id]);
+    else if(act==='note') saveNote(c.id, document.getElementById('suiviNote')?.value||'');
+    else if(act==='agenda') downloadRappels(c,'both');
+    else if(act==='agenda-cmd') downloadRappels(c,'cmd');
+    else if(act==='agenda-mep') downloadRappels(c,'mep');
+    if(state.detail && String(state.detail.id)===String(c.id)){ state.detail=state.data.find(x=>x.id===c.id)||state.detail; render(); }
+});
 
 /* ══════════════════════════════════════
    DETAIL
@@ -1517,6 +1958,8 @@ function renderDetail(d,m){
 
     <div style="display:flex;gap:8px;margin-bottom:16px;">${chip(d.pris)} ${typeTag(d.type)}</div>
 
+    ${suiviBlock(d)}
+
     ${editForm}
 
     <div style="margin-bottom:14px;">
@@ -1538,8 +1981,8 @@ function renderDetail(d,m){
     <button data-delete-item="${d.id}" class="btn-danger" style="width:100%;padding:12px;border-radius:14px;">${icon('trash',14)} Supprimer la commande</button>`}
     ${m?'</div>':''}`;
 
-    if(m) return `<div class="detail-view">${inner}</div>${state.toast?`<div class="toast">${state.toast}</div>`:''}<nav class="mobile-nav"><div class="mobile-nav-items"><button class="mobile-nav-btn" data-back-home><span class="nav-icon">${icon('home',18)}</span><span>Accueil</span></button>${[["dashboard","dashboard","Dash"],["activite","clipboard","Activité"],["stats","chart","Stats"],["settings","sliders","Régl."]].map(([tab,ic,label])=>`<button class="mobile-nav-btn ${state.adminTab===tab?'active':''}" data-admin-tab="${tab}"><span class="nav-icon">${icon(ic,18)}</span><span>${label}</span><span class="nav-dot"></span></button>`).join('')}</div></nav>`;
-    return inner;
+    if(m) return `<div class="detail-view">${inner}</div>${state.toast?`<div class="toast">${state.toast}</div>`:''}${mobileNavHtml()}`;
+    return `<div style="max-width:960px;margin:0 auto;padding:24px 32px 48px;">${inner}</div>`;
 }
 
 
@@ -1569,165 +2012,80 @@ function notifBannerHtml(){
     </div>`;
 }
 function renderDashboard(total,attente,m){
-    const today2=new Date(); today2.setHours(0,0,0,0);
+    const now=new Date(), todayK=isoDay(now), tom=new Date(now); tom.setDate(now.getDate()+1); const tomK=isoDay(tom);
+    const n=countStages();
+    const ev=eventsByDay();
+    const today=(ev[todayK]||[]), demain=(ev[tomK]||[]);
+    const prenom=(adminName()||'').split(' ')[0];
+    const h=now.getHours(), salut=h<18?'Bonjour':'Bonsoir';
+    const avalider=state.data.filter(c=>stageOf(c)==='avalider').sort(byDateAsc);
+    const acommander=state.data.filter(c=>stageOf(c)==='acommander').sort(byDateAsc);
+    const urgentCmd=acommander.filter(c=>{ const j=daysLeft(c.date); return j!==null&&j<=3; });
+    const aFaire=[...avalider,...urgentCmd].sort(byDateAsc).slice(0,8);
+    const resteAFaire=avalider.length+acommander.length-aFaire.length;
+    const validesMois=state.data.filter(c=>{ if(c.pris!=='OUI') return false; const d=parseDate(c.date); return d&&d.getMonth()===now.getMonth()&&d.getFullYear()===now.getFullYear(); });
+    const totalMois=validesMois.reduce((a,b)=>a+(b.prix||0),0);
 
-    const today3=new Date(); today3.setHours(0,0,0,0);
-    // Section 1 : En attente de validation (toutes)
-    const enAttente = state.data
-        .filter(c=>c.pris==='En attente'||c.pris==='En cours')
-        .sort((a,b)=>(parseDate(a.date)||new Date(0))-(parseDate(b.date)||new Date(0)));
+    const phrase=[];
+    if(n.avalider) phrase.push(`<b>${n.avalider}</b> demande${n.avalider>1?'s':''} à valider`);
+    if(n.acommander) phrase.push(`<b>${n.acommander}</b> à commander`);
+    phrase.push(today.length?`<b>${today.length}</b> prestation${today.length>1?'s':''} aujourd’hui`:'aucune prestation aujourd’hui');
 
-    // Section 2 : Validées à venir (date >= aujourd'hui)
-    const aVenir = state.data
-        .filter(c=>c.pris==='OUI'&&(daysLeft(c.date)??-1)>=0)
-        .sort((a,b)=>(parseDate(a.date)||new Date(0))-(parseDate(b.date)||new Date(0)));
+    const tile=(k,val,label,sub,navJson)=>{ const S=STAGES[k]||{color:'#15803d',bg:'#f0fdf4',icon:'wallet'};
+        return `<button data-nav='${navJson}' class="stat-card" style="display:flex;align-items:center;gap:${isMobile()?'9px':'12px'};padding:${isMobile()?'11px 10px':'13px 15px'};text-align:left;cursor:pointer;width:100%;min-width:0;box-sizing:border-box;font:inherit;overflow:hidden;">
+            <span style="width:38px;height:38px;border-radius:11px;background:${S.bg};color:${S.color};display:flex;align-items:center;justify-content:center;flex-shrink:0;">${icon(S.icon,18)}</span>
+            <span style="min-width:0;"><span style="display:block;font-size:10px;color:#9e9a93;text-transform:uppercase;letter-spacing:.05em;">${label}</span>
+            <span style="display:block;font-family:'DM Serif Display',serif;font-size:24px;line-height:1.2;color:${S.color};">${val}</span>
+            <span style="display:block;font-size:11px;color:#9e9a93;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${sub}</span></span></button>`; };
 
-    const validesMois = state.data.filter(c=>{
-        if(c.pris!=='OUI') return false;
-        const d=parseDate(c.date);
-        return d && d.getMonth()===today2.getMonth() && d.getFullYear()===today2.getFullYear();
-    });
-    const totalMois = validesMois.reduce((a,b)=>a+(b.prix||0),0);
+    const timeline=(list,vide)=>list.length?`<div style="display:flex;flex-direction:column;">${list.map((c,i)=>{ const st=stageOf(c), S=STAGES[st];
+        return `<div style="display:flex;gap:12px;align-items:stretch;">
+            <div style="width:46px;flex-shrink:0;text-align:right;font-size:12px;font-weight:700;color:var(--ink);padding-top:11px;">${esc(c.heure||'—')}</div>
+            <div style="display:flex;flex-direction:column;align-items:center;flex-shrink:0;"><span style="width:10px;height:10px;border-radius:50%;background:${S.color};margin-top:14px;box-shadow:0 0 0 3px ${S.bg};"></span>${i<list.length-1?'<span style="flex:1;width:2px;background:#ece9e3;margin-top:4px;"></span>':''}</div>
+            <div data-open-detail='${JSON.stringify(c).replace(/'/g,"&apos;")}' style="flex:1;min-width:0;padding:8px 0 10px;cursor:pointer;">
+                <div style="display:flex;align-items:center;gap:6px;"><span style="color:var(--ink-mid);">${typeIc(c.type,13)}</span><span style="font-weight:700;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0;">${esc(titreDe(c))}</span>${stagePill(st)}</div>
+                <div style="font-size:12px;color:#7a7570;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${[c.type==='taxi'?`${esc(c.depart||'—')} → ${esc(c.arrivee||'—')}`:esc(c.lieu||''), c.type==='repas'?`${c.nb||1} pers.`:'', esc(c.demandeur||'')].filter(Boolean).join(' · ')}</div>
+            </div></div>`; }).join('')}</div>`
+        :`<div style="text-align:center;color:#b0aba2;font-size:12px;padding:16px 0;">${vide}</div>`;
 
-    const nbAttente = enAttente.length;
-    const nbEnRetard = enAttente.filter(c=>{const j=daysLeft(c.date);return j!==null&&j<0;}).length;
-    const prochaine = aVenir.length ? $d(aVenir[0].date) : null;
+    const card=(ic,title,count,body,extra='')=>`<div class="stat-card" style="padding:16px;margin-bottom:16px;">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+            <span style="width:28px;height:28px;border-radius:9px;background:var(--accent-soft,#e3edf3);color:var(--accent);display:flex;align-items:center;justify-content:center;">${icon(ic,15)}</span>
+            <span style="font-weight:700;font-size:14px;color:var(--ink);flex:1;">${title}${count?` <span style="background:var(--accent);color:#fff;border-radius:20px;padding:0 8px;font-size:11px;margin-left:4px;">${count}</span>`:''}</span>${extra}
+        </div>${body}</div>`;
 
-    // Répartition par type de demande
-    const nbRepas = state.data.filter(c=>c.type==='repas').length;
-    const nbTaxi  = state.data.filter(c=>c.type==='taxi').length;
-    const nbHotel = state.data.filter(c=>c.type==='hotel').length;
-
-    function makeIcsSingle(c){
-        if(!c.date) return null;
-        let yr,mo,dy;
-        if(c.date.includes('-')){ [yr,mo,dy]=c.date.split('-').map(Number); }
-        else { const p=c.date.split('/'); dy=+p[0];mo=+p[1];yr=+p[2]; }
-        const pad=n=>String(n).padStart(2,'0');
-        const uid=`${c.id}@gestioncommandes`;
-        const desc=(c.desc||'').replace(/,/g,'').replace(/[\r\n]+/g,' ');
-        const loc=(c.lieu||c.depart||'').replace(/,/g,'');
-        let startDt,endDt;
-        const hm=(c.heure||'').match(/(\d{1,2})h(\d{2})/);
-        if(hm){ const hh=parseInt(hm[1]),mm=parseInt(hm[2]); startDt=`${yr}${pad(mo)}${pad(dy)}T${pad(hh)}${pad(mm)}00`; const tot=hh*60+mm+30; endDt=`${yr}${pad(mo)}${pad(dy)}T${pad(Math.floor(tot/60)%24)}${pad(tot%60)}00`; }
-        else { startDt=`${yr}${pad(mo)}${pad(dy)}T120000`; endDt=`${yr}${pad(mo)}${pad(dy)}T123000`; }
-        const evt=['BEGIN:VEVENT',`UID:${uid}`,`DTSTART:${startDt}`,`DTEND:${endDt}`,`SUMMARY:${c.type==='taxi'?'🚕':c.type==='repas'?'🍽':c.type==='hotel'?'🏨':'📦'} ${desc}`,`DESCRIPTION:${c.demandeur||''} — ${c.pourQui||''} — ${c.presta||''}${c.tel?' — 📱 '+c.tel:''}`,loc?`LOCATION:${loc}`:'','END:VEVENT'].filter(Boolean).join('\r\n');
-        return ['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//GestionCommandes//FR','CALSCALE:GREGORIAN','METHOD:PUBLISH',evt,'END:VCALENDAR'].join('\r\n');
-    }
-
-    function dashCard(c, showValidateBtn){
-        const j=daysLeft(c.date); const badge=j!==null&&j<=5?badgeColor(j):null;
-        const icsData=makeIcsSingle(c);
-        const typeIcon=icon(c.type==='taxi'?'car':c.type==='repas'?'utensils':c.type==='hotel'?'bed':'box',13);
-        return `<div style="display:flex;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid #f0eeea;">
-            ${showValidateBtn==='sel'?`<input type="checkbox" class="sel-box" data-sel-id="${c.id}" ${(state.sel||[]).includes(c.id)?'checked':''} style="width:16px;height:16px;accent-color:var(--accent);cursor:pointer;flex-shrink:0;">`:''}
-            <div data-open-detail='${JSON.stringify(c).replace(/'/g,"&apos;")}' style="display:flex;align-items:center;gap:10px;flex:1;min-width:0;cursor:pointer;">
-                ${avatar(c.demandeur,32)}
-                <div style="flex:1;min-width:0;">
-                    <div style="font-weight:600;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${typeIcon} ${c.desc||'—'}</div>
-                    <div style="font-size:11px;color:#9e9a93;">${c.demandeur}${c.pourQui?' · '+c.pourQui:''} · ${$d(c.date)}${c.heure?' · '+c.heure:''}${showValidateBtn&&ageLabel(c)?` · <span style="color:${(Date.now()-pendingSince(c))>ALERT_AGE_H*36e5?'#b45309':'#9e9a93'};">${ageLabel(c)}</span>`:''}</div>
-                </div>
-            </div>
-            <div style="display:flex;gap:5px;align-items:center;flex-shrink:0;">
-                ${badge?`<span style="background:${badge.bg};border:1px solid ${badge.border};color:${badge.color};border-radius:20px;padding:3px 8px;font-size:11px;font-weight:700;">${badge.label}</span>`:''}
-                ${icsData?`<button data-ics-single="${encodeURIComponent(icsData).replace(/"/g,'&quot;')}" data-ics-name="${(c.desc||'commande').replace(/[^a-z0-9]/gi,'_')}" title="Ajouter au calendrier" style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:5px 9px;cursor:pointer;display:flex;align-items:center;color:#1d4ed8;">${icon('calendar',13)}</button>`:''}
-                ${showValidateBtn?`<button data-set-status='${JSON.stringify({id:c.id,status:"OUI"})}' style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:5px 9px;cursor:pointer;color:#15803d;display:flex;align-items:center;" title="Valider">${icon('check',13)}</button>
-                <button data-set-status='${JSON.stringify({id:c.id,status:"Annulé"})}' style="background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:5px 9px;cursor:pointer;color:#b91c1c;display:flex;align-items:center;" title="Annuler">${icon('x',13)}</button>`:''}
-            </div>
-        </div>`;
-    }
-
-    const sectionHead=(iconName,bg,fg,title,count)=>`
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
-            <div style="width:28px;height:28px;border-radius:9px;background:${bg};color:${fg};display:flex;align-items:center;justify-content:center;flex-shrink:0;">${icon(iconName,15)}</div>
-            <div style="font-weight:700;font-size:14px;color:var(--ink);">${title}</div>
-            ${count?`<span style="background:${fg};color:#fff;border-radius:20px;padding:1px 9px;font-size:11px;font-weight:700;">${count}</span>`:''}
-        </div>`;
+    const left=card('alert','À faire maintenant',avalider.length+urgentCmd.length,
+        aFaire.length?`<div style="display:flex;flex-direction:column;gap:8px;">${aFaire.map(c=>suiviCard(c,{showStage:true})).join('')}</div>
+            ${resteAFaire>0?`<button data-nav='{"adminTab":"suivi"}' style="display:block;width:100%;margin-top:10px;background:none;border:none;color:var(--accent);font-size:12px;font-weight:700;cursor:pointer;">Voir les ${resteAFaire} autre${resteAFaire>1?'s':''} dans le suivi →</button>`:''}`
+        :`<div style="text-align:center;padding:22px 0;"><div style="width:44px;height:44px;border-radius:50%;background:#f0fdf4;color:#15803d;display:flex;align-items:center;justify-content:center;margin:0 auto 8px;">${icon('check',22)}</div><div style="font-weight:700;font-size:14px;">Tout est à jour</div><div style="font-size:12px;color:#9e9a93;margin-top:2px;">Aucune demande en attente, rien d’urgent à commander.</div></div>`);
+    const right=card('calendar',`Aujourd’hui <span style="font-weight:500;color:#9e9a93;font-size:12px;">· ${dateLongue(now)}</span>`,0,timeline(today,'Aucune prestation prévue aujourd’hui'),
+            today.length?`<button data-print-day="${todayK}" title="Imprimer la feuille du jour" style="background:#f0eeea;border:none;border-radius:14px;padding:5px 10px;font-size:11px;font-weight:600;color:#5a5650;cursor:pointer;display:flex;align-items:center;gap:4px;">${icon('download',11)} Imprimer</button>`:'')
+        +card('clock','Demain',0,timeline(demain,'Rien de prévu demain'))
+        +`<div class="stat-card" style="padding:14px 16px;">${miniCalendar()}<button data-nav='{"adminTab":"calendrier"}' style="display:block;width:100%;margin-top:8px;background:none;border:none;color:var(--accent);font-size:12px;font-weight:700;cursor:pointer;">Ouvrir le calendrier →</button></div>`;
 
     return `<div>
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
-        <div style="font-family:'DM Serif Display',serif;font-size:${m?'18px':'22px'};display:flex;align-items:center;gap:9px;color:var(--ink);">${icon('dashboard',m?18:20)} Dashboard</div>
-    </div>
-
     ${notifBannerHtml()}
-    <!-- Chiffres clés -->
-    <div class="stats-3col" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:20px;">
-        <div class="stat-card" style="display:flex;align-items:center;gap:12px;padding:13px 15px;">
-            <div style="width:38px;height:38px;border-radius:11px;background:${nbAttente>0?'#fef3c7':'#dcfce7'};color:${nbAttente>0?'#b45309':'#15803d'};display:flex;align-items:center;justify-content:center;flex-shrink:0;">${icon('hourglass',18)}</div>
-            <div style="min-width:0;">
-                <div style="font-size:10px;color:#9e9a93;text-transform:uppercase;letter-spacing:.05em;">En attente</div>
-                <div style="font-family:'DM Serif Display',serif;font-size:22px;line-height:1.3;color:${nbAttente>0?'#b45309':'#15803d'};">${nbAttente}</div>
-                <div style="font-size:11px;color:${nbEnRetard>0?'#b91c1c':'#9e9a93'};font-weight:${nbEnRetard>0?'600':'400'};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${nbEnRetard>0?`${nbEnRetard} en retard`:(nbAttente>0?'à traiter':'à jour')}</div>
-            </div>
+    <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap;margin-bottom:16px;">
+        <div>
+            <div style="font-size:12px;color:#9e9a93;">${dateLongue(now)} ${now.getFullYear()}</div>
+            <div style="font-family:'DM Serif Display',serif;font-size:${m?'22px':'28px'};color:var(--ink);line-height:1.2;">${salut}${prenom&&prenom!=='Admin'?' '+esc(prenom):''}</div>
+            <div style="font-size:13px;color:#5a5650;margin-top:4px;">${phrase.join(', ').replace(/, ([^,]*)$/,' et $1')}.</div>
         </div>
-        <div class="stat-card" style="display:flex;align-items:center;gap:12px;padding:13px 15px;">
-            <div style="width:38px;height:38px;border-radius:11px;background:#dbeafe;color:#1d4ed8;display:flex;align-items:center;justify-content:center;flex-shrink:0;">${icon('calendar',18)}</div>
-            <div style="min-width:0;">
-                <div style="font-size:10px;color:#9e9a93;text-transform:uppercase;letter-spacing:.05em;">À venir</div>
-                <div style="font-family:'DM Serif Display',serif;font-size:22px;line-height:1.3;color:#1d4ed8;">${aVenir.length}</div>
-                <div style="font-size:11px;color:#9e9a93;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${prochaine?`prochaine : ${prochaine}`:'aucune'}</div>
-            </div>
-        </div>
-        <div class="stat-card" style="display:flex;align-items:center;gap:12px;padding:13px 15px;">
-            <div style="width:38px;height:38px;border-radius:11px;background:#dcfce7;color:#15803d;display:flex;align-items:center;justify-content:center;flex-shrink:0;">${icon('wallet',18)}</div>
-            <div style="min-width:0;">
-                <div style="font-size:10px;color:#9e9a93;text-transform:uppercase;letter-spacing:.05em;">Ce mois</div>
-                <div style="font-family:'DM Serif Display',serif;font-size:${totalMois>=10000?'16px':'22px'};line-height:1.3;color:#15803d;">${$ms(totalMois)}</div>
-                <div style="font-size:11px;color:#9e9a93;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${validesMois.length} commande${validesMois.length>1?'s':''}</div>
-            </div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;">
+            ${[["repas","utensils","Repas"],["taxi","car","Taxi"],["hotel","bed","Hôtel"],["commande","box","Commande"]].map(([t,ic,l])=>`<button data-saisie-type="${t}" style="display:flex;align-items:center;gap:5px;background:#fff;border:1px solid var(--border);border-radius:20px;padding:7px 12px;font-size:12px;font-weight:600;color:var(--ink);cursor:pointer;">${icon('plus',12)} ${l}</button>`).join('')}
         </div>
     </div>
-
-    <!-- Répartition par type -->
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:20px;">
-        <div style="background:var(--white);border:1px solid var(--border);border-radius:14px;padding:10px 14px;display:flex;align-items:center;gap:10px;">
-            <div style="width:28px;height:28px;border-radius:8px;background:#fff7ed;color:#c2410c;display:flex;align-items:center;justify-content:center;flex-shrink:0;">${icon('utensils',14)}</div>
-            <div style="min-width:0;"><div style="font-size:16px;font-weight:700;color:var(--ink);line-height:1.2;">${nbRepas}</div><div style="font-size:10px;color:#9e9a93;">Repas</div></div>
-        </div>
-        <div style="background:var(--white);border:1px solid var(--border);border-radius:14px;padding:10px 14px;display:flex;align-items:center;gap:10px;">
-            <div style="width:28px;height:28px;border-radius:8px;background:#eff6ff;color:#1e40af;display:flex;align-items:center;justify-content:center;flex-shrink:0;">${icon('car',14)}</div>
-            <div style="min-width:0;"><div style="font-size:16px;font-weight:700;color:var(--ink);line-height:1.2;">${nbTaxi}</div><div style="font-size:10px;color:#9e9a93;">Taxi</div></div>
-        </div>
-        <div style="background:var(--white);border:1px solid var(--border);border-radius:14px;padding:10px 14px;display:flex;align-items:center;gap:10px;">
-            <div style="width:28px;height:28px;border-radius:8px;background:#ecfeff;color:#0e7490;display:flex;align-items:center;justify-content:center;flex-shrink:0;">${icon('bed',14)}</div>
-            <div style="min-width:0;"><div style="font-size:16px;font-weight:700;color:var(--ink);line-height:1.2;">${nbHotel}</div><div style="font-size:10px;color:#9e9a93;">Hôtel</div></div>
-        </div>
+    <div style="display:grid;grid-template-columns:${m?'repeat(2,minmax(0,1fr))':'repeat(4,minmax(0,1fr))'};gap:${m?'10px':'12px'};margin-bottom:18px;">
+        ${tile('avalider',n.avalider,'À valider',n.avalider?'réponse à donner':'rien en attente','{"adminTab":"suivi","suiviStage":"avalider"}')}
+        ${tile('acommander',n.acommander,'À commander',urgentCmd.length?`${urgentCmd.length} dans les 3 jours`:'auprès des prestataires','{"adminTab":"suivi","suiviStage":"acommander"}')}
+        ${tile('commandee',n.commandee,'Commandé',n.commandee?'en attente de la prestation':'aucune en cours','{"adminTab":"suivi","suiviStage":"commandee"}')}
+        ${tile('x-cal',$ms(totalMois),'Dépenses du mois',`${validesMois.length} validée${validesMois.length>1?'s':''}`,'{"adminTab":"stats","statsPeriod":"mois"}')}
     </div>
-
-    ${(()=>{
-        const al=computeAlerts();
-        if(!al.total) return '';
-        const grp=(titre,list,col)=>list.length?`<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:${col};margin:6px 0 2px;">${titre} · ${list.length}</div>${list.map(c=>dashCard(c,true)).join('')}`:'';
-        return `<div class="stat-card" style="margin-bottom:16px;border:1.5px solid #fecaca;background:#fffafa;">
-            ${sectionHead('alert','#fee2e2','#b91c1c','À traiter en priorité',al.total)}
-            ${grp('Date proche ou dépassée, non validée',al.proche,'#b91c1c')}
-            ${grp(`En attente depuis plus de ${ALERT_AGE_H} h`,al.vieilles,'#b45309')}
-        </div>`;
-    })()}
-
-
-    <!-- Section 1 : En attente de validation -->
-    <div class="stat-card" style="margin-bottom:16px;">
-        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;">
-            ${sectionHead('hourglass','#fef3c7','#b45309','En attente de validation',enAttente.length)}
-            ${enAttente.length>1?`<label style="display:flex;align-items:center;gap:6px;font-size:12px;color:#9e9a93;cursor:pointer;white-space:nowrap;margin-top:5px;"><input type="checkbox" class="sel-all" data-sel-all="${enAttente.map(c=>c.id).join(',')}" ${enAttente.every(c=>(state.sel||[]).includes(c.id))?'checked':''} style="width:15px;height:15px;accent-color:var(--accent);"> Tout</label>`:''}
-        </div>
-        ${enAttente.length
-            ? enAttente.map(c=>dashCard(c,'sel')).join('')
-            : `<div style="text-align:center;color:#9e9a93;padding:16px 0;font-size:13px;display:flex;align-items:center;justify-content:center;gap:6px;">${icon('check',14)} Aucune demande en attente</div>`}
-    </div>
-
-    <!-- Section 2 : Validées à venir -->
-    <div class="stat-card">
-        ${sectionHead('calendar','#dbeafe','#1d4ed8','À venir — validées',aVenir.length)}
-        ${aVenir.length
-            ? aVenir.map(c=>dashCard(c,false)).join('')
-            : `<div style="text-align:center;color:#9e9a93;padding:16px 0;font-size:13px;">Aucune commande à venir</div>`}
-        <button data-admin-tab="activite" style="display:flex;align-items:center;justify-content:center;gap:5px;width:100%;text-align:center;background:none;border:none;color:#9e9a93;cursor:pointer;font-size:12px;padding-top:10px;margin-top:4px;">Voir tout l'historique ${icon('arrow',12)}</button>
+    <div style="${m?'':'display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:16px;align-items:start;'}">
+        <div>${left}</div><div>${right}</div>
     </div>
     </div>`;
 }
-
 
 /* ══════════════════════════════════════
    STATISTIQUES PAR PÉRIODE
@@ -1840,7 +2198,7 @@ function renderJournal(m){
     const q=(state.journalSearch||'').toLowerCase();
     const all=(state.journal||[]).filter(e=>!q||`${e.qui} ${e.action} ${e.code} ${e.desc} ${e.detail}`.toLowerCase().includes(q));
     const list=all.slice(0,300);
-    const COL={'Statut':['#eff6ff','#1e40af'],'Prix':['#f0fdf4','#15803d'],'Modification':['#f5f3ff','#6d28d9'],'Suppression':['#fef2f2','#b91c1c'],'Restauration':['#ecfeff','#0e7490'],'Création':['#fff7ed','#c2410c'],'Corbeille vidée':['#fef2f2','#b91c1c'],'Complété':['#f0fdf4','#15803d']};
+    const COL={'Statut':['#eff6ff','#1e40af'],'Prix':['#f0fdf4','#15803d'],'Modification':['#f5f3ff','#6d28d9'],'Suppression':['#fef2f2','#b91c1c'],'Restauration':['#ecfeff','#0e7490'],'Création':['#fff7ed','#c2410c'],'Corbeille vidée':['#fef2f2','#b91c1c'],'Complété':['#f0fdf4','#15803d'],'Commandée':['#eff6ff','#1d4ed8'],'Commande annulée':['#f1f5f9','#5a6a85'],'Terminée':['#f0fdf4','#15803d'],'Rappel agenda':['#f5f3ff','#6d28d9']};
     let lastDay='';
     const rows=list.map(e=>{
         const d=new Date(e.t);
@@ -2855,7 +3213,7 @@ function attachEvents(){
         document.querySelectorAll('[data-back-detail]').forEach(el=>el.onclick=()=>setState({detail:null}));
     document.querySelectorAll('[data-admin-logout]').forEach(el=>el.onclick=()=>{sessionEnd();updateBadge();setState({vue:"select",authed:false,adminTab:"dashboard",fabOpen:false,sel:[]});});
     document.querySelectorAll('[data-action="admin"]').forEach(el=>el.onclick=()=>setState({vue:"admin",authed:sessionValid()}));
-    document.querySelectorAll('[data-admin-tab]').forEach(el=>el.onclick=()=>setState({vue:"admin",adminTab:el.getAttribute('data-admin-tab'),search:"",filtre:"all",detail:null,fabOpen:false,sel:[]}));
+    document.querySelectorAll('[data-admin-tab]').forEach(el=>el.onclick=(ev)=>{ ev.stopPropagation(); setState({vue:"admin",adminTab:el.getAttribute('data-admin-tab'),search:"",filtre:"all",detail:null,fabOpen:false,sel:[],moreOpen:false}); window.scrollTo(0,0); });
 
     // Sélection multiple (sans re-rendu complet, pour garder le défilement)
     document.querySelectorAll('.sel-box').forEach(el=>el.addEventListener('change',()=>{
@@ -3523,14 +3881,15 @@ if ('serviceWorker' in navigator && location.protocol === 'https:') {
     // Charger réglages ET commandes en parallèle
     const [data] = await Promise.all([
         dbLoad(),
-        loadSettingsFromDB()
+        loadSettingsFromDB(),
+        loadSuivi()
     ]);
     state.data = data;
     trackFirstSeen(data);
     // Session admin encore valide → on revient directement dans l'admin
     if (sessionValid()) {
         await Promise.all([loadTrash(), loadJournal()]);
-        if (lsGet('last_vue') === 'admin') { state.vue = 'admin'; state.authed = true; state.adminTab = lsGet('last_admin_tab') || 'dashboard'; }
+        if (lsGet('last_vue') === 'admin') { state.vue = 'admin'; state.authed = true; state.adminTab = 'dashboard'; }
     }
     state.loading = false;
     render();
@@ -3548,7 +3907,7 @@ if ('serviceWorker' in navigator && location.protocol === 'https:') {
             if(isTyping || isInForm){ updateBadgeFrom(fresh); return; }
             state.data=fresh;
             trackFirstSeen(fresh);
-            if(state.vue==='admin' && state.authed){ await Promise.all([loadTrash(), loadJournal()]); }
+            if(state.vue==='admin' && state.authed){ await Promise.all([loadTrash(), loadJournal(), loadSuivi()]); }
             render();
             if(sessionValid() && nouvelles.length){
                 const n=nouvelles.length, c=nouvelles[0];
