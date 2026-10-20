@@ -51,7 +51,7 @@
         .badge-director  { background:#fef3c7;color:#b45309;padding:3px 10px;border-radius:20px;font-size:10px;font-weight:600; }
 
         /* ─── LAYOUT ─── */
-        .desktop-app { max-width:1400px;margin:0 auto;background:var(--surface);min-height:100vh; }
+        .desktop-app { max-width:none;margin:0;background:var(--surface);min-height:100vh; }
         .admin-grid { display:flex;flex-direction:column;gap:0;padding:20px; }
         .admin-sidebar { background:var(--white);border-radius:24px;padding:20px;height:fit-content;border:1px solid var(--border);position:sticky;top:20px; }
         .admin-main { background:var(--white);border-radius:24px;padding:16px;border:1px solid var(--border);min-height:400px; }
@@ -367,10 +367,12 @@ function emailRows(c){
     if(c.type==='hotel') rows.push(['Séjour', `${emailDateLong(c.date)} → ${emailDateLong(c.dateDepart)}`]);
     else rows.push(['Date', emailDateLong(c.date) + (c.heure ? ` à ${c.heure}` : '')]);
     if(c.type==='taxi') rows.push(['Trajet', `${c.depart||'—'} → ${c.arrivee||'—'}`]);
-    else if(c.lieu) rows.push(['Lieu', c.lieu]);
+    else if(c.type==='repas') rows.push(['Salle / lieu', c.lieu || 'Non précisé']);
+    else if(c.type==='hotel') rows.push(['Ville', c.lieu || 'Non précisée']);
+    else if(c.lieu) rows.push(['Lieu de livraison', c.lieu]);
+    if(c.type==='repas' || c.type==='hotel') rows.push(['Personnes', String(c.nb || 1)]);
     if(c.desc && c.type!=='commande') rows.push(['Description', c.desc]);
     if(c.presta) rows.push([c.type==='hotel'?'Hôtel':'Prestataire', c.presta]);
-    if(c.type==='repas' && c.nb>1) rows.push(['Personnes', String(c.nb)]);
     if(c.pourQui) rows.push(['Pour', c.pourQui]);
     if(c.vol) rows.push(['Vol / train', c.vol]);
     if(c.tel) rows.push(['Téléphone', c.tel]);
@@ -1084,10 +1086,14 @@ function installHintHtml(){
         ? `<button id="installAppBtn" style="background:var(--accent);color:#fff;border:none;border-radius:20px;padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;">Installer</button>`
         : '';
     const txt = _installPrompt
-        ? 'Ajoutez l’appli sur votre écran d’accueil pour l’ouvrir en un geste.'
+        ? (isMobile() ? 'Ajoutez l’appli sur votre écran d’accueil pour l’ouvrir en un geste.' : 'Installez l’appli sur ce PC : elle s’ouvrira dans sa propre fenêtre, sans la barre du navigateur.')
         : isIOS()
             ? `Dans Safari, touchez <b>Partager</b> <span style="display:inline-block;vertical-align:-2px;">⬆︎</span> puis <b>« Sur l’écran d’accueil »</b>.`
-            : `Ouvrez le menu <b>⋮</b> du navigateur puis <b>« Ajouter à l’écran d’accueil »</b>.`;
+            : isMobile()
+                ? `Ouvrez le menu <b>⋮</b> du navigateur puis <b>« Ajouter à l’écran d’accueil »</b>.`
+                : /Edg\//.test(navigator.userAgent)
+                    ? `Dans Edge : menu <b>…</b> › <b>Applications</b> › <b>« Installer ce site en tant qu’application »</b>.`
+                    : `Dans Chrome : icône <b>⊕</b> à droite de la barre d’adresse, ou menu <b>⋮</b> › <b>Caster, enregistrer et partager</b> › <b>Installer</b>.`;
     return `<div style="display:flex;align-items:center;gap:12px;background:#fff;border:1px solid var(--border);border-radius:16px;padding:12px 12px 12px 14px;margin-bottom:16px;">
         <img src="icon-192.png" alt="" style="width:40px;height:40px;border-radius:10px;flex-shrink:0;">
         <div style="flex:1;min-width:0;">
@@ -1120,8 +1126,8 @@ function renderHome(m){
         </div>
 
         <!-- ── FORM AREA ── -->
-        <div style="flex:1;padding:${m?'20px 16px calc(20px + env(safe-area-inset-bottom,0px))':'32px 40px'};max-width:${m?'100%':'860px'};margin:0 auto;width:100%;">
-            ${m?installHintHtml():''}
+        <div style="flex:1;padding:${m?'20px 16px calc(20px + env(safe-area-inset-bottom,0px))':'32px 40px'};max-width:${m?'100%':'1100px'};margin:0 auto;width:100%;">
+            ${installHintHtml()}
             ${renderInlineForm(m)}
         </div>
     </div>
@@ -1390,7 +1396,7 @@ function renderAdminView(m){
 
     return `
     <div style="background:var(--accent);padding:12px 32px;">
-        <div style="max-width:1400px;margin:0 auto;">
+        <div style="max-width:none;margin:0;">
             <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px 20px;">
                 <div style="display:flex;align-items:center;gap:10px;">
                     <div>
@@ -2036,7 +2042,7 @@ function renderActiviteTout(m){
     </div>
 
     <div style="background:#fff;border-radius:16px;border:1px solid #e4e7ec;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.04);">
-        <div style="overflow:auto;max-height:65vh;">
+        <div style="overflow:auto;max-height:calc(100vh - 290px);">
             <table class="grid-table" style="width:100%;border-collapse:collapse;font-size:13px;min-width:${m?'480px':'600px'};">
                 <thead>
                     <tr style="border-bottom:2px solid #e2e8f0;">
@@ -2164,7 +2170,7 @@ function renderReservations(m){
 
     <!-- Tableau unique -->
     <div style="background:#fff;border-radius:16px;border:1px solid #e4e7ec;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.04);">
-        <div style="overflow:auto;max-height:65vh;">
+        <div style="overflow:auto;max-height:calc(100vh - 290px);">
             <table class="grid-table" style="width:100%;border-collapse:collapse;font-size:13px;min-width:${m?'480px':'560px'};">
                 <thead>
                     <tr style="background:#f8fafc;border-bottom:2px solid #e2e8f0;">
@@ -2259,7 +2265,7 @@ function renderCommandes(m){
     </div>
 
     <div style="background:#fff;border-radius:16px;border:1px solid #e4e7ec;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.04);">
-        <div style="overflow:auto;max-height:65vh;">
+        <div style="overflow:auto;max-height:calc(100vh - 290px);">
             <table class="grid-table" style="width:100%;border-collapse:collapse;font-size:13px;min-width:${m?'480px':'560px'};">
                 <thead>
                     <tr style="background:#f8fafc;border-bottom:2px solid #e2e8f0;">
@@ -2346,7 +2352,7 @@ function renderHotels(m){
     </div>
 
     <div style="background:#fff;border-radius:16px;border:1px solid #e4e7ec;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.04);">
-        <div style="overflow:auto;max-height:65vh;">
+        <div style="overflow:auto;max-height:calc(100vh - 290px);">
             <table class="grid-table" style="width:100%;border-collapse:collapse;font-size:13px;min-width:${m?'560px':'680px'};">
                 <thead>
                     <tr style="background:#f8fafc;border-bottom:2px solid #e2e8f0;">
@@ -2471,7 +2477,7 @@ function renderHistorique(m){
 
     <!-- Tableau moderne -->
     <div style="background:#fff;border-radius:20px;border:1px solid #e4e7ec;overflow:hidden;box-shadow:0 1px 2px rgba(0,0,0,0.04);">
-        <div style="overflow:auto;max-height:65vh;">
+        <div style="overflow:auto;max-height:calc(100vh - 290px);">
             <table class="grid-table" style="width:100%;border-collapse:collapse;font-size:13px;min-width:700px;">
                 <thead id="histTableHead">
                     <tr style="background:#f8fafc;">
@@ -2658,6 +2664,10 @@ function renderSettings(){
         ${secHead("edit","Anciennes données en majuscules", n?`${n} ligne${n>1?'s':''} contiennent encore des minuscules (description, lieu, commentaire, pour qui…).`:'Toutes les données sont déjà en majuscules.')}
         ${n?`<button id="upperAll" class="btn-primary" style="width:100%;padding:12px;">Tout passer en majuscules (${n})</button>`:''}
     </div>`; })()}
+    ${isStandalone()?'':`<div class="settings-section">
+        ${secHead("download","Installer l’appli sur cet appareil","Elle s’ouvre alors dans sa propre fenêtre, comme un logiciel.")}
+        ${_installPrompt?`<button id="installAppBtn" class="btn-primary" style="width:100%;padding:12px;">Installer maintenant</button>`:`<div style="font-size:13px;color:#5a5650;line-height:1.5;">${/Edg\//.test(navigator.userAgent)?'Dans Edge : menu <b>…</b> › <b>Applications</b> › <b>« Installer ce site en tant qu’application »</b>.':'Dans Chrome : icône <b>⊕</b> à droite de la barre d’adresse, ou menu <b>⋮</b> › <b>Caster, enregistrer et partager</b> › <b>Installer</b>.'}</div>`}
+    </div>`}
     <div class="settings-section">
         ${secHead("trash","Corbeille",`${(state.deletedData||[]).length} élément${(state.deletedData||[]).length>1?'s':''} · effacés définitivement après ${TRASH_DAYS} jours`)}
         <button data-goto-trash style="width:100%;background:#fff;border:1.5px solid var(--border);border-radius:12px;padding:11px;font-size:14px;font-weight:600;color:var(--ink);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;">Ouvrir la corbeille ${icon('arrow',14)}</button>
