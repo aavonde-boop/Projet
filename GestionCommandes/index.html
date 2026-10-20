@@ -70,8 +70,7 @@
         .form-label { display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--ink-soft);margin-bottom:6px; }
         #formDesc,#formLieu,#formDe,#formVers,#formVol,#formCom,#formParticipants,#pourQuiAutreInput,
         #afDesc,#afLieu,#afDe,#afVers,#afVol,#afCom,#afYooz,#afPqAutre,
-        #editDesc,#editLieu,#editDe,#editVers,#editComment,#editPqAutre,
-        [data-ac-input="desc"],[data-ac-input="yooz"],[data-ac-input="pourQui"] { text-transform:uppercase; }
+        #editDesc,#editLieu,#editDe,#editVers,#editComment,#editPqAutre { text-transform:uppercase; }
         .form-input { width:100%;border:1.5px solid var(--border);border-radius:14px;padding:13px 14px;font-size:15px;background:var(--white);transition:border 0.2s;-webkit-appearance:none; }
         .form-input:focus{outline:none;border-color:var(--accent);}
         .form-select { width:100%;border:1.5px solid var(--border);border-radius:14px;padding:13px 36px 13px 14px;font-size:15px;background:var(--white);cursor:pointer;-webkit-appearance:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='7' viewBox='0 0 12 7'%3E%3Cpath fill='%239e9a93' d='M6 7L0 0h12z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center; }
@@ -628,23 +627,6 @@ async function dbImportAll() {
     console.log('Import initial terminé');
 }
 
-function rowsToUpper(){
-    const map={desc:1,lieu:1,comment:1,depart:1,arrivee:1,vol:1,yooz:1,pourQui:1};
-    return (state.data||[]).filter(c=>Object.keys(map).some(k=>typeof c[k]==='string'&&c[k]!==toUp(c[k])));
-}
-async function upperAllRows(){
-    const rows=rowsToUpper(); if(!rows.length) return;
-    if(!confirm(`Passer ${rows.length} ligne${rows.length>1?'s':''} en majuscules ? Les descriptions, lieux, commentaires et « pour qui » seront réécrits.`)) return;
-    let done=0;
-    for(const c of rows){
-        const f={}; ['desc','lieu','comment','depart','arrivee','vol','yooz','pourQui'].forEach(k=>{ if(typeof c[k]==='string'&&c[k]!==toUp(c[k])) f[k]=c[k]; });
-        await dbUpdate(c.id,f);
-        done++; if(done%20===0){ state.toast=`Conversion… ${done}/${rows.length}`; render(); }
-    }
-    logAction('Modification',[{id:null,desc:`${done} lignes passées en majuscules`}]);
-    showToast(`✓ ${done} lignes passées en majuscules`);
-}
-
 /* ── Saisie en MAJUSCULES : champs libres uniquement.
    Les valeurs choisies dans les listes (demandeur, prestataire) restent telles
    quelles pour ne pas casser les emails et les N° Yooz associés. ── */
@@ -1010,7 +992,7 @@ let state = {
     search:"", filtre:"all", toast:"",
     saisieType:null, fabOpen:false, fabAdminOpen:false, trackMode:false, trackResult:null, trackCode:"" ,
     resaFilter:"all", cmdFilter:"all", hotelFilter:"all", resaSort:"date", resaSortAsc:true, cmdSort:"date", cmdSortAsc:true, hotelSort:"date", hotelSortAsc:true, histSortAsc:true,
-    activiteTab:"acompleter", histSort:"date", histPage:0, calMonth:null, colOrder:["date","code","type","desc","demandeur","pourQui","statut","prix"],
+    activiteTab:"reservations", histSort:"date", histPage:0, calMonth:null, colOrder:["date","code","type","desc","demandeur","pourQui","statut","prix"],
     deletedData:[], journal:[], sel:[], statsPeriod:'annee', statsFrom:'', statsTo:'', journalSearch:'', confirmRm:null, confirmDelete:null, yoozMap:null, settingsTab:null, adminForm:null,
     form:{ type:null, step:1, sent:false, code:null,
         dem:"", pourQui:[], pourQuiAutre:"", participants:"", vol:"", tel:"", copyMail:false,
@@ -1375,9 +1357,8 @@ function renderAdminView(m){
     const attente=state.data.filter(c=>c.pris==="En attente"||c.pris==="En cours");
     if(state.detail) return renderDetail(state.detail,m);
 
-    const nbAC=aCompleterList(false).length;
-    const activiteSubTabs=[['acompleter','edit','À compléter'+(nbAC?` (${nbAC})`:'')],['reservations','utensils','Réservations'],['commandes','box','Commandes'],['hotels','bed','Hôtels'],['historique','clock','Historique'],['tout','grid','Tout'],['journal','edit','Journal'],['corbeille','trash','Corbeille']].map(([k,ic,label])=>{
-        const active=(state.activiteTab||'acompleter')===k;
+    const activiteSubTabs=[['reservations','utensils','Réservations'],['commandes','box','Commandes'],['hotels','bed','Hôtels'],['historique','clock','Historique'],['tout','grid','Tout'],['journal','edit','Journal'],['corbeille','trash','Corbeille']].map(([k,ic,label])=>{
+        const active=(state.activiteTab||'reservations')===k;
         return `<button data-activite-tab="${k}" style="display:flex;align-items:center;gap:6px;padding:6px 12px;border-radius:30px;border:none;cursor:pointer;font-size:13px;font-weight:500;white-space:nowrap;background:${active?'#fff':'rgba(255,255,255,.14)'};color:${active?'var(--accent)':'rgba(255,255,255,.9)'};transition:all 0.15s;">${icon(ic,15)} ${label}</button>`;
     }).join('');
 
@@ -1724,10 +1705,6 @@ function renderDashboard(total,attente,m){
         </div>`;
     })()}
 
-    ${(()=>{ const n=aCompleterList(false).length; return n?`<button data-goto-ac style="display:flex;align-items:center;gap:10px;width:100%;text-align:left;background:#fff7ed;border:1px solid #fed7aa;border-radius:16px;padding:12px 14px;margin-bottom:16px;cursor:pointer;">
-        <span style="width:30px;height:30px;border-radius:9px;background:#ffedd5;color:#c2410c;display:flex;align-items:center;justify-content:center;flex-shrink:0;">${icon('edit',15)}</span>
-        <span style="flex:1;min-width:0;"><span style="display:block;font-weight:700;font-size:14px;color:var(--ink);">${n} ligne${n>1?'s':''} à compléter</span><span style="display:block;font-size:12px;color:#9a5b2f;">Prix, paiement, N° Yooz… manquants</span></span>
-        <span style="color:#c2410c;">${icon('arrow',16)}</span></button>`:''; })()}
 
     <!-- Section 1 : En attente de validation -->
     <div class="stat-card" style="margin-bottom:16px;">
@@ -1751,124 +1728,6 @@ function renderDashboard(total,attente,m){
     </div>`;
 }
 
-
-/* ══════════════════════════════════════
-   À COMPLÉTER : repère les lignes incomplètes
-══════════════════════════════════════ */
-const FIELD_LABEL={prix:'Prix',paie:'Paiement',yooz:'N° Yooz',presta:'Prestataire',desc:'Description',dateDepart:'Date de départ',pourQui:'Pour qui'};
-const OPTIONAL_FIELDS=['pourQui'];
-function missingFields(c){
-    if(c.pris==='Annulé') return [];
-    const miss=[];
-    const fait = c.pris==='Reçu' || (c.pris==='OUI' && (daysLeft(c.date)??1)<=0);
-    if(!c.presta) miss.push('presta');
-    if(c.type!=='commande' && !c.desc) miss.push('desc');
-    if(c.type==='hotel' && !c.dateDepart) miss.push('dateDepart');
-    if(fait){
-        if(!(c.prix>0)) miss.push('prix');
-        if(!c.paie) miss.push('paie');
-        if(c.paie==='Facturation' && !c.yooz) miss.push('yooz');
-    }
-    if(c.type!=='commande' && !c.pourQui) miss.push('pourQui');
-    return miss;
-}
-function aCompleterList(includeOptional){
-    return state.data.map(c=>({c,miss:missingFields(c).filter(f=>includeOptional||!OPTIONAL_FIELDS.includes(f))}))
-        .filter(x=>x.miss.length);
-}
-function yoozFor(c){ return (state.yoozMap||YOOZ_MAP||{})[c.presta]||''; }
-
-function renderACompleter(m){
-    const fField=state.acField||'all';
-    const withOpt=fField==='pourQui';
-    let list=aCompleterList(withOpt);
-    const counts={}; list.forEach(x=>x.miss.forEach(f=>counts[f]=(counts[f]||0)+1));
-    const optCount=aCompleterList(true).filter(x=>x.miss.includes('pourQui')).length;
-    if(fField!=='all') list=list.filter(x=>x.miss.includes(fField));
-    const q=(state.search||'').toLowerCase();
-    if(q) list=list.filter(({c})=>`${c.desc} ${c.presta} ${c.demandeur} ${c.code} ${c.pourQui}`.toLowerCase().includes(q));
-    list.sort((a,b)=>(parseDate(b.c.date)||0)-(parseDate(a.c.date)||0));
-    const total=list.length, shown=list.slice(0,state.acLimit||40);
-    const autoYooz=state.data.filter(c=>c.pris!=='Annulé'&&!c.yooz&&c.paie==='Facturation'&&yoozFor(c)).length;
-
-    const chip=(k,l,n)=>`<button data-ac-field="${k}" style="padding:6px 12px;border:none;border-radius:16px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;background:${fField===k?'var(--accent)':'#f0eeea'};color:${fField===k?'#fff':'#5a5650'};">${l}${n!=null?` <span style="opacity:.75;">${n}</span>`:''}</button>`;
-    const typeIc=t=>icon(t==='taxi'?'car':t==='repas'?'utensils':t==='hotel'?'bed':'box',14);
-    const presOpts=t=>(t==='taxi'?P_TAXI:t==='commande'?P_CMD:t==='hotel'?P_HOTEL:P_REPAS)||[];
-    const input=(c,f)=>{
-        const base=`data-ac-input="${f}" data-id="${c.id}" class="form-input" style="padding:8px 10px;font-size:13px;width:100%;"`;
-        if(f==='paie') return `<select ${base}><option value="">—</option><option>CB</option><option>Facturation</option></select>`;
-        if(f==='prix') return `<input ${base} type="text" inputmode="decimal" placeholder="0,00 €">`;
-        if(f==='dateDepart') return `<input ${base} type="date">`;
-        if(f==='yooz') return `<div style="display:flex;gap:6px;"><input ${base} type="text" placeholder="AAF-PO-26-…" value="${esc(yoozFor(c))}" style="padding:8px 10px;font-size:13px;width:100%;font-family:monospace;"></div>`;
-        if(f==='presta') return `<input ${base} type="text" list="ac-presta-${c.type}" placeholder="Choisir…">`;
-        if(f==='pourQui') return `<input ${base} type="text" list="ac-dir" placeholder="Directeur…">`;
-        return `<input ${base} type="text" placeholder="${FIELD_LABEL[f]}">`;
-    };
-    const card=({c,miss})=>`<div style="padding:14px 16px;border-bottom:1px solid #f1f5f9;">
-        <div data-open-detail='${JSON.stringify(c).replace(/'/g,"&apos;")}' style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;">
-            <span style="color:var(--ink-mid);padding-top:1px;">${typeIc(c.type)}</span>
-            <div style="flex:1;min-width:0;">
-                <div style="font-weight:600;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(c.type==='commande'?(c.presta||c.desc||'Commande'):(c.desc||'—'))}</div>
-                <div style="font-size:11px;color:#9e9a93;">${$d(c.date)} · ${esc(c.demandeur||'—')}${c.presta&&c.type!=='commande'?' · '+esc(c.presta):''}${c.prix?' · '+$m(c.prix):''}${c.paie?' · '+esc(c.paie):''}</div>
-            </div>
-            <div style="display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end;max-width:45%;">${miss.map(f=>`<span style="background:#fff7ed;color:#c2410c;border-radius:10px;padding:2px 7px;font-size:10px;font-weight:700;white-space:nowrap;">${FIELD_LABEL[f]}</span>`).join('')}</div>
-        </div>
-        <div style="display:grid;grid-template-columns:${m?'1fr 1fr':`repeat(${miss.length},200px) max-content`};justify-content:start;gap:8px;margin-top:10px;align-items:end;">
-            ${miss.map(f=>`<label style="display:block;min-width:0;"><span style="display:block;font-size:10px;font-weight:600;color:#9e9a93;text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px;">${FIELD_LABEL[f]}</span>${input(c,f)}</label>`).join('')}
-            <button data-ac-save="${c.id}" class="btn-primary" style="padding:9px 16px;font-size:13px;${m?'grid-column:1/-1;':''}">Enregistrer</button>
-        </div>
-    </div>`;
-
-    return `<div>
-    <datalist id="ac-dir">${(settings.directeurs||[]).map(d=>`<option value="${esc(d)}">`).join('')}</datalist>
-    ${['repas','taxi','commande','hotel'].map(t=>`<datalist id="ac-presta-${t}">${presOpts(t).map(p=>`<option value="${esc(p)}">`).join('')}</datalist>`).join('')}
-    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap;margin-bottom:12px;">
-        <div>
-            <div style="font-family:'DM Serif Display',serif;font-size:${m?'18px':'22px'};display:flex;align-items:center;gap:8px;">${icon('edit',m?16:19)} À compléter</div>
-            <div style="font-size:12px;color:#9e9a93;margin-top:3px;">${total?`${total} ligne${total>1?'s':''} avec des informations manquantes`:'Tout est complet 🎉'} · le prix et le paiement sont demandés une fois la prestation passée</div>
-        </div>
-        ${autoYooz?`<button id="acAutoYooz" style="background:#eff6ff;border:1px solid #bfdbfe;color:#1d4ed8;border-radius:20px;padding:8px 14px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;">Remplir ${autoYooz} N° Yooz automatiquement</button>`:''}
-    </div>
-    <div style="display:flex;gap:6px;overflow-x:auto;margin-bottom:10px;padding-bottom:2px;">
-        ${chip('all','Tout',null)}${['prix','paie','yooz','presta','desc','dateDepart'].filter(f=>counts[f]||fField===f).map(f=>chip(f,FIELD_LABEL[f],counts[f]||0)).join('')}${optCount?chip('pourQui','Pour qui',optCount):''}
-    </div>
-    <input id="adminSearch" type="text" placeholder="Rechercher..." value="${esc(state.search||'')}" class="search-input" style="margin-bottom:12px;">
-    <div style="background:#fff;border-radius:16px;border:1px solid #e4e7ec;overflow:hidden;">
-        ${shown.length?shown.map(card).join(''):`<div style="text-align:center;padding:40px;color:#9e9a93;font-size:14px;">${icon('check',18)} Rien à compléter ici</div>`}
-    </div>
-    ${total>shown.length?`<button id="acMore" style="display:block;margin:12px auto 0;background:#f0eeea;border:none;border-radius:20px;padding:8px 18px;font-size:13px;font-weight:600;color:#5a5650;cursor:pointer;">Afficher plus (${total-shown.length} restantes)</button>`:''}
-    </div>`;
-}
-async function saveACompleter(id, inputs){
-    const c=state.data.find(x=>String(x.id)===String(id)); if(!c) return;
-    const fields={};
-    inputs.forEach(el=>{
-        const f=el.getAttribute('data-ac-input'); let v=(el.value||'').trim();
-        if(!v) return;
-        if(f==='prix'){ v=parseFloat(v.replace(/\s/g,'').replace(',','.').replace('€',''))||0; if(!v) return; }
-        fields[f]=v;
-    });
-    if(!Object.keys(fields).length){ showToast('Rien à enregistrer'); return; }
-    const updated={...c,...fields};
-    state.data=state.data.map(x=>x.id===c.id?updated:x);
-    logAction('Complété', updated, Object.entries(fields).map(([k,v])=>`${FIELD_LABEL[k]} : ${k==='prix'?$m(v):v}`).join(', '));
-    const left=missingFields(updated).filter(f=>!OPTIONAL_FIELDS.includes(f)||state.acField==='pourQui').length;
-    showToast(left?`✓ Enregistré · ${left} info${left>1?'s':''} encore manquante${left>1?'s':''}`:'✓ Ligne complète');
-    render();
-    await dbUpdate(c.id, fields);
-}
-async function autoFillYooz(){
-    const items=state.data.filter(c=>c.pris!=='Annulé'&&!c.yooz&&c.paie==='Facturation'&&yoozFor(c));
-    if(!items.length) return;
-    if(!confirm(`Remplir le N° Yooz de ${items.length} ligne${items.length>1?'s':''} d'après les fournisseurs (Réglages › Prestataires) ?`)) return;
-    const upd=items.map(c=>({...c,yooz:yoozFor(c)}));
-    const byId=Object.fromEntries(upd.map(c=>[c.id,c]));
-    state.data=state.data.map(c=>byId[c.id]||c);
-    logAction('Complété', [{id:null, desc:`${upd.length} N° Yooz remplis automatiquement d'après les fournisseurs`}]);
-    showToast(`✓ ${upd.length} N° Yooz remplis`);
-    render();
-    for(const c of upd) await dbUpdate(c.id,{yooz:c.yooz});
-}
 
 /* ══════════════════════════════════════
    STATISTIQUES PAR PÉRIODE
@@ -2132,9 +1991,8 @@ function renderActiviteTout(m){
    codé (Réservations, Commandes, Historique + export Excel, Corbeille) mais
    qui n'étaient reliés à aucune navigation avant cette mise à jour. */
 function renderActivite(m){
-    const tab=state.activiteTab||'acompleter';
-    const nbAC=aCompleterList(false).length;
-    const TABS=[['acompleter','edit','À compléter'+(nbAC?` (${nbAC})`:'')],['reservations','utensils','Réservations'],['commandes','box','Commandes'],['hotels','bed','Hôtels'],['historique','clock','Historique'],['tout','grid','Tout'],['journal','edit','Journal'],['corbeille','trash','Corbeille']];
+    const tab=state.activiteTab||'reservations';
+    const TABS=[['reservations','utensils','Réservations'],['commandes','box','Commandes'],['hotels','bed','Hôtels'],['historique','clock','Historique'],['tout','grid','Tout'],['journal','edit','Journal'],['corbeille','trash','Corbeille']];
     const subNav=`<div style="display:flex;gap:4px;flex-wrap:wrap;background:var(--border-light);padding:4px;border-radius:30px;width:fit-content;margin-bottom:10px;">
         ${TABS.map(([k,ic,l])=>`<button data-activite-tab="${k}" style="display:flex;align-items:center;gap:6px;padding:6px 13px;border:none;border-radius:24px;font-size:13px;font-weight:500;cursor:pointer;white-space:nowrap;background:${tab===k?'var(--white)':'transparent'};color:${tab===k?'var(--ink)':'var(--ink-soft)'};box-shadow:${tab===k?'0 1px 3px rgba(0,0,0,0.08)':'none'};transition:all 0.15s;">${icon(ic,14)} ${l}</button>`).join('')}
     </div>`;
@@ -2144,7 +2002,6 @@ function renderActivite(m){
     else if(tab==='historique') body=renderHistorique(m);
     else if(tab==='corbeille') body=renderCorbeille(m);
     else if(tab==='journal') body=renderJournal(m);
-    else if(tab==='acompleter') body=renderACompleter(m);
     else if(tab==='tout') body=renderActiviteTout(m);
     else body=renderReservations(m);
     // Sur desktop, les icônes de sous-onglets sont déjà dans la barre du haut (voir renderAdminView) :
@@ -2615,7 +2472,7 @@ function renderSettings(){
         ['equipe','user','Équipe',`${settings.assistantes.length} assistantes · ${(settings.directeurs||[]).length} directeurs`],
         ['prestataires','box','Prestataires',`${['prestatairesRepas','prestatairesTaxi','prestatairesCommande','prestatairesHotel'].reduce((n,k)=>n+(settings[k]||[]).length,0)} entrées · N° Yooz`],
         ['notifications','bell','Notifications',`${(settings.adminEmails||[]).filter(Boolean).length} email${(settings.adminEmails||[]).filter(Boolean).length>1?'s':''} · appareil ${('Notification' in window)&&Notification.permission==='granted'?'activé':'inactif'}`],
-        ['compte','shield','Compte & outils','Prénom, session, maintenance'],
+        ['compte','shield','Compte & outils','Prénom, session, installation, corbeille'],
     ];
     const cur=TABS.find(t=>t[0]===tab)||TABS[0];
     let body='';
@@ -2704,10 +2561,6 @@ function renderSettings(){
             <button data-admin-logout style="background:#fef2f2;border:1px solid #fecaca;color:#b91c1c;border-radius:20px;padding:6px 14px;font-size:12px;font-weight:600;cursor:pointer;">Se déconnecter</button>
         </div>
     </div>
-    ${(()=>{ const n=rowsToUpper().length; return `<div class="settings-section">
-        ${secHead("edit","Anciennes données en majuscules", n?`${n} ligne${n>1?'s':''} contiennent encore des minuscules (description, lieu, commentaire, pour qui…).`:'Toutes les données sont déjà en majuscules.')}
-        ${n?`<button id="upperAll" class="btn-primary" style="width:100%;padding:12px;">Tout passer en majuscules (${n})</button>`:''}
-    </div>`; })()}
     ${isStandalone()?'':`<div class="settings-section">
         ${secHead("download","Installer l’appli sur cet appareil","Elle s’ouvre alors dans sa propre fenêtre, comme un logiciel.")}
         ${_installPrompt?`<button id="installAppBtn" class="btn-primary" style="width:100%;padding:12px;">Installer maintenant</button>`:`<div style="font-size:13px;color:#5a5650;line-height:1.5;">${/Edg\//.test(navigator.userAgent)?'Dans Edge : menu <b>…</b> › <b>Applications</b> › <b>« Installer ce site en tant qu’application »</b>.':'Dans Chrome : icône <b>⊕</b> à droite de la barre d’adresse, ou menu <b>⋮</b> › <b>Caster, enregistrer et partager</b> › <b>Installer</b>.'}</div>`}
@@ -2715,17 +2568,6 @@ function renderSettings(){
     <div class="settings-section">
         ${secHead("trash","Corbeille",`${(state.deletedData||[]).length} élément${(state.deletedData||[]).length>1?'s':''} · effacés définitivement après ${TRASH_DAYS} jours`)}
         <button data-goto-trash style="width:100%;background:#fff;border:1.5px solid var(--border);border-radius:12px;padding:11px;font-size:14px;font-weight:600;color:var(--ink);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;">Ouvrir la corbeille ${icon('arrow',14)}</button>
-    </div>
-    <!-- Outil correction données -->
-    <div class="settings-section">
-        ${secHead("tool","Correction des descriptions","Séparez les descriptions mixtes (ex : « Repas Franck » → Description + Pour qui).")}
-        
-        
-        <button id="showCorrector" style="background:var(--accent);color:#fff;border:none;border-radius:12px;padding:10px 16px;font-size:13px;font-weight:600;cursor:pointer;width:100%;display:flex;align-items:center;justify-content:center;gap:7px;">${icon('tool',14)} Ouvrir l'outil de correction</button>
-        <div id="correctorPanel" style="display:none;margin-top:14px;">
-            <div id="correctorList"></div>
-            <button id="saveCorrections" style="background:#16a34a;color:#fff;border:none;border-radius:12px;padding:11px;font-size:13px;font-weight:700;cursor:pointer;width:100%;margin-top:12px;display:flex;align-items:center;justify-content:center;gap:7px;">${icon('save',14)} Sauvegarder toutes les corrections</button>
-        </div>
     </div>`;
 
     const nav=m
@@ -3035,17 +2877,6 @@ function attachEvents(){
     document.getElementById('statsFrom')?.addEventListener('change',e=>setState({statsFrom:e.target.value,statsPeriod:'perso'}));
     document.getElementById('statsTo')?.addEventListener('change',e=>setState({statsTo:e.target.value,statsPeriod:'perso'}));
 
-    // À compléter
-    document.querySelectorAll('[data-goto-ac]').forEach(el=>el.onclick=()=>setState({adminTab:'activite',activiteTab:'acompleter',search:'',sel:[]}));
-    document.querySelectorAll('[data-ac-field]').forEach(el=>el.onclick=()=>setState({acField:el.getAttribute('data-ac-field'),acLimit:40}));
-    document.querySelectorAll('[data-ac-save]').forEach(el=>el.onclick=()=>{
-        const id=el.getAttribute('data-ac-save');
-        saveACompleter(id,[...document.querySelectorAll(`[data-ac-input][data-id="${id}"]`)]);
-    });
-    document.querySelectorAll('[data-ac-input]').forEach(el=>{ if(el.tagName==='INPUT') el.addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); document.querySelector(`[data-ac-save="${el.getAttribute('data-id')}"]`)?.click(); } }); });
-    document.getElementById('acAutoYooz')?.addEventListener('click',autoFillYooz);
-    document.getElementById('acMore')?.addEventListener('click',()=>setState({acLimit:(state.acLimit||40)+40}));
-
     // Journal : recherche
     const js=document.getElementById('journalSearch');
     if(js){ js.addEventListener('input',e=>{ state.journalSearch=e.target.value; const pos=e.target.selectionStart; render(); const n=document.getElementById('journalSearch'); if(n){n.focus();n.setSelectionRange(pos,pos);} }); }
@@ -3090,60 +2921,6 @@ function attachEvents(){
     document.querySelector('[data-hist-next]')?.addEventListener('click',()=>{
         const total=Math.ceil(state.data.length/30);
         if((state.histPage||0)<total-1) setState({histPage:(state.histPage||0)+1});
-    });
-
-        // Outil correction descriptions
-    document.getElementById('showCorrector')?.addEventListener('click',()=>{
-        const panel=document.getElementById('correctorPanel');
-        const list=document.getElementById('correctorList');
-        if(!panel||!list) return;
-        panel.style.display=panel.style.display==='none'?'block':'none';
-        if(panel.style.display==='none') return;
-
-        // Générer les lignes à corriger (repas uniquement)
-        const repas=state.data.filter(c=>c.type==='repas');
-        if(!repas.length){list.innerHTML='<div style="color:#9e9a93;text-align:center;padding:16px;">Aucun repas à corriger</div>';return;}
-
-        list.innerHTML=repas.map((c,i)=>{
-            const desc=c.desc||'';
-            const pourQui=c.pourQui||'';
-            return `<div style="display:flex;flex-direction:column;gap:6px;padding:12px;background:#fff;border-radius:12px;border:1px solid #e0e7ff;margin-bottom:8px;">
-                <div style="font-size:11px;color:#6366f1;font-weight:600;margin-bottom:2px;">ID: ${c.id} — Actuel: <strong>${desc}</strong> / Pour qui: <strong>${pourQui||'—'}</strong></div>
-                <div style="display:flex;gap:8px;flex-wrap:wrap;">
-                    <div style="flex:1;min-width:140px;">
-                        <label style="font-size:11px;color:#64748b;display:block;margin-bottom:3px;">Description</label>
-                        <select class="corr-desc form-select" data-id="${c.id}" style="width:100%;padding:7px 10px;font-size:13px;">
-                            <option value="">— Choisir —</option>
-                            ${P_TYPES.map(p=>`<option value="${p}" ${desc===p||desc.toLowerCase().includes(p.toLowerCase())?'selected':''}>${p}</option>`).join('')}
-                            <option value="${desc}" ${!P_REPAS.includes(desc)?'selected':''}>Garder: ${desc}</option>
-                        </select>
-                    </div>
-                    <div style="flex:1;min-width:140px;">
-                        <label style="font-size:11px;color:#64748b;display:block;margin-bottom:3px;">Pour qui</label>
-                        <input class="corr-pourqui form-input" data-id="${c.id}" value="${pourQui}" placeholder="Nom de la personne" style="width:100%;padding:7px 10px;font-size:13px;">
-                    </div>
-                </div>
-            </div>`;
-        }).join('');
-    });
-
-    document.getElementById('saveCorrections')?.addEventListener('click',async()=>{
-        const descs=document.querySelectorAll('.corr-desc');
-        const pourquis=document.querySelectorAll('.corr-pourqui');
-        let saved=0;
-        for(let i=0;i<descs.length;i++){
-            const id=parseInt(descs[i].getAttribute('data-id'));
-            const newDesc=descs[i].value;
-            const newPourQui=pourquis[i].value;
-            if(!newDesc) continue;
-            state.data=state.data.map(c=>c.id===id?{...c,desc:newDesc,pourQui:newPourQui}:c);
-            try{
-                await dbUpdate(id,{descr:newDesc,pour_qui:newPourQui});
-                saved++;
-            }catch(e){console.error('Erreur save',id,e);}
-        }
-        showToast(`✓ ${saved} corrections sauvegardées`);
-        render();
     });
 
     // Yooz réglages
@@ -3627,7 +3404,6 @@ function attachEvents(){
             render();
         });
     });
-    document.getElementById('upperAll')?.addEventListener('click',upperAllRows);
     document.getElementById('enableNotifs')?.addEventListener('click',activateAll);
     document.querySelectorAll('[data-activate-notifs]').forEach(el=>el.onclick=async()=>{
         if(notifsReady()){ await systemNotify('Notifications actives','Tout fonctionne sur cet appareil.'); updateBadge(); showToast('✓ Notifications déjà actives · pastille à jour'); return; }
