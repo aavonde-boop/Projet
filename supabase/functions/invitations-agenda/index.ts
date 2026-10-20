@@ -10,9 +10,11 @@
 //  Si la demande est modifiée (date, heure, lieu…), les invitations sont mises
 //  à jour ; si elle est annulée, elles sont retirées des agendas.
 //
+//  Envoi par Brevo (SMTP, gratuit jusqu'à 300 emails/jour).
 //  Secrets à définir dans Supabase (Edge Functions › Secrets) :
-//    GMAIL_USER          adresse Gmail d'envoi (ex. gestion.commandes.aag@gmail.com)
-//    GMAIL_APP_PASSWORD  mot de passe d'application Gmail (16 lettres)
+//    BREVO_SMTP_LOGIN  identifiant SMTP Brevo (ex. 8a1b2c001@smtp-brevo.com)
+//    BREVO_SMTP_KEY    clé SMTP Brevo (commence par « xsmtpsib- »)
+//    EXPEDITEUR        adresse d'expéditeur validée dans Brevo
 //  SUPABASE_URL et SUPABASE_SERVICE_ROLE_KEY sont fournis automatiquement.
 // ════════════════════════════════════════════════════════════════════
 import nodemailer from "npm:nodemailer@6.9.16";
@@ -172,14 +174,16 @@ Deno.serve(async (req) => {
     if (!method) return new Response(JSON.stringify({ ok: true, skipped: true }), { headers: { "Content-Type": "application/json" } });
     const row = method === "CANCEL" && p.type === "DELETE" ? p.old_record : rec;
 
-    const user = Deno.env.get("GMAIL_USER")!, pass = Deno.env.get("GMAIL_APP_PASSWORD")!;
+    const login = Deno.env.get("BREVO_SMTP_LOGIN")!, key = Deno.env.get("BREVO_SMTP_KEY")!, user = Deno.env.get("EXPEDITEUR")!;
+    if (!login || !key || !user) return new Response(JSON.stringify({ ok: false, error: "Secrets Brevo manquants" }), { status: 200 });
     const to = await adminEmails();
     if (!to.length) return new Response(JSON.stringify({ ok: false, error: "Aucun email admin dans les réglages" }), { status: 200 });
 
     const now = parisNow();
     const evs = rappels(row, now);
     const seq = Math.floor(Date.now() / 1000) - 1760000000; // croissant : chaque mise à jour remplace la précédente
-    const transport = nodemailer.createTransport({ host: "smtp.gmail.com", port: 465, secure: true, auth: { user, pass } });
+    // Port 465 (SSL) : les ports 25 et 587 sont bloqués dans les Edge Functions Supabase
+    const transport = nodemailer.createTransport({ host: "smtp-relay.brevo.com", port: 465, secure: true, auth: { user: login, pass: key } });
     for (const ev of evs) {
       const content = ics(ev, method, user, to, seq);
       await transport.sendMail({
