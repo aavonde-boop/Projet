@@ -395,7 +395,21 @@ function buildEmailHtml(kind, c){
 ${c.code?`<tr><td style="padding:6px 24px 4px;"><div style="background:#f4f2ee;border-radius:10px;padding:10px 14px;font-size:13px;color:#5a5650;">Code de suivi : <b style="font-family:monospace;font-size:15px;color:#1a1f36;letter-spacing:1px;">${e(c.code)}</b></div></td></tr>`:''}
 ${url?`<tr><td style="padding:16px 24px 6px;"><table role="presentation" cellpadding="0" cellspacing="0"><tr><td bgcolor="${K.couleur}" style="background:${K.couleur};border-radius:10px;padding:12px 22px;"><a href="${url}" style="color:#ffffff;text-decoration:none;font-weight:700;font-size:14px;display:inline-block;">${K.bouton} →</a></td></tr></table></td></tr>`:''}
 <tr><td style="padding:18px 24px 22px;font-size:11px;color:#9e9a93;border-top:1px solid #f0eeea;">${K.pourquoi}<br>Gestion des commandes ${new Date().getFullYear()}</td></tr>
-</table></div>`;
+</table>${kind.startsWith('admin')?agendaDataBlock(c):''}</div>`;
+}
+/* Bloc invisible lu par Power Automate pour créer les rappels dans Outlook.
+   Données encodées en base64 (ASCII) : insensibles aux réécritures d'Outlook. */
+function agendaDataBlock(c){
+    try{
+        const ev=rappelEvents(c,'both'); if(ev.length<2) return '';
+        const p=n=>String(n).padStart(2,'0');
+        const loc=d=>`${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}:00`;
+        const html=t=>String(t||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
+        const conv=e=>({ titre:e.title, debut:loc(e.start), fin:loc(new Date(e.start.getTime()+e.min*60000)), lieu:e.location||'', rappel:e.alarm, details:html(e.desc) });
+        const data={ v:1, code:c.code||'', commander:conv(ev[0]), miseEnPlace:conv(ev[1]) };
+        const b64=btoa(unescape(encodeURIComponent(JSON.stringify(data))));
+        return `<div style="display:none;max-height:0;overflow:hidden;mso-hide:all;font-size:1px;line-height:1px;color:#f4f2ee;">AGENDADATA:${b64}:FINAGENDA</div>`;
+    }catch(e){ return ''; }
 }
 function buildEmailSubject(kind, c){
     const K = EMAIL_KINDS[kind];
@@ -2893,6 +2907,8 @@ function renderSettings(){
         </div>
         <button id="addAdminEmail" style="background:none;border:1.5px dashed var(--border);border-radius:12px;width:100%;padding:10px;font-size:14px;color:var(--ink-soft);cursor:pointer;margin-bottom:10px;">+ Ajouter un email admin</button>
         <button id="saveAdminEmails" class="btn-primary" style="width:100%;padding:12px;display:flex;align-items:center;justify-content:center;gap:7px;">${icon('save',14)} Sauvegarder</button>
+        <button id="testAdminEmail" style="width:100%;margin-top:8px;background:#fff;border:1.5px solid var(--border);border-radius:12px;padding:11px;font-size:13px;font-weight:600;color:var(--ink);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;">${icon('calendar',14)} Envoyer un email de test (rappels agenda)</button>
+        <div style="font-size:11px;color:#9e9a93;margin-top:6px;">Envoie une fausse demande « TEST » pour demain 12h30 à tous les emails admin : pratique pour vérifier que les rappels se créent bien dans Outlook.</div>
     </div>
 `;
     if(cur[0]==='notifications') body=`
@@ -3774,6 +3790,15 @@ function attachEvents(){
         showToast('✓ Prénom enregistré');
     });
     document.querySelectorAll('[data-goto-trash]').forEach(el=>el.onclick=()=>setState({adminTab:'activite',activiteTab:'corbeille',sel:[]}));
+    document.getElementById('testAdminEmail')?.addEventListener('click',async()=>{
+        const list=(settings.adminEmails||[]).filter(Boolean);
+        if(!list.length){ showToast('Ajoutez d’abord au moins un email admin'); return; }
+        const d=new Date(); d.setDate(d.getDate()+1);
+        const sample={ id:'test', code:'TEST', type:'repas', pris:'En attente', demandeur:'Test Appli', pourQui:'TEST', date:isoDay(d), heure:'12h30',
+            lieu:'SALLE TEST', nb:'4', desc:'DÉJEUNER TEST', presta:(P_REPAS||[])[0]||'', comment:'Email de test : vous pouvez le supprimer.' };
+        for(const to of list) await sendConfirmationEmail(sample,{to});
+        showToast(`✓ Email de test envoyé à ${list.length} admin${list.length>1?'s':''}`);
+    });
     document.getElementById('saveAdminEmails')?.addEventListener('click',()=>{
         const inputs=document.querySelectorAll('.admin-email-input');
         settings.adminEmails=[...inputs].map(i=>i.value.trim()).filter(Boolean);
