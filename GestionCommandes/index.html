@@ -1616,14 +1616,14 @@ function suiviCard(c,{compact=false,showStage=false,select=false}={}){
     const B={
         valider: btn('valider','Valider','check','background:#f0fdf4;border:1px solid #bbf7d0;color:#15803d;'),
         refuser: btn('refuser','Refuser','x','background:#fff;border:1px solid #fecaca;color:#b91c1c;'),
-        copier:  btn('copier','Copier le message','mail','background:#fff;border:1px solid var(--border);color:var(--ink);'),
+        annuler: btn('annuler','Annuler la demande','x','background:#fff;border:1px solid #fecaca;color:#b91c1c;'),
         commande:`<button data-suivi-act="commande" data-id="${c.id}" title="À cocher une fois la commande passée auprès du prestataire" style="display:inline-flex;align-items:center;gap:6px;border-radius:10px;padding:5px 10px 5px 7px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;background:#fff;border:1.5px dashed #93c5fd;color:#1d4ed8;"><span style="width:14px;height:14px;border:1.5px solid #1d4ed8;border-radius:4px;display:inline-block;"></span> J’ai passé la commande</button>`,
         fait:    `<button data-suivi-act="fait" data-id="${c.id}" title="À cocher une fois la prestation réalisée" style="display:inline-flex;align-items:center;gap:6px;border-radius:10px;padding:5px 10px 5px 7px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;background:#fff;border:1.5px dashed #a5f3fc;color:#0e7490;"><span style="width:14px;height:14px;border:1.5px solid #0e7490;border-radius:4px;display:inline-block;"></span> Prestation terminée</button>`,
     };
     let actions='', info='';
     if(st==='avalider') actions=B.valider+B.refuser;
-    else if(st==='acommander') actions=B.copier+B.commande;
-    else if(st==='commandee'){ actions=B.fait; info=`${icon('check',11)} Commande passée le ${new Date(s.cmd).toLocaleDateString('fr-FR')}${s.cmdBy&&s.cmdBy!=='Admin'?' par '+esc(s.cmdBy):''} · <a href="#" data-suivi-act="uncommande" data-id="${c.id}" style="color:#9e9a93;">annuler</a>`; }
+    else if(st==='acommander') actions=B.commande+B.annuler;
+    else if(st==='commandee'){ actions=B.fait+B.annuler; info=`${icon('check',11)} Commande passée le ${new Date(s.cmd).toLocaleDateString('fr-FR')}${s.cmdBy&&s.cmdBy!=='Admin'?' par '+esc(s.cmdBy):''} · <a href="#" data-suivi-act="uncommande" data-id="${c.id}" style="color:#9e9a93;">décocher</a>`; }
     else if(st==='fait'){ info=s.fait?`Terminé le ${new Date(s.fait).toLocaleDateString('fr-FR')}${s.cmd?'':''} · <a href="#" data-suivi-act="unfait" data-id="${c.id}" style="color:#9e9a93;">rouvrir</a>`:'Prestation passée'; }
     const sel=select?`<input type="checkbox" class="sel-box" data-sel-id="${c.id}" ${(state.sel||[]).includes(c.id)?'checked':''} style="width:16px;height:16px;accent-color:var(--accent);cursor:pointer;flex-shrink:0;margin-top:3px;">`:'';
     return `<div class="suivi-card" style="background:#fff;border:1px solid var(--border);border-left:3px solid ${STAGES[st].color};border-radius:14px;padding:${compact?'10px 12px':'12px 14px'};display:flex;gap:10px;align-items:flex-start;">
@@ -1794,8 +1794,8 @@ function suiviBlock(d){
     const btn=(act,label,ic,style)=>`<button data-suivi-act="${act}" data-id="${d.id}" style="display:inline-flex;align-items:center;gap:6px;border-radius:12px;padding:10px 14px;font-size:13px;font-weight:700;cursor:pointer;${style}">${icon(ic,14)} ${label}</button>`;
     let actions='';
     if(st==='avalider') actions=btn('valider','Valider la demande','check','background:#15803d;border:1px solid #15803d;color:#fff;')+btn('refuser','Refuser','x','background:#fff;border:1px solid #fecaca;color:#b91c1c;');
-    else if(st==='acommander') actions=`<div style="width:100%;font-size:12px;color:#5a5650;background:#eff6ff;border-radius:10px;padding:8px 10px;margin-bottom:2px;">① Commandez auprès de <b>${esc(d.presta||'du prestataire')}</b> (le message prêt à envoyer peut être copié) ② puis cochez « J’ai passé la commande ».</div>`+btn('copier','Copier le message de commande','mail','background:#fff;border:1px solid var(--border);color:var(--ink);')+btn('commande','J’ai passé la commande','check','background:#fff;border:1.5px dashed #93c5fd;color:#1d4ed8;')
-    else if(st==='commandee') actions=btn('fait','Prestation terminée','check','background:#fff;border:1.5px dashed #a5f3fc;color:#0e7490;')+btn('uncommande','Je n’ai pas encore commandé','x','background:#fff;border:1px solid var(--border);color:#7a7570;')
+    else if(st==='acommander') actions=`<div style="width:100%;font-size:12px;color:#5a5650;background:#eff6ff;border-radius:10px;padding:8px 10px;margin-bottom:2px;">① Commandez auprès de <b>${esc(d.presta||'du prestataire')}</b> ② puis cochez « J’ai passé la commande ».</div>`+btn('commande','J’ai passé la commande','check','background:#fff;border:1.5px dashed #93c5fd;color:#1d4ed8;')+btn('annuler','Annuler la demande','x','background:#fff;border:1px solid #fecaca;color:#b91c1c;')
+    else if(st==='commandee') actions=btn('fait','Prestation terminée','check','background:#fff;border:1.5px dashed #a5f3fc;color:#0e7490;')+btn('uncommande','Je n’ai pas encore commandé','arrow','background:#fff;border:1px solid var(--border);color:#7a7570;')+btn('annuler','Annuler la demande','x','background:#fff;border:1px solid #fecaca;color:#b91c1c;')
     else if(st==='fait'&&s.fait) actions=btn('unfait','Rouvrir','arrow','background:#fff;border:1px solid var(--border);color:#7a7570;');
     const histo=[s.cmd?`Commandé le ${new Date(s.cmd).toLocaleString('fr-FR',{dateStyle:'short',timeStyle:'short'})}${s.cmdBy&&s.cmdBy!=='Admin'?' par '+esc(s.cmdBy):''}`:'', s.fait?`Terminé le ${new Date(s.fait).toLocaleString('fr-FR',{dateStyle:'short',timeStyle:'short'})}${s.faitBy&&s.faitBy!=='Admin'?' par '+esc(s.faitBy):''}`:''].filter(Boolean).join(' · ');
     return `<div style="background:#fff;border:1px solid var(--border);border-radius:16px;padding:16px;margin-bottom:14px;">
@@ -1860,6 +1860,7 @@ document.addEventListener('click', async e=>{
     const act=a.getAttribute('data-suivi-act'), id=a.getAttribute('data-id');
     const c=state.data.find(x=>String(x.id)===String(id)); if(!c) return;
     if(act==='valider'){ await applyStatus([c.id],'OUI'); }
+    else if(act==='annuler'){ if(confirm(`Annuler « ${titreDe(c)} » du ${dateCourte(c)} ?\n\n• ${c.demandeur||'La demandeuse'} recevra l’email d’annulation.\n• Les rappels seront retirés de vos agendas.${stageOf(c)==='commandee'?`\n• Pensez à prévenir ${c.presta||'le prestataire'} : la commande avait été passée.`:''}`)){ await applyStatus([c.id],'Annulé'); showToast('Demande annulée'); } }
     else if(act==='refuser'){ if(confirm(`Refuser « ${titreDe(c)} » ? ${c.demandeur||'La demandeuse'} recevra l’email d’annulation.`)) await applyStatus([c.id],'Annulé'); }
     else if(act==='copier'){ const ok=await copyText(orderMessage(c)); showToast(ok?'✓ Message copié : collez-le dans votre email au prestataire':`${icon('alert',13)} Copie impossible`); }
     else if(act==='commande'){ if(confirm(`Confirmer : la commande « ${titreDe(c)} » a bien été passée auprès de ${c.presta||'du prestataire'} ?`)) markCommande([c.id]); }
