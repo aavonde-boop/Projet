@@ -992,7 +992,7 @@ let state = {
     search:"", filtre:"all", toast:"",
     saisieType:null, fabOpen:false, fabAdminOpen:false, trackMode:false, trackResult:null, trackCode:"" ,
     resaFilter:"all", cmdFilter:"all", hotelFilter:"all", resaSort:"date", resaSortAsc:true, cmdSort:"date", cmdSortAsc:true, hotelSort:"date", hotelSortAsc:true, histSortAsc:true,
-    activiteTab:"reservations", histSort:"date", histPage:0, calMonth:null, colOrder:["date","code","type","desc","demandeur","pourQui","statut","prix"],
+    activiteTab:"tout", histSort:"date", histPage:0, calMonth:null, colOrder:["date","code","type","desc","demandeur","pourQui","statut","prix"],
     deletedData:[], journal:[], sel:[], statsPeriod:'annee', statsFrom:'', statsTo:'', journalSearch:'', confirmRm:null, confirmDelete:null, yoozMap:null, settingsTab:null, adminForm:null,
     form:{ type:null, step:1, sent:false, code:null,
         dem:"", pourQui:[], pourQuiAutre:"", participants:"", vol:"", tel:"", copyMail:false,
@@ -1357,8 +1357,8 @@ function renderAdminView(m){
     const attente=state.data.filter(c=>c.pris==="En attente"||c.pris==="En cours");
     if(state.detail) return renderDetail(state.detail,m);
 
-    const activiteSubTabs=[['reservations','utensils','Réservations'],['commandes','box','Commandes'],['hotels','bed','Hôtels'],['historique','clock','Historique'],['tout','grid','Tout'],['journal','edit','Journal'],['corbeille','trash','Corbeille']].map(([k,ic,label])=>{
-        const active=(state.activiteTab||'reservations')===k;
+    const activiteSubTabs=[['tout','grid','Tout'],['reservations','utensils','Réservations'],['commandes','box','Commandes'],['hotels','bed','Hôtels'],['historique','clock','Historique'],['journal','edit','Journal'],['corbeille','trash','Corbeille']].map(([k,ic,label])=>{
+        const active=(state.activiteTab||'tout')===k;
         return `<button data-activite-tab="${k}" style="display:flex;align-items:center;gap:6px;padding:6px 12px;border-radius:30px;border:none;cursor:pointer;font-size:13px;font-weight:500;white-space:nowrap;background:${active?'#fff':'rgba(255,255,255,.14)'};color:${active?'var(--accent)':'rgba(255,255,255,.9)'};transition:all 0.15s;">${icon(ic,15)} ${label}</button>`;
     }).join('');
 
@@ -1991,8 +1991,8 @@ function renderActiviteTout(m){
    codé (Réservations, Commandes, Historique + export Excel, Corbeille) mais
    qui n'étaient reliés à aucune navigation avant cette mise à jour. */
 function renderActivite(m){
-    const tab=state.activiteTab||'reservations';
-    const TABS=[['reservations','utensils','Réservations'],['commandes','box','Commandes'],['hotels','bed','Hôtels'],['historique','clock','Historique'],['tout','grid','Tout'],['journal','edit','Journal'],['corbeille','trash','Corbeille']];
+    const tab=state.activiteTab||'tout';
+    const TABS=[['tout','grid','Tout'],['reservations','utensils','Réservations'],['commandes','box','Commandes'],['hotels','bed','Hôtels'],['historique','clock','Historique'],['journal','edit','Journal'],['corbeille','trash','Corbeille']];
     const subNav=`<div style="display:flex;gap:4px;flex-wrap:wrap;background:var(--border-light);padding:4px;border-radius:30px;width:fit-content;margin-bottom:10px;">
         ${TABS.map(([k,ic,l])=>`<button data-activite-tab="${k}" style="display:flex;align-items:center;gap:6px;padding:6px 13px;border:none;border-radius:24px;font-size:13px;font-weight:500;cursor:pointer;white-space:nowrap;background:${tab===k?'var(--white)':'transparent'};color:${tab===k?'var(--ink)':'var(--ink-soft)'};box-shadow:${tab===k?'0 1px 3px rgba(0,0,0,0.08)':'none'};transition:all 0.15s;">${icon(ic,14)} ${l}</button>`).join('')}
     </div>`;
