@@ -326,77 +326,117 @@ function refreshGlobals(){ P_REPAS=[...settings.prestatairesRepas]; P_TAXI=[...s
 const MONTHS_LONG = ["","Janvier","Février","Mars","Avril","Mai","Juin","Juillet","Août","Septembre","Octobre","Novembre","Décembre"];
 function $dLong(d){ if(!d)return"—"; const p=d.split("-"); return parseInt(p[2])+" "+MONTHS_LONG[parseInt(p[1])]+" "+p[0]; }
 
-async function sendConfirmationEmail(commande, opts={}) {
-    // opts.isCopie = true → mail copie à l'assistante
-    // opts.to = email admin override
-    const isCopie = opts.isCopie || false;
-    const isAnnulation = opts.isAnnulation || false;
-    const toOverride = opts.to || null;
+/* Quatre emails bien distincts, chacun avec un bandeau qui dit à qui il s'adresse :
+   - admin      : à l'administrateur, nouvelle demande à valider
+   - adminAjout : à l'administrateur, commande saisie par un admin (pour info)
+   - copie      : à l'assistante, accusé de réception de sa demande
+   - valide     : à l'assistante, demande validée
+   - annule     : à l'assistante, demande annulée
+   Le corps HTML part dans le paramètre {{{html_body}}} du modèle EmailJS ;
+   les anciens paramètres restent envoyés pour compatibilité. */
+const EMAIL_KINDS = {
+    admin:      { pour:'ADMINISTRATEUR', titre:'Nouvelle demande à valider', couleur:'#b45309', fond:'#fff7ed', emoji:'🔔', sujet:'[Admin] À valider',
+                  intro: c => `<b>${c.demandeur||'Une assistante'}</b> vient de faire une demande. Elle attend votre validation.`,
+                  bouton:'Valider dans l’appli', pourquoi:'Vous recevez cet email car vous êtes administrateur de Gestion des commandes.' },
+    adminAjout: { pour:'ADMINISTRATEUR', titre:'Commande ajoutée par un admin', couleur:'#475569', fond:'#f1f5f9', emoji:'📝', sujet:'[Admin] Ajoutée',
+                  intro: () => `Une commande a été saisie directement dans l’administration. Aucune action n’est nécessaire.`,
+                  bouton:'Voir dans l’appli', pourquoi:'Vous recevez cet email car vous êtes administrateur de Gestion des commandes.' },
+    copie:      { pour:'VOTRE DEMANDE', titre:'Demande bien reçue', couleur:'#1d4ed8', fond:'#eff6ff', emoji:'📨', sujet:'Demande reçue',
+                  intro: c => `Bonjour ${c._prenom}, votre demande a bien été transmise. Vous recevrez un autre email dès qu’elle sera validée.`,
+                  bouton:'Suivre ma demande', pourquoi:'Vous recevez cette copie car vous l’avez demandée en envoyant votre demande.' },
+    valide:     { pour:'VOTRE DEMANDE', titre:'Demande validée', couleur:'#15803d', fond:'#f0fdf4', emoji:'✅', sujet:'Validée',
+                  intro: c => `Bonjour ${c._prenom}, bonne nouvelle : votre demande est validée.`,
+                  bouton:'Voir ma demande', pourquoi:'Vous recevez cet email car vous avez fait cette demande.' },
+    annule:     { pour:'VOTRE DEMANDE', titre:'Demande annulée', couleur:'#b91c1c', fond:'#fef2f2', emoji:'❌', sujet:'Annulée',
+                  intro: c => `Bonjour ${c._prenom}, votre demande a été annulée. Contactez l’administration pour toute question.`,
+                  bouton:'Voir ma demande', pourquoi:'Vous recevez cet email car vous avez fait cette demande.' },
+};
+function emailDateLong(d){
+    if(!d) return "—";
+    const p = d.includes("-") ? d.split("-") : d.split("/").reverse();
+    const months=["","janvier","février","mars","avril","mai","juin","juillet","août","septembre","octobre","novembre","décembre"];
+    return `${parseInt(p[2])} ${months[parseInt(p[1])]} ${p[0]}`;
+}
+function emailRows(c){
+    const typeLabel = TYPE_LABEL[c.type] || c.type || '—';
+    const rows = [['Type', typeLabel]];
+    if(c.type==='hotel') rows.push(['Séjour', `${emailDateLong(c.date)} → ${emailDateLong(c.dateDepart)}`]);
+    else rows.push(['Date', emailDateLong(c.date) + (c.heure ? ` à ${c.heure}` : '')]);
+    if(c.type==='taxi') rows.push(['Trajet', `${c.depart||'—'} → ${c.arrivee||'—'}`]);
+    else if(c.lieu) rows.push(['Lieu', c.lieu]);
+    if(c.desc && c.type!=='commande') rows.push(['Description', c.desc]);
+    if(c.presta) rows.push([c.type==='hotel'?'Hôtel':'Prestataire', c.presta]);
+    if(c.type==='repas' && c.nb>1) rows.push(['Personnes', String(c.nb)]);
+    if(c.pourQui) rows.push(['Pour', c.pourQui]);
+    if(c.vol) rows.push(['Vol / train', c.vol]);
+    if(c.tel) rows.push(['Téléphone', c.tel]);
+    rows.push(['Demandé par', c.demandeur || '—']);
+    if(c.comment) rows.push(['Commentaire', c.comment]);
+    return rows;
+}
+function buildEmailHtml(kind, c){
+    const K = EMAIL_KINDS[kind];
+    const e = s => String(s ?? '').replace(/[&<>"]/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch]));
+    const url = (location.protocol==='https:' ? location.origin + location.pathname : '');
+    const rows = emailRows(c).map(([k,v]) => `<tr><td style="padding:8px 0;color:#7a7570;font-size:13px;width:120px;vertical-align:top;">${e(k)}</td><td style="padding:8px 0;color:#1a1f36;font-size:14px;font-weight:600;">${e(v)}</td></tr>`).join('');
+    return `<div style="background:#f4f2ee;padding:24px 12px;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;margin:0 auto;background:#ffffff;border-radius:16px;overflow:hidden;border:1px solid #e8e5df;">
+<tr><td style="background:${K.couleur};padding:10px 24px;color:#ffffff;font-size:11px;font-weight:700;letter-spacing:2px;">${K.pour}</td></tr>
+<tr><td style="background:${K.fond};padding:22px 24px 18px;">
+  <div style="font-size:30px;line-height:1;margin-bottom:10px;">${K.emoji}</div>
+  <div style="font-size:22px;font-weight:700;color:${K.couleur};margin-bottom:6px;">${K.titre}</div>
+  <div style="font-size:14px;color:#3f3b36;line-height:1.5;">${K.intro({...c,_prenom:e((c.demandeur||'').split(' ')[0])})}</div>
+</td></tr>
+<tr><td style="padding:8px 24px 4px;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">${rows}</table>
+</td></tr>
+${c.code?`<tr><td style="padding:6px 24px 4px;"><div style="background:#f4f2ee;border-radius:10px;padding:10px 14px;font-size:13px;color:#5a5650;">Code de suivi : <b style="font-family:monospace;font-size:15px;color:#1a1f36;letter-spacing:1px;">${e(c.code)}</b></div></td></tr>`:''}
+${url?`<tr><td style="padding:16px 24px 6px;"><a href="${url}" style="display:inline-block;background:${K.couleur};color:#ffffff;text-decoration:none;font-weight:700;font-size:14px;padding:12px 22px;border-radius:10px;">${K.bouton} →</a></td></tr>`:''}
+<tr><td style="padding:18px 24px 22px;font-size:11px;color:#9e9a93;border-top:1px solid #f0eeea;">${K.pourquoi}<br>Gestion des commandes ${new Date().getFullYear()}</td></tr>
+</table></div>`;
+}
+function buildEmailSubject(kind, c){
+    const K = EMAIL_KINDS[kind];
+    const typeLabel = TYPE_LABEL[c.type] || c.type;
+    const quand = emailDateLong(c.date);
+    const qui = kind.startsWith('admin') ? ` — ${c.demandeur||''}` : '';
+    return `${K.emoji} ${K.sujet} · ${typeLabel} du ${quand}${qui}${c.code?` · ${c.code}`:''}`;
+}
 
+async function sendConfirmationEmail(commande, opts={}) {
+    // opts.isCopie → copie à l'assistante ; opts.to → email admin ; opts.kind force le type
+    const toOverride = opts.to || null;
+    const kind = opts.kind
+        || (opts.isAnnulation ? 'annule' : opts.isCopie ? 'copie' : toOverride ? 'admin' : 'valide');
     const email = toOverride || settings.emails?.[commande.demandeur];
+    const prenom = (commande.demandeur||'').split(" ")[0];
     if(!email) {
-        if(!toOverride) showToast(`${icon('alert',13)} Pas d'email pour `+commande.demandeur.split(" ")[0]);
+        if(!toOverride) showToast(`${icon('alert',13)} Pas d'email pour `+prenom);
         return;
     }
-
-    const typeLabel = {repas:"Repas",taxi:"Taxi",commande:"Commande"}[commande.type] || commande.type;
-    const typeEmoji = {repas:"🍽",taxi:"🚕",commande:"📦"}[commande.type] || "📋";
-    const prenom = commande.demandeur.split(" ")[0];
-
-    // Format date lisible depuis YYYY-MM-DD ou DD/MM/YYYY
-    function formatDateLong(d){
-        if(!d) return "—";
-        let p;
-        if(d.includes("-")) p=d.split("-"); // YYYY-MM-DD
-        else p=d.split("/").reverse();       // DD/MM/YYYY → [YYYY,MM,DD]
-        const months=["","janvier","février","mars","avril","mai","juin","juillet","août","septembre","octobre","novembre","décembre"];
-        return `${parseInt(p[2])} ${months[parseInt(p[1])]} ${p[0]}`;
-    }
-
-    const dateLong = formatDateLong(commande.date);
-
-    // Sujet avec nom, type et date
-    const isAdmin = !!toOverride && !isCopie && !isAnnulation;
-
-    let subject;
-    if(isAnnulation){
-        subject = `❌ Annulation — ${typeEmoji} ${typeLabel} du ${dateLong}`;
-    } else if(isCopie){
-        subject = `✅ Copie — ${commande.code||''} — ${typeEmoji} ${typeLabel} du ${dateLong}`;
-    } else if(isAdmin){
-        subject = `🔔 Nouvelle demande — ${commande.code||''} — ${typeEmoji} ${typeLabel} — ${commande.demandeur} — ${dateLong}`;
-    } else {
-        subject = `${typeEmoji} ${typeLabel} — ${commande.code||''} — ${commande.demandeur} — ${dateLong}`;
-    }
-
-    const template = EJS_TEMPLATE;
-
+    const K = EMAIL_KINDS[kind];
+    const typeLabel = TYPE_LABEL[commande.type] || commande.type;
     const params = {
         to_email:     email,
-        to_name:      isAdmin ? "Admin" : prenom,
+        to_name:      kind.startsWith('admin') ? "Admin" : prenom,
+        subject:      buildEmailSubject(kind, commande),
+        html_body:    buildEmailHtml(kind, commande),
+        // Anciens paramètres (si le modèle EmailJS n'a pas encore été mis à jour)
         code:         commande.code||'',
-        subject:      subject,
         desc:         commande.desc || "—",
-        date:         dateLong,
+        date:         emailDateLong(commande.date),
         heure:        commande.heure || "—",
         lieu:         commande.type==="taxi" ? `${commande.depart||"—"} → ${commande.arrivee||"—"}` : (commande.lieu||"—"),
         presta:       commande.presta || "—",
         pour_qui:     commande.pourQui || "—",
-        type:         `${typeEmoji} ${typeLabel}`,
+        type:         typeLabel,
         demandeur:    commande.demandeur,
         commentaire:  commande.comment || "—",
-        is_copie:     isCopie ? "Ceci est une copie de votre demande." : isAdmin ? "Notification administrateur — nouvelle demande reçue." : "",
-        message_bas:  isAnnulation
-            ? "Votre demande a été annulée. N'hésitez pas à nous contacter pour plus d'informations."
-            : isCopie
-            ? "Votre demande a bien été transmise et sera traitée prochainement."
-            : isAdmin
-            ? "Une nouvelle demande vient d'être soumise et est en attente de validation."
-            : "Votre demande a été validée ✅ Merci !",
+        is_copie:     `${K.pour} — ${K.titre}`,
+        message_bas:  K.pourquoi,
     };
-
     try {
-        await emailjs.send(EJS_SERVICE, template, params);
+        await emailjs.send(EJS_SERVICE, EJS_TEMPLATE, params);
         if(!toOverride) showToast(`${icon('mail',13)} Email envoyé à ${prenom}`);
     } catch(err) {
         console.error("EmailJS error:", err);
@@ -3468,7 +3508,7 @@ function attachEvents(){
         if(savedCmd.id!==newCmd.id){state.data=state.data.map(c=>c.id===newCmd.id?savedCmd:c);}
         logAction('Création', savedCmd, 'saisie admin');
         // Notifier les admins
-        (settings.adminEmails||[]).forEach(email=>{ if(email) sendConfirmationEmail(savedCmd.id!==newCmd.id?savedCmd:newCmd,{to:email}); });
+        (settings.adminEmails||[]).forEach(email=>{ if(email) sendConfirmationEmail(savedCmd.id!==newCmd.id?savedCmd:newCmd,{to:email,kind:'adminAjout'}); });
     };
 
     // Settings helpers
