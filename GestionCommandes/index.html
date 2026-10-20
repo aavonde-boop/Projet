@@ -338,7 +338,7 @@ const EMAIL_KINDS = {
     admin:      { pour:'ADMINISTRATEUR', titre:'Nouvelle demande à valider', couleur:'#b45309', fond:'#fff7ed', emoji:'🔔', sujet:'[Admin] À valider',
                   intro: c => `<b>${c.demandeur||'Une assistante'}</b> vient de faire une demande. Elle attend votre validation.`,
                   bouton:'Valider dans l’appli', pourquoi:'Vous recevez cet email car vous êtes administrateur de Gestion des commandes.' },
-    adminAjout: { pour:'ADMINISTRATEUR', titre:'Commande ajoutée par un admin', couleur:'#475569', fond:'#f1f5f9', emoji:'📝', sujet:'[Admin] Ajoutée',
+    adminAjout: { pour:'ADMINISTRATEUR', titre:'Commande ajoutée par un admin', couleur:'#6d28d9', fond:'#f5f3ff', emoji:'📝', sujet:'[Admin] Ajoutée',
                   intro: () => `Une commande a été saisie directement dans l’administration. Aucune action n’est nécessaire.`,
                   bouton:'Voir dans l’appli', pourquoi:'Vous recevez cet email car vous êtes administrateur de Gestion des commandes.' },
     copie:      { pour:'VOTRE DEMANDE', titre:'Demande bien reçue', couleur:'#1d4ed8', fond:'#eff6ff', emoji:'📨', sujet:'Demande reçue',
@@ -381,8 +381,8 @@ function buildEmailHtml(kind, c){
     const rows = emailRows(c).map(([k,v]) => `<tr><td style="padding:8px 0;color:#7a7570;font-size:13px;width:120px;vertical-align:top;">${e(k)}</td><td style="padding:8px 0;color:#1a1f36;font-size:14px;font-weight:600;">${e(v)}</td></tr>`).join('');
     return `<div style="background:#f4f2ee;padding:24px 12px;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;margin:0 auto;background:#ffffff;border-radius:16px;overflow:hidden;border:1px solid #e8e5df;">
-<tr><td style="background:${K.couleur};padding:10px 24px;color:#ffffff;font-size:11px;font-weight:700;letter-spacing:2px;">${K.pour}</td></tr>
-<tr><td style="background:${K.fond};padding:22px 24px 18px;">
+<tr><td bgcolor="${K.couleur}" style="background:${K.couleur};padding:10px 24px;color:#ffffff;font-size:11px;font-weight:700;letter-spacing:2px;">${K.pour}</td></tr>
+<tr><td bgcolor="${K.fond}" style="background:${K.fond};padding:22px 24px 18px;">
   <div style="font-size:30px;line-height:1;margin-bottom:10px;">${K.emoji}</div>
   <div style="font-size:22px;font-weight:700;color:${K.couleur};margin-bottom:6px;">${K.titre}</div>
   <div style="font-size:14px;color:#3f3b36;line-height:1.5;">${K.intro({...c,_prenom:e((c.demandeur||'').split(' ')[0])})}</div>
@@ -391,7 +391,7 @@ function buildEmailHtml(kind, c){
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">${rows}</table>
 </td></tr>
 ${c.code?`<tr><td style="padding:6px 24px 4px;"><div style="background:#f4f2ee;border-radius:10px;padding:10px 14px;font-size:13px;color:#5a5650;">Code de suivi : <b style="font-family:monospace;font-size:15px;color:#1a1f36;letter-spacing:1px;">${e(c.code)}</b></div></td></tr>`:''}
-${url?`<tr><td style="padding:16px 24px 6px;"><a href="${url}" style="display:inline-block;background:${K.couleur};color:#ffffff;text-decoration:none;font-weight:700;font-size:14px;padding:12px 22px;border-radius:10px;">${K.bouton} →</a></td></tr>`:''}
+${url?`<tr><td style="padding:16px 24px 6px;"><table role="presentation" cellpadding="0" cellspacing="0"><tr><td bgcolor="${K.couleur}" style="background:${K.couleur};border-radius:10px;padding:12px 22px;"><a href="${url}" style="color:#ffffff;text-decoration:none;font-weight:700;font-size:14px;display:inline-block;">${K.bouton} →</a></td></tr></table></td></tr>`:''}
 <tr><td style="padding:18px 24px 22px;font-size:11px;color:#9e9a93;border-top:1px solid #f0eeea;">${K.pourquoi}<br>Gestion des commandes ${new Date().getFullYear()}</td></tr>
 </table></div>`;
 }
