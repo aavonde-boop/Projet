@@ -68,6 +68,10 @@
         /* ─── FORM ─── */
         .form-group { margin-bottom:16px; }
         .form-label { display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--ink-soft);margin-bottom:6px; }
+        #formDesc,#formLieu,#formDe,#formVers,#formVol,#formCom,#formParticipants,#pourQuiAutreInput,
+        #afDesc,#afLieu,#afDe,#afVers,#afVol,#afCom,#afYooz,#afPqAutre,
+        #editDesc,#editLieu,#editDe,#editVers,#editComment,#editPqAutre,
+        [data-ac-input="desc"],[data-ac-input="yooz"],[data-ac-input="pourQui"] { text-transform:uppercase; }
         .form-input { width:100%;border:1.5px solid var(--border);border-radius:14px;padding:13px 14px;font-size:15px;background:var(--white);transition:border 0.2s;-webkit-appearance:none; }
         .form-input:focus{outline:none;border-color:var(--accent);}
         .form-select { width:100%;border:1.5px solid var(--border);border-radius:14px;padding:13px 36px 13px 14px;font-size:15px;background:var(--white);cursor:pointer;-webkit-appearance:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='7' viewBox='0 0 12 7'%3E%3Cpath fill='%239e9a93' d='M6 7L0 0h12z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center; }
@@ -625,7 +629,36 @@ async function dbImportAll() {
     console.log('Import initial terminé');
 }
 
+function rowsToUpper(){
+    const map={desc:1,lieu:1,comment:1,depart:1,arrivee:1,vol:1,yooz:1,pourQui:1};
+    return (state.data||[]).filter(c=>Object.keys(map).some(k=>typeof c[k]==='string'&&c[k]!==toUp(c[k])));
+}
+async function upperAllRows(){
+    const rows=rowsToUpper(); if(!rows.length) return;
+    if(!confirm(`Passer ${rows.length} ligne${rows.length>1?'s':''} en majuscules ? Les descriptions, lieux, commentaires et « pour qui » seront réécrits.`)) return;
+    let done=0;
+    for(const c of rows){
+        const f={}; ['desc','lieu','comment','depart','arrivee','vol','yooz','pourQui'].forEach(k=>{ if(typeof c[k]==='string'&&c[k]!==toUp(c[k])) f[k]=c[k]; });
+        await dbUpdate(c.id,f);
+        done++; if(done%20===0){ state.toast=`Conversion… ${done}/${rows.length}`; render(); }
+    }
+    logAction('Modification',[{id:null,desc:`${done} lignes passées en majuscules`}]);
+    showToast(`✓ ${done} lignes passées en majuscules`);
+}
+
+/* ── Saisie en MAJUSCULES : champs libres uniquement.
+   Les valeurs choisies dans les listes (demandeur, prestataire) restent telles
+   quelles pour ne pas casser les emails et les N° Yooz associés. ── */
+const UPPER_FIELDS = ['desc','descr','lieu','comment','depart','arrivee','vol','yooz','pourQui','pour_qui'];
+const toUp = v => typeof v === 'string' ? v.toLocaleUpperCase('fr-FR') : v;
+function upperize(obj) {
+    if (!obj) return obj;
+    UPPER_FIELDS.forEach(k => { if (typeof obj[k] === 'string') obj[k] = toUp(obj[k]); });
+    return obj;
+}
+
 async function dbInsert(item) {
+    upperize(item);
     try {
         const r = await fetch(SB_TABLE, {
             method: 'POST',
@@ -641,6 +674,15 @@ async function dbInsert(item) {
 }
 
 async function dbUpdate(id, fields) {
+    fields = upperize({ ...fields });
+    // garder l'affichage cohérent avec ce qui est enregistré
+    const appKeys = { descr: 'desc', pour_qui: 'pourQui' };
+    const patch = {};
+    Object.keys(fields).forEach(k => { if (UPPER_FIELDS.includes(k)) patch[appKeys[k] || k] = fields[k]; });
+    if (Object.keys(patch).length) {
+        state.data = state.data.map(c => String(c.id) === String(id) ? { ...c, ...patch } : c);
+        if (state.detail && String(state.detail.id) === String(id)) state.detail = { ...state.detail, ...patch };
+    }
     try {
         const row = {};
         if (fields.pris      !== undefined) row.pris      = fields.pris;
@@ -1397,7 +1439,7 @@ function renderDetail(d,m){
 
     const pqHtml = isCmd
         ? '<label class="form-label">Fournisseur</label><select id="editPresta2" class="form-select"><option value="">—</option>'+(d.presta&&!P_CMD.includes(d.presta)?'<option selected>'+d.presta+'</option>':'')+P_CMD.map(p=>'<option '+(d.presta===p?'selected':'')+'>'+p+'</option>').join('')+'</select>'
-        : '<label class="form-label">Pour qui</label><div style="position:relative;" id="editPqWrapper"><button type="button" id="editPqToggle" style="width:100%;border:1.5px solid var(--border);border-radius:14px;padding:12px 14px;font-size:14px;background:var(--white);text-align:left;cursor:pointer;display:flex;justify-content:space-between;align-items:center;font-family:DM Sans,sans-serif;color:var(--ink);"><span id="editPqLabel">'+(d.pourQui||'— Choisir —')+'</span><span style="font-size:11px;color:var(--ink-soft);">▼</span></button><div id="editPqDropdown" style="display:none;position:absolute;top:calc(100% + 4px);left:0;right:0;background:var(--white);border:1.5px solid var(--border);border-radius:14px;box-shadow:0 8px 24px rgba(0,0,0,0.10);z-index:999;overflow:hidden;max-height:220px;overflow-y:auto;">'+settings.directeurs.map(dir=>'<label style="display:flex;align-items:center;gap:12px;padding:11px 16px;cursor:pointer;border-bottom:1px solid var(--border-light);"><input type="checkbox" class="edit-pq-check" value="'+dir+'" '+((d.pourQui||'').includes(dir)?'checked':'')+' style="width:17px;height:17px;accent-color:var(--accent);cursor:pointer;flex-shrink:0;"><span style="font-size:14px;">'+dir+'</span></label>').join('')+'<div style="padding:10px 16px;border-top:1px solid var(--border-light);"><input id="editPqAutre" type="text" placeholder="Autre nom..." value="'+(settings.directeurs.some(d2=>(d.pourQui||'').includes(d2))?'':d.pourQui||'')+'" class="form-input" style="font-size:13px;padding:7px 10px;"></div></div></div>';
+        : '<label class="form-label">Pour qui</label><div style="position:relative;" id="editPqWrapper"><button type="button" id="editPqToggle" style="width:100%;border:1.5px solid var(--border);border-radius:14px;padding:12px 14px;font-size:14px;background:var(--white);text-align:left;cursor:pointer;display:flex;justify-content:space-between;align-items:center;font-family:DM Sans,sans-serif;color:var(--ink);"><span id="editPqLabel">'+(d.pourQui||'— Choisir —')+'</span><span style="font-size:11px;color:var(--ink-soft);">▼</span></button><div id="editPqDropdown" style="display:none;position:absolute;top:calc(100% + 4px);left:0;right:0;background:var(--white);border:1.5px solid var(--border);border-radius:14px;box-shadow:0 8px 24px rgba(0,0,0,0.10);z-index:999;overflow:hidden;max-height:220px;overflow-y:auto;">'+settings.directeurs.map(dir=>'<label style="display:flex;align-items:center;gap:12px;padding:11px 16px;cursor:pointer;border-bottom:1px solid var(--border-light);"><input type="checkbox" class="edit-pq-check" value="'+dir+'" '+((d.pourQui||'').toUpperCase().includes(dir.toUpperCase())?'checked':'')+' style="width:17px;height:17px;accent-color:var(--accent);cursor:pointer;flex-shrink:0;"><span style="font-size:14px;">'+dir+'</span></label>').join('')+'<div style="padding:10px 16px;border-top:1px solid var(--border-light);"><input id="editPqAutre" type="text" placeholder="Autre nom..." value="'+(settings.directeurs.some(d2=>(d.pourQui||'').toUpperCase().includes(d2.toUpperCase()))?'':d.pourQui||'')+'" class="form-input" style="font-size:13px;padding:7px 10px;"></div></div></div>';
 
     const editForm=`
     <div style="background:#fafaf8;border-radius:16px;padding:16px;margin-bottom:14px;">
@@ -1811,7 +1853,7 @@ function renderStats(m){
     const agg=(keyFn)=>{ const mp={}; valid.forEach(c=>{ const keys=keyFn(c); const part=(c.prix||0)/keys.length; keys.forEach(k=>{ if(!mp[k]) mp[k]={total:0,n:0}; mp[k].total+=part; mp[k].n++; }); }); return Object.entries(mp).sort((a,b)=>b[1].total-a[1].total||b[1].n-a[1].n); };
     const top=(arr,n=8)=>{ if(arr.length<=n) return arr; const rest=arr.slice(n).reduce((a,[,v])=>({total:a.total+v.total,n:a.n+v.n}),{total:0,n:0}); return [...arr.slice(0,n),[`Autres (${arr.length-n})`,rest]]; };
     const parPresta=top(agg(c=>[c.presta||'Non renseigné']));
-    const parDirecteur=top(agg(c=>{ const l=(c.pourQui||'').split(/\s*,\s*/).filter(Boolean); return l.length?l:['Non renseigné']; }));
+    const parDirecteur=top(agg(c=>{ const l=(c.pourQui||'').split(/\s*,\s*/).filter(Boolean).map(x=>x.toLocaleUpperCase('fr-FR')); return l.length?l:['Non renseigné']; }));
     const parDemandeur=top(agg(c=>[c.demandeur||'Non renseigné']));
     const parType=agg(c=>[TYPE_LABEL[c.type]||c.type||'Autre']);
 
@@ -2612,6 +2654,10 @@ function renderSettings(){
             <button data-admin-logout style="background:#fef2f2;border:1px solid #fecaca;color:#b91c1c;border-radius:20px;padding:6px 14px;font-size:12px;font-weight:600;cursor:pointer;">Se déconnecter</button>
         </div>
     </div>
+    ${(()=>{ const n=rowsToUpper().length; return `<div class="settings-section">
+        ${secHead("edit","Anciennes données en majuscules", n?`${n} ligne${n>1?'s':''} contiennent encore des minuscules (description, lieu, commentaire, pour qui…).`:'Toutes les données sont déjà en majuscules.')}
+        ${n?`<button id="upperAll" class="btn-primary" style="width:100%;padding:12px;">Tout passer en majuscules (${n})</button>`:''}
+    </div>`; })()}
     <div class="settings-section">
         ${secHead("trash","Corbeille",`${(state.deletedData||[]).length} élément${(state.deletedData||[]).length>1?'s':''} · effacés définitivement après ${TRASH_DAYS} jours`)}
         <button data-goto-trash style="width:100%;background:#fff;border:1.5px solid var(--border);border-radius:12px;padding:11px;font-size:14px;font-weight:600;color:var(--ink);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;">Ouvrir la corbeille ${icon('arrow',14)}</button>
@@ -3529,6 +3575,7 @@ function attachEvents(){
             render();
         });
     });
+    document.getElementById('upperAll')?.addEventListener('click',upperAllRows);
     document.getElementById('saveAdminName')?.addEventListener('click',()=>{
         const v=(document.getElementById('adminNameSetting')?.value||'').trim();
         if(v) lsSet('admin_nom',v); else { try{localStorage.removeItem('admin_nom');}catch(e){} }
