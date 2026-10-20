@@ -246,6 +246,7 @@ function loadSettingsLocal() {
         emails:               JSON.parse(localStorage.getItem('settings_emails')               ||JSON.stringify(DEFAULT_EMAILS)),
         adminEmails:          JSON.parse(localStorage.getItem('settings_admin_emails')          ||JSON.stringify([])),
         yoozMap:              JSON.parse(localStorage.getItem('settings_yooz_map')              ||JSON.stringify({})),
+        loginObligatoire:     JSON.parse(localStorage.getItem('settings_login_obligatoire')     ||'false'),
     };
 }
 
@@ -260,6 +261,7 @@ function saveSettingsLocal(s) {
     localStorage.setItem('settings_emails',               JSON.stringify(s.emails));
     localStorage.setItem('settings_admin_emails',         JSON.stringify(s.adminEmails||[]));
     localStorage.setItem('settings_yooz_map',              JSON.stringify(s.yoozMap||{}));
+    localStorage.setItem('settings_login_obligatoire',     JSON.stringify(!!s.loginObligatoire));
 }
 
 async function loadSettingsFromDB() {
@@ -283,6 +285,7 @@ async function loadSettingsFromDB() {
         if (map.prestatairesHotel)    settings.prestatairesHotel    = map.prestatairesHotel;
         if (map.emails)               settings.emails               = map.emails;
         if (map.adminEmails)          settings.adminEmails          = map.adminEmails;
+        if (map.loginObligatoire !== undefined && map.loginObligatoire !== null) settings.loginObligatoire = !!map.loginObligatoire;
         if (map.yoozMap)              { settings.yoozMap = map.yoozMap; Object.assign(YOOZ_MAP, map.yoozMap); state.yoozMap = map.yoozMap; }
         saveSettingsLocal(settings);
         refreshGlobals();
@@ -293,7 +296,7 @@ async function loadSettingsFromDB() {
 
 async function saveSettingsToDB(s) {
     saveSettingsLocal(s);
-    const keys = ['assistantes','directeurs','prestatairesRepas','typesRepas','prestatairesTaxi','prestatairesCommande','prestatairesHotel','emails','adminEmails','yoozMap'];
+    const keys = ['assistantes','directeurs','prestatairesRepas','typesRepas','prestatairesTaxi','prestatairesCommande','prestatairesHotel','emails','adminEmails','yoozMap','loginObligatoire'];
     for (const cle of keys) {
         try {
             await fetch(`${SB_PARAMS}?cle=eq.${cle}`, {
@@ -508,7 +511,6 @@ const TYPE_ICON={repas:icon('utensils',13),taxi:icon('car',13),commande:icon('bo
 const TYPE_LABEL={repas:"Repas",taxi:"Taxi",commande:"Commande",hotel:"Hôtel",autre:"Autre"};
 const AVC=["#0f172a","#1e3a5f","#3d1a6e","#6e1a1a","#1a4d2e","#1a4a6e","#4a1a6e","#6e4a1a"];
 const MONTHS=["","Jan","Fév","Mar","Avr","Mai","Jun","Jul","Aoû","Sep","Oct","Nov","Déc"];
-const ADMIN_CODE="AdminAAG";
 
 const $m  = v => v>0?v.toLocaleString("fr-FR",{minimumFractionDigits:2,maximumFractionDigits:2})+" €":"—";
 const $ms = v => v>=1000?(v/1000).toFixed(1)+"k€":Math.round(v)+"€";
@@ -728,28 +730,60 @@ async function paramSet(cle, valeur) {
 
 const esc = s => String(s ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
 
-/* ── Session admin persistante ── */
-const SESSION_KEY = 'admin_session';
+/* ── Comptes personnels (Supabase Auth, email + mot de passe) ──
+   Admin = email présent dans Réglages › Notifications › Emails admin.
+   Assistante = email renseigné pour elle dans Réglages › Équipe. */
 const SESSION_DAYS = 30;
+const AUTH_KEY = 'auth_session';
+let AUTH = null;
 function lsGet(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } }
 function lsSet(k,v){ try{ localStorage.setItem(k,v); }catch(e){} }
-function sessionValid(){
-    try{
-        const s = JSON.parse(localStorage.getItem(SESSION_KEY) || sessionStorage.getItem(SESSION_KEY) || 'null');
-        return !!(s && s.exp > Date.now());
-    }catch(e){ return false; }
+function authLoad(){ try{ AUTH = JSON.parse(lsGet(AUTH_KEY) || 'null'); }catch(e){ AUTH = null; } }
+function authSave(sess){ AUTH = sess; lsSet(AUTH_KEY, JSON.stringify(sess)); }
+function authClear(){ AUTH = null; try{ localStorage.removeItem(AUTH_KEY); localStorage.removeItem('last_vue'); localStorage.removeItem('admin_session'); }catch(e){} }
+function authErr(j){
+    const raw = (j && (j.error_description || j.msg || j.message || j.error_code || j.error)) || '';
+    const m = String(raw).toLowerCase();
+    if (m.includes('invalid login') || m.includes('invalid_credentials')) return 'Email ou mot de passe incorrect';
+    if (m.includes('already registered') || m.includes('already been registered') || m.includes('user_already_exists')) return 'Un compte existe déjà avec cet email : connectez-vous';
+    if (m.includes('password should') || m.includes('at least') || m.includes('weak_password')) return 'Mot de passe trop court (6 caractères minimum)';
+    if (m.includes('not confirmed')) return 'Compte non confirmé : la confirmation par email doit être désactivée dans Supabase';
+    if (m.includes('signup') && (m.includes('disabled') || m.includes('not allowed'))) return 'La création de compte est désactivée dans Supabase';
+    if (m.includes('rate limit') || m.includes('over_')) return 'Trop de tentatives : réessayez dans quelques minutes';
+    return raw || 'Connexion impossible';
 }
-function sessionStart(remember){
-    const s = JSON.stringify({ exp: Date.now() + (remember ? SESSION_DAYS*864e5 : 12*36e5) });
-    try{
-        if(remember){ localStorage.setItem(SESSION_KEY, s); sessionStorage.removeItem(SESSION_KEY); }
-        else { sessionStorage.setItem(SESSION_KEY, s); localStorage.removeItem(SESSION_KEY); }
-    }catch(e){}
+async function authCall(path, body, method='POST'){
+    const r = await fetch(`${SB_URL}/auth/v1/${path}`, { method, headers: { 'Content-Type':'application/json', apikey: SB_KEY, ...(path==='user' && AUTH ? { Authorization:`Bearer ${AUTH.access_token}` } : {}) }, body: body?JSON.stringify(body):undefined });
+    const j = await r.json().catch(()=>({}));
+    if (!r.ok) throw new Error(authErr(j));
+    return j;
 }
-function sessionEnd(){
-    try{ localStorage.removeItem(SESSION_KEY); sessionStorage.removeItem(SESSION_KEY); localStorage.removeItem('last_vue'); }catch(e){}
+const sessionFrom = j => ({ access_token:j.access_token, refresh_token:j.refresh_token, expires_at: Date.now()+(j.expires_in||3600)*1000, user:j.user });
+async function authLogin(email, pw){ authSave(sessionFrom(await authCall('token?grant_type=password', { email, password: pw }))); }
+async function authSignup(email, pw, nom){
+    const j = await authCall('signup', { email, password: pw, data: { nom } });
+    if (!j.access_token) throw new Error('Compte créé mais pas encore actif : la confirmation par email doit être désactivée dans Supabase');
+    authSave(sessionFrom(j));
 }
-const adminName = () => (lsGet('admin_nom') || 'Admin');
+async function authRefresh(){
+    if (!AUTH?.refresh_token) return false;
+    try{ authSave(sessionFrom(await authCall('token?grant_type=refresh_token', { refresh_token: AUTH.refresh_token }))); return true; }
+    catch(e){ if (/incorrect|invalid|not found|revoked/i.test(e.message)) authClear(); return false; }
+}
+async function authRecover(email){
+    const back = location.origin + location.pathname;
+    await authCall(`recover?redirect_to=${encodeURIComponent(back)}`, { email });
+}
+async function authUpdate(fields){ const u = await authCall('user', fields, 'PUT'); if (AUTH) authSave({ ...AUTH, user: u }); return u; }
+const userEmail = () => String(AUTH?.user?.email || '').trim().toLowerCase();
+function adminList(){ return (settings.adminEmails||[]).map(e=>String(e).trim().toLowerCase()).filter(Boolean); }
+function isAdmin(){ if (!AUTH) return false; const l = adminList(); return l.length ? l.includes(userEmail()) : true; }
+function assistanteName(){ const e = userEmail(); if (!e) return null; const hit = Object.entries(settings.emails||{}).find(([,m]) => String(m||'').trim().toLowerCase() === e); return hit ? hit[0] : null; }
+function emailAutorise(e){ e = String(e||'').trim().toLowerCase(); return adminList().includes(e) || Object.values(settings.emails||{}).some(m => String(m||'').trim().toLowerCase() === e) || !adminList().length; }
+function userName(){ return AUTH ? (AUTH.user?.user_metadata?.nom || assistanteName() || userEmail().split('@')[0]) : ''; }
+function sessionValid(){ return isAdmin(); }
+function sessionEnd(){ authClear(); }
+const adminName = () => (AUTH ? userName() : '') || 'Admin';
 
 /* ── Journal des modifications ── */
 const JOURNAL_MAX = 500;
@@ -757,7 +791,7 @@ let _journalChain = Promise.resolve();
 function logAction(action, items, detail) {
     const list = Array.isArray(items) ? items : [items];
     const t = new Date().toISOString();
-    const qui = state.vue === 'admin' ? adminName() : 'Demandeur';
+    const qui = AUTH ? userName() : (state.vue === 'admin' ? adminName() : 'Demandeur');
     const entries = list.filter(Boolean).map(c => ({
         t, qui, action,
         id: c.id, code: c.code || '', type: c.type || '', desc: c.desc || '',
@@ -1030,7 +1064,10 @@ function render(){
     lsSet('last_vue', state.vue==='admin'&&state.authed?'admin':'');
     if(!state.loading) updateBadge();
     if(state.vue==='admin'&&state.authed) lsSet('last_admin_tab', state.adminTab||'dashboard');
-    if(state.vue==="admin") html=state.authed?renderAdminView(m):renderAdminLogin();
+    state.authed = isAdmin();
+    if(state.authMode==='reset') html=renderLogin();
+    else if(state.vue==="admin") html=state.authed?renderAdminView(m):(AUTH?renderPasAdmin():renderLogin());
+    else if(state.loginScreen || (settings.loginObligatoire && !AUTH)) html=renderLogin();
     else if(state.trackMode) html=renderTrackCode(m);
     else html=renderHome(m);
     app.innerHTML=`<div class="desktop-app">${html}</div>`;
@@ -1110,6 +1147,33 @@ function installHintHtml(){
     </div>`;
 }
 
+const CLIENT_LBL={avalider:['En attente','hourglass','avalider'],acommander:['Validée','check','commandee'],commandee:['Commandée','check','commandee'],fait:['Faite','check','fait'],refusee:['Annulée','x','refusee']};
+function clientPill(st){ const [l,ic,k]=CLIENT_LBL[st]; const S=STAGES[k]; return `<span style="display:inline-flex;align-items:center;gap:4px;background:${S.bg};color:${S.color};border:1px solid ${S.border};border-radius:20px;padding:2px 9px;font-size:11px;font-weight:700;white-space:nowrap;">${icon(ic,11)} ${l}</span>`; }
+function mesDemandesHtml(m){
+    const moi=assistanteName()||userName();
+    const today=new Date(); today.setHours(0,0,0,0);
+    const toutes=state.data.filter(c=>String(c.demandeur||'').toLowerCase()===String(moi).toLowerCase());
+    const aVenir=toutes.filter(c=>{ const d=parseDate(c.date); return d&&d>=today; }).sort(byDateAsc);
+    const passees=toutes.filter(c=>{ const d=parseDate(c.date); return !d||d<today; }).sort((a,b)=>byDateAsc(b,a)).slice(0,state.mesPasseesAll?50:5);
+    const ligne=c=>{ const st=stageOf(c);
+        return `<div style="background:#fff;border:1px solid var(--border);border-left:3px solid ${STAGES[CLIENT_LBL[st][2]].color};border-radius:14px;padding:12px 14px;">
+            <div style="display:flex;align-items:center;gap:8px;"><span style="color:var(--ink-mid);">${typeIc(c.type,14)}</span>
+                <span style="font-weight:700;font-size:14px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(titreDe(c))}</span>${clientPill(st)}</div>
+            <div style="font-size:12px;color:#5a5650;margin-top:3px;">${dateCourte(c)}${c.heure?' · '+esc(c.heure):''}${c.lieu?' · '+esc(c.lieu):''}${c.type==='repas'?` · ${c.nb||1} pers.`:''}${c.code?` · <span style="font-family:monospace;color:#9e9a93;">${esc(c.code)}</span>`:''}</div>
+            <div style="margin-top:8px;">${trackSteps(c)}</div>
+            ${c.pris==='En attente'?`<button data-mes-annuler="${c.id}" style="background:#fff;border:1px solid #fecaca;color:#b91c1c;border-radius:10px;padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer;">${icon('x',12)} Annuler ma demande</button>`:''}
+        </div>`; };
+    return `<div style="margin-top:28px;">
+        <div style="display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:12px;">
+            <div style="font-family:'DM Serif Display',serif;font-size:${m?'20px':'24px'};">Mes demandes</div>
+            <div style="font-size:12px;color:#9e9a93;">${aVenir.length} à venir</div>
+        </div>
+        ${aVenir.length?`<div style="display:grid;grid-template-columns:${m?'1fr':'1fr 1fr'};gap:10px;">${aVenir.map(ligne).join('')}</div>`:`<div style="text-align:center;color:#b0aba2;font-size:13px;padding:18px;border:1.5px dashed var(--border);border-radius:14px;">Aucune demande à venir</div>`}
+        ${passees.length?`<div style="font-size:12px;font-weight:700;color:#9e9a93;text-transform:uppercase;letter-spacing:.05em;margin:18px 0 8px;">Passées</div>
+        <div style="display:flex;flex-direction:column;gap:6px;">${passees.map(c=>`<div style="display:flex;align-items:center;gap:8px;font-size:13px;color:#5a5650;padding:8px 12px;background:#faf9f7;border-radius:10px;"><span>${typeIc(c.type,13)}</span><span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(titreDe(c))}</span><span style="color:#9e9a93;">${dateCourte(c)}</span>${clientPill(stageOf(c))}</div>`).join('')}</div>
+        ${!state.mesPasseesAll&&toutes.length-aVenir.length>5?`<button data-nav='{"mesPasseesAll":true}' style="background:none;border:none;color:var(--accent);font-size:12px;font-weight:700;cursor:pointer;margin-top:8px;">Voir plus</button>`:''}`:''}
+    </div>`;
+}
 function renderHome(m){
     const total=state.data.filter(c=>c.pris==="OUI").reduce((a,b)=>a+(b.prix||0),0);
     const att=state.data.filter(c=>c.pris==="En attente").length;
@@ -1122,10 +1186,15 @@ function renderHome(m){
                     <div style="font-size:10px;font-weight:600;letter-spacing:2px;color:rgba(255,255,255,.35);margin-bottom:5px;">GESTION DES COMMANDES</div>
                     <div style="font-family:'DM Serif Display',serif;font-size:${m?'26px':'34px'};color:#fff;">2026</div>
                 </div>
-                <div style="display:flex;align-items:center;gap:12px;">
-                    <button data-action="admin" style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);border-radius:10px;padding:7px 13px;color:rgba(255,255,255,.65);cursor:pointer;font-size:13px;font-weight:600;display:flex;align-items:center;gap:5px;transition:background 0.2s;white-space:nowrap;" onmouseover="this.style.background='rgba(255,255,255,.18)'" onmouseout="this.style.background='rgba(255,255,255,.1)'">
-                        ${icon('shield',15)}${m?'':' Admin'}${att>0?` <span style="background:#f59e0b;color:#fff;border-radius:50%;width:16px;height:16px;font-size:10px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;">${att}</span>`:''}
-                    </button>
+                <div style="display:flex;align-items:center;gap:${m?'8px':'12px'};">
+                    ${AUTH?`<div style="display:flex;align-items:center;gap:8px;color:#fff;">
+                        <span style="width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;">${esc($ini(userName()))}</span>
+                        ${m?'':`<span style="font-size:13px;">${esc(userName())}</span>`}
+                        <button data-admin-logout title="Se déconnecter" style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);border-radius:10px;padding:7px 10px;color:rgba(255,255,255,.75);cursor:pointer;display:flex;align-items:center;">${icon('logout',15)}</button>
+                    </div>`:`<button data-login style="background:#fff;border:none;border-radius:10px;padding:7px 13px;color:var(--accent);cursor:pointer;font-size:13px;font-weight:700;display:flex;align-items:center;gap:6px;">${icon('user',15)}${m?'':' Se connecter'}</button>`}
+                    ${AUTH&&!isAdmin()?'':`<button data-action="admin" style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);border-radius:10px;padding:7px 13px;color:rgba(255,255,255,.65);cursor:pointer;font-size:13px;font-weight:600;display:flex;align-items:center;gap:5px;transition:background 0.2s;white-space:nowrap;" onmouseover="this.style.background='rgba(255,255,255,.18)'" onmouseout="this.style.background='rgba(255,255,255,.1)'">
+                        ${icon('shield',15)}${m?'':' Admin'}${att>0&&isAdmin()?` <span style="background:#f59e0b;color:#fff;border-radius:50%;width:16px;height:16px;font-size:10px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;">${att}</span>`:''}
+                    </button>`}
                 </div>
             </div>
         </div>
@@ -1134,6 +1203,7 @@ function renderHome(m){
         <div style="flex:1;padding:${m?'20px 16px calc(20px + env(safe-area-inset-bottom,0px))':'32px 40px'};max-width:${m?'100%':'1100px'};margin:0 auto;width:100%;">
             ${installHintHtml()}
             ${renderInlineForm(m)}
+            ${!state.form.type&&AUTH?mesDemandesHtml(m):''}
         </div>
     </div>
 
@@ -1206,10 +1276,11 @@ function renderInlineForm(m){
         <!-- Assistante -->
         <div class="form-group">
             <label class="form-label">Votre nom (assistante) *</label>
+            ${assistanteName()?`<div class="form-input" style="background:#f4f2ee;display:flex;align-items:center;gap:8px;">${icon('user',14)} <b>${esc(assistanteName())}</b> <span style="color:#9e9a93;font-size:12px;">(connectée)</span></div><input type="hidden" id="formDem" value="${esc(assistanteName())}">`:`
             <select id="formDem" class="form-select">
                 <option value="">— Choisir votre nom —</option>
                 ${settings.assistantes.map(d=>`<option ${f.dem===d?'selected':''}>${d}</option>`).join('')}
-            </select>
+            </select>`}
         </div>
 
         ${f.type==='commande'?'':isRepas?`
@@ -1334,20 +1405,46 @@ function renderInlineForm(m){
 /* ══════════════════════════════════════
    ADMIN LOGIN
 ══════════════════════════════════════ */
-function renderAdminLogin(){
+function renderLogin(){
+    const mode = state.authMode || 'login';
+    const pourAdmin = state.vue === 'admin';
+    const titre = {login: pourAdmin ? 'Accès administration' : 'Connexion', signup:'Créer mon compte', forgot:'Mot de passe oublié', reset:'Nouveau mot de passe'}[mode];
+    const sous = {login:'Connectez-vous avec votre email professionnel', signup:'Première connexion : choisissez votre mot de passe', forgot:'Recevez un lien pour choisir un nouveau mot de passe', reset:'Choisissez votre nouveau mot de passe'}[mode];
+    const err = state.authError ? `<div style="background:#fef2f2;color:#b91c1c;border-radius:10px;padding:9px 12px;font-size:13px;margin-bottom:12px;text-align:left;">${esc(state.authError)}</div>` : '';
+    const info = state.authInfo ? `<div style="background:#f0fdf4;color:#15803d;border-radius:10px;padding:9px 12px;font-size:13px;margin-bottom:12px;text-align:left;">${esc(state.authInfo)}</div>` : '';
+    const lien = (m, l) => `<button data-auth-mode="${m}" style="background:none;border:none;color:var(--accent);cursor:pointer;font-size:13px;font-weight:600;padding:4px;">${l}</button>`;
+    const champ = (id, type, ph, ac, val='') => `<input id="${id}" type="${type}" class="form-input" placeholder="${ph}" autocomplete="${ac}" value="${esc(val)}" style="margin-bottom:10px;">`;
+    let corps = '';
+    if (mode === 'login') corps = champ('authEmail','email','Email professionnel','username',lsGet('auth_last_email')||'') + champ('authPass','password','Mot de passe','current-password')
+        + `<button id="authSubmit" class="btn-primary" style="width:100%;padding:14px;">Se connecter</button>
+           <div style="display:flex;justify-content:space-between;gap:8px;margin-top:12px;flex-wrap:wrap;">${lien('signup','Première connexion ?')}${lien('forgot','Mot de passe oublié ?')}</div>`;
+    else if (mode === 'signup') corps = champ('authEmail','email','Email professionnel','username',lsGet('auth_last_email')||'') + champ('authNom','text','Prénom NOM','name') + champ('authPass','password','Mot de passe (6 caractères min.)','new-password') + champ('authPass2','password','Confirmez le mot de passe','new-password')
+        + `<button id="authSubmit" class="btn-primary" style="width:100%;padding:14px;">Créer mon compte</button>
+           <div style="font-size:11px;color:#9e9a93;margin-top:10px;text-align:left;">Seuls les emails enregistrés par l’administration peuvent créer un compte.</div>
+           <div style="margin-top:8px;">${lien('login','J’ai déjà un compte')}</div>`;
+    else if (mode === 'forgot') corps = champ('authEmail','email','Email professionnel','username',lsGet('auth_last_email')||'')
+        + `<button id="authSubmit" class="btn-primary" style="width:100%;padding:14px;">Recevoir le lien</button><div style="margin-top:8px;">${lien('login','Retour à la connexion')}</div>`;
+    else corps = champ('authPass','password','Nouveau mot de passe (6 caractères min.)','new-password') + champ('authPass2','password','Confirmez le mot de passe','new-password')
+        + `<button id="authSubmit" class="btn-primary" style="width:100%;padding:14px;">Enregistrer</button>`;
+    const sortie = (!settings.loginObligatoire || pourAdmin) && mode !== 'reset'
+        ? `<button data-auth-exit style="background:none;border:none;color:#9e9a93;cursor:pointer;margin-top:14px;font-size:14px;display:block;width:100%;padding:8px;">${pourAdmin?'← Retour':'Continuer sans compte →'}</button>` : '';
     return `<div class="login-wrap">
         <div class="login-card">
-            <div style="width:64px;height:64px;border-radius:20px;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;margin:0 auto 18px;">${icon('lock',28)}</div>
-            <div style="font-family:'DM Serif Display',serif;font-size:24px;margin-bottom:6px;">Accès Admin</div>
-            <div style="color:#9e9a93;margin-bottom:22px;font-size:14px;">Saisissez votre code d'accès</div>
-            <input type="password" id="adminCodeInput" class="form-input" style="font-size:22px;text-align:center;letter-spacing:8px;margin-bottom:10px;" placeholder="••••••••" autocomplete="current-password">
-            <input type="text" id="adminNameInput" class="form-input" style="text-align:center;margin-bottom:10px;" placeholder="Votre prénom (pour le journal)" value="${esc(lsGet('admin_nom')||'')}" autocomplete="given-name">
-            <label style="display:flex;align-items:center;justify-content:center;gap:8px;font-size:13px;color:#7a7570;margin-bottom:12px;cursor:pointer;"><input type="checkbox" id="adminRemember" checked style="width:16px;height:16px;accent-color:var(--accent);"> Rester connecté ${SESSION_DAYS} jours</label>
-            <div id="loginError" style="color:#ef4444;font-size:13px;margin-bottom:10px;display:none;">Code incorrect</div>
-            <button id="adminLoginBtn" class="btn-primary" style="width:100%;padding:14px;">Accéder →</button>
-            <button data-back-home style="background:none;border:none;color:#9e9a93;cursor:pointer;margin-top:14px;font-size:14px;display:block;width:100%;padding:8px;">← Retour</button>
+            <div style="width:64px;height:64px;border-radius:20px;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;margin:0 auto 18px;">${icon(mode==='login'?'lock':mode==='signup'?'user':'mail',28)}</div>
+            <div style="font-family:'DM Serif Display',serif;font-size:24px;margin-bottom:6px;">${titre}</div>
+            <div style="color:#9e9a93;margin-bottom:20px;font-size:14px;">${sous}</div>
+            ${err}${info}${corps}${sortie}
         </div>
     </div>`;
+}
+function renderPasAdmin(){
+    return `<div class="login-wrap"><div class="login-card">
+        <div style="width:64px;height:64px;border-radius:20px;background:#fef3c7;color:#b45309;display:flex;align-items:center;justify-content:center;margin:0 auto 18px;">${icon('shield',28)}</div>
+        <div style="font-family:'DM Serif Display',serif;font-size:22px;margin-bottom:6px;">Accès réservé</div>
+        <div style="color:#7a7570;margin-bottom:20px;font-size:14px;">Vous êtes connecté·e en tant que <b>${esc(userName())}</b>. L’administration est réservée aux adresses déclarées comme admin.</div>
+        <button data-back-home class="btn-primary" style="width:100%;padding:13px;">Retour au formulaire</button>
+        <button data-admin-logout style="background:none;border:none;color:#9e9a93;cursor:pointer;margin-top:12px;font-size:13px;width:100%;">Changer de compte</button>
+    </div></div>`;
 }
 
 /* ══════════════════════════════════════
@@ -2823,7 +2920,7 @@ function renderSettings(){
         ['equipe','user','Équipe',`${settings.assistantes.length} assistantes · ${(settings.directeurs||[]).length} directeurs`],
         ['prestataires','box','Prestataires',`${['prestatairesRepas','prestatairesTaxi','prestatairesCommande','prestatairesHotel'].reduce((n,k)=>n+(settings[k]||[]).length,0)} entrées · N° Yooz`],
         ['notifications','bell','Notifications',`${(settings.adminEmails||[]).filter(Boolean).length} email${(settings.adminEmails||[]).filter(Boolean).length>1?'s':''} · appareil ${('Notification' in window)&&Notification.permission==='granted'?'activé':'inactif'}`],
-        ['compte','shield','Compte & outils','Prénom, session, installation, corbeille'],
+        ['compte','shield','Compte & outils','Mon compte, connexion, corbeille'],
     ];
     const cur=TABS.find(t=>t[0]===tab)||TABS[0];
     let body='';
@@ -2902,15 +2999,27 @@ function renderSettings(){
     </div>`+body;
     if(cur[0]==='compte') body=`
     <div class="settings-section">
-        ${secHead("user","Mon prénom","Affiché dans le journal des modifications.")}
-        <div style="display:flex;gap:8px;">
-            <input id="adminNameSetting" class="form-input" value="${esc(lsGet('admin_nom')||'')}" placeholder="Votre prénom" style="flex:1;">
-            <button id="saveAdminName" class="btn-primary" style="padding:0 18px;">Enregistrer</button>
+        ${secHead("user","Mon compte",esc(userEmail()))}
+        <div style="display:grid;grid-template-columns:1fr auto;gap:8px;margin-bottom:10px;">
+            <input id="acctNom" class="form-input" value="${esc(userName())}" placeholder="Prénom NOM">
+            <button id="acctSaveNom" class="btn-primary" style="padding:0 16px;">Enregistrer</button>
         </div>
-        <div style="font-size:12px;color:#9e9a93;margin-top:12px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
-            <span>${(()=>{ try{ const s=JSON.parse(localStorage.getItem(SESSION_KEY)||sessionStorage.getItem(SESSION_KEY)||'null'); return s?`Session active jusqu’au ${new Date(s.exp).toLocaleDateString('fr-FR')} sur cet appareil`:''; }catch(e){ return ''; } })()}</span>
+        <div style="font-size:11px;color:#9e9a93;margin:-4px 0 12px;">Nom affiché dans le journal et sur l’accueil.</div>
+        <div style="display:grid;grid-template-columns:1fr auto;gap:8px;">
+            <input id="acctPass" type="password" class="form-input" placeholder="Nouveau mot de passe (6 caractères min.)" autocomplete="new-password">
+            <button id="acctSavePass" style="background:#fff;border:1.5px solid var(--border);border-radius:12px;padding:0 14px;font-size:13px;font-weight:600;cursor:pointer;">Changer</button>
+        </div>
+        <div style="display:flex;justify-content:flex-end;margin-top:12px;">
             <button data-admin-logout style="background:#fef2f2;border:1px solid #fecaca;color:#b91c1c;border-radius:20px;padding:6px 14px;font-size:12px;font-weight:600;cursor:pointer;">Se déconnecter</button>
         </div>
+    </div>
+    <div class="settings-section">
+        ${secHead("lock","Connexion obligatoire",settings.loginObligatoire?'Activée : chacun doit se connecter pour faire une demande.':'Désactivée : les assistantes peuvent encore faire une demande sans compte.')}
+        <label style="display:flex;align-items:center;justify-content:space-between;gap:12px;cursor:pointer;">
+            <span style="font-size:13px;color:#5a5650;">Exiger un compte pour faire une demande</span>
+            <input type="checkbox" id="loginObligatoire" ${settings.loginObligatoire?'checked':''} style="width:20px;height:20px;accent-color:var(--accent);">
+        </label>
+        <div style="font-size:11px;color:#9e9a93;margin-top:8px;">À activer une fois que chaque assistante a créé son compte (« Première connexion ? » sur l’écran de connexion, avec l’email renseigné dans Réglages › Équipe).</div>
     </div>
     ${isStandalone()?'':`<div class="settings-section">
         ${secHead("download","Installer l’appli sur cet appareil","Elle s’ouvre alors dans sa propre fenêtre, comme un logiciel.")}
@@ -3204,8 +3313,8 @@ function attachEvents(){
     }
 
         document.querySelectorAll('[data-back-detail]').forEach(el=>el.onclick=()=>setState({detail:null}));
-    document.querySelectorAll('[data-admin-logout]').forEach(el=>el.onclick=()=>{sessionEnd();updateBadge();setState({vue:"select",authed:false,adminTab:"dashboard",fabOpen:false,sel:[]});});
-    document.querySelectorAll('[data-action="admin"]').forEach(el=>el.onclick=()=>setState({vue:"admin",authed:sessionValid()}));
+    document.querySelectorAll('[data-admin-logout]').forEach(el=>el.onclick=()=>{sessionEnd();updateBadge();state.form.dem='';setState({vue:"select",authed:false,authMode:'login',loginScreen:false,adminTab:"dashboard",fabOpen:false,sel:[]});});
+    document.querySelectorAll('[data-action="admin"]').forEach(el=>el.onclick=()=>setState({vue:"admin",authed:isAdmin(),authMode:'login',authError:'',authInfo:''}));
     document.querySelectorAll('[data-admin-tab]').forEach(el=>el.onclick=(ev)=>{ ev.stopPropagation(); setState({vue:"admin",adminTab:el.getAttribute('data-admin-tab'),search:"",filtre:"all",detail:null,fabOpen:false,sel:[],moreOpen:false}); window.scrollTo(0,0); });
 
     // Sélection multiple (sans re-rendu complet, pour garder le défilement)
@@ -3508,19 +3617,58 @@ function attachEvents(){
         try{ await _installPrompt.userChoice; }catch(e){}
         _installPrompt=null; render();
     });
-    const lb=document.getElementById('adminLoginBtn');
-    if(lb)lb.onclick=()=>{
-        const code=document.getElementById('adminCodeInput')?.value;
-        if(code===ADMIN_CODE){
-            const nom=(document.getElementById('adminNameInput')?.value||'').trim();
-            if(nom) lsSet('admin_nom',nom);
-            sessionStart(!!document.getElementById('adminRemember')?.checked);
-            setState({authed:true,adminTab:"dashboard"});
-            loadTrash().then(render); loadJournal(); setTimeout(()=>document.dispatchEvent(new Event('visibilitychange')),0);
-        }else{const err=document.getElementById('loginError');if(err){err.style.display='block';setTimeout(()=>{err.style.display='none';},1800);}}
-    };
-    const ci=document.getElementById('adminCodeInput');
-    if(ci)ci.onkeydown=e=>{if(e.key==='Enter')lb?.click();};
+    document.querySelectorAll('[data-mes-annuler]').forEach(el=>el.onclick=async()=>{
+        const c=state.data.find(x=>String(x.id)===el.getAttribute('data-mes-annuler')); if(!c) return;
+        if(!confirm(`Annuler votre demande « ${titreDe(c)} » du ${dateCourte(c)} ?`)) return;
+        state.data=state.data.map(x=>x.id===c.id?{...x,pris:'Annulé'}:x);
+        logAction('Statut',{...c,pris:'Annulé'},`${ST[c.pris]?.label||c.pris} → Annulé (par la demandeuse)`);
+        showToast('✓ Demande annulée'); render();
+        await dbUpdate(c.id,{pris:'Annulé'});
+    });
+    // Comptes : connexion, création, mot de passe oublié, nouveau mot de passe
+    document.querySelectorAll('[data-auth-mode]').forEach(el=>el.onclick=()=>setState({authMode:el.getAttribute('data-auth-mode'),authError:'',authInfo:''}));
+    document.querySelectorAll('[data-auth-exit]').forEach(el=>el.onclick=()=>setState({vue:'select',loginScreen:false,authMode:'login',authError:'',authInfo:''}));
+    document.querySelectorAll('[data-login]').forEach(el=>el.onclick=()=>setState({loginScreen:true,authMode:'login',authError:'',authInfo:''}));
+    const authBtn=document.getElementById('authSubmit');
+    if(authBtn){
+        const go=async()=>{
+            const mode=state.authMode||'login';
+            const email=(document.getElementById('authEmail')?.value||'').trim().toLowerCase();
+            const pw=document.getElementById('authPass')?.value||'', pw2=document.getElementById('authPass2')?.value;
+            const nom=(document.getElementById('authNom')?.value||'').trim();
+            const fail=msg=>setState({authError:msg,authInfo:''});
+            if(email) lsSet('auth_last_email',email);
+            authBtn.disabled=true; authBtn.textContent='Un instant…';
+            try{
+                if(mode==='login'){
+                    if(!email||!pw) return fail('Saisissez votre email et votre mot de passe');
+                    await authLogin(email,pw);
+                }else if(mode==='signup'){
+                    if(!email||!pw) return fail('Email et mot de passe obligatoires');
+                    if(pw.length<6) return fail('Mot de passe trop court (6 caractères minimum)');
+                    if(pw!==pw2) return fail('Les deux mots de passe ne correspondent pas');
+                    if(!emailAutorise(email)) return fail('Cet email n’est pas enregistré : demandez à l’administration de l’ajouter dans Réglages › Équipe (ou Emails admin).');
+                    const auto=Object.entries(settings.emails||{}).find(([,m])=>String(m||'').trim().toLowerCase()===email);
+                    await authSignup(email,pw,nom||(auto?auto[0]:''));
+                }else if(mode==='forgot'){
+                    if(!email) return fail('Saisissez votre email');
+                    await authRecover(email);
+                    return setState({authInfo:'Si un compte existe pour cet email, un lien vient de vous être envoyé. Pensez à regarder les courriers indésirables.',authError:''});
+                }else{
+                    if(pw.length<6) return fail('Mot de passe trop court (6 caractères minimum)');
+                    if(pw!==pw2) return fail('Les deux mots de passe ne correspondent pas');
+                    await authUpdate({password:pw});
+                }
+                const admin=isAdmin();
+                setState({authMode:'login',authError:'',authInfo:'',loginScreen:false,authed:admin,vue:state.vue==='admin'&&admin?'admin':state.vue==='admin'?'admin':'select',adminTab:'dashboard'});
+                showToast(`✓ Bonjour ${userName().split(' ')[0]}`);
+                if(admin){ loadTrash().then(render); loadJournal(); loadSuivi(); setTimeout(()=>document.dispatchEvent(new Event('visibilitychange')),0); }
+            }catch(e){ fail(e.message); }
+            finally{ const b=document.getElementById('authSubmit'); if(b){ b.disabled=false; } }
+        };
+        authBtn.onclick=go;
+        document.querySelectorAll('.login-card input').forEach(i=>i.onkeydown=e=>{ if(e.key==='Enter') go(); });
+    }
 
     // Form – type
     document.querySelectorAll('[data-set-type]').forEach(el=>el.onclick=()=>{state.form.type=el.getAttribute('data-set-type');state.form.step=2;render();});
@@ -3761,10 +3909,18 @@ function attachEvents(){
         activateAll();
     });
     document.querySelectorAll('[data-notif-banner-off]').forEach(el=>el.onclick=()=>{ lsSet('notif_banner_off','1'); state.notifHelp=false; render(); });
-    document.getElementById('saveAdminName')?.addEventListener('click',()=>{
-        const v=(document.getElementById('adminNameSetting')?.value||'').trim();
-        if(v) lsSet('admin_nom',v); else { try{localStorage.removeItem('admin_nom');}catch(e){} }
-        showToast('✓ Prénom enregistré');
+    document.getElementById('acctSaveNom')?.addEventListener('click',async()=>{
+        const nom=(document.getElementById('acctNom')?.value||'').trim(); if(!nom) return;
+        try{ await authUpdate({data:{nom}}); showToast('✓ Nom enregistré'); render(); }catch(e){ showToast(`${icon('alert',13)} ${e.message}`); }
+    });
+    document.getElementById('acctSavePass')?.addEventListener('click',async()=>{
+        const pw=document.getElementById('acctPass')?.value||'';
+        if(pw.length<6){ showToast('6 caractères minimum'); return; }
+        try{ await authUpdate({password:pw}); showToast('✓ Mot de passe changé'); render(); }catch(e){ showToast(`${icon('alert',13)} ${e.message}`); }
+    });
+    document.getElementById('loginObligatoire')?.addEventListener('change',e=>{
+        settings.loginObligatoire=!!e.target.checked; saveSettings(settings);
+        showToast(settings.loginObligatoire?'✓ Connexion obligatoire activée':'Connexion obligatoire désactivée'); render();
     });
     document.querySelectorAll('[data-goto-trash]').forEach(el=>el.onclick=()=>setState({adminTab:'activite',activiteTab:'corbeille',sel:[]}));
     document.getElementById('saveAdminEmails')?.addEventListener('click',()=>{
@@ -3870,6 +4026,23 @@ if ('serviceWorker' in navigator && location.protocol === 'https:') {
 
 // ── INIT : chargement depuis Supabase ──
 (async () => {
+    authLoad();
+    // Lien « mot de passe oublié » : Supabase revient sur l'appli avec #access_token=…&type=recovery
+    try{
+        const h=new URLSearchParams(location.hash.replace(/^#/,''));
+        if(h.get('access_token') && (h.get('type')==='recovery' || h.get('type')==='invite' || h.get('type')==='signup')){
+            const tok=h.get('access_token');
+            const u=await (await fetch(`${SB_URL}/auth/v1/user`,{headers:{apikey:SB_KEY,Authorization:`Bearer ${tok}`}})).json();
+            authSave({access_token:tok, refresh_token:h.get('refresh_token'), expires_at:Date.now()+(+h.get('expires_in')||3600)*1000, user:u});
+            if(h.get('type')==='recovery'||h.get('type')==='invite') state.authMode='reset';
+            history.replaceState(null,'',location.pathname+location.search);
+        } else if(h.get('error_description')){
+            state.authError=decodeURIComponent(h.get('error_description')).replace(/\+/g,' ');
+            state.loginScreen=true; history.replaceState(null,'',location.pathname+location.search);
+        }
+    }catch(e){ console.error('Lien de connexion:',e); }
+    if(AUTH && AUTH.expires_at < Date.now()+60000) await authRefresh();
+    setInterval(()=>{ if(AUTH && AUTH.expires_at < Date.now()+5*60000) authRefresh(); }, 10*60000);
     render(); // affiche l'écran de chargement
     // Charger réglages ET commandes en parallèle
     const [data] = await Promise.all([
