@@ -801,6 +801,36 @@ async function loadJournal() {
     try { state.journal = (await paramGet('journal')) || []; } catch (e) { console.error('Journal load:', e); }
 }
 
+/* ── Pastille (chiffre sur l'icône) + compteur dans l'onglet ──
+   Admin connecté sur cet appareil : nombre de demandes en attente.
+   navigator.setAppBadge : Windows/Mac (Chrome, Edge) et iPhone 16.4+ (appli installée). */
+const BASE_TITLE = document.title;
+function pendingCount(){ return (state.data||[]).filter(c=>c.pris==='En attente'||c.pris==='En cours').length; }
+function updateBadge(){
+    const n = sessionValid() ? pendingCount() : 0;
+    document.title = n ? `(${n}) ${BASE_TITLE}` : BASE_TITLE;
+    try {
+        if ('setAppBadge' in navigator) { n ? navigator.setAppBadge(n).catch(()=>{}) : navigator.clearAppBadge().catch(()=>{}); }
+    } catch(e) {}
+}
+async function systemNotify(title, body){
+    if (!('Notification' in window) || Notification.permission !== 'granted') return false;
+    const opts = { body, icon: 'icon-192.png', badge: 'icon-192.png', tag: 'nouvelle-demande', renotify: true };
+    try {
+        const reg = await navigator.serviceWorker?.getRegistration?.();
+        if (reg) { await reg.showNotification(title, opts); return true; }
+    } catch(e) {}
+    try { new Notification(title, opts); return true; } catch(e) { return false; }
+}
+async function enableDeviceNotifs(){
+    if (!('Notification' in window)) { showToast(`${icon('alert',13)} Notifications non disponibles ici`); return; }
+    if (isIOS() && !isStandalone()) { showToast('Sur iPhone : installez d’abord l’appli sur l’écran d’accueil'); return; }
+    const r = await Notification.requestPermission();
+    if (r === 'granted') { await systemNotify('Notifications activées', 'Vous serez prévenu ici des nouvelles demandes.'); updateBadge(); showToast('✓ Notifications activées sur cet appareil'); }
+    else showToast(`${icon('alert',13)} Refusé : à réactiver dans les réglages du navigateur`);
+    render();
+}
+
 /* ── Notifications téléphone (appli gratuite ntfy, iPhone et Android) ── */
 async function sendPhoneNotif(title, message, { tags = [], priority = 4 } = {}) {
     const topic = (settings.ntfyTopic || '').trim();
@@ -1025,6 +1055,7 @@ function render(){
     const m=isMobile();
     let html='';
     lsSet('last_vue', state.vue==='admin'&&state.authed?'admin':'');
+    if(!state.loading) updateBadge();
     if(state.vue==='admin'&&state.authed) lsSet('last_admin_tab', state.adminTab||'dashboard');
     if(state.vue==="admin") html=state.authed?renderAdminView(m):renderAdminLogin();
     else if(state.trackMode) html=renderTrackCode(m);
@@ -2631,12 +2662,13 @@ function renderSettings(){
         <button id="saveAdminEmails" class="btn-primary" style="width:100%;padding:12px;display:flex;align-items:center;justify-content:center;gap:7px;">${icon('save',14)} Sauvegarder</button>
     </div>
     <div class="settings-section">
-        ${secHead("bell","Notifications téléphone","Une alerte instantanée sur votre téléphone, même appli fermée.")}
+        ${secHead("bell","Notifications téléphone et PC (ntfy)","Une alerte instantanée, même appli fermée.")}
         
         <ol style="font-size:13px;color:#5a5650;line-height:1.6;margin:0 0 12px;padding-left:18px;">
             <li>Installez l’appli gratuite <b>ntfy</b> (App Store ou Google Play).</li>
             <li>Cliquez sur « Générer », puis « Sauvegarder ».</li>
             <li>Dans ntfy, appuyez sur <b>+</b> et abonnez-vous au nom ci-dessous.</li>
+            <li><b>Sur PC</b> : ${settings.ntfyTopic?`<a href="https://ntfy.sh/${esc(settings.ntfyTopic)}" target="_blank" rel="noopener" style="color:var(--accent);font-weight:600;">ouvrez ce lien</a>`:'ouvrez ntfy.sh/<i>nom-du-canal</i>'}, cliquez sur la cloche et acceptez les notifications. Laissez l’onglet ouvert (ou installez la page ntfy comme appli).</li>
         </ol>
         <div style="display:flex;gap:8px;margin-bottom:10px;">
             <input id="ntfyTopicInput" class="form-input" value="${esc(settings.ntfyTopic||'')}" placeholder="Nom du canal" style="flex:1;padding:10px 12px;font-size:14px;font-family:monospace;">
@@ -2648,7 +2680,19 @@ function renderSettings(){
         </div>
         <div style="font-size:11px;color:#9e9a93;margin-top:10px;">Vous recevez une alerte à chaque nouvelle demande et à chaque annulation par un demandeur. Gardez ce nom pour vous : quiconque le connaît peut s’abonner.</div>
     </div>`;
-    else body=`
+    if(cur[0]==='notifications') body=`
+    <div class="settings-section">
+        ${secHead("bell","Cet appareil : notifications et pastille","Une alerte et un chiffre sur l’icône de l’appli (comme sur iPhone) avec le nombre de demandes en attente.")}
+        ${(()=>{ const perm=('Notification' in window)?Notification.permission:'na';
+            const etat=perm==='granted'?'<span style="color:#15803d;font-weight:600;">Activées sur cet appareil</span>':perm==='denied'?'<span style="color:#b91c1c;font-weight:600;">Bloquées : à réactiver dans les réglages du navigateur (cadenas à gauche de l’adresse)</span>':'<span style="color:#b45309;font-weight:600;">Pas encore activées</span>';
+            return `<div style="font-size:13px;margin-bottom:12px;">${etat}</div>${perm!=='granted'&&perm!=='na'?`<button id="enableNotifs" class="btn-primary" style="width:100%;padding:12px;margin-bottom:12px;">Activer sur cet appareil</button>`:''}`; })()}
+        <ul style="font-size:12px;color:#7a7570;line-height:1.6;margin:0;padding-left:18px;">
+            <li><b>PC</b> : installez l’appli (Compte & outils) pour avoir le chiffre sur l’icône de la barre des tâches.</li>
+            <li><b>iPhone</b> : l’appli doit être installée sur l’écran d’accueil, puis activée ici depuis l’appli installée.</li>
+            <li>Le chiffre se met à jour quand l’appli est ouverte ou réduite. Appli complètement fermée, c’est ntfy qui prévient.</li>
+        </ul>
+    </div>`+body;
+    if(cur[0]==='compte') body=`
     <div class="settings-section">
         ${secHead("user","Mon prénom","Affiché dans le journal des modifications.")}
         <div style="display:flex;gap:8px;">
@@ -2967,7 +3011,7 @@ function attachEvents(){
     }
 
         document.querySelectorAll('[data-back-detail]').forEach(el=>el.onclick=()=>setState({detail:null}));
-    document.querySelectorAll('[data-admin-logout]').forEach(el=>el.onclick=()=>{sessionEnd();setState({vue:"select",authed:false,adminTab:"dashboard",fabOpen:false,sel:[]});});
+    document.querySelectorAll('[data-admin-logout]').forEach(el=>el.onclick=()=>{sessionEnd();updateBadge();setState({vue:"select",authed:false,adminTab:"dashboard",fabOpen:false,sel:[]});});
     document.querySelectorAll('[data-action="admin"]').forEach(el=>el.onclick=()=>setState({vue:"admin",authed:sessionValid()}));
     document.querySelectorAll('[data-admin-tab]').forEach(el=>el.onclick=()=>setState({vue:"admin",adminTab:el.getAttribute('data-admin-tab'),search:"",filtre:"all",detail:null,fabOpen:false,sel:[]}));
 
@@ -3345,7 +3389,7 @@ function attachEvents(){
             if(nom) lsSet('admin_nom',nom);
             sessionStart(!!document.getElementById('adminRemember')?.checked);
             setState({authed:true,adminTab:"dashboard"});
-            loadTrash().then(render); loadJournal();
+            loadTrash().then(render); loadJournal(); setTimeout(()=>document.dispatchEvent(new Event('visibilitychange')),0);
         }else{const err=document.getElementById('loginError');if(err){err.style.display='block';setTimeout(()=>{err.style.display='none';},1800);}}
     };
     const ci=document.getElementById('adminCodeInput');
@@ -3586,6 +3630,7 @@ function attachEvents(){
         });
     });
     document.getElementById('upperAll')?.addEventListener('click',upperAllRows);
+    document.getElementById('enableNotifs')?.addEventListener('click',enableDeviceNotifs);
     document.getElementById('saveAdminName')?.addEventListener('click',()=>{
         const v=(document.getElementById('adminNameSetting')?.value||'').trim();
         if(v) lsSet('admin_nom',v); else { try{localStorage.removeItem('admin_nom');}catch(e){} }
@@ -3730,39 +3775,34 @@ if ('serviceWorker' in navigator && location.protocol === 'https:') {
     state.loading = false;
     render();
 
-    // Polling temps réel toutes les 30 secondes
-    setInterval(async()=>{
+    // Rafraîchissement : chaque minute sur un appareil admin, toutes les 5 min sinon
+    let _seenPending = new Set(state.data.filter(c=>c.pris==='En attente').map(c=>c.id));
+    async function poll(){
         try{
-            // Ne pas interrompre si l'utilisateur est en train de remplir un formulaire
             const activeEl = document.activeElement;
             const isTyping = activeEl && (activeEl.tagName==='INPUT'||activeEl.tagName==='TEXTAREA'||activeEl.tagName==='SELECT');
             const isInForm = state.form && state.form.step >= 1 && state.form.type && !state.form.sent;
-            if(isTyping || isInForm) return;
-
-            const prevAttente=state.data.filter(c=>c.pris==='En attente').length;
             const fresh=await dbLoad();
-            const newAttente=fresh.filter(c=>c.pris==='En attente').length;
+            const nouvelles=fresh.filter(c=>c.pris==='En attente'&&!_seenPending.has(c.id));
+            _seenPending=new Set(fresh.filter(c=>c.pris==='En attente').map(c=>c.id));
+            if(isTyping || isInForm){ updateBadgeFrom(fresh); return; }
             state.data=fresh;
             trackFirstSeen(fresh);
             if(state.vue==='admin' && state.authed){ await Promise.all([loadTrash(), loadJournal()]); }
             render();
-            if(state.vue==='admin' && state.authed && newAttente>prevAttente){
-                const diff=newAttente-prevAttente;
-                showToast(`${icon('bell',13)} ${diff} nouvelle${diff>1?'s':''} demande${diff>1?'s':''} !`);
-                if(Notification.permission==='granted'){
-                    new Notification('Nouvelle demande',{
-                        body:`${diff} nouvelle${diff>1?'s':''} demande${diff>1?'s':''} en attente`,
-                        icon:'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">🔔</text></svg>'
-                    });
-                }
+            if(sessionValid() && nouvelles.length){
+                const n=nouvelles.length, c=nouvelles[0];
+                if(state.vue==='admin') showToast(`${icon('bell',13)} ${n} nouvelle${n>1?'s':''} demande${n>1?'s':''} !`);
+                systemNotify(n>1?`${n} nouvelles demandes`:`Nouvelle demande · ${TYPE_LABEL[c.type]||''}`,
+                    n>1?'À valider dans Gestion des commandes':`${$d(c.date)}${c.heure?' '+c.heure:''} · ${c.type==='commande'?(c.presta||'Commande'):(c.desc||'')} · ${c.demandeur||''}`);
             }
         } catch(e){}
-    }, 300000);
-
-    // Demander permission notifications navigateur
-    if('Notification' in window && Notification.permission==='default'){
-        setTimeout(()=>Notification.requestPermission(),2000);
     }
+    function updateBadgeFrom(list){ const keep=state.data; state.data=list; updateBadge(); state.data=keep; }
+    let _pollTimer=null;
+    function schedulePoll(){ clearInterval(_pollTimer); _pollTimer=setInterval(poll, sessionValid()?60000:300000); }
+    schedulePoll();
+    document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible'){ poll(); schedulePoll(); } });
 })();
 </script>
 </body>
