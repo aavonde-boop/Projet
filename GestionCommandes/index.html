@@ -247,7 +247,6 @@ function loadSettingsLocal() {
         emails:               JSON.parse(localStorage.getItem('settings_emails')               ||JSON.stringify(DEFAULT_EMAILS)),
         adminEmails:          JSON.parse(localStorage.getItem('settings_admin_emails')          ||JSON.stringify([])),
         yoozMap:              JSON.parse(localStorage.getItem('settings_yooz_map')              ||JSON.stringify({})),
-        ntfyTopic:            JSON.parse(localStorage.getItem('settings_ntfy_topic')            ||'""'),
     };
 }
 
@@ -262,7 +261,6 @@ function saveSettingsLocal(s) {
     localStorage.setItem('settings_emails',               JSON.stringify(s.emails));
     localStorage.setItem('settings_admin_emails',         JSON.stringify(s.adminEmails||[]));
     localStorage.setItem('settings_yooz_map',              JSON.stringify(s.yoozMap||{}));
-    localStorage.setItem('settings_ntfy_topic',            JSON.stringify(s.ntfyTopic||''));
 }
 
 async function loadSettingsFromDB() {
@@ -286,7 +284,6 @@ async function loadSettingsFromDB() {
         if (map.prestatairesHotel)    settings.prestatairesHotel    = map.prestatairesHotel;
         if (map.emails)               settings.emails               = map.emails;
         if (map.adminEmails)          settings.adminEmails          = map.adminEmails;
-        if (map.ntfyTopic !== undefined && map.ntfyTopic !== null) settings.ntfyTopic = map.ntfyTopic;
         if (map.yoozMap)              { settings.yoozMap = map.yoozMap; Object.assign(YOOZ_MAP, map.yoozMap); state.yoozMap = map.yoozMap; }
         saveSettingsLocal(settings);
         refreshGlobals();
@@ -297,7 +294,7 @@ async function loadSettingsFromDB() {
 
 async function saveSettingsToDB(s) {
     saveSettingsLocal(s);
-    const keys = ['assistantes','directeurs','prestatairesRepas','typesRepas','prestatairesTaxi','prestatairesCommande','prestatairesHotel','emails','adminEmails','yoozMap','ntfyTopic'];
+    const keys = ['assistantes','directeurs','prestatairesRepas','typesRepas','prestatairesTaxi','prestatairesCommande','prestatairesHotel','emails','adminEmails','yoozMap'];
     for (const cle of keys) {
         try {
             await fetch(`${SB_PARAMS}?cle=eq.${cle}`, {
@@ -829,25 +826,6 @@ async function enableDeviceNotifs(){
     if (r === 'granted') { await systemNotify('Notifications activées', 'Vous serez prévenu ici des nouvelles demandes.'); updateBadge(); showToast('✓ Notifications activées sur cet appareil'); }
     else showToast(`${icon('alert',13)} Refusé : à réactiver dans les réglages du navigateur`);
     render();
-}
-
-/* ── Notifications téléphone (appli gratuite ntfy, iPhone et Android) ── */
-async function sendPhoneNotif(title, message, { tags = [], priority = 4 } = {}) {
-    const topic = (settings.ntfyTopic || '').trim();
-    if (!topic) return false;
-    try {
-        const r = await fetch('https://ntfy.sh/', {
-            method: 'POST',
-            body: JSON.stringify({ topic, title, message, tags, priority, click: location.href.split('#')[0] })
-        });
-        return r.ok;
-    } catch (e) { console.error('ntfy:', e); return false; }
-}
-function notifNouvelleDemande(c) {
-    const t = TYPE_LABEL[c.type] || 'Demande';
-    sendPhoneNotif(`Nouvelle demande · ${t}`,
-        [$d(c.date) + (c.heure ? ' ' + c.heure : ''), c.type === 'commande' ? (c.presta || 'Commande') : (c.desc || ''), c.demandeur ? 'par ' + c.demandeur : ''].filter(Boolean).join(' · '),
-        { tags: ['bell'] });
 }
 
 /* ── Corbeille persistante (purge auto après 30 jours) ── */
@@ -2596,7 +2574,7 @@ function renderSettings(){
     const TABS=[
         ['equipe','user','Équipe',`${settings.assistantes.length} assistantes · ${(settings.directeurs||[]).length} directeurs`],
         ['prestataires','box','Prestataires',`${['prestatairesRepas','prestatairesTaxi','prestatairesCommande','prestatairesHotel'].reduce((n,k)=>n+(settings[k]||[]).length,0)} entrées · N° Yooz`],
-        ['notifications','bell','Notifications',`${(settings.adminEmails||[]).filter(Boolean).length} email${(settings.adminEmails||[]).filter(Boolean).length>1?'s':''} · téléphone ${settings.ntfyTopic?'activé':'inactif'}`],
+        ['notifications','bell','Notifications',`${(settings.adminEmails||[]).filter(Boolean).length} email${(settings.adminEmails||[]).filter(Boolean).length>1?'s':''} · appareil ${('Notification' in window)&&Notification.permission==='granted'?'activé':'inactif'}`],
         ['compte','shield','Compte & outils','Prénom, session, maintenance'],
     ];
     const cur=TABS.find(t=>t[0]===tab)||TABS[0];
@@ -2661,25 +2639,7 @@ function renderSettings(){
         <button id="addAdminEmail" style="background:none;border:1.5px dashed var(--border);border-radius:12px;width:100%;padding:10px;font-size:14px;color:var(--ink-soft);cursor:pointer;margin-bottom:10px;">+ Ajouter un email admin</button>
         <button id="saveAdminEmails" class="btn-primary" style="width:100%;padding:12px;display:flex;align-items:center;justify-content:center;gap:7px;">${icon('save',14)} Sauvegarder</button>
     </div>
-    <div class="settings-section">
-        ${secHead("bell","Notifications téléphone et PC (ntfy)","Une alerte instantanée, même appli fermée.")}
-        
-        <ol style="font-size:13px;color:#5a5650;line-height:1.6;margin:0 0 12px;padding-left:18px;">
-            <li>Installez l’appli gratuite <b>ntfy</b> (App Store ou Google Play).</li>
-            <li>Cliquez sur « Générer », puis « Sauvegarder ».</li>
-            <li>Dans ntfy, appuyez sur <b>+</b> et abonnez-vous au nom ci-dessous.</li>
-            <li><b>Sur PC</b> : ${settings.ntfyTopic?`<a href="https://ntfy.sh/${esc(settings.ntfyTopic)}" target="_blank" rel="noopener" style="color:var(--accent);font-weight:600;">ouvrez ce lien</a>`:'ouvrez ntfy.sh/<i>nom-du-canal</i>'}, cliquez sur la cloche et acceptez les notifications. Laissez l’onglet ouvert (ou installez la page ntfy comme appli).</li>
-        </ol>
-        <div style="display:flex;gap:8px;margin-bottom:10px;">
-            <input id="ntfyTopicInput" class="form-input" value="${esc(settings.ntfyTopic||'')}" placeholder="Nom du canal" style="flex:1;padding:10px 12px;font-size:14px;font-family:monospace;">
-            <button id="ntfyGenerate" style="background:#f0eeea;border:none;border-radius:12px;padding:0 14px;font-size:13px;font-weight:600;color:#5a5650;cursor:pointer;">Générer</button>
-        </div>
-        <div style="display:flex;gap:8px;">
-            <button id="ntfySave" class="btn-primary" style="flex:1;padding:12px;display:flex;align-items:center;justify-content:center;gap:7px;">${icon('save',14)} Sauvegarder</button>
-            <button id="ntfyTest" style="flex:1;background:#fff;border:1.5px solid var(--border);border-radius:12px;padding:12px;font-size:14px;font-weight:600;color:var(--ink);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;">${icon('bell',14)} Tester</button>
-        </div>
-        <div style="font-size:11px;color:#9e9a93;margin-top:10px;">Vous recevez une alerte à chaque nouvelle demande et à chaque annulation par un demandeur. Gardez ce nom pour vous : quiconque le connaît peut s’abonner.</div>
-    </div>`;
+`;
     if(cur[0]==='notifications') body=`
     <div class="settings-section">
         ${secHead("bell","Cet appareil : notifications et pastille","Une alerte et un chiffre sur l’icône de l’appli (comme sur iPhone) avec le nombre de demandes en attente.")}
@@ -2689,7 +2649,7 @@ function renderSettings(){
         <ul style="font-size:12px;color:#7a7570;line-height:1.6;margin:0;padding-left:18px;">
             <li><b>PC</b> : installez l’appli (Compte & outils) pour avoir le chiffre sur l’icône de la barre des tâches.</li>
             <li><b>iPhone</b> : l’appli doit être installée sur l’écran d’accueil, puis activée ici depuis l’appli installée.</li>
-            <li>Le chiffre se met à jour quand l’appli est ouverte ou réduite. Appli complètement fermée, c’est ntfy qui prévient.</li>
+            <li>Le chiffre et les alertes se mettent à jour quand l’appli est ouverte ou réduite. Appli fermée, ce sont les emails admin qui préviennent.</li>
         </ul>
     </div>`+body;
     if(cur[0]==='compte') body=`
@@ -3237,7 +3197,6 @@ function attachEvents(){
         showToast('✓ Demande annulée');
         render();
         logAction('Statut', {...r,pris:'Annulé'}, `${ST[r.pris]?.label||r.pris} → Annulé (par le demandeur)`);
-        sendPhoneNotif(`Demande annulée par ${r.demandeur||'le demandeur'}`, [$d(r.date), r.desc||TYPE_LABEL[r.type]||''].filter(Boolean).join(' · '), {tags:['x'],priority:3});
         await dbUpdate(r.id,{pris:'Annulé'});
     });
 
@@ -3495,7 +3454,6 @@ function attachEvents(){
         console.log('newItem code:', newItem.code, 'appToRow:', JSON.stringify(appToRow(newItem)));
         const saved=await dbInsert(newItem);
         if(saved.id!==newItem.id){state.data=state.data.map(c=>c.id===newItem.id?saved:c);}
-        notifNouvelleDemande(saved);
         // Fallback localStorage si Supabase pas encore chargé
         const adminEmailsSafe = (settings.adminEmails||[]).filter(Boolean).length
             ? settings.adminEmails
@@ -3637,25 +3595,6 @@ function attachEvents(){
         showToast('✓ Prénom enregistré');
     });
     document.querySelectorAll('[data-goto-trash]').forEach(el=>el.onclick=()=>setState({adminTab:'activite',activiteTab:'corbeille',sel:[]}));
-    document.getElementById('ntfyGenerate')?.addEventListener('click',()=>{
-        const a=new Uint8Array(9); crypto.getRandomValues(a);
-        const inp=document.getElementById('ntfyTopicInput');
-        if(inp) inp.value='commandes-'+[...a].map(b=>b.toString(36).padStart(2,'0')).join('').slice(0,14);
-    });
-    document.getElementById('ntfySave')?.addEventListener('click',()=>{
-        const v=(document.getElementById('ntfyTopicInput')?.value||'').trim();
-        if(v && !/^[A-Za-z0-9_-]{6,64}$/.test(v)){ showToast(`${icon('alert',13)} Nom invalide (lettres, chiffres, - ou _)`); return; }
-        settings.ntfyTopic=v; saveSettings(settings);
-        showToast(v?'✓ Notifications téléphone activées':'Notifications téléphone désactivées');
-    });
-    document.getElementById('ntfyTest')?.addEventListener('click',async()=>{
-        const v=(document.getElementById('ntfyTopicInput')?.value||'').trim();
-        if(!v){ showToast('Saisissez ou générez un nom d’abord'); return; }
-        const prev=settings.ntfyTopic; settings.ntfyTopic=v;
-        const ok=await sendPhoneNotif('Test · Gestion des commandes','Les notifications fonctionnent 🎉',{tags:['white_check_mark'],priority:3});
-        settings.ntfyTopic=prev;
-        showToast(ok?'✓ Notification envoyée':`${icon('alert',13)} Échec de l’envoi`);
-    });
     document.getElementById('saveAdminEmails')?.addEventListener('click',()=>{
         const inputs=document.querySelectorAll('.admin-email-input');
         settings.adminEmails=[...inputs].map(i=>i.value.trim()).filter(Boolean);
