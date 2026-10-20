@@ -38,7 +38,16 @@
         @media(min-width:768px){ .modal-overlay{align-items:center;} }
         .modal-content { background:var(--surface); border-radius:24px 24px 0 0; width:100%; max-height:92vh; display:flex; flex-direction:column; box-shadow:0 -8px 40px rgba(0,0,0,0.15); animation:slideUp 0.35s cubic-bezier(0.32,0.72,0,1); }
         @keyframes slideUp { from{transform:translateY(60px);opacity:0} to{transform:translateY(0);opacity:1} }
-        @media(min-width:768px){ .modal-content{border-radius:24px;max-width:580px;max-height:88vh;animation:scaleIn 0.25s ease;} }
+        @media(min-width:768px){ .modal-content{border-radius:24px;max-width:min(580px,calc(100vw - 32px));max-height:88vh;max-height:calc(100dvh - 48px);animation:scaleIn 0.25s ease;} }
+        @supports(height:100dvh){ .modal-content{max-height:92dvh;} }
+        /* En-tête admin : sur fenêtre moyenne, menu sur sa propre ligne défilante et boutons en icônes */
+        @media(max-width:1199px){
+            .admin-nav{order:3;width:100%;flex-wrap:nowrap!important;overflow-x:auto;scrollbar-width:none;padding-bottom:2px;}
+            .admin-nav::-webkit-scrollbar{display:none;}
+            .hdr-lbl{display:none;}
+        }
+        img,svg{max-width:100%;}
+        textarea,input,select{min-width:0;}
         @keyframes scaleIn { from{transform:scale(0.95);opacity:0} to{transform:scale(1);opacity:1} }
         .modal-handle { width:40px;height:4px;background:var(--border);border-radius:4px;margin:12px auto 0;flex-shrink:0; }
         @media(min-width:768px){ .modal-handle{display:none;} }
@@ -153,7 +162,7 @@
         .fab-main.open{transform:rotate(45deg);}
 
         /* ─── SCROLL CONTENT ─── */
-        .scroll-content { overflow-y:auto;flex:1;padding:20px 24px; }
+        .scroll-content { overflow-y:auto;flex:1;min-height:0;padding:20px 24px;overscroll-behavior:contain; }
         @media(max-width:767px){ .scroll-content{padding:16px 20px;} }
 
         /* ─── LOGIN ─── */
@@ -731,8 +740,8 @@ async function paramSet(cle, valeur) {
 const esc = s => String(s ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
 
 /* ── Comptes personnels (Supabase Auth, email + mot de passe) ──
-   Admin = email présent dans Réglages › Notifications › Emails admin.
-   Assistante = email renseigné pour elle dans Réglages › Équipe. */
+   Admin = email présent dans Réglages › Équipe & accès › Administrateurs.
+   Assistante = email renseigné pour elle dans Réglages › Équipe & accès › Assistantes. */
 const SESSION_DAYS = 30;
 const AUTH_KEY = 'auth_session';
 let AUTH = null;
@@ -1455,7 +1464,7 @@ function renderAdminView(m){
     const attente=state.data.filter(c=>c.pris==="En attente"||c.pris==="En cours");
     if(state.detail) return renderDetail(state.detail,m);
 
-    const activiteSubTabs=[['tout','grid','Tout'],['reservations','utensils','Réservations'],['commandes','box','Commandes'],['hotels','bed','Hôtels'],['historique','clock','Historique'],['journal','edit','Journal'],['corbeille','trash','Corbeille']].map(([k,ic,label])=>{
+    const activiteSubTabs=[['tout','grid','Toutes'],['reservations','utensils','Repas & taxis'],['commandes','box','Fournitures'],['hotels','bed','Hôtels'],['historique','wallet','Dépenses & export'],['journal','edit','Journal'],['corbeille','trash','Corbeille']].map(([k,ic,label])=>{
         const active=(state.activiteTab||'tout')===k;
         return `<button data-activite-tab="${k}" style="display:flex;align-items:center;gap:6px;padding:6px 12px;border-radius:30px;border:none;cursor:pointer;font-size:13px;font-weight:500;white-space:nowrap;background:${active?'#fff':'rgba(255,255,255,.14)'};color:${active?'var(--accent)':'rgba(255,255,255,.9)'};transition:all 0.15s;">${icon(ic,15)} ${label}</button>`;
     }).join('');
@@ -1474,10 +1483,11 @@ function renderAdminView(m){
         <div style="display:flex;align-items:center;justify-content:space-between;">
             <div>
                 <div style="font-size:10px;font-weight:600;letter-spacing:2px;color:rgba(255,255,255,.35);margin-bottom:4px;">ADMIN</div>
-                <div style="font-family:'DM Serif Display',serif;font-size:19px;color:#fff;">${{dashboard:icon('dashboard',17)+" Dashboard",suivi:icon('clipboard',17)+" Suivi",calendrier:icon('calendar',17)+" Calendrier",activite:icon('grid',17)+" Tableaux",stats:icon('chart',17)+" Statistiques",settings:icon('sliders',17)+" Réglages"}[state.adminTab]}</div>
+                <div style="font-family:'DM Serif Display',serif;font-size:19px;color:#fff;">${{dashboard:icon('dashboard',17)+" Tableau de bord",suivi:icon('clipboard',17)+" Suivi des demandes",calendrier:icon('calendar',17)+" Agenda",activite:icon('grid',17)+" Registre",stats:icon('chart',17)+" Statistiques",settings:icon('sliders',17)+" Réglages"}[state.adminTab]}</div>
             </div>
             <div style="display:flex;gap:8px;">
                 <button data-activate-notifs aria-label="Notifications" style="background:${notifsReady()?'rgba(255,255,255,.1)':'#f59e0b'};border:none;border-radius:10px;padding:8px 11px;color:#fff;cursor:pointer;display:flex;align-items:center;">${icon('bell',16)}</button>
+                <button data-admin-tab="settings" aria-label="Réglages" style="background:${state.adminTab==='settings'?'#fff':'rgba(255,255,255,.1)'};border:none;border-radius:10px;padding:8px 11px;color:${state.adminTab==='settings'?'var(--accent)':'#fff'};cursor:pointer;display:flex;align-items:center;">${icon('sliders',16)}</button>
                 <button data-admin-logout style="background:rgba(255,255,255,.1);border:none;border-radius:10px;padding:8px 13px;color:rgba(255,255,255,.7);cursor:pointer;display:flex;align-items:center;">${icon('logout',16)}</button>
             </div>
         </div>
@@ -1504,16 +1514,18 @@ function renderAdminView(m){
                         <div style="font-family:'DM Serif Display',serif;font-size:17px;color:#fff;white-space:nowrap;">Gestion des commandes 2026</div>
                     </div>
                 </div>
-                <nav style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;">
-                    ${[["dashboard","dashboard","Dashboard"],["suivi","clipboard","Suivi"],["calendrier","calendar","Calendrier"],["activite","grid","Tableaux"],["stats","chart","Statistiques"],["settings","sliders","Réglages"]].map(([tab,ic,label])=>`
+                <nav class="admin-nav" style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;">
+                    ${[["dashboard","dashboard","Tableau de bord"],["suivi","clipboard","Suivi des demandes"],["calendrier","calendar","Agenda"],["activite","grid","Registre"],["stats","chart","Statistiques"]].map(([tab,ic,label])=>`
                         <button data-admin-tab="${tab}" style="display:flex;align-items:center;gap:6px;padding:6px 12px;border-radius:30px;border:none;cursor:pointer;font-size:13px;font-weight:500;white-space:nowrap;background:${state.adminTab===tab?'#fff':'transparent'};color:${state.adminTab===tab?'var(--accent)':'rgba(255,255,255,.9)'};transition:all 0.15s;">
                             ${icon(ic,15)} ${label}${tab==='suivi'&&aFaireCount()?` <span style="background:#f59e0b;color:#fff;border-radius:10px;min-width:16px;height:16px;padding:0 4px;font-size:10px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;margin-left:2px;">${aFaireCount()}</span>`:''}
                         </button>`).join('')}
                 </nav>
                 <div style="display:flex;gap:8px;align-items:center;">
                     <button data-activate-notifs title="${notifsReady()?'Notifications activées':'Activer les notifications et la pastille'}" style="position:relative;display:flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:50%;border:1px solid rgba(255,255,255,.35);background:${notifsReady()?'rgba(255,255,255,.15)':'#f59e0b'};color:#fff;cursor:pointer;">${icon('bell',16)}</button>
-                    <button data-back-home style="display:flex;align-items:center;gap:6px;padding:6px 12px;border-radius:30px;border:1px solid rgba(255,255,255,.35);cursor:pointer;font-size:13px;color:#fff;background:transparent;white-space:nowrap;">${icon('home',15)} Accueil</button>
-                    <button data-admin-logout style="display:flex;align-items:center;gap:6px;background:#fef2f2;border:1px solid #fecaca;border-radius:30px;padding:6px 12px;color:#b91c1c;cursor:pointer;font-size:13px;font-weight:600;white-space:nowrap;">${icon('logout',15)} Déco</button>
+                    <button data-admin-tab="settings" title="Réglages" style="display:flex;align-items:center;gap:6px;padding:6px 12px;border-radius:30px;border:1px solid ${state.adminTab==='settings'?'#fff':'rgba(255,255,255,.35)'};cursor:pointer;font-size:13px;font-weight:600;color:${state.adminTab==='settings'?'var(--accent)':'#fff'};background:${state.adminTab==='settings'?'#fff':'transparent'};white-space:nowrap;">${icon('sliders',15)}<span class="hdr-lbl"> Réglages</span></button>
+                    <span style="width:1px;height:22px;background:rgba(255,255,255,.25);"></span>
+                    <button data-back-home title="Formulaire de demande" style="display:flex;align-items:center;gap:6px;padding:6px 12px;border-radius:30px;border:1px solid rgba(255,255,255,.35);cursor:pointer;font-size:13px;color:#fff;background:transparent;white-space:nowrap;">${icon('home',15)}<span class="hdr-lbl"> Formulaire</span></button>
+                    <button data-admin-logout style="display:flex;align-items:center;gap:6px;background:#fef2f2;border:1px solid #fecaca;border-radius:30px;padding:6px 12px;color:#b91c1c;cursor:pointer;font-size:13px;font-weight:600;white-space:nowrap;">${icon('logout',15)}<span class="hdr-lbl"> Déconnexion</span></button>
                     <div style="position:relative;display:inline-block;">
                         <button id="fabAdminMain" style="width:34px;height:34px;border-radius:50%;background:#fff;color:var(--accent);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;">${icon('plus',18)}</button>
                         <div id="fabAdminMenu" style="display:none;position:absolute;top:42px;right:0;background:#fff;border:1.5px solid #e8e5df;border-radius:14px;box-shadow:0 8px 24px rgba(0,0,0,.12);padding:8px;z-index:9999;min-width:160px;flex-direction:column;gap:4px;">
@@ -1759,7 +1771,7 @@ function renderSuivi(m){
     const types=[['all','Tout'],['repas','Repas'],['taxi','Taxi'],['hotel','Hôtel'],['commande','Commande']];
     const head=`<div style="display:flex;justify-content:space-between;align-items:flex-end;gap:10px;flex-wrap:wrap;margin-bottom:14px;">
         <div>
-            <div style="font-family:'DM Serif Display',serif;font-size:${m?'18px':'22px'};display:flex;align-items:center;gap:9px;">${icon('clipboard',m?17:20)} Suivi</div>
+            <div style="font-family:'DM Serif Display',serif;font-size:${m?'18px':'22px'};display:flex;align-items:center;gap:9px;">${icon('clipboard',m?17:20)} Suivi des demandes</div>
             <div style="font-size:12px;color:#9e9a93;margin-top:3px;">Demande reçue → Réponse → Commande → Fait</div>
         </div>
         <div style="display:flex;gap:6px;flex-wrap:wrap;">${types.map(([k,l])=>`<button data-nav='{"suiviType":"${k}"}' style="padding:6px 12px;border:none;border-radius:16px;font-size:12px;font-weight:600;cursor:pointer;background:${(state.suiviType||'all')===k?'var(--accent)':'#f0eeea'};color:${(state.suiviType||'all')===k?'#fff':'#5a5650'};">${l}</button>`).join('')}</div>
@@ -1781,7 +1793,7 @@ function renderSuivi(m){
         ${list(cur)}</div>`;
     }
     return `<div>${head}
-    <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;align-items:start;">
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,250px),1fr));gap:14px;align-items:start;">
         ${STAGE_ORDER.map(k=>`<div style="background:#faf9f7;border:1px solid var(--border);border-radius:18px;padding:12px;min-height:200px;">${colHead(k)}${list(k)}</div>`).join('')}
     </div></div>`;
 }
@@ -1831,11 +1843,12 @@ function renderCalendrier(m){
         const chips=m
             ? `<div style="display:flex;gap:2px;justify-content:center;flex-wrap:wrap;margin-top:3px;">${l.slice(0,4).map(c=>`<span style="width:6px;height:6px;border-radius:50%;background:${STAGES[stageOf(c)].color};"></span>`).join('')}</div>`
             : l.slice(0,3).map(c=>{ const S=STAGES[stageOf(c)]; return `<div style="font-size:11px;background:${S.bg};color:${S.color};border-left:2px solid ${S.color};border-radius:4px;padding:1px 5px;margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:left;">${c.heure?`<b>${esc(c.heure)}</b> `:''}${esc(titreDe(c))}</div>`; }).join('')+(l.length>3?`<div style="font-size:10px;color:#9e9a93;margin-top:2px;text-align:left;">+${l.length-3} autre${l.length-3>1?'s':''}</div>`:'');
-        return `<button data-cal-day="${k}" style="display:block;width:100%;text-align:${m?'center':'left'};vertical-align:top;min-height:${m?'48px':'96px'};border:1px solid ${isS?'var(--accent)':'#efece7'};outline:${isS?'1px solid var(--accent)':'none'};background:${out?'#fbfaf8':we?'#fcfbf9':'#fff'};border-radius:10px;padding:${m?'5px 2px':'6px 7px'};cursor:pointer;color:${out?'#c9c4bb':'var(--ink)'};">
+        return `<button data-cal-day="${k}" style="display:block;width:100%;text-align:${m?'center':'left'};vertical-align:top;min-height:${m?'48px':window.innerWidth<1100?'76px':'96px'};border:1px solid ${isS?'var(--accent)':'#efece7'};outline:${isS?'1px solid var(--accent)':'none'};background:${out?'#fbfaf8':we?'#fcfbf9':'#fff'};border-radius:10px;padding:${m?'5px 2px':'6px 7px'};cursor:pointer;color:${out?'#c9c4bb':'var(--ink)'};">
             <span style="display:inline-flex;align-items:center;justify-content:center;min-width:22px;height:22px;border-radius:11px;font-size:12px;font-weight:700;background:${isT?'var(--accent)':'transparent'};color:${isT?'#fff':'inherit'};">${d.getDate()}</span>${chips}</button>`;
     };
     const legend=STAGE_ORDER.map(k=>`<span style="display:inline-flex;align-items:center;gap:5px;font-size:11px;color:#5a5650;"><span style="width:8px;height:8px;border-radius:50%;background:${STAGES[k].color};"></span>${STAGES[k].label}</span>`).join('');
-    const dayPanel=`<div style="background:#fff;border:1px solid var(--border);border-radius:18px;padding:14px;${m?'margin-top:14px;':'position:sticky;top:16px;'}">
+    const side=!m&&window.innerWidth>=1100;
+    const dayPanel=`<div style="background:#fff;border:1px solid var(--border);border-radius:18px;padding:14px;${side?'position:sticky;top:16px;':'margin-top:14px;'}">
         <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px;">
             <div><div style="font-family:'DM Serif Display',serif;font-size:18px;">${selD?dateLongue(selD):''}</div>
             <div style="font-size:12px;color:#9e9a93;">${selList.length?`${selList.length} prestation${selList.length>1?'s':''}`:'Rien de prévu'}</div></div>
@@ -1845,7 +1858,7 @@ function renderCalendrier(m){
     </div>`;
     return `<div>
     <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px;">
-        <div style="font-family:'DM Serif Display',serif;font-size:${m?'18px':'22px'};display:flex;align-items:center;gap:9px;">${icon('calendar',m?17:20)} Calendrier</div>
+        <div style="font-family:'DM Serif Display',serif;font-size:${m?'18px':'22px'};display:flex;align-items:center;gap:9px;">${icon('calendar',m?17:20)} Agenda</div>
         <div style="display:flex;align-items:center;gap:6px;">
             <button data-cal-nav="-1" style="width:32px;height:32px;border-radius:50%;border:1px solid var(--border);background:#fff;cursor:pointer;font-size:16px;">‹</button>
             <div style="min-width:${m?'120px':'150px'};text-align:center;font-weight:700;font-size:15px;">${moisAn(mo,y)}</div>
@@ -1854,7 +1867,7 @@ function renderCalendrier(m){
         </div>
     </div>
     <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:10px;">${legend}<span style="font-size:11px;color:#9e9a93;margin-left:auto;">${inMonth} prestation${inMonth>1?'s':''} ce mois</span></div>
-    <div style="${m?'':'display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:16px;align-items:start;'}">
+    <div style="${side?'display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:16px;align-items:start;':''}">
         <div>
             <div style="display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;margin-bottom:4px;">${(m?['L','M','M','J','V','S','D']:['Lun.','Mar.','Mer.','Jeu.','Ven.','Sam.','Dim.']).map(d=>`<div style="text-align:center;font-size:11px;font-weight:700;color:#9e9a93;padding:4px 0;">${d}</div>`).join('')}</div>
             <div style="display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;">${days.map(cell).join('')}</div>
@@ -1902,8 +1915,8 @@ function suiviBlock(d){
         ${actions?`<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;">${actions}</div>`:''}
         <div style="margin-top:14px;">
             <label class="form-label" style="display:flex;align-items:center;gap:6px;">${icon('message',13)} Note interne <span style="font-weight:400;color:#b0aba2;">(visible seulement par l’admin)</span></label>
-            <div style="display:flex;gap:8px;align-items:flex-start;">
-                <textarea id="suiviNote" class="form-input" style="min-height:44px;resize:vertical;font-size:13px;" placeholder="Ex : commandé par téléphone, confirmation n° 1234…">${esc(s.note||'')}</textarea>
+            <div style="display:flex;gap:8px;align-items:flex-start;min-width:0;">
+                <textarea id="suiviNote" class="form-input" style="min-height:44px;resize:vertical;font-size:13px;flex:1;min-width:0;width:auto;" placeholder="Ex : commandé par téléphone, confirmation n° 1234…">${esc(s.note||'')}</textarea>
                 <button data-suivi-act="note" data-id="${d.id}" class="btn-primary" style="padding:11px 14px;font-size:13px;">${icon('save',13)}</button>
             </div>
         </div>
@@ -1924,18 +1937,18 @@ function trackSteps(c){
 
 /* Navigation mobile commune */
 function mobileNavHtml(){
-    const items=[["dashboard","dashboard","Dash"],["suivi","clipboard","Suivi"],["calendrier","calendar","Agenda"],["activite","grid","Tableaux"]];
+    const items=[["dashboard","dashboard","Accueil"],["suivi","clipboard","Suivi"],["calendrier","calendar","Agenda"],["activite","grid","Registre"]];
     const n=aFaireCount();
     return `<nav class="mobile-nav"><div class="mobile-nav-items">
         ${items.map(([tab,ic,label])=>`<button class="mobile-nav-btn ${state.adminTab===tab&&!state.detail?'active':''}" data-admin-tab="${tab}" style="position:relative;">
             <span class="nav-icon">${icon(ic,18)}</span><span>${label}</span><span class="nav-dot"></span>
             ${tab==='suivi'&&n?`<span style="position:absolute;top:2px;left:calc(50% + 6px);background:#ef4444;color:#fff;border-radius:10px;min-width:16px;height:16px;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0 4px;">${n}</span>`:''}
         </button>`).join('')}
-        <button class="mobile-nav-btn ${['stats','settings'].includes(state.adminTab)&&!state.detail?'active':''}" data-nav='{"moreOpen":true}'><span class="nav-icon">${icon('sliders',18)}</span><span>Plus</span><span class="nav-dot"></span></button>
+        <button class="mobile-nav-btn ${state.adminTab==='stats'&&!state.detail?'active':''}" data-nav='{"moreOpen":true}'><span class="nav-icon">${icon('grid',18)}</span><span>Plus</span><span class="nav-dot"></span></button>
     </div></nav>
     ${state.moreOpen?`<div data-nav='{"moreOpen":false}' style="position:fixed;inset:0;background:rgba(15,23,42,.35);z-index:9500;display:flex;align-items:flex-end;">
         <div style="background:#fff;width:100%;border-radius:20px 20px 0 0;padding:14px 14px calc(14px + env(safe-area-inset-bottom,0px));">
-            ${[["stats","chart","Statistiques"],["settings","sliders","Réglages"]].map(([t,ic,l])=>`<button data-admin-tab="${t}" style="display:flex;align-items:center;gap:12px;width:100%;background:none;border:none;padding:14px 8px;font-size:15px;font-weight:600;color:var(--ink);cursor:pointer;border-bottom:1px solid #f1efeb;">${icon(ic,18)} ${l}</button>`).join('')}
+            ${[["stats","chart","Statistiques"]].map(([t,ic,l])=>`<button data-admin-tab="${t}" style="display:flex;align-items:center;gap:12px;width:100%;background:none;border:none;padding:14px 8px;font-size:15px;font-weight:600;color:var(--ink);cursor:pointer;border-bottom:1px solid #f1efeb;">${icon(ic,18)} ${l}</button>`).join('')}
             <button data-back-home style="display:flex;align-items:center;gap:12px;width:100%;background:none;border:none;padding:14px 8px;font-size:15px;font-weight:600;color:var(--ink);cursor:pointer;border-bottom:1px solid #f1efeb;">${icon('home',18)} Formulaire de demande</button>
             <button data-admin-logout style="display:flex;align-items:center;gap:12px;width:100%;background:none;border:none;padding:14px 8px;font-size:15px;font-weight:600;color:#b91c1c;cursor:pointer;">${icon('logout',18)} Se déconnecter</button>
         </div></div>`:''}`;
@@ -2165,13 +2178,13 @@ function renderDashboard(total,attente,m){
             ${[["repas","utensils","Repas"],["taxi","car","Taxi"],["hotel","bed","Hôtel"],["commande","box","Commande"]].map(([t,ic,l])=>`<button data-saisie-type="${t}" style="display:flex;align-items:center;gap:5px;background:#fff;border:1px solid var(--border);border-radius:20px;padding:7px 12px;font-size:12px;font-weight:600;color:var(--ink);cursor:pointer;">${icon('plus',12)} ${l}</button>`).join('')}
         </div>
     </div>
-    <div style="display:grid;grid-template-columns:${m?'repeat(2,minmax(0,1fr))':'repeat(4,minmax(0,1fr))'};gap:${m?'10px':'12px'};margin-bottom:18px;">
+    <div style="display:grid;grid-template-columns:${m?'repeat(2,minmax(0,1fr))':'repeat(auto-fit,minmax(200px,1fr))'};gap:${m?'10px':'12px'};margin-bottom:18px;">
         ${tile('avalider',n.avalider,'À valider',n.avalider?'réponse à donner':'rien en attente','{"adminTab":"suivi","suiviStage":"avalider"}')}
         ${tile('acommander',n.acommander,'À commander',urgentCmd.length?`${urgentCmd.length} dans les 3 jours`:'auprès des prestataires','{"adminTab":"suivi","suiviStage":"acommander"}')}
         ${tile('commandee',n.commandee,'Commandé',n.commandee?'en attente de la prestation':'aucune en cours','{"adminTab":"suivi","suiviStage":"commandee"}')}
         ${tile('x-cal',$ms(totalMois),'Dépenses du mois',`${validesMois.length} validée${validesMois.length>1?'s':''}`,'{"adminTab":"stats","statsPeriod":"mois"}')}
     </div>
-    <div style="${m?'':'display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:16px;align-items:start;'}">
+    <div style="${m||window.innerWidth<1000?'':'display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:16px;align-items:start;'}">
         <div>${left}</div><div>${right}</div>
     </div>
     </div>`;
@@ -2250,7 +2263,7 @@ function renderStats(m){
     </div>
     ${period==='perso'?`<div style="display:flex;gap:8px;align-items:center;margin-bottom:16px;flex-wrap:wrap;font-size:13px;color:#7a7570;">Du <input type="date" id="statsFrom" class="form-input" value="${rg.fromIso||''}" style="width:auto;padding:7px 10px;"> au <input type="date" id="statsTo" class="form-input" value="${rg.toIso||''}" style="width:auto;padding:7px 10px;"></div>`:''}
 
-    <div style="display:grid;grid-template-columns:${m?'1fr 1fr':'repeat(4,1fr)'};gap:12px;margin-bottom:16px;">
+    <div style="display:grid;grid-template-columns:${m?'repeat(2,minmax(0,1fr))':'repeat(auto-fit,minmax(180px,1fr))'};gap:12px;margin-bottom:16px;">
         ${kpi('Dépenses validées',total?$m(total):'0 €',delta===null?'':`${delta>=0?'+':''}${delta} % vs période préc.`,'#15803d')}
         ${kpi('Commandes validées',valid.length,`${scope.length} demandes au total`)}
         ${kpi('Coût moyen',avecPrix.length?$m(total/avecPrix.length):'—',`sur ${avecPrix.length} avec prix`)}
@@ -2271,7 +2284,7 @@ function renderStats(m){
         </div>
     </div>
 
-    <div style="display:grid;grid-template-columns:${m?'1fr':'1fr 1fr'};gap:16px;">
+    <div style="display:grid;grid-template-columns:${m||window.innerWidth<1000?'minmax(0,1fr)':'repeat(2,minmax(0,1fr))'};gap:16px;">
         ${hbars('Par prestataire','box',parPresta,'#1d4ed8')}
         ${hbars('Par directeur','user',parDirecteur,'#7c3aed')}
         ${hbars('Par demandeur','clipboard',parDemandeur,'#0e7490')}
@@ -2310,7 +2323,7 @@ function renderJournal(m){
     return `<div>
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:10px;">
         <div>
-            <div style="font-family:'DM Serif Display',serif;font-size:${m?'18px':'22px'};display:flex;align-items:center;gap:8px;">${icon('edit',m?16:19)} Journal</div>
+            <div style="font-family:'DM Serif Display',serif;font-size:${m?'18px':'22px'};display:flex;align-items:center;gap:8px;">${icon('edit',m?16:19)} Journal des actions</div>
             <div style="font-size:12px;color:#9e9a93;margin-top:3px;">Qui a modifié quoi, et quand · ${JOURNAL_MAX} dernières actions conservées</div>
         </div>
         <button id="journalRefresh" style="background:#f0eeea;border:none;border-radius:20px;padding:7px 14px;font-size:12px;font-weight:600;color:#5a5650;cursor:pointer;">Actualiser</button>
@@ -2398,7 +2411,7 @@ function renderActiviteTout(m){
     </div>
 
     <div style="background:#fff;border-radius:16px;border:1px solid #e4e7ec;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.04);">
-        <div style="overflow:auto;max-height:calc(100vh - 290px);">
+        <div style="overflow:auto;max-height:max(340px, calc(100vh - 290px));">
             <table class="grid-table" style="width:100%;border-collapse:collapse;font-size:13px;min-width:${m?'480px':'600px'};">
                 <thead>
                     <tr style="border-bottom:2px solid #e2e8f0;">
@@ -2440,7 +2453,7 @@ function renderActiviteTout(m){
    qui n'étaient reliés à aucune navigation avant cette mise à jour. */
 function renderActivite(m){
     const tab=state.activiteTab||'tout';
-    const TABS=[['tout','grid','Tout'],['reservations','utensils','Réservations'],['commandes','box','Commandes'],['hotels','bed','Hôtels'],['historique','clock','Historique'],['journal','edit','Journal'],['corbeille','trash','Corbeille']];
+    const TABS=[['tout','grid','Toutes'],['reservations','utensils','Repas & taxis'],['commandes','box','Fournitures'],['hotels','bed','Hôtels'],['historique','wallet','Dépenses & export'],['journal','edit','Journal'],['corbeille','trash','Corbeille']];
     const subNav=`<div style="display:flex;gap:4px;flex-wrap:wrap;background:var(--border-light);padding:4px;border-radius:30px;width:fit-content;margin-bottom:10px;">
         ${TABS.map(([k,ic,l])=>`<button data-activite-tab="${k}" style="display:flex;align-items:center;gap:6px;padding:6px 13px;border:none;border-radius:24px;font-size:13px;font-weight:500;cursor:pointer;white-space:nowrap;background:${tab===k?'var(--white)':'transparent'};color:${tab===k?'var(--ink)':'var(--ink-soft)'};box-shadow:${tab===k?'0 1px 3px rgba(0,0,0,0.08)':'none'};transition:all 0.15s;">${icon(ic,14)} ${l}</button>`).join('')}
     </div>`;
@@ -2510,7 +2523,7 @@ function renderReservations(m){
 
     return `<div>
     <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:10px;">
-        <div style="font-family:'DM Serif Display',serif;font-size:${m?'18px':'22px'};">${icon('utensils',m?16:19)} Réservations <span style="font-size:13px;color:#94a3b8;font-weight:400;">${all.length} entrée${all.length>1?'s':''}</span></div>
+        <div style="font-family:'DM Serif Display',serif;font-size:${m?'18px':'22px'};">${icon('utensils',m?16:19)} Repas & taxis <span style="font-size:13px;color:#94a3b8;font-weight:400;">${all.length} entrée${all.length>1?'s':''}</span></div>
 
     </div>
 
@@ -2524,7 +2537,7 @@ function renderReservations(m){
 
     <!-- Tableau unique -->
     <div style="background:#fff;border-radius:16px;border:1px solid #e4e7ec;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.04);">
-        <div style="overflow:auto;max-height:calc(100vh - 290px);">
+        <div style="overflow:auto;max-height:max(340px, calc(100vh - 290px));">
             <table class="grid-table" style="width:100%;border-collapse:collapse;font-size:13px;min-width:${m?'480px':'560px'};">
                 <thead>
                     <tr style="background:#f8fafc;border-bottom:2px solid #e2e8f0;">
@@ -2607,7 +2620,7 @@ function renderCommandes(m){
 
     return `<div>
     <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:10px;">
-        <div style="font-family:'DM Serif Display',serif;font-size:${m?'18px':'22px'};">${icon('box',m?16:19)} Commandes <span style="font-size:13px;color:#94a3b8;font-weight:400;">${all.length} entrée${all.length>1?'s':''}</span></div>
+        <div style="font-family:'DM Serif Display',serif;font-size:${m?'18px':'22px'};">${icon('box',m?16:19)} Fournitures <span style="font-size:13px;color:#94a3b8;font-weight:400;">${all.length} entrée${all.length>1?'s':''}</span></div>
 
     </div>
 
@@ -2619,7 +2632,7 @@ function renderCommandes(m){
     </div>
 
     <div style="background:#fff;border-radius:16px;border:1px solid #e4e7ec;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.04);">
-        <div style="overflow:auto;max-height:calc(100vh - 290px);">
+        <div style="overflow:auto;max-height:max(340px, calc(100vh - 290px));">
             <table class="grid-table" style="width:100%;border-collapse:collapse;font-size:13px;min-width:${m?'480px':'560px'};">
                 <thead>
                     <tr style="background:#f8fafc;border-bottom:2px solid #e2e8f0;">
@@ -2706,7 +2719,7 @@ function renderHotels(m){
     </div>
 
     <div style="background:#fff;border-radius:16px;border:1px solid #e4e7ec;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.04);">
-        <div style="overflow:auto;max-height:calc(100vh - 290px);">
+        <div style="overflow:auto;max-height:max(340px, calc(100vh - 290px));">
             <table class="grid-table" style="width:100%;border-collapse:collapse;font-size:13px;min-width:${m?'560px':'680px'};">
                 <thead>
                     <tr style="background:#f8fafc;border-bottom:2px solid #e2e8f0;">
@@ -2812,7 +2825,7 @@ function renderHistorique(m){
     <!-- Header -->
     <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:10px;">
         <div>
-            <div style="font-family:'DM Serif Display',serif;font-size:${m?'18px':'22px'};">${icon('clock',m?16:19)} Historique</div>
+            <div style="font-family:'DM Serif Display',serif;font-size:${m?'18px':'22px'};">${icon('wallet',m?16:19)} Dépenses & export</div>
             <div style="font-size:12px;color:#7f8c9b;margin-top:3px;">${allSorted.length} entrée${allSorted.length>1?'s':''} au total</div>
         </div>
         <button id="exportExcel" style="background:#1d6f42;color:#fff;border:none;border-radius:30px;padding:9px 20px;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:7px;box-shadow:0 2px 8px rgba(29,111,66,0.2);">
@@ -2831,7 +2844,7 @@ function renderHistorique(m){
 
     <!-- Tableau moderne -->
     <div style="background:#fff;border-radius:20px;border:1px solid #e4e7ec;overflow:hidden;box-shadow:0 1px 2px rgba(0,0,0,0.04);">
-        <div style="overflow:auto;max-height:calc(100vh - 290px);">
+        <div style="overflow:auto;max-height:max(340px, calc(100vh - 290px));">
             <table class="grid-table" style="width:100%;border-collapse:collapse;font-size:13px;min-width:700px;">
                 <thead id="histTableHead">
                     <tr style="background:#f8fafc;">
@@ -2886,13 +2899,13 @@ function renderHistorique(m){
 function renderSettings(){
     const secs=[
         {title:"Directeurs",       key:"directeurs",            icon:"user",badge:"director", inputId:"newDirecteur", btnId:"addDirecteur", rm:"remove-directeur", ph:"Prénom NOM",desc:"Proposés dans « Pour qui » lors d’une demande."},
-        {title:"Types de repas",       key:"prestatairesRepas",   icon:"utensils",badge:null,inputId:"newPrepas",btnId:"addPrepas",rm:"remove-prepas",ph:"Ex: Sushi, Burger...",desc:"Proposés lors d’une demande de repas."},
-        {title:"Prestataires Taxi",    key:"prestatairesTaxi",    icon:"car",badge:null,inputId:"newPtaxi", btnId:"addPtaxi", rm:"remove-ptaxi", ph:"Nouveau prestataire",desc:"Compagnies de taxi proposées."},
-        {title:"Prestataires Commande",key:"prestatairesCommande",icon:"box",badge:null,inputId:"newPcmd",  btnId:"addPcmd",  rm:"remove-pcmd",  ph:"Nouveau prestataire",desc:"Fournisseurs pour les commandes."},
-        {title:"Prestataires Hôtel",   key:"prestatairesHotel",   icon:"bed",badge:null,inputId:"newPhotel",btnId:"addPhotel",rm:"remove-photel",ph:"Nouvel hôtel",desc:"Hôtels proposés lors d’une réservation."},
+        {title:"Restauration",          key:"prestatairesRepas",   icon:"utensils",badge:null,inputId:"newPrepas",btnId:"addPrepas",rm:"remove-prepas",ph:"Ex: Sushi, Burger...",desc:"Traiteurs et restaurants proposés pour les repas."},
+        {title:"Taxis",                 key:"prestatairesTaxi",    icon:"car",badge:null,inputId:"newPtaxi", btnId:"addPtaxi", rm:"remove-ptaxi", ph:"Nouveau prestataire",desc:"Compagnies de taxi proposées."},
+        {title:"Fournisseurs",          key:"prestatairesCommande",icon:"box",badge:null,inputId:"newPcmd",  btnId:"addPcmd",  rm:"remove-pcmd",  ph:"Nouveau prestataire",desc:"Fournisseurs pour les commandes de fournitures."},
+        {title:"Hôtels",                key:"prestatairesHotel",   icon:"bed",badge:null,inputId:"newPhotel",btnId:"addPhotel",rm:"remove-photel",ph:"Nouvel hôtel",desc:"Hôtels proposés lors d’une réservation."},
     ];
     const m=isMobile();
-    const tab=state.settingsTab||'equipe';
+    const tab=state.settingsTab||'compte';
     const secHead=(ic,title,desc)=>`<div style="display:flex;gap:12px;align-items:flex-start;margin-bottom:16px;">
             <div style="width:34px;height:34px;border-radius:10px;background:var(--border-light,#f4f2ee);color:var(--accent);display:flex;align-items:center;justify-content:center;flex-shrink:0;">${icon(ic,16)}</div>
             <div style="min-width:0;"><div style="font-weight:700;font-size:15px;color:var(--ink);">${title}</div>${desc?`<div style="font-size:12px;color:#9e9a93;margin-top:2px;">${desc}</div>`:''}</div>
@@ -2917,18 +2930,63 @@ function renderSettings(){
         <div style="margin-top:12px;display:flex;gap:10px;"><input type="text" id="${s.inputId}" placeholder="${s.ph}" class="form-input" style="flex:1;"><button id="${s.btnId}" class="btn-primary">+ Ajouter</button></div>
     </div>`).join('')}`;
     const TABS=[
-        ['equipe','user','Équipe',`${settings.assistantes.length} assistantes · ${(settings.directeurs||[]).length} directeurs`],
+        ['compte','user','Mon compte',`${esc(userName()||'')} · notifications`],
+        ['equipe','shield','Équipe & accès',`${adminList().length} admin${adminList().length>1?'s':''} · ${settings.assistantes.length} assistantes · ${(settings.directeurs||[]).length} directeurs`],
         ['prestataires','box','Prestataires',`${['prestatairesRepas','prestatairesTaxi','prestatairesCommande','prestatairesHotel'].reduce((n,k)=>n+(settings[k]||[]).length,0)} entrées · N° Yooz`],
-        ['notifications','bell','Notifications',`${(settings.adminEmails||[]).filter(Boolean).length} email${(settings.adminEmails||[]).filter(Boolean).length>1?'s':''} · appareil ${('Notification' in window)&&Notification.permission==='granted'?'activé':'inactif'}`],
-        ['compte','shield','Compte & outils','Mon compte, connexion, corbeille'],
+        ['donnees','grid','Données','Corbeille · export Excel'],
     ];
     const cur=TABS.find(t=>t[0]===tab)||TABS[0];
     let body='';
-    if(cur[0]==='equipe') body=`
+    if(cur[0]==='compte') body=`
     <div class="settings-section">
-        ${secHead("user","Assistantes de direction","Elles passent les demandes. Leur email reçoit les confirmations.")}
+        ${secHead("user","Mon compte",esc(userEmail()))}
+        <div style="display:grid;grid-template-columns:1fr auto;gap:8px;margin-bottom:10px;">
+            <input id="acctNom" class="form-input" value="${esc(userName())}" placeholder="Prénom NOM">
+            <button id="acctSaveNom" class="btn-primary" style="padding:0 16px;">Enregistrer</button>
+        </div>
+        <div style="font-size:11px;color:#9e9a93;margin:-4px 0 12px;">Nom affiché dans le journal et sur l’accueil.</div>
+        <div style="display:grid;grid-template-columns:1fr auto;gap:8px;">
+            <input id="acctPass" type="password" class="form-input" placeholder="Nouveau mot de passe" autocomplete="new-password">
+            <button id="acctSavePass" style="background:#fff;border:1.5px solid var(--border);border-radius:12px;padding:0 14px;font-size:13px;font-weight:600;cursor:pointer;">Changer</button>
+        </div>
+        <div style="display:flex;justify-content:flex-end;margin-top:12px;">
+            <button data-admin-logout style="background:#fef2f2;border:1px solid #fecaca;color:#b91c1c;border-radius:20px;padding:6px 14px;font-size:12px;font-weight:600;cursor:pointer;">Se déconnecter</button>
+        </div>
+    </div>
+    <div class="settings-section">
+        ${secHead("bell","Cet appareil : notifications et pastille","Une alerte et un chiffre sur l’icône de l’appli (comme sur iPhone) avec le nombre de demandes en attente.")}
+        ${(()=>{ const perm=('Notification' in window)?Notification.permission:'na';
+            const etat=perm==='granted'?'<span style="color:#15803d;font-weight:600;">Activées sur cet appareil</span>':perm==='denied'?'<span style="color:#b91c1c;font-weight:600;">Bloquées : à réactiver dans les réglages du navigateur (cadenas à gauche de l’adresse)</span>':'<span style="color:#b45309;font-weight:600;">Pas encore activées</span>';
+            return `<div style="font-size:13px;margin-bottom:12px;">${etat}</div>${perm!=='granted'&&perm!=='na'?`<button id="enableNotifs" class="btn-primary" style="width:100%;padding:12px;margin-bottom:12px;">Activer sur cet appareil</button>`:''}`; })()}
+        <ul style="font-size:12px;color:#7a7570;line-height:1.6;margin:0;padding-left:18px;">
+            <li><b>PC</b> : installez l’appli (ci-dessous) pour avoir le chiffre sur l’icône de la barre des tâches.</li>
+            <li><b>iPhone</b> : l’appli doit être installée sur l’écran d’accueil, puis activée ici depuis l’appli installée.</li>
+            <li>Le chiffre et les alertes se mettent à jour quand l’appli est ouverte ou réduite. Appli fermée, ce sont les emails admin qui préviennent.</li>
+        </ul>
+    </div>
+    ${isStandalone()?'':`<div class="settings-section">
+        ${secHead("download","Installer l’appli sur cet appareil","Elle s’ouvre alors dans sa propre fenêtre, comme un logiciel.")}
+        ${_installPrompt?`<button id="installAppBtn" class="btn-primary" style="width:100%;padding:12px;">Installer maintenant</button>`:`<div style="font-size:13px;color:#5a5650;line-height:1.5;">${/Edg\//.test(navigator.userAgent)?'Dans Edge : menu <b>…</b> › <b>Applications</b> › <b>« Installer ce site en tant qu’application »</b>.':'Dans Chrome : icône <b>⊕</b> à droite de la barre d’adresse, ou menu <b>⋮</b> › <b>Caster, enregistrer et partager</b> › <b>Installer</b>.'}</div>`}
+    </div>`}
+`;
+    else if(cur[0]==='equipe') body=`
+    <div class="settings-section">
+        ${secHead("shield","Administrateurs","Ont accès à l’administration, reçoivent l’email de chaque nouvelle demande et les rappels dans leur agenda.")}
         
-        <div style="display:grid;grid-template-columns:${m?'1fr':'1fr 1fr'};gap:10px 16px;margin-bottom:14px;">
+        <div id="adminEmailsList">
+            ${(settings.adminEmails||[]).map((em,i)=>`
+            <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;">
+                <input class="admin-email-input form-input" data-idx="${i}" value="${em}" placeholder="admin@example.com" style="flex:1;padding:10px 12px;font-size:14px;">
+                <button data-rm-admin="${i}" style="background:none;border:none;font-size:18px;cursor:pointer;color:var(--ink-soft);">✕</button>
+            </div>`).join('')}
+        </div>
+        <button id="addAdminEmail" style="background:none;border:1.5px dashed var(--border);border-radius:12px;width:100%;padding:10px;font-size:14px;color:var(--ink-soft);cursor:pointer;margin-bottom:10px;">+ Ajouter un administrateur</button>
+        <button id="saveAdminEmails" class="btn-primary" style="width:100%;padding:12px;display:flex;align-items:center;justify-content:center;gap:7px;">${icon('save',14)} Sauvegarder</button>
+    </div>
+    <div class="settings-section">
+        ${secHead("user","Assistantes","Elles passent les demandes. Leur email sert à créer leur compte et reçoit les confirmations.")}
+        
+        <div style="display:grid;grid-template-columns:${m||window.innerWidth<1100?'minmax(0,1fr)':'repeat(2,minmax(0,1fr))'};gap:10px 16px;margin-bottom:14px;">
             ${settings.assistantes.map((nom,i)=>`
             <div class="settings-item" style="align-items:flex-start;">
                 <div style="display:flex;flex-direction:column;gap:6px;flex:1;">
@@ -2952,10 +3010,18 @@ function renderSettings(){
             <button id="addAssistante" class="btn-primary" style="width:100%;margin-top:10px;">+ Ajouter une assistante</button>
         </div>
     </div>
-    ${section(secs.slice(0,1))}`;
+    ${section(secs.slice(0,1))}
+    <div class="settings-section">
+        ${secHead("lock","Connexion obligatoire",settings.loginObligatoire?'Activée : chacun doit se connecter pour faire une demande.':'Désactivée : les assistantes peuvent encore faire une demande sans compte.')}
+        <label style="display:flex;align-items:center;justify-content:space-between;gap:12px;cursor:pointer;">
+            <span style="font-size:13px;color:#5a5650;">Exiger un compte pour faire une demande</span>
+            <input type="checkbox" id="loginObligatoire" ${settings.loginObligatoire?'checked':''} style="width:20px;height:20px;accent-color:var(--accent);">
+        </label>
+        <div style="font-size:11px;color:#9e9a93;margin-top:8px;">À activer une fois que chaque assistante a créé son compte (« Première connexion ? » sur l’écran de connexion, avec l’email renseigné dans la liste des assistantes ci-dessus).</div>
+    </div>
+`;
     else if(cur[0]==='prestataires') body=`
     ${section(secs.slice(1))}
-    <!-- N° Yooz par prestataire -->
     <div class="settings-section">
         ${secHead("wallet","N° Yooz par fournisseur","Rempli automatiquement dans les commandes du fournisseur.")}
         
@@ -2969,67 +3035,17 @@ function renderSettings(){
         </div>
         <button id="addYoozPresta" style="background:none;border:1.5px dashed var(--border);border-radius:12px;width:100%;padding:9px;font-size:13px;color:var(--ink-soft);cursor:pointer;margin-bottom:8px;">+ Ajouter un fournisseur</button>
         <button id="saveYooz" class="btn-primary" style="width:100%;padding:11px;display:flex;align-items:center;justify-content:center;gap:7px;">${icon('save',14)} Sauvegarder les N° Yooz</button>
-    </div>`;
-    else if(cur[0]==='notifications') body=`
-    <div class="settings-section">
-        ${secHead("mail","Emails admin","Reçoivent un email à chaque nouvelle demande.")}
-        
-        <div id="adminEmailsList">
-            ${(settings.adminEmails||[]).map((em,i)=>`
-            <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;">
-                <input class="admin-email-input form-input" data-idx="${i}" value="${em}" placeholder="admin@example.com" style="flex:1;padding:10px 12px;font-size:14px;">
-                <button data-rm-admin="${i}" style="background:none;border:none;font-size:18px;cursor:pointer;color:var(--ink-soft);">✕</button>
-            </div>`).join('')}
-        </div>
-        <button id="addAdminEmail" style="background:none;border:1.5px dashed var(--border);border-radius:12px;width:100%;padding:10px;font-size:14px;color:var(--ink-soft);cursor:pointer;margin-bottom:10px;">+ Ajouter un email admin</button>
-        <button id="saveAdminEmails" class="btn-primary" style="width:100%;padding:12px;display:flex;align-items:center;justify-content:center;gap:7px;">${icon('save',14)} Sauvegarder</button>
     </div>
 `;
-    if(cur[0]==='notifications') body=`
-    <div class="settings-section">
-        ${secHead("bell","Cet appareil : notifications et pastille","Une alerte et un chiffre sur l’icône de l’appli (comme sur iPhone) avec le nombre de demandes en attente.")}
-        ${(()=>{ const perm=('Notification' in window)?Notification.permission:'na';
-            const etat=perm==='granted'?'<span style="color:#15803d;font-weight:600;">Activées sur cet appareil</span>':perm==='denied'?'<span style="color:#b91c1c;font-weight:600;">Bloquées : à réactiver dans les réglages du navigateur (cadenas à gauche de l’adresse)</span>':'<span style="color:#b45309;font-weight:600;">Pas encore activées</span>';
-            return `<div style="font-size:13px;margin-bottom:12px;">${etat}</div>${perm!=='granted'&&perm!=='na'?`<button id="enableNotifs" class="btn-primary" style="width:100%;padding:12px;margin-bottom:12px;">Activer sur cet appareil</button>`:''}`; })()}
-        <ul style="font-size:12px;color:#7a7570;line-height:1.6;margin:0;padding-left:18px;">
-            <li><b>PC</b> : installez l’appli (Compte & outils) pour avoir le chiffre sur l’icône de la barre des tâches.</li>
-            <li><b>iPhone</b> : l’appli doit être installée sur l’écran d’accueil, puis activée ici depuis l’appli installée.</li>
-            <li>Le chiffre et les alertes se mettent à jour quand l’appli est ouverte ou réduite. Appli fermée, ce sont les emails admin qui préviennent.</li>
-        </ul>
-    </div>`+body;
-    if(cur[0]==='compte') body=`
-    <div class="settings-section">
-        ${secHead("user","Mon compte",esc(userEmail()))}
-        <div style="display:grid;grid-template-columns:1fr auto;gap:8px;margin-bottom:10px;">
-            <input id="acctNom" class="form-input" value="${esc(userName())}" placeholder="Prénom NOM">
-            <button id="acctSaveNom" class="btn-primary" style="padding:0 16px;">Enregistrer</button>
-        </div>
-        <div style="font-size:11px;color:#9e9a93;margin:-4px 0 12px;">Nom affiché dans le journal et sur l’accueil.</div>
-        <div style="display:grid;grid-template-columns:1fr auto;gap:8px;">
-            <input id="acctPass" type="password" class="form-input" placeholder="Nouveau mot de passe (6 caractères min.)" autocomplete="new-password">
-            <button id="acctSavePass" style="background:#fff;border:1.5px solid var(--border);border-radius:12px;padding:0 14px;font-size:13px;font-weight:600;cursor:pointer;">Changer</button>
-        </div>
-        <div style="display:flex;justify-content:flex-end;margin-top:12px;">
-            <button data-admin-logout style="background:#fef2f2;border:1px solid #fecaca;color:#b91c1c;border-radius:20px;padding:6px 14px;font-size:12px;font-weight:600;cursor:pointer;">Se déconnecter</button>
-        </div>
-    </div>
-    <div class="settings-section">
-        ${secHead("lock","Connexion obligatoire",settings.loginObligatoire?'Activée : chacun doit se connecter pour faire une demande.':'Désactivée : les assistantes peuvent encore faire une demande sans compte.')}
-        <label style="display:flex;align-items:center;justify-content:space-between;gap:12px;cursor:pointer;">
-            <span style="font-size:13px;color:#5a5650;">Exiger un compte pour faire une demande</span>
-            <input type="checkbox" id="loginObligatoire" ${settings.loginObligatoire?'checked':''} style="width:20px;height:20px;accent-color:var(--accent);">
-        </label>
-        <div style="font-size:11px;color:#9e9a93;margin-top:8px;">À activer une fois que chaque assistante a créé son compte (« Première connexion ? » sur l’écran de connexion, avec l’email renseigné dans Réglages › Équipe).</div>
-    </div>
-    ${isStandalone()?'':`<div class="settings-section">
-        ${secHead("download","Installer l’appli sur cet appareil","Elle s’ouvre alors dans sa propre fenêtre, comme un logiciel.")}
-        ${_installPrompt?`<button id="installAppBtn" class="btn-primary" style="width:100%;padding:12px;">Installer maintenant</button>`:`<div style="font-size:13px;color:#5a5650;line-height:1.5;">${/Edg\//.test(navigator.userAgent)?'Dans Edge : menu <b>…</b> › <b>Applications</b> › <b>« Installer ce site en tant qu’application »</b>.':'Dans Chrome : icône <b>⊕</b> à droite de la barre d’adresse, ou menu <b>⋮</b> › <b>Caster, enregistrer et partager</b> › <b>Installer</b>.'}</div>`}
-    </div>`}
+    else body=`
     <div class="settings-section">
         ${secHead("trash","Corbeille",`${(state.deletedData||[]).length} élément${(state.deletedData||[]).length>1?'s':''} · effacés définitivement après ${TRASH_DAYS} jours`)}
         <button data-goto-trash style="width:100%;background:#fff;border:1.5px solid var(--border);border-radius:12px;padding:11px;font-size:14px;font-weight:600;color:var(--ink);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;">Ouvrir la corbeille ${icon('arrow',14)}</button>
+    </div>
+    <div class="settings-section">
+        ${secHead("download","Export Excel","Toutes les demandes et leurs prix, pour la comptabilité.")}
+        <button data-nav='{"adminTab":"activite","activiteTab":"historique"}' style="width:100%;background:#fff;border:1.5px solid var(--border);border-radius:12px;padding:11px;font-size:14px;font-weight:600;color:var(--ink);cursor:pointer;">Ouvrir l’historique et exporter ${icon('arrow',14)}</button>
     </div>`;
-
     const nav=m
         ? `<div style="display:flex;gap:6px;overflow-x:auto;margin:0 -16px 16px;padding:0 16px 4px;scrollbar-width:none;">
             ${TABS.map(([k,ic,l])=>`<button data-settings-tab="${k}" style="display:flex;align-items:center;gap:6px;flex-shrink:0;padding:8px 14px;border-radius:20px;border:1px solid ${k===cur[0]?'var(--accent)':'var(--border)'};background:${k===cur[0]?'var(--accent)':'#fff'};color:${k===cur[0]?'#fff':'var(--ink)'};font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;">${icon(ic,14)} ${l}</button>`).join('')}
@@ -3047,7 +3063,7 @@ function renderSettings(){
         <div style="font-size:12px;color:#15803d;display:flex;align-items:center;gap:5px;">${icon('check',13)} Enregistré dans la base, partagé avec tous les postes</div>
     </div>
     ${m?nav:''}
-    <div style="${m?'':'display:grid;grid-template-columns:240px minmax(0,1fr);gap:20px;align-items:start;'}">
+    <div style="${m?'':`display:grid;grid-template-columns:${window.innerWidth<1000?'200px':'240px'} minmax(0,1fr);gap:${window.innerWidth<1000?'14px':'20px'};align-items:start;`}">
         ${m?'':nav}
         <div class="settings-body">${body}
         </div>
@@ -3647,7 +3663,7 @@ function attachEvents(){
                     if(!email||!pw) return fail('Email et mot de passe obligatoires');
                     if(pw.length<6) return fail('Mot de passe trop court (6 caractères minimum)');
                     if(pw!==pw2) return fail('Les deux mots de passe ne correspondent pas');
-                    if(!emailAutorise(email)) return fail('Cet email n’est pas enregistré : demandez à l’administration de l’ajouter dans Réglages › Équipe (ou Emails admin).');
+                    if(!emailAutorise(email)) return fail('Cet email n’est pas enregistré : demandez à l’administration de l’ajouter dans Réglages › Équipe & accès.');
                     const auto=Object.entries(settings.emails||{}).find(([,m])=>String(m||'').trim().toLowerCase()===email);
                     await authSignup(email,pw,nom||(auto?auto[0]:''));
                 }else if(mode==='forgot'){
