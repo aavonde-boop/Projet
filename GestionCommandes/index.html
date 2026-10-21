@@ -307,6 +307,86 @@
             .form-input,.form-select,.search-input{ font-size:16px; } /* évite le zoom auto d'iOS */
         }
         select.form-select,select.form-input{ text-transform:none!important; }
+        /* ═══ FORMULAIRE DE DEMANDE (tout sur un écran) ═══ */
+        input::placeholder,textarea::placeholder{ text-transform:none; color:#9aa3af; }
+        .pub{ min-height:100vh; background:var(--bg); }
+        .pub-top{ background:var(--side); padding-top:env(safe-area-inset-top,0px); }
+        .pub-in{ max-width:1120px; margin:0 auto; padding-left:24px; padding-right:24px; width:100%; }
+        .pub-bar{ height:60px; display:flex; align-items:center; justify-content:space-between; gap:10px; }
+        .nf-brand{ display:flex; align-items:center; gap:10px; color:#fff; min-width:0; } .nf-brand b{ font-size:14.5px; font-weight:650; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .nf-acts{ display:flex; align-items:center; gap:8px; flex-shrink:0; }
+        .pub-btn{ display:inline-flex; align-items:center; gap:6px; height:34px; padding:0 11px; border-radius:7px; border:1px solid rgba(255,255,255,.14); background:rgba(255,255,255,.06); color:#dbe3ee; font:600 12.5px var(--fb); cursor:pointer; white-space:nowrap; position:relative; }
+        .pub-btn:hover{ background:rgba(255,255,255,.12); color:#fff; } .pub-btn.light{ background:#fff; color:var(--side); border-color:#fff; }
+        .nf-av{ width:22px; height:22px; border-radius:50%; background:#3b6e96; color:#fff; font-size:10px; font-weight:700; display:inline-flex; align-items:center; justify-content:center; }
+        .nf-badge{ background:#d97706; color:#fff; border-radius:9px; font-size:10px; font-weight:700; padding:0 6px; line-height:16px; }
+        .nf-hero{ display:flex; align-items:flex-end; justify-content:space-between; gap:16px; padding-top:6px; padding-bottom:40px; }
+        .nf-hello{ color:#8fa0b5; font-size:13px; } .nf-hero h1{ color:#fff; font:650 26px var(--ft); letter-spacing:-.015em; margin-top:2px; }
+        .nf-seg{ display:flex; gap:4px; background:rgba(255,255,255,.08); padding:4px; border-radius:10px; width:380px; max-width:100%; }
+        .nf-seg button{ flex:1; display:flex; align-items:center; justify-content:center; gap:7px; height:38px; border:none; border-radius:7px; background:transparent; color:#c5d0dd; font:600 13.5px var(--fb); cursor:pointer; }
+        .nf-seg button.on{ background:#fff; color:var(--side); box-shadow:0 1px 3px rgba(0,0,0,.2); }
+        .nf-main{ margin-top:-24px; padding-bottom:48px; }
+        .nf-col{ min-width:0; }
+        .nf-layout{ display:grid; grid-template-columns:minmax(0,1fr) 340px; gap:20px; align-items:start; }
+        .nf-card{ background:#fff; border:1px solid var(--border); border-radius:12px; padding:18px; margin-bottom:12px; box-shadow:0 1px 2px rgba(15,27,45,.04); }
+        .nf-sec-h{ display:flex; align-items:center; gap:9px; margin-bottom:16px; } .nf-sec-h b{ font-size:15px; font-weight:650; }
+        .nf-sec-ic{ width:28px; height:28px; border-radius:8px; background:var(--accent-soft); color:var(--accent); display:inline-flex; align-items:center; justify-content:center; }
+        .nf-aside{ margin-left:auto; color:var(--ink-soft); font-size:12.5px; text-align:right; }
+        .nf-lbl{ font-size:12.5px; font-weight:600; color:var(--ink-mid); margin-bottom:8px; } .nf-lbl span{ font-weight:400; color:var(--ink-soft); }
+        .nf-row{ display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+        .nf-sugg{ margin-top:8px; gap:6px; } .nf-hint{ font-size:12px; color:var(--ink-soft); }
+        .nf-chip{ display:inline-flex; align-items:center; gap:6px; height:36px; padding:0 13px; border-radius:18px; border:1px solid var(--border); background:#fff; font:500 13.5px var(--fb); color:var(--ink); cursor:pointer; white-space:nowrap; transition:background .12s,border-color .12s; }
+        .nf-chip:hover{ border-color:#c9d3df; } .nf-chip.on{ background:var(--accent); border-color:var(--accent); color:#fff; font-weight:600; }
+        .nf-chip.soft.on{ background:var(--accent-soft); border-color:#b9cfe3; color:var(--accent); cursor:default; }
+        .nf-days{ display:flex; gap:8px; overflow-x:auto; scrollbar-width:none; padding-bottom:2px; } .nf-days::-webkit-scrollbar{ display:none; }
+        .nf-day{ flex:0 0 auto; width:60px; height:62px; border-radius:10px; border:1px solid var(--border); background:#fff; color:var(--ink); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:1px; cursor:pointer; font-family:var(--fb); }
+        .nf-day span{ font-size:11.5px; color:var(--ink-soft); } .nf-day b{ font-size:18px; font-weight:700; }
+        .nf-day.on{ background:var(--accent); border-color:var(--accent); color:#fff; } .nf-day.on span{ color:#d6e3ef; }
+        .nf-tiles{ display:grid; grid-template-columns:repeat(auto-fit,minmax(84px,1fr)); gap:8px; margin-bottom:16px; }
+        .nf-tile{ height:74px; border-radius:10px; border:1px solid var(--border); background:#fff; color:var(--ink-mid); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; font:500 12.5px var(--fb); cursor:pointer; padding:0 6px; text-align:center; }
+        .nf-tile.on{ border-color:var(--accent); background:var(--accent-soft); color:var(--accent); font-weight:650; }
+        .nf-step-row{ display:flex; align-items:center; justify-content:space-between; gap:12px; margin:16px 0; }
+        .nf-step-row b{ display:block; font-size:14px; font-weight:600; } .nf-step-row span{ font-size:12px; color:var(--ink-soft); }
+        .nf-stepper{ display:flex; align-items:center; border:1px solid var(--border); border-radius:10px; height:42px; flex-shrink:0; }
+        .nf-stepper button{ width:42px; height:40px; border:none; background:none; color:var(--accent); cursor:pointer; display:flex; align-items:center; justify-content:center; }
+        .nf-stepper b{ min-width:38px; text-align:center; font-size:16px; }
+        .nf-grid2{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+        .nf-check{ display:flex; align-items:flex-start; gap:10px; margin-top:12px; padding:12px 14px; border:1px solid var(--border); border-radius:10px; cursor:pointer; }
+        .nf-check input{ width:17px; height:17px; accent-color:var(--accent); margin-top:1px; flex-shrink:0; }
+        .nf-check b{ display:block; font-size:13.5px; font-weight:600; } .nf-check span span{ display:block; font-size:12px; color:var(--ink-soft); margin-top:1px; }
+        .nf-recap{ position:sticky; top:16px; padding:0; overflow:hidden; }
+        .nf-recap-h{ display:flex; justify-content:space-between; align-items:center; padding:14px 18px; border-bottom:1px solid var(--border); }
+        .nf-recap-h span{ font-size:11.5px; background:#fef6e7; color:#b45309; padding:3px 8px; border-radius:5px; font-weight:600; }
+        .nf-sum{ padding:6px 18px 14px; }
+        .nf-tk{ display:flex; justify-content:space-between; gap:12px; padding:9px 0; border-bottom:1px dashed var(--border); font-size:13px; }
+        .nf-tk span{ color:var(--ink-soft); white-space:nowrap; } .nf-tk b{ text-align:right; font-weight:600; word-break:break-word; } .nf-tk b.vide{ color:#c3c8d0; font-weight:400; }
+        .nf-btn{ display:inline-flex; align-items:center; justify-content:center; gap:8px; height:46px; padding:0 18px; border-radius:10px; background:var(--accent); color:#fff; font:600 15px var(--fb); border:none; cursor:pointer; }
+        .nf-btn:hover{ background:#24506f; } .nf-btn.ghost{ background:#fff; color:var(--ink); border:1px solid var(--border); } .nf-btn.ghost:hover{ background:#f6f7f9; }
+        .nf-note{ font-size:12px; color:var(--ink-soft); text-align:center; margin-top:10px; }
+        .nf-ok{ max-width:560px; margin:0 auto; text-align:center; padding:40px 32px; }
+        .nf-ok h1{ font:650 24px var(--ft); margin-bottom:6px; } .nf-ok p{ color:var(--ink-soft); margin-bottom:22px; }
+        .nf-ok-ic{ width:56px; height:56px; border-radius:50%; background:#ecf8f0; color:#15803d; display:flex; align-items:center; justify-content:center; margin:0 auto 16px; }
+        .nf-ok-btns{ display:flex; gap:10px; justify-content:center; flex-wrap:wrap; margin-top:22px; }
+        .code-box{ display:inline-block; min-width:260px; border:1px solid var(--border); background:#fafbfc; border-radius:10px; padding:16px 22px; }
+        .code-l{ font-size:11px; font-weight:600; color:var(--ink-soft); text-transform:uppercase; letter-spacing:.08em; }
+        .code-v{ font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:28px; font-weight:700; letter-spacing:4px; color:var(--ink); margin:6px 0; }
+        .code-s{ font-size:12px; color:var(--ink-soft); }
+        .nf-bar{ position:fixed; left:0; right:0; bottom:0; z-index:150; background:rgba(255,255,255,.97); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); border-top:1px solid var(--border); padding:10px 14px calc(12px + env(safe-area-inset-bottom,0px)); }
+        .nf-bar-sum{ display:flex; justify-content:space-between; gap:10px; font-size:12.5px; color:var(--ink-mid); margin-bottom:8px; }
+        .nf-bar-sum b{ color:var(--ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; } .nf-bar-sum span{ white-space:nowrap; }
+        @media(max-width:1023px){ .nf-layout{ grid-template-columns:minmax(0,1fr) 300px; } .nf-hero{ flex-direction:column; align-items:stretch; } .nf-seg{ width:100%; } }
+        @media(max-width:767px){
+            .pub-in{ padding-left:12px; padding-right:12px; }
+            .pub-bar{ height:56px; } .nf-brand b{ font-size:17px; }
+            .nf-hero{ padding-top:0; padding-bottom:14px; }
+            .nf-main{ margin-top:12px; padding-bottom:calc(120px + env(safe-area-inset-bottom,0px)); }
+            .nf-layout{ grid-template-columns:minmax(0,1fr); }
+            .nf-card{ padding:16px 14px; }
+            .nf-tiles{ grid-template-columns:repeat(4,minmax(0,1fr)); gap:6px; } .nf-tile{ height:68px; font-size:11.5px; }
+            .nf-grid2{ grid-template-columns:1fr; }
+            .nf-ok{ padding:32px 18px; } .nf-ok-btns{ flex-direction:column-reverse; } .nf-ok-btns .nf-btn{ width:100%; } .code-box{ min-width:0; width:100%; }
+            .form-input{ font-size:16px; }
+        }
+        @media(max-width:767px){ .pub ~ .toast{ bottom:calc(130px + env(safe-area-inset-bottom,0px)); } .toast{ white-space:normal; max-width:92vw; text-align:center; } }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
@@ -596,6 +676,13 @@ const ST={"OUI":{label:"Validé",dot:"#22c55e",bg:"#f0fdf4",tx:"#15803d"},"En at
    ICÔNES (SVG trait, remplacent les emojis dans l'UI d'administration)
 ══════════════════════════════════════ */
 const ICON_PATHS = {
+    coffee: '<path d="M4 9h13v5a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5z"/><path d="M17 10h1.5a2.5 2.5 0 0 1 0 5H17"/><line x1="8" y1="3" x2="8" y2="6"/><line x1="12" y1="3" x2="12" y2="6"/>',
+    cake: '<path d="M4 21h16v-8H4z"/><path d="M4 16c2 1 4 1 6 0s4-1 6 0 3 1 4 0"/><line x1="12" y1="13" x2="12" y2="9"/><circle cx="12" cy="6" r="1"/>',
+    moon: '<path d="M21 13A9 9 0 1 1 11 3a7 7 0 0 0 10 10z"/>',
+    glass: '<path d="M8 3h8l-1 7a3 3 0 0 1-6 0z"/><line x1="12" y1="13" x2="12" y2="21"/><line x1="8" y1="21" x2="16" y2="21"/>',
+    minus: '<line x1="5" y1="12" x2="19" y2="12"/>',
+    send: '<line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>',
+    users: '<circle cx="9" cy="8" r="3.5"/><path d="M2 20c.8-3.5 3.5-5.5 7-5.5s6.2 2 7 5.5"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7"/><path d="M18 14.8c2 .7 3.4 2.4 4 5.2"/>',
     menu: '<line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="20" y2="17"/>',
     dashboard: '<line x1="5" y1="20" x2="5" y2="11"/><line x1="12" y1="20" x2="12" y2="5"/><line x1="19" y1="20" x2="19" y2="14"/>',
     clipboard: '<rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4V3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1"/><line x1="8" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="16" y2="14"/><line x1="8" y1="18" x2="13" y2="18"/>',
@@ -1308,231 +1395,167 @@ function mesDemandesHtml(m){
     </div>`;
 }
 function renderHome(m){
-    const total=state.data.filter(c=>c.pris==="OUI").reduce((a,b)=>a+(b.prix||0),0);
     const att=state.data.filter(c=>c.pris==="En attente").length;
-    return `
-    <div style="min-height:100vh;display:flex;flex-direction:column;">
-        <!-- ── TOP BAR ── -->
-        <div style="background:var(--side);padding:${m?'calc(16px + env(safe-area-inset-top,0px)) 20px 18px':'28px 40px'};">
-            <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;">
-                <div>
-                    <div style="font-size:10px;font-weight:600;letter-spacing:2px;color:rgba(255,255,255,.35);margin-bottom:5px;">GESTION DES COMMANDES</div>
-                    <div style="font-family:var(--ft);font-weight:650;letter-spacing:-.01em;font-size:${m?'26px':'34px'};color:#fff;">2026</div>
-                </div>
-                <div style="display:flex;align-items:center;gap:${m?'8px':'12px'};">
-                    ${AUTH?`<div style="display:flex;align-items:center;gap:8px;color:#fff;">
-                        <span style="width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;">${esc($ini(userName()))}</span>
-                        ${m?'':`<span style="font-size:13px;">${esc(userName())}</span>`}
-                        <button data-admin-logout title="Se déconnecter" style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);border-radius:10px;padding:7px 10px;color:rgba(255,255,255,.75);cursor:pointer;display:flex;align-items:center;">${icon('logout',15)}</button>
-                    </div>`:`<button data-login style="background:#fff;border:none;border-radius:10px;padding:7px 13px;color:var(--accent);cursor:pointer;font-size:13px;font-weight:700;display:flex;align-items:center;gap:6px;">${icon('user',15)}${m?'':' Se connecter'}</button>`}
-                    ${AUTH&&!isAdmin()?'':`<button data-action="admin" style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);border-radius:10px;padding:7px 13px;color:rgba(255,255,255,.65);cursor:pointer;font-size:13px;font-weight:600;display:flex;align-items:center;gap:5px;transition:background 0.2s;white-space:nowrap;" onmouseover="this.style.background='rgba(255,255,255,.18)'" onmouseout="this.style.background='rgba(255,255,255,.1)'">
-                        ${icon('shield',15)}${m?'':' Admin'}${att>0&&isAdmin()?` <span style="background:#f59e0b;color:#fff;border-radius:50%;width:16px;height:16px;font-size:10px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;">${att}</span>`:''}
-                    </button>`}
-                </div>
+    const f=state.form;
+    if(!f.type&&!f.sent) f.type='repas';
+    if(!f.dem&&!assistanteName()){ const last=lsGet('nf_dem'); if(last&&settings.assistantes.includes(last)) f.dem=last; }
+    const prenom=AUTH?String(userName()||'').split(' ')[0]:'';
+    const seg=`<div class="nf-seg">${[['repas','utensils','Repas'],['taxi','car','Taxi'],['hotel','bed','Hôtel']].map(([k,ic,l])=>`<button data-nf="type" data-v="${k}" class="${f.type===k?'on':''}">${icon(ic,16)} ${l}</button>`).join('')}</div>`;
+    const actions=`<div class="nf-acts">
+        <button id="goTrackHome" class="pub-btn" title="Suivre une demande">${icon('search',15)}${m?'':' Suivre une demande'}</button>
+        ${AUTH?`<button data-admin-logout class="pub-btn" title="Se déconnecter (${esc(userName())})"><span class="nf-av">${esc($ini(userName()))}</span>${icon('logout',14)}</button>`
+            :`<button data-login class="pub-btn light">${icon('user',15)}${m?'':' Se connecter'}</button>`}
+        ${AUTH&&!isAdmin()?'':`<button data-action="admin" class="pub-btn" title="Administration">${icon('shield',15)}${m?'':' Admin'}${att>0&&isAdmin()?`<span class="nf-badge">${att}</span>`:''}</button>`}
+    </div>`;
+    if(f.sent) return `<div class="pub">
+        <header class="pub-top"><div class="pub-in pub-bar"><div class="nf-brand"><span class="logo-sq">${icon('clipboard',16)}</span><b>${m?'Demande envoyée':'Gestion des commandes'}</b></div>${actions}</div></header>
+        <main class="pub-in" style="padding-top:28px;padding-bottom:40px;">${renderInlineForm(m)}${AUTH?mesDemandesHtml(m):''}</main></div>
+        ${state.toast?`<div class="toast">${state.toast}</div>`:''}`;
+    return `<div class="pub">
+        <header class="pub-top">
+            <div class="pub-in pub-bar"><div class="nf-brand"><span class="logo-sq">${icon('clipboard',16)}</span><b>${m?'Nouvelle demande':'Gestion des commandes'}</b></div>${actions}</div>
+            <div class="pub-in nf-hero">
+                ${m?'':`<div><div class="nf-hello">${prenom?`Bonjour ${esc(prenom)}`:'Espace demandes'}</div><h1>Nouvelle demande</h1></div>`}
+                ${seg}
             </div>
-        </div>
-
-        <!-- ── FORM AREA ── -->
-        <div style="flex:1;padding:${m?'20px 16px calc(20px + env(safe-area-inset-bottom,0px))':'32px 40px'};max-width:${m?'100%':'1100px'};margin:0 auto;width:100%;">
+        </header>
+        <main class="pub-in nf-main">
             ${installHintHtml()}
             ${renderInlineForm(m)}
-            ${!state.form.type&&AUTH?mesDemandesHtml(m):''}
-        </div>
+            ${AUTH?`<div style="margin-top:8px;">${mesDemandesHtml(m)}</div>`:''}
+        </main>
     </div>
-
     ${state.toast?`<div class="toast">${state.toast}</div>`:''}`;
 }
 
 /* ══════════════════════════════════════
-   INLINE FORM
+   FORMULAIRE « tout sur un écran »
 ══════════════════════════════════════ */
+const NF_HEURES={repas:['08h30','09h00','10h00','11h30','12h00','12h30','13h00','16h00','19h00'],taxi:['07h00','08h00','09h00','10h00','12h00','14h00','17h00','18h00','19h00','20h00']};
+function nfIcRepas(t){ const s=String(t).toLowerCase(); return s.includes('petit')?'coffee':s.includes('déj')||s.includes('dej')?'utensils':s.includes('goût')||s.includes('gout')?'cake':s.includes('dîn')||s.includes('din')?'moon':s.includes('cocktail')?'glass':s.includes('plateau')?'box':'utensils'; }
+function nfJours(){ const out=[]; const d=new Date(); d.setHours(0,0,0,0); while(out.length<6){ if(d.getDay()!==0&&d.getDay()!==6||out.length===0) out.push(new Date(d)); d.setDate(d.getDate()+1); } return out; }
+function nfRecents(type,champ,n=4){
+    const cpt={}; state.data.filter(c=>c.type===type&&c[champ]).forEach(c=>{ const v=String(c[champ]).trim(); const k=v.toUpperCase(); if(!k||k==='—')return; cpt[k]=cpt[k]||{v,n:0}; cpt[k].n++; });
+    return Object.values(cpt).sort((a,b)=>b.n-a.n).slice(0,n).map(x=>x.v);
+}
+function nfNuits(f){ return Math.max(1,parseInt(f.nights)||1); }
+function nfDepart(f){ const d=parseDate(f.date); if(!d) return ''; const x=new Date(d); x.setDate(x.getDate()+nfNuits(f)); return isoDay(x); }
+function nfQui(f){ return f.type==='repas'?(f.participants||''):(f.pourQui.includes('__autre__')?[...f.pourQui.filter(v=>v!=='__autre__'),f.pourQuiAutre||'Autre'].join(', '):f.pourQui.join(', ')); }
+function nfSummaryRows(f){
+    const d=parseDate(f.date); const dl=d?dateLongue(d):'—';
+    const R=[];
+    if(f.type==='repas') R.push(['Repas',f.desc||'—'],['Date',dl],['Heure',f.heure||'—'],['Personnes',f.nb||'1'],['Participants',nfQui(f)||'—'],['Lieu',f.lieu||'—'],['Restaurant',f.presta||'—']);
+    else if(f.type==='taxi') R.push(['Date',dl],['Heure',f.heure||'—'],['Pour',nfQui(f)||'—'],['Départ',f.de||'—'],['Arrivée',f.vers||'—'],['Téléphone',f.tel||'—'],['Prestataire',f.presta||'—']);
+    else { const dd=parseDate(nfDepart(f)); R.push(['Arrivée',dl],['Départ',dd?dateLongue(dd):'—'],['Nuits',String(nfNuits(f))],['Pour',nfQui(f)||'—'],['Voyageur(s)',f.desc||'—'],['Ville',f.lieu||'—'],['Hôtel',f.presta||'—']); }
+    R.unshift(['Demandeur',f.dem||'—']);
+    return R;
+}
+function nfSummaryHtml(){ return nfSummaryRows(state.form).map(([k,v])=>`<div class="nf-tk"><span>${k}</span><b class="${v==='—'?'vide':''}">${esc(v)}</b></div>`).join(''); }
+function nfBarHtml(){
+    const f=state.form, d=parseDate(f.date);
+    const a=f.type==='repas'?[f.desc||'Repas',`${f.nb||1} pers.`,f.presta].filter(Boolean).join(' · '):f.type==='taxi'?`Taxi${f.vers?' → '+String(f.vers).split(',')[0]:''}`:`Hôtel${f.lieu?' · '+f.lieu:''} · ${nfNuits(f)} nuit${nfNuits(f)>1?'s':''}`;
+    const b=d?`${JOURS_C[d.getDay()]} ${d.getDate()}${f.type!=='hotel'&&f.heure?' · '+f.heure:''}`:'';
+    return `<b>${esc(a)}</b><span>${esc(b)}</span>`;
+}
 function renderInlineForm(m){
     const f=state.form;
 
-    /* ─ SUCCESS ─ */
     if(f.sent) return `
-    <div style="background:var(--white);border-radius:${m?'20px':'28px'};padding:${m?'32px 20px':'48px'};border:1px solid var(--border);text-align:center;box-shadow:0 8px 32px rgba(0,0,0,0.06);">
-        <div style="width:70px;height:70px;border-radius:50%;background:#f0fdf4;border:2px solid #22c55e;display:flex;align-items:center;justify-content:center;font-size:38px;margin:0 auto 18px;">✓</div>
-        <div style="font-family:var(--ft);font-weight:650;letter-spacing:-.01em;font-size:24px;margin-bottom:8px;">Demande envoyée !</div>
-        <div style="color:#8b93a1;font-size:14px;margin-bottom:24px;">En attente de validation par l'admin.</div>
-
-        <div style="background:#f8fafc;border:2px dashed #e2e8f0;border-radius:8px;padding:20px;margin-bottom:24px;display:inline-block;min-width:200px;">
-            <div style="font-size:11px;color:#94a3b8;margin-bottom:8px;text-transform:uppercase;letter-spacing:.08em;">Code de suivi</div>
-            <div style="font-family:monospace;font-size:30px;font-weight:800;color:#1a1f36;letter-spacing:6px;">${f.code||'—'}</div>
-            <div style="font-size:11px;color:#94a3b8;margin-top:8px;">Notez ce code pour suivre ou modifier votre demande</div>
-        </div>
-
-        <div style="display:flex;flex-direction:column;gap:10px;max-width:280px;margin:0 auto;">
-            <button data-reset-form class="btn-primary" style="width:100%;padding:14px;">+ Nouvelle demande</button>
-            <button id="goTrack" class="btn-secondary" style="width:100%;padding:12px;">${icon('search',14)} Suivre ma demande</button>
+    <div class="nf-card nf-ok">
+        <div class="nf-ok-ic">${icon('check',28)}</div>
+        <h1>Demande envoyée</h1>
+        <p>Elle est en attente de validation. Vous recevrez une confirmation par email.</p>
+        <div class="code-box"><div class="code-l">Code de suivi</div><div class="code-v">${f.code||'—'}</div><div class="code-s">Conservez ce code pour suivre ou modifier votre demande.</div></div>
+        <div class="nf-ok-btns">
+            <button id="goTrack" class="nf-btn ghost">${icon('search',15)} Suivre ma demande</button>
+            <button data-reset-form class="nf-btn">${icon('plus',15)} Nouvelle demande</button>
         </div>
     </div>`;
 
-    /* ─ STEP 1 : TYPE ─ */
-    if(!f.type) return `
-    <div>
-        <div style="font-family:var(--ft);font-weight:650;letter-spacing:-.01em;font-size:${m?'26px':'34px'};margin-bottom:6px;line-height:1.1;">Faire une<br>demande</div>
-        <div style="color:var(--ink-soft);font-size:14px;margin-bottom:24px;">Choisissez le type</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:${m?'10px':'14px'};">
-            <div data-set-type="repas" style="background:var(--white);border:2px solid var(--border);border-radius:8px;padding:${m?'18px 10px':'36px 20px'};cursor:pointer;transition:all 0.2s;text-align:center;" onmouseover="this.style.borderColor='var(--accent)';this.style.boxShadow='0 8px 24px rgba(0,0,0,0.08)'" onmouseout="this.style.borderColor='var(--border)';this.style.boxShadow='none'">
-                <div style="color:var(--accent);margin-bottom:10px;">${icon('utensils',m?30:44)}</div>
-                <div style="font-size:${m?'14px':'17px'};font-weight:700;margin-bottom:4px;">Repas</div>
-                <div style="color:var(--ink-soft);font-size:11px;">Déjeuner, petit-dej, goûter</div>
-            </div>
-            <div data-set-type="taxi" style="background:var(--white);border:2px solid var(--border);border-radius:8px;padding:${m?'18px 10px':'36px 20px'};cursor:pointer;transition:all 0.2s;text-align:center;" onmouseover="this.style.borderColor='var(--accent)';this.style.boxShadow='0 8px 24px rgba(0,0,0,0.08)'" onmouseout="this.style.borderColor='var(--border)';this.style.boxShadow='none'">
-                <div style="color:var(--accent);margin-bottom:10px;">${icon('car',m?30:44)}</div>
-                <div style="font-size:${m?'14px':'17px'};font-weight:700;margin-bottom:4px;">Taxi</div>
-                <div style="color:var(--ink-soft);font-size:11px;">Véhicule avec chauffeur</div>
-            </div>
-            <div data-set-type="hotel" style="background:var(--white);border:2px solid var(--border);border-radius:8px;padding:${m?'18px 10px':'36px 20px'};cursor:pointer;transition:all 0.2s;text-align:center;" onmouseover="this.style.borderColor='var(--accent)';this.style.boxShadow='0 8px 24px rgba(0,0,0,0.08)'" onmouseout="this.style.borderColor='var(--border)';this.style.boxShadow='none'">
-                <div style="color:var(--accent);margin-bottom:10px;">${icon('bed',m?30:44)}</div>
-                <div style="font-size:${m?'14px':'17px'};font-weight:700;margin-bottom:4px;">Hôtel</div>
-                <div style="color:var(--ink-soft);font-size:11px;">Nuit(s) d'hôtel</div>
-            </div>
-        </div>
-    <button id="goTrackHome" style="width:100%;margin-top:14px;background:none;border:1.5px solid var(--border);border-radius:8px;padding:12px;font-size:13px;color:var(--ink-soft);cursor:pointer;">${icon('search',14)} Suivre ou modifier ma demande</button>
-    </div>`;
+    const T=f.type;
+    const chip=(act,k,v,label,on,extra='')=>`<button type="button" data-nf="${act}" data-k="${k}" data-v="${esc(v)}" class="nf-chip ${on?'on':''}" ${extra}>${label}</button>`;
+    const sec=(ic,titre,body,aside='')=>`<section class="nf-card"><div class="nf-sec-h"><span class="nf-sec-ic">${icon(ic,15)}</span><b>${titre}</b>${aside?`<span class="nf-aside">${aside}</span>`:''}</div>${body}</section>`;
+    const lbl=(t,opt)=>`<div class="nf-lbl">${t}${opt?` <span>${opt}</span>`:''}</div>`;
+    const recents=(list,k)=>list.length?`<div class="nf-row nf-sugg"><span class="nf-hint">Récents :</span>${list.map(v=>chip('set',k,v,esc(v),false,'style="height:30px;font-size:12.5px;"')).join('')}</div>`:'';
 
-    const card = (inner) => `<div style="background:var(--white);border-radius:${m?'20px':'28px'};padding:${m?'20px 16px':'28px 32px'};border:1px solid var(--border);box-shadow:0 8px 32px rgba(0,0,0,0.05);">${inner}</div>`;
-    const isRepas = f.type==='repas';
-    const isHotel = f.type==='hotel';
+    /* Qui */
+    const demandeur=assistanteName()
+        ?`<div class="nf-row"><span class="nf-chip soft on">${icon('user',14)} ${esc(assistanteName())}</span><span class="nf-hint">connectée</span></div>`
+        :`<div class="nf-row">${settings.assistantes.map(a=>chip('set','dem',a,esc(a),f.dem===a)).join('')}</div>`;
+    let qui='';
+    if(T==='repas'){
+        const deja=String(f.participants||'').toUpperCase();
+        const sugg=settings.directeurs.filter(d=>!deja.includes(String(d).toUpperCase()));
+        qui=lbl('Participants du repas *')+`<input id="formParticipants" type="text" class="form-input nf-in" value="${esc(f.participants||'')}" placeholder="Ex : Jean Dupont, Marie Martin…">`
+            +(sugg.length?`<div class="nf-row nf-sugg"><span class="nf-hint">Ajouter :</span>${sugg.map(d=>chip('addpart','participants',d,'+ '+esc(d),false,'style="height:30px;font-size:12.5px;"')).join('')}</div>`:'');
+    } else {
+        qui=lbl('Pour qui ? *','plusieurs choix possibles')+`<div class="nf-row">${settings.directeurs.map(d=>chip('toggle','pourQui',d,(f.pourQui.includes(d)?icon('check',13)+' ':'')+esc(d),f.pourQui.includes(d))).join('')}${chip('toggle','pourQui','__autre__','Autre…',f.pourQui.includes('__autre__'))}</div>`
+            +(f.pourQui.includes('__autre__')?`<input id="pourQuiAutreInput" type="text" class="form-input nf-in" style="margin-top:8px;" placeholder="Préciser le nom…" value="${esc(f.pourQuiAutre||'')}">`:'');
+    }
+    const nQui=T==='repas'?String(f.participants||'').split(',').filter(s=>s.trim()).length:f.pourQui.length;
+    const secQui=sec('users','Pour qui ?',lbl('Demandeur *')+demandeur+`<div style="height:14px"></div>`+qui,nQui?`${nQui} personne${nQui>1?'s':''}`:'');
 
-    /* ─ STEP 2 : DÉTAILS ─ */
-    if(f.step===2) return card(`
-        <button data-form-back-type class="back-btn-dark" style="margin-bottom:16px;">← Retour</button>
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:22px;">
-            <span style="color:var(--accent);">${icon(isRepas?'utensils':isHotel?'bed':'car',24)}</span>
-            <div style="font-family:var(--ft);font-weight:650;letter-spacing:-.01em;font-size:${m?'20px':'24px'};">${isRepas?'Commande repas':isHotel?'Réservation hôtel':'Réservation taxi'}</div>
-        </div>
-        <div class="step-indicator"><div class="step-dot done"></div><div class="step-dot active"></div><div class="step-dot"></div></div>
+    /* Quand */
+    const jours=nfJours(), jk=jours.map(isoDay), autreDate=f.dateAutre||(f.date&&!jk.includes(f.date));
+    const dsel=parseDate(f.date);
+    const daysHtml=`<div class="nf-days">${jours.map((d,i)=>{ const k=jk[i]; const on=!autreDate&&f.date===k;
+        return `<button type="button" data-nf="set" data-k="date" data-v="${k}" class="nf-day ${on?'on':''}"><span>${i===0?'Auj.':JOURS_C[d.getDay()]}</span><b>${d.getDate()}</b></button>`; }).join('')}
+        <button type="button" data-nf="dateautre" class="nf-day ${autreDate?'on':''}" title="Autre date">${icon('calendar',18)}<span>Autre</span></button></div>
+        ${autreDate?`<input type="date" id="formDate" class="form-input nf-in" style="margin-top:8px;max-width:220px;" value="${f.date||''}">`:''}`;
+    let quandBody='', quandAside=dsel?dateLongue(dsel):'';
+    if(T==='hotel'){
+        const n=nfNuits(f), dd=parseDate(nfDepart(f));
+        quandBody=lbl('Arrivée *')+daysHtml+`<div class="nf-step-row"><div><b>Nombre de nuits</b><span>${dd?'Départ le '+dateLongue(dd):''}</span></div>
+            <div class="nf-stepper"><button type="button" data-nf="nights" data-v="-1">${icon('minus',16)}</button><b>${n}</b><button type="button" data-nf="nights" data-v="1">${icon('plus',16)}</button></div></div>`;
+        quandAside=dsel?`${n} nuit${n>1?'s':''}`:'';
+    } else {
+        const H=NF_HEURES[T]||NF_HEURES.repas, autreH=f.heureAutre||(f.heure&&!H.includes(f.heure));
+        quandBody=lbl('Jour *')+daysHtml+`<div style="height:14px"></div>`+lbl('Heure *')
+            +`<div class="nf-row">${H.map(h=>chip('set','heure',h,h,!autreH&&f.heure===h)).join('')}${chip('heureautre','','','Autre…',autreH)}</div>`
+            +(autreH?`<input id="formHeure" type="text" class="form-input nf-in" style="margin-top:8px;max-width:220px;" placeholder="Ex : 08h45" value="${esc(f.heure||'')}">`:'');
+        if(dsel&&f.heure) quandAside+=' · '+esc(f.heure);
+    }
+    const secQuand=sec('calendar',T==='hotel'?'Séjour':'Quand ?',quandBody,quandAside);
 
-        <!-- Assistante -->
-        <div class="form-group">
-            <label class="form-label">Votre nom (assistante) *</label>
-            ${assistanteName()?`<div class="form-input" style="background:#f3f4f6;display:flex;align-items:center;gap:8px;">${icon('user',14)} <b>${esc(assistanteName())}</b> <span style="color:#8b93a1;font-size:12px;">(connectée)</span></div><input type="hidden" id="formDem" value="${esc(assistanteName())}">`:`
-            <select id="formDem" class="form-select">
-                <option value="">— Choisir votre nom —</option>
-                ${settings.assistantes.map(d=>`<option ${f.dem===d?'selected':''}>${d}</option>`).join('')}
-            </select>`}
-        </div>
+    /* Détails */
+    let det='', detTitre='', detIc='';
+    if(T==='repas'){
+        detTitre='Le repas'; detIc='utensils';
+        det=lbl('Type de repas')+`<div class="nf-tiles">${P_TYPES.map(t=>`<button type="button" data-nf="set" data-k="desc" data-v="${esc(t)}" class="nf-tile ${f.desc===t?'on':''}">${icon(nfIcRepas(t),20)}<span>${esc(t)}</span></button>`).join('')}</div>`
+            +`<div class="nf-step-row"><div><b>Nombre de personnes</b><span>participants compris</span></div>
+                <div class="nf-stepper"><button type="button" data-nf="nb" data-v="-1">${icon('minus',16)}</button><b>${esc(f.nb||'1')}</b><button type="button" data-nf="nb" data-v="1">${icon('plus',16)}</button></div></div>`
+            +lbl('Restaurant / prestataire *')+`<div class="nf-row">${P_REPAS.map(p=>chip('set','presta',p,esc(p),f.presta===p)).join('')}</div>`
+            +`<div style="height:14px"></div>`+lbl('Lieu de livraison *')+`<input id="formLieu" type="text" class="form-input nf-in" value="${esc(f.lieu||'')}" placeholder="Bureau, salle, adresse…">`+recents(nfRecents('repas','lieu'),'lieu');
+    } else if(T==='taxi'){
+        detTitre='Le trajet'; detIc='car';
+        det=lbl('Adresse de départ *')+`<input id="formDe" type="text" class="form-input nf-in" value="${esc(f.de||'')}" placeholder="Saisissez l’adresse de départ…" autocomplete="off">`+recents(nfRecents('taxi','depart',3),'de')
+            +`<div style="height:14px"></div>`+lbl('Adresse d’arrivée *')+`<input id="formVers" type="text" class="form-input nf-in" value="${esc(f.vers||'')}" placeholder="Saisissez la destination…" autocomplete="off">`+recents(nfRecents('taxi','arrivee',3),'vers')
+            +`<div class="nf-grid2" style="margin-top:14px;"><div>${lbl('Téléphone du passager *')}<input id="formTel" type="tel" class="form-input nf-in" value="${esc(f.tel||'')}" placeholder="06 12 34 56 78"></div>
+               <div>${lbl('N° de vol / train','si gare ou aéroport')}<input id="formVol" type="text" class="form-input nf-in" value="${esc(f.vol||'')}" placeholder="Ex : AF1234, TGV 6201"></div></div>`
+            +`<div style="height:14px"></div>`+lbl('Prestataire')+`<div class="nf-row">${P_TAXI.map(p=>chip('set','presta',p,esc(p),f.presta===p)).join('')}</div>`;
+    } else {
+        detTitre='L’hébergement'; detIc='bed';
+        det=`<div class="nf-grid2"><div>${lbl('Voyageur(s)')}<input id="formDesc" type="text" class="form-input nf-in" value="${esc(f.desc||'')}" placeholder="Ex : Jean Dupont"></div>
+               <div>${lbl('Ville *')}<input id="formLieu" type="text" class="form-input nf-in" value="${esc(f.lieu||'')}" placeholder="Ex : Lyon"></div></div>`+recents(nfRecents('hotel','lieu',3),'lieu')
+            +`<div class="nf-step-row"><div><b>Nombre de personnes</b><span>&nbsp;</span></div>
+                <div class="nf-stepper"><button type="button" data-nf="nb" data-v="-1">${icon('minus',16)}</button><b>${esc(f.nb||'1')}</b><button type="button" data-nf="nb" data-v="1">${icon('plus',16)}</button></div></div>`
+            +lbl('Hôtel')+`<div class="nf-row">${P_HOTEL.map(p=>chip('set','presta',p,esc(p),f.presta===p)).join('')}</div>`;
+    }
+    const secDet=sec(detIc,detTitre,det);
+    const secPlus=sec('message','Compléments',lbl('Commentaire','optionnel')+`<textarea id="formCom" class="form-input nf-in" style="min-height:70px;resize:vertical;" placeholder="Allergies, consignes, informations utiles…">${esc(f.com||'')}</textarea>`
+        +`<label class="nf-check"><input type="checkbox" id="formCopyMail" class="nf-in" ${f.copyMail?'checked':''}><span><b>Recevoir une copie par email</b><span>Un récapitulatif de la demande vous sera envoyé.</span></span></label>`);
 
-        ${f.type==='commande'?'':isRepas?`
-        <!-- Participants du repas -->
-        <div class="form-group">
-            <label class="form-label">Participants du repas *</label>
-            <input id="formParticipants" type="text" class="form-input" value="${f.participants||''}" placeholder="Ex: Jean Dupont, Marie Martin...">
-        </div>
-        `:`
-        <!-- Pour qui -->
-        <div class="form-group">
-            <label class="form-label">Pour qui ? *</label>
-            <div style="position:relative;" id="pqWrapper">
-                <button type="button" id="pqToggle" style="width:100%;border:1.5px solid var(--border);border-radius:8px;padding:13px 14px;font-size:15px;background:var(--white);text-align:left;cursor:pointer;display:flex;justify-content:space-between;align-items:center;font-family:var(--fb);color:var(--ink);">
-                    <span id="pqLabel">${f.pourQui.length?f.pourQui.filter(v=>v!=='__autre__').join(', ')+(f.pourQui.includes('__autre__')?(f.pourQui.length>1?', Autre':'Autre'):'') || '— Choisir —':'— Choisir —'}</span>
-                    <span style="font-size:11px;color:var(--ink-soft);">▼</span>
-                </button>
-                <div id="pqDropdown" style="display:none;position:absolute;top:calc(100% + 4px);left:0;right:0;background:var(--white);border:1.5px solid var(--border);border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,0.10);z-index:999;overflow:hidden;max-height:220px;overflow-y:auto;">
-                    ${settings.directeurs.map(d=>`
-                    <label style="display:flex;align-items:center;gap:12px;padding:11px 16px;cursor:pointer;border-bottom:1px solid var(--border-light);" onmouseover="this.style.background='#f3f4f6'" onmouseout="this.style.background=''">
-                        <input type="checkbox" class="pq-check" value="${d}" ${f.pourQui.includes(d)?'checked':''} style="width:17px;height:17px;accent-color:var(--accent);cursor:pointer;flex-shrink:0;">
-                        <span style="font-size:14px;">${d}</span>
-                    </label>`).join('')}
-                    <label style="display:flex;align-items:center;gap:12px;padding:11px 16px;cursor:pointer;" onmouseover="this.style.background='#f3f4f6'" onmouseout="this.style.background=''">
-                        <input type="checkbox" class="pq-check" value="__autre__" ${f.pourQui.includes('__autre__')?'checked':''} style="width:17px;height:17px;accent-color:var(--accent);cursor:pointer;flex-shrink:0;">
-                        <span style="font-size:14px;color:var(--ink-mid);">Autre…</span>
-                    </label>
-                </div>
-            </div>
-            ${f.pourQui.includes('__autre__')?`<input id="pourQuiAutreInput" type="text" class="form-input" style="margin-top:10px;" placeholder="Préciser le nom..." value="${f.pourQuiAutre}">`:''}
-        </div>
-        `}
-        <!-- Date & Heure -->
-        ${isHotel?`
-        <div class="form-row-2">
-            <div class="form-group"><label class="form-label">${icon('calendar',13)} Arrivée</label><input type="date" id="formDate" value="${f.date}" class="form-input"></div>
-            <div class="form-group"><label class="form-label">${icon('calendar',13)} Départ</label><input type="date" id="formDateDepart" value="${f.dateDepart||''}" class="form-input"></div>
-        </div>
-        `:`
-        <div class="form-row-2">
-            <div class="form-group"><label class="form-label">Date</label><input type="date" id="formDate" value="${f.date}" class="form-input"></div>
-<div class="form-group"><label class="form-label">Heure</label><input id="formHeure" type="text" value="${f.heure||''}" placeholder="Ex: 08h30" class="form-input"></div>
-        </div>
-        `}
-
-        ${isRepas?`
-        <div class="form-group"><label class="form-label">Type de repas</label><select id="formDesc" class="form-select"><option value="">— Choisir —</option>${P_TYPES.map(o=>`<option ${f.desc===o?'selected':''}>${o}</option>`).join('')}</select></div>
-        <div class="form-group"><label class="form-label">Lieu de livraison</label><input id="formLieu" type="text" value="${f.lieu}" placeholder="Bureau, Salle France, adresse..." class="form-input"></div>
-        <div class="form-row-2">
-            <div class="form-group"><label class="form-label">Nb personnes</label><select id="formNb" class="form-select">${NBS.map(n=>`<option ${f.nb===n?'selected':''}>${n}</option>`).join('')}</select></div>
-            <div class="form-group"><label class="form-label">Restaurant / prestataire</label><select id="formPresta" class="form-select"><option value="">— Choisir —</option>${P_REPAS.map(p=>`<option ${f.presta===p?"selected":""}>${p}</option>`).join("")}</select></div>
-        </div>
-        `:isHotel?`
-        <div class="form-group"><label class="form-label">Voyageur(s)</label><input id="formDesc" type="text" value="${f.desc}" placeholder="Ex: Jean Dupont" class="form-input"></div>
-        <div class="form-group"><label class="form-label">${icon('pin',13)} Ville</label><input id="formLieu" type="text" value="${f.lieu}" placeholder="Ex: Lyon" class="form-input"></div>
-        <div class="form-row-2">
-            <div class="form-group"><label class="form-label">Nb personnes</label><select id="formNb" class="form-select">${NBS.map(n=>`<option ${f.nb===n?'selected':''}>${n}</option>`).join('')}</select></div>
-            <div class="form-group"><label class="form-label">${icon('bed',13)} Hôtel</label><select id="formPresta" class="form-select"><option value="">— Choisir —</option>${P_HOTEL.map(p=>`<option ${f.presta===p?'selected':''}>${p}</option>`).join('')}</select></div>
-        </div>
-        `:`
-        <div class="form-group">
-            <label class="form-label">${icon('pin',13)} Adresse de départ</label>
-            <input id="formDe" type="text" value="${f.de}" placeholder="Saisissez l'adresse de départ…" class="form-input" autocomplete="off">
-            <div style="font-size:11px;color:var(--ink-soft);margin-top:5px;display:flex;align-items:center;gap:4px;"><span>${icon('search',12)}</span> Suggestions Google Maps actives</div>
-        </div>
-        <div class="form-group">
-            <label class="form-label">${icon('flag',13)} Adresse d'arrivée</label>
-            <input id="formVers" type="text" value="${f.vers}" placeholder="Saisissez la destination…" class="form-input" autocomplete="off">
-            <div style="font-size:11px;color:var(--ink-soft);margin-top:5px;display:flex;align-items:center;gap:4px;"><span>${icon('search',12)}</span> Suggestions Google Maps actives</div>
-        </div>
-        <div class="form-group"><label class="form-label">Prestataire</label><select id="formPresta" class="form-select"><option value="">— Choisir —</option>${P_TAXI.map(p=>`<option ${f.presta===p?'selected':''}>${p}</option>`).join('')}</select></div>
-        ${(()=>{ const dest=(f.vers||'').toLowerCase(); const isAero=dest.includes('aéroport')||dest.includes('aeroport')||dest.includes('cdg')||dest.includes('orly')||dest.includes('roissy')||dest.includes('beauvais'); const isGare=dest.includes('gare')||dest.includes('saint-lazare')||dest.includes('montparnasse')||dest.includes('lyon')||dest.includes('nord')||dest.includes('bercy'); const dep=(f.de||'').toLowerCase(); const isAeroDep=dep.includes('aéroport')||dep.includes('aeroport')||dep.includes('cdg')||dep.includes('orly')||dep.includes('roissy'); const isGareDep=dep.includes('gare'); return (isAero||isGare||isAeroDep||isGareDep)?`<div class="form-group"><label class="form-label" style="color:#b45309;">✈️ N° de vol / train *<span style="font-size:10px;font-weight:400;margin-left:6px;">(obligatoire pour gare/aéroport)</span></label><input id="formVol" type="text" value="${f.vol||''}" placeholder="Ex: AF1234, TGV 6201…" class="form-input" style="border-color:#f59e0b;"></div>`:''})()}
-        <div class="form-group"><label class="form-label">${icon('phone',13)} Téléphone du passager * <span style="font-size:10px;font-weight:400;color:var(--ink-soft);">(pour le chauffeur)</span></label><input id="formTel" type="tel" value="${f.tel||''}" placeholder="Ex: 06 12 34 56 78" class="form-input"></div>
-        `}
-
-        <div class="form-group"><label class="form-label">Commentaire (optionnel)</label><textarea id="formCom" class="form-input" style="min-height:72px;resize:vertical;" placeholder="Informations complémentaires...">${f.com}</textarea></div>
-        <p style="font-size:13px;color:var(--ink-soft);text-align:center;margin-bottom:10px;">Lorsque votre demande sera prise en compte, vous recevrez une confirmation par email.</p>
-        <label style="display:flex;align-items:center;gap:10px;padding:13px 16px;background:var(--white);border:1.5px solid var(--border);border-radius:8px;cursor:pointer;margin-bottom:10px;">
-            <input type="checkbox" id="formCopyMail" ${f.copyMail?'checked':''} style="width:18px;height:18px;accent-color:var(--accent);cursor:pointer;flex-shrink:0;">
-            <span style="font-size:14px;font-weight:500;">Recevoir une copie de ma demande par mail</span>
-        </label>
-        <button id="formNextStep" class="btn-primary" style="width:100%;padding:14px;font-size:16px;">Vérifier →</button>
-    `);
-
-    /* ─ STEP 3 : RÉCAP ─ */
-    const pourQuiLabel = isRepas
-        ? (f.participants||'—')
-        : (f.pourQui.includes('__autre__') ? (f.pourQuiAutre||'Autre') : f.pourQui.join(', ')||'—');
-    const nbNuits = isHotel && f.date && f.dateDepart ? Math.round((parseDate(f.dateDepart)-parseDate(f.date))/(1000*60*60*24)) : null;
-    const descFinal = isRepas ? (f.desc||'Commande repas')
-        : isHotel ? (f.desc||`Hôtel ${f.lieu||'?'}`)
-        : `Taxi ${(f.de||'?').split(',')[0]} → ${(f.vers||'?').split(',')[0]}`;
-
-    return card(`
-        <button data-form-step2 class="back-btn-dark" style="margin-bottom:18px;">← Modifier</button>
-        <div style="font-family:var(--ft);font-weight:650;letter-spacing:-.01em;font-size:${m?'20px':'24px'};margin-bottom:4px;">Récapitulatif</div>
-        <div style="color:var(--ink-soft);font-size:13px;margin-bottom:20px;">Vérifiez avant d'envoyer</div>
-        <div class="step-indicator"><div class="step-dot done"></div><div class="step-dot done"></div><div class="step-dot active"></div></div>
-        <div style="background:#fafaf8;border-radius:8px;padding:14px;margin-bottom:18px;">
-            ${[
-                ["Type",`${TYPE_ICON[f.type]} ${TYPE_LABEL[f.type]}`],
-                ["Demandeur",f.dem||'—'],
-                [isRepas?"Participants":"Pour",pourQuiLabel],
-                ...(isHotel
-                    ? [["Arrivée",$d(f.date)],["Départ",$d(f.dateDepart)],...(nbNuits!==null&&nbNuits>0?[["Durée",`${nbNuits} nuit${nbNuits>1?'s':''}`]]:[])]
-                    : [["Date & heure",`${$d(f.date)} à ${f.heure}`]]),
-                isRepas?["Lieu",f.lieu||'—']:isHotel?["Ville",f.lieu||'—']:["Trajet",`${(f.de||'?').split(',')[0]} → ${(f.vers||'?').split(',')[0]}`],
-                ["Prestataire",f.presta||'—'],
-            ].map(([k,v],i,arr)=>`
-                <div style="display:flex;justify-content:space-between;align-items:flex-start;padding:10px 0;${i<arr.length-1?'border-bottom:1px solid #e6e8ec;':''}gap:10px;">
-                    <span style="color:#8b93a1;font-size:13px;white-space:nowrap;">${k}</span>
-                    <span style="font-weight:600;font-size:14px;text-align:right;">${v}</span>
-                </div>`).join('')}
-        </div>
-        <div style="background:#fffbeb;border-radius:12px;padding:12px 16px;margin-bottom:18px;">
-            <span style="color:#b45309;font-size:13px;">En attente de validation admin</span>
-        </div>
-        <button id="formSubmit" class="btn-primary" style="width:100%;padding:14px;font-size:16px;">✓ Envoyer ma demande</button>
-    `);
+    const recap=`<aside class="nf-card nf-recap">
+        <div class="nf-recap-h"><b>Récapitulatif</b><span>À envoyer</span></div>
+        <div id="nfSum" class="nf-sum">${nfSummaryHtml()}</div>
+        <div style="padding:0 18px 18px;"><button class="nf-btn f-send" style="width:100%;">${icon('send',16)} Envoyer la demande</button>
+        <div class="nf-note">Vous recevrez un email de confirmation et un code de suivi.</div></div>
+    </aside>`;
+    return `<div class="nf-layout">
+        <div class="nf-col">${secQui}${secQuand}${secDet}${secPlus}</div>
+        ${m?'':recap}
+    </div>
+    ${m?`<div class="nf-bar"><div id="nfBar" class="nf-bar-sum">${nfBarHtml()}</div><button class="nf-btn f-send" style="width:100%;">${icon('send',16)} Envoyer la demande</button></div>`:''}`;
 }
 
 /* ══════════════════════════════════════
@@ -3915,7 +3938,7 @@ function attachEvents(){
 
     // Form submit
     const sb=document.getElementById('formSubmit');
-    if(sb)sb.onclick=async()=>{
+    const _submitForm=async()=>{
         const f=state.form;
         const pourQuiLabel=f.type==='repas'?(f.participants||''):(f.pourQui.includes('__autre__')?(f.pourQuiAutre||'Autre'):f.pourQui.join(', '));
         const descFinal=f.type==='taxi'?`Taxi ${(f.de||'?').split(',')[0]} → ${(f.vers||'?').split(',')[0]}`:f.type==='hotel'?(f.desc||`Hôtel ${f.lieu||'?'}`):(f.desc||'Commande repas');
@@ -3941,6 +3964,62 @@ function attachEvents(){
             sendConfirmationEmail(newItem, {isCopie: true});
         }
     };
+    if(sb)sb.onclick=_submitForm;
+    // ── Nouveau formulaire : pastilles, saisie, envoi ──
+    const nfSave=()=>{ const f=state.form, g=id=>document.getElementById(id);
+        if(g('formParticipants')) f.participants=g('formParticipants').value;
+        if(g('pourQuiAutreInput')) f.pourQuiAutre=g('pourQuiAutreInput').value;
+        if(g('formDate')) f.date=g('formDate').value;
+        if(g('formHeure')) f.heure=g('formHeure').value;
+        if(g('formLieu')) f.lieu=g('formLieu').value;
+        if(g('formDesc')&&g('formDesc').tagName==='INPUT') f.desc=g('formDesc').value;
+        if(g('formDe')) f.de=g('formDe').value;
+        if(g('formVers')) f.vers=g('formVers').value;
+        if(g('formTel')) f.tel=g('formTel').value;
+        if(g('formVol')) f.vol=g('formVol').value;
+        if(g('formCom')) f.com=g('formCom').value;
+        if(g('formCopyMail')) f.copyMail=g('formCopyMail').checked;
+        if(assistanteName()) f.dem=assistanteName();
+        if(f.type==='hotel') f.dateDepart=nfDepart(f);
+    };
+    const nfRefresh=()=>{ const s=document.getElementById('nfSum'); if(s) s.innerHTML=nfSummaryHtml(); const b=document.getElementById('nfBar'); if(b) b.innerHTML=nfBarHtml(); };
+    document.querySelectorAll('.nf-in').forEach(el=>{ el.addEventListener('input',()=>{ nfSave(); nfRefresh(); }); el.addEventListener('change',()=>{ nfSave(); nfRefresh(); }); });
+    document.querySelectorAll('[data-nf]').forEach(el=>el.onclick=e=>{
+        e.preventDefault(); nfSave();
+        const f=state.form, act=el.getAttribute('data-nf'), k=el.getAttribute('data-k'), v=el.getAttribute('data-v');
+        if(act==='type'){ if(f.type!==v){ f.type=v; f.presta=''; f.desc=''; f.lieu=''; f.heureAutre=false; } }
+        else if(act==='set'){ f[k]=(f[k]===v&&k!=='date'&&k!=='lieu'&&k!=='de'&&k!=='vers')?'':v; if(k==='date') f.dateAutre=false; if(k==='heure') f.heureAutre=false; if(k==='dem') lsSet('nf_dem',v); }
+        else if(act==='toggle'){ const a=f[k]||[]; f[k]=a.includes(v)?a.filter(x=>x!==v):[...a,v]; }
+        else if(act==='addpart'){ const cur=String(f.participants||'').trim(); f.participants=cur?cur.replace(/,\s*$/,'')+', '+v:v; }
+        else if(act==='nb'){ f.nb=String(Math.max(1,Math.min(500,(parseInt(f.nb)||1)+(+v)))); }
+        else if(act==='nights'){ f.nights=Math.max(1,Math.min(60,nfNuits(f)+(+v))); }
+        else if(act==='dateautre'){ f.dateAutre=true; }
+        else if(act==='heureautre'){ f.heureAutre=true; if(NF_HEURES[f.type]?.includes(f.heure)) f.heure=''; }
+        if(f.type==='hotel') f.dateDepart=nfDepart(f);
+        render();
+    });
+    document.querySelectorAll('.f-send').forEach(btn=>btn.onclick=()=>{
+        nfSave(); const f=state.form;
+        if(!f.heure&&f.type==='hotel') f.heure='';
+        const err=m=>showToast(`${icon('alert',13)} ${m}`);
+        if(!f.dem) return err('Choisissez votre nom (demandeur)');
+        if(f.type==='repas'){ if(!String(f.participants||'').trim()) return err('Les participants du repas sont obligatoires'); }
+        else if(!f.pourQui.length) return err('Indiquez pour qui');
+        if(!f.date) return err('Choisissez la date');
+        if(f.type!=='hotel'&&!f.heure) return err('Choisissez l’heure');
+        if(f.type==='repas'){ if(!f.presta) return err('Choisissez le restaurant'); if(!f.lieu) return err('Le lieu de livraison est obligatoire'); }
+        if(f.type==='hotel'){ if(!f.lieu) return err('La ville est obligatoire'); f.dateDepart=nfDepart(f); }
+        if(f.type==='taxi'){
+            if(!f.de) return err('L’adresse de départ est obligatoire');
+            if(!f.vers) return err('L’adresse d’arrivée est obligatoire');
+            if(!f.tel) return err('Le téléphone du passager est obligatoire');
+            const t=(String(f.de)+' '+String(f.vers)).toLowerCase();
+            const needsVol=['aéroport','aeroport','cdg','orly','roissy','beauvais','gare','saint-lazare','montparnasse'].some(w=>t.includes(w));
+            if(needsVol&&!f.vol) return err('N° de vol / train obligatoire pour une gare ou un aéroport');
+        }
+        if(f.type==='hotel') f.heure=f.heure||'';
+        _submitForm();
+    });
 
     document.querySelectorAll('[data-reset-form]').forEach(el=>el.onclick=()=>setState({form:{type:null,step:1,sent:false,dem:"",pourQui:[],pourQuiAutre:"",participants:"",vol:"",copyMail:false,date:today(),dateDepart:"",heure:"12h00",lieu:"",de:"",vers:"",presta:"",desc:"",nb:"1",com:""}}));
 
