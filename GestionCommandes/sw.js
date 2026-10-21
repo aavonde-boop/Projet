@@ -2,8 +2,8 @@
    Stratégie « réseau d'abord » pour la page : chaque mise à jour publiée sur
    GitHub est visible immédiatement ; le cache ne sert que hors connexion.
    Les appels externes (Supabase, emails, notifications) ne sont jamais mis en cache. */
-const CACHE = 'commandes-v7';
-const SHELL = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png'];
+const CACHE = 'commandes-v8';
+const SHELL = ['./', './index.html', './manifest.webmanifest', './express.html', './express.webmanifest', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).then(() => self.skipWaiting()));

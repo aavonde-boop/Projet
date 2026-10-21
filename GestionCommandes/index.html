@@ -470,6 +470,67 @@
         .rg .rg-n b{ min-width:16px; text-align:center; }
         .nf-warn{ margin-top:10px; background:#fef6e7; color:#92400e; border-radius:8px; padding:9px 12px; font-size:12.5px; display:flex; gap:7px; align-items:flex-start; }
         .pi-mini{ display:inline-flex; gap:3px; color:var(--ink-soft); margin-left:6px; }
+        /* ═══ ÉCRAN LIVE ═══ */
+        .lv{ position:fixed; inset:0; z-index:5000; background:#0b1422; color:#e6edf6; display:grid; grid-template-columns:minmax(0,1fr) 420px; grid-template-rows:auto auto 1fr auto; gap:22px 28px; padding:28px 36px 0; overflow:hidden; font-family:var(--fb); }
+        .lv-bg{ position:absolute; inset:-20%; background:radial-gradient(40% 40% at 20% 20%,rgba(44,95,133,.45),transparent 70%),radial-gradient(35% 35% at 85% 30%,rgba(20,184,166,.18),transparent 70%),radial-gradient(40% 40% at 60% 90%,rgba(59,130,246,.22),transparent 70%); animation:lvBg 24s ease-in-out infinite alternate; pointer-events:none; }
+        @keyframes lvBg{ from{ transform:translate(0,0) scale(1); } to{ transform:translate(-4%,3%) scale(1.08); } }
+        .lv > *:not(.lv-bg){ position:relative; }
+        .lv-top{ grid-column:1/-1; display:flex; align-items:center; gap:20px; }
+        .lv-brand{ display:flex; align-items:center; gap:12px; } .lv-brand b{ display:block; font-size:18px; color:#fff; } .lv-brand span{ font-size:13px; color:#8fa0b5; }
+        .lv-clock{ margin-left:auto; font:700 46px var(--ft); letter-spacing:-.02em; font-variant-numeric:tabular-nums; color:#fff; text-shadow:0 0 30px rgba(96,165,250,.35); }
+        .lv-exit{ width:40px; height:40px; border-radius:10px; border:1px solid rgba(255,255,255,.15); background:rgba(255,255,255,.05); color:#c5d0dd; cursor:pointer; display:flex; align-items:center; justify-content:center; }
+        .lv-kpis{ grid-column:1/-1; display:grid; grid-template-columns:repeat(4,1fr); gap:16px; }
+        .lv-kpi{ background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.08); border-radius:16px; padding:18px 22px; backdrop-filter:blur(8px); animation:lvUp .7s cubic-bezier(.2,.8,.2,1) both; }
+        .lv-kpi-v{ display:block; font:700 52px var(--ft); line-height:1; letter-spacing:-.03em; font-variant-numeric:tabular-nums; } .lv-kpi-l{ display:block; margin-top:8px; color:#9fb0c4; font-size:15px; }
+        @keyframes lvUp{ from{ opacity:0; transform:translateY(18px); } to{ opacity:1; transform:none; } }
+        .lv-tl{ background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.08); border-radius:18px; padding:16px 20px 18px; overflow:hidden; align-self:start; }
+        .lv-tl-h{ position:relative; height:20px; margin:0 70px 8px 0; } .lv-tl-h span{ position:absolute; transform:translateX(-50%); font-size:12px; color:#7d8ea3; }
+        .lv-tl-b{ position:relative; margin-right:70px; min-height:84px; } .lv-tl-b > i{ position:absolute; top:0; bottom:0; width:1px; background:rgba(255,255,255,.06); }
+        .lv-now{ position:absolute; top:-6px; bottom:-6px; width:2px; background:#f43f5e; box-shadow:0 0 14px #f43f5e; transition:left 1s linear; z-index:3; }
+        .lv-now span{ position:absolute; top:-22px; left:50%; transform:translateX(-50%); background:#f43f5e; color:#fff; font-size:11px; font-weight:700; padding:2px 7px; border-radius:6px; white-space:nowrap; }
+        .lv-now::after{ content:''; position:absolute; bottom:-4px; left:-4px; width:10px; height:10px; border-radius:50%; background:#f43f5e; animation:lvPing 1.6s infinite; }
+        @keyframes lvPing{ 0%{ box-shadow:0 0 0 0 rgba(244,63,94,.6); } 100%{ box-shadow:0 0 0 14px rgba(244,63,94,0); } }
+        .lv-ev{ position:absolute; min-width:150px; max-width:220px; padding:8px 11px; border-radius:10px; background:color-mix(in srgb,var(--c) 18%,#0b1422); border:1px solid color-mix(in srgb,var(--c) 55%,transparent); border-left:4px solid var(--c); animation:lvPop .6s cubic-bezier(.2,.8,.2,1) both; }
+        .lv-ev b{ display:block; font-size:13px; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; } .lv-ev span{ display:block; font-size:11.5px; color:#a9b8ca; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .lv-ev.ok{ opacity:.55; } .lv-ev.ok b::after{ content:' ✓'; color:#4ade80; }
+        @keyframes lvPop{ from{ opacity:0; transform:scale(.85) translateY(8px); } to{ opacity:1; transform:none; } }
+        .lv-empty{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; color:#7d8ea3; font-size:15px; }
+        .lv-list{ grid-column:2; grid-row:3; background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.08); border-radius:18px; padding:18px; overflow:hidden; align-self:start; }
+        .lv-list h3{ font-size:14px; color:#9fb0c4; font-weight:600; text-transform:uppercase; letter-spacing:.08em; margin-bottom:12px; }
+        .lv-item{ display:flex; align-items:center; gap:14px; padding:12px 14px; border-radius:12px; background:rgba(255,255,255,.04); border-left:4px solid var(--c); margin-bottom:10px; animation:lvSlide .6s cubic-bezier(.2,.8,.2,1) both; }
+        .lv-item:nth-child(2){ animation-delay:.1s; } .lv-item:nth-child(3){ animation-delay:.2s; } .lv-item:nth-child(4){ animation-delay:.3s; } .lv-item:nth-child(5){ animation-delay:.4s; } .lv-item:nth-child(6){ animation-delay:.5s; }
+        @keyframes lvSlide{ from{ opacity:0; transform:translateX(30px); } to{ opacity:1; transform:none; } }
+        .lv-item.pulse{ animation:lvSlide .6s both, lvGlow 2s ease-in-out .6s infinite; }
+        @keyframes lvGlow{ 0%,100%{ box-shadow:0 0 0 0 transparent; } 50%{ box-shadow:0 0 0 2px var(--c), 0 0 24px color-mix(in srgb,var(--c) 45%,transparent); } }
+        .lv-h{ font:700 20px var(--ft); color:#fff; min-width:62px; } .lv-item b{ display:block; font-size:15px; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; } .lv-item div span{ display:block; font-size:12.5px; color:#9fb0c4; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .lv-st{ font-size:12px; font-weight:700; color:var(--c); white-space:nowrap; }
+        .lv-tl{ grid-column:1; grid-row:3; }
+        .lv{ grid-template-rows:auto auto auto 1fr auto; } .lv-list{ grid-row:3 / span 2; }
+        .lv-next{ grid-column:1; grid-row:4; align-self:start; display:grid; grid-template-columns:auto 1fr; grid-template-rows:auto auto; column-gap:28px; align-items:end; background:linear-gradient(120deg,rgba(44,95,133,.35),rgba(20,184,166,.12)); border:1px solid rgba(255,255,255,.1); border-radius:18px; padding:22px 26px; animation:lvUp .8s .3s both; }
+        .lv-next-l{ grid-column:1/-1; color:#9fb0c4; font-size:14px; text-transform:uppercase; letter-spacing:.08em; font-weight:600; margin-bottom:6px; }
+        .lv-next-cd{ font:700 54px var(--ft); color:#fff; letter-spacing:-.02em; font-variant-numeric:tabular-nums; line-height:1; }
+        .lv-next-d b{ display:block; font-size:22px; color:#fff; } .lv-next-d span{ display:block; color:#a9b8ca; font-size:15px; margin-top:4px; }
+        .lv-ticker{ grid-column:1/-1; display:flex; align-items:center; gap:16px; height:58px; margin:0 -36px; padding:0 36px; background:rgba(0,0,0,.3); border-top:1px solid rgba(255,255,255,.08); }
+        .lv-ticker > b{ background:#2c5f85; color:#fff; padding:5px 12px; border-radius:6px; font-size:13px; text-transform:uppercase; letter-spacing:.06em; flex-shrink:0; }
+        .lv-tk{ overflow:hidden; flex:1; mask-image:linear-gradient(90deg,transparent,#000 5%,#000 95%,transparent); }
+        .lv-tk-in{ display:inline-flex; gap:48px; white-space:nowrap; animation:lvTk 40s linear infinite; font-size:16px; color:#dbe3ee; } .lv-tk-in span{ display:inline-flex; align-items:center; gap:8px; }
+        @keyframes lvTk{ from{ transform:translateX(0); } to{ transform:translateX(-50%); } }
+        @media(max-width:1100px){ .lv{ grid-template-columns:1fr; overflow:auto; } .lv-list,.lv-next{ grid-column:1; grid-row:auto; } .lv-tl{ grid-row:auto; } .lv-clock{ font-size:32px; } }
+        /* ═══ VUE EXPRESS ═══ */
+        .ex{ min-height:100vh; background:var(--side); color:#fff; padding:calc(18px + env(safe-area-inset-top,0px)) 16px calc(20px + env(safe-area-inset-bottom,0px)); display:flex; flex-direction:column; gap:14px; }
+        .ex-top{ display:flex; justify-content:space-between; align-items:flex-end; } .ex-top span{ display:block; color:#8fa0b5; font-size:13px; } .ex-top b{ font-size:22px; font-weight:700; } .ex-maj{ font-size:11.5px!important; }
+        .ex-grid{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+        .ex-tile{ text-align:left; border:none; border-radius:18px; padding:16px; background:rgba(255,255,255,.06); color:#fff; cursor:pointer; position:relative; overflow:hidden; font-family:var(--fb); }
+        .ex-tile::before{ content:''; position:absolute; top:14px; right:14px; width:10px; height:10px; border-radius:50%; background:var(--c); box-shadow:0 0 12px var(--c); }
+        .ex-tile b{ display:block; font:700 40px var(--ft); line-height:1; } .ex-tile span{ display:block; margin-top:6px; color:#9fb0c4; font-size:13px; }
+        .ex-card{ background:#fff; color:var(--ink); border-radius:18px; overflow:hidden; }
+        .ex-card-h{ padding:12px 16px; font-size:12px; font-weight:700; color:var(--ink-soft); text-transform:uppercase; letter-spacing:.06em; border-bottom:1px solid var(--border-light); }
+        .ex-row{ display:flex; align-items:center; gap:12px; padding:11px 16px; border-bottom:1px solid var(--border-light); } .ex-row:last-child{ border-bottom:none; }
+        .ex-h{ display:flex; flex-direction:column; min-width:46px; } .ex-h b{ font-size:14px; } .ex-h span{ font-size:11px; color:var(--ink-soft); }
+        .ex-row div b{ display:block; font-size:14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; } .ex-row div span{ display:block; font-size:12px; color:var(--ink-soft); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .ex-empty{ padding:20px 16px; text-align:center; color:var(--ink-soft); font-size:13px; }
+        .ex-open{ margin-top:auto; height:50px; border:none; border-radius:14px; background:#fff; color:var(--side); font:700 15px var(--fb); display:flex; align-items:center; justify-content:center; gap:8px; cursor:pointer; }
+        .recu-btn{ display:inline-flex; align-items:center; gap:6px; border:none; border-radius:8px; padding:8px 14px; background:#15803d; color:#fff; font:600 13px var(--fb); cursor:pointer; margin-top:8px; }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
@@ -1376,13 +1437,15 @@ function render(){
     state.authed = isAdmin();
     if(AUTH&&!state.loading) trackConnexion();
     if(state.authMode==='reset') html=renderLogin();
-    else if(state.vue==="admin") html=state.authed?renderAdminView(m):(AUTH?renderPasAdmin():renderLogin());
+    else if(state.express) html=isAdmin()?renderExpress():(AUTH?renderPasAdmin():renderLogin());
+    else if(state.vue==="admin") html=state.authed?(state.live?renderLive():renderAdminView(m)):(AUTH?renderPasAdmin():renderLogin());
     else if(state.loginScreen || (settings.loginObligatoire && !AUTH)) html=renderLogin();
     else if(state.trackMode) html=renderTrackCode(m);
     else html=renderHome(m);
     app.innerHTML=`<div class="desktop-app">${html}</div>`;
     attachEvents();
     initAutocomplete();
+    if(state.live&&document.getElementById('lvClock')){ if(!_liveTimer) _liveTimer=setInterval(liveTick,1000); liveAnimateCounters(); }
 }
 
 /* ══════════════════════════════════════
@@ -1471,6 +1534,7 @@ function mesDemandesHtml(m){
                 <span style="font-weight:700;font-size:14px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(titreDe(c))}</span>${clientPill(st)}</div>
             <div style="font-size:12px;color:#4b5563;margin-top:3px;">${dateCourte(c)}${c.heure?' · '+esc(c.heure):''}${c.lieu?' · '+esc(c.lieu):''}${c.type==='repas'?` · ${c.nb||1} pers.`:''}${c.code?` · <span style="font-family:monospace;color:#8b93a1;">${esc(c.code)}</span>`:''}</div>
             <div style="margin-top:8px;">${trackSteps(c)}</div>
+            ${peutConfirmer(c)?`<button class="recu-btn" data-recu="${c.id}">${icon('check',14)} Bien reçu</button> `:''}${suiviOf(c).recu?`<div style="font-size:12px;color:#15803d;margin-top:6px;">${icon('check',12)} ${recuInfo(suiviOf(c))}</div>`:''}
             ${c.pris==='En attente'?`<button data-mes-annuler="${c.id}" style="background:#fff;border:1px solid #fecaca;color:#b91c1c;border-radius:10px;padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer;">${icon('x',12)} Annuler ma demande</button>`:''}
         </div>`; };
     return `<div style="margin-top:28px;">
@@ -1815,6 +1879,7 @@ function renderAdminView(m){
         <header class="topbar">
             <div class="crumb">Administration / <b>${TITRES[state.adminTab]||''}</b></div>
             <div style="margin-left:auto;display:flex;gap:8px;align-items:center;">
+                <button data-live-open class="btn-sm" title="Écran live (plein écran, pour un PC ou une TV)">${icon('dashboard',15)} Écran live</button>
                 <button data-activate-notifs class="ic-btn" title="${notifsReady()?'Notifications activées':'Activer les notifications et la pastille'}">${icon('bell',16)}${notifsReady()?'':'<i></i>'}</button>
                 <div style="position:relative;display:inline-block;">
                     <button id="fabAdminMain" class="btn-sm pri" style="padding:8px 14px;">${icon('plus',15)} Nouvelle demande</button>
@@ -2018,8 +2083,8 @@ function suiviCard(c,{compact=false,showStage=false,select=false}={}){
     let actions='', info='';
     if(st==='avalider') actions=B.valider+B.refuser;
     else if(st==='acommander') actions=B.commande+pContactHtml(c)+B.annuler;
-    else if(st==='commandee'){ actions=B.fait+B.annuler; info=`${icon('check',11)} Commande passée le ${new Date(s.cmd).toLocaleDateString('fr-FR')}${s.cmdBy&&s.cmdBy!=='Admin'?' par '+esc(s.cmdBy):''} · <a href="#" data-suivi-act="uncommande" data-id="${c.id}" style="color:#8b93a1;">décocher</a>`; }
-    else if(st==='fait'){ info=s.fait?`Terminé le ${new Date(s.fait).toLocaleDateString('fr-FR')}${s.cmd?'':''} · <a href="#" data-suivi-act="unfait" data-id="${c.id}" style="color:#8b93a1;">rouvrir</a>`:'Prestation passée'; }
+    else if(st==='commandee'){ actions=(peutConfirmer(c)?`<button data-recu="${c.id}" style="display:inline-flex;align-items:center;gap:5px;border-radius:8px;padding:6px 10px;font-size:12px;font-weight:700;cursor:pointer;background:#15803d;border:1px solid #15803d;color:#fff;">${icon('check',12)} Bien reçu</button>`:'')+B.fait+B.annuler; info=`${icon('check',11)} Commande passée le ${new Date(s.cmd).toLocaleDateString('fr-FR')}${s.cmdBy&&s.cmdBy!=='Admin'?' par '+esc(s.cmdBy):''} · <a href="#" data-suivi-act="uncommande" data-id="${c.id}" style="color:#8b93a1;">décocher</a>`; }
+    else if(st==='fait'){ info=s.recu?recuInfo(s):s.fait?`Terminé le ${new Date(s.fait).toLocaleDateString('fr-FR')}${s.cmd?'':''} · <a href="#" data-suivi-act="unfait" data-id="${c.id}" style="color:#8b93a1;">rouvrir</a>`:'Prestation passée'; }
     const sel=select?`<input type="checkbox" class="sel-box" data-sel-id="${c.id}" ${(state.sel||[]).includes(c.id)?'checked':''} style="width:16px;height:16px;accent-color:var(--accent);cursor:pointer;flex-shrink:0;margin-top:3px;">`:'';
     return `<div class="suivi-card" style="background:#fff;border:1px solid var(--border);border-left:3px solid ${STAGES[st].color};border-radius:8px;padding:${compact?'10px 12px':'12px 14px'};display:flex;gap:10px;align-items:flex-start;">
         ${sel}
@@ -2193,7 +2258,7 @@ function suiviBlock(d){
     else if(st==='acommander') actions=`<div style="width:100%;font-size:12px;color:#4b5563;background:#eff6ff;border-radius:10px;padding:8px 10px;margin-bottom:2px;">① Commandez auprès de <b>${esc(d.presta||'du prestataire')}</b> ② puis cochez « J’ai passé la commande ».</div>`+btn('commande','J’ai passé la commande','check','background:#fff;border:1.5px dashed #93c5fd;color:#1d4ed8;')+btn('annuler','Annuler la demande','x','background:#fff;border:1px solid #fecaca;color:#b91c1c;')
     else if(st==='commandee') actions=btn('fait','Prestation terminée','check','background:#fff;border:1.5px dashed #a5f3fc;color:#0e7490;')+btn('uncommande','Je n’ai pas encore commandé','arrow','background:#fff;border:1px solid var(--border);color:#6b7280;')+btn('annuler','Annuler la demande','x','background:#fff;border:1px solid #fecaca;color:#b91c1c;')
     else if(st==='fait'&&s.fait) actions=btn('unfait','Rouvrir','arrow','background:#fff;border:1px solid var(--border);color:#6b7280;');
-    const histo=[s.cmd?`Commandé le ${new Date(s.cmd).toLocaleString('fr-FR',{dateStyle:'short',timeStyle:'short'})}${s.cmdBy&&s.cmdBy!=='Admin'?' par '+esc(s.cmdBy):''}`:'', s.fait?`Terminé le ${new Date(s.fait).toLocaleString('fr-FR',{dateStyle:'short',timeStyle:'short'})}${s.faitBy&&s.faitBy!=='Admin'?' par '+esc(s.faitBy):''}`:''].filter(Boolean).join(' · ');
+    const histo=[s.cmd?`Commandé le ${new Date(s.cmd).toLocaleString('fr-FR',{dateStyle:'short',timeStyle:'short'})}${s.cmdBy&&s.cmdBy!=='Admin'?' par '+esc(s.cmdBy):''}`:'', s.fait?`Terminé le ${new Date(s.fait).toLocaleString('fr-FR',{dateStyle:'short',timeStyle:'short'})}${s.faitBy&&s.faitBy!=='Admin'?' par '+esc(s.faitBy):''}`:'', s.recu?recuInfo(s):''].filter(Boolean).join(' · ');
     return `<div style="background:#fff;border:1px solid var(--border);border-radius:8px;padding:16px;margin-bottom:14px;">
         <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:14px;"><div style="font-weight:700;font-size:13px;color:var(--ink-soft);">${icon('clipboard',13)} Suivi</div>${stagePill(st)}</div>
         ${stepper}
@@ -2235,6 +2300,7 @@ function mobileNavHtml(){
         </div></div>`:''}`;
 }
 
+document.addEventListener('keydown',e=>{ if(e.key==='Escape'&&state.live){ document.querySelector('[data-live-exit]')?.click(); } });
 /* Clics délégués (installés une seule fois) */
 document.addEventListener('click', async e=>{
     const nav=e.target.closest('[data-nav]');
@@ -2685,6 +2751,107 @@ function anomaliesHtml(m){
 }
 
 /* ══════════════════════════════════════
+   « BIEN REÇU » ET PONCTUALITÉ
+══════════════════════════════════════ */
+function heurePrevue(c){ const d=parseDate(c.date); const mn=heureMin(c.heure); if(!d||mn===9999) return null; const x=new Date(d); x.setHours(0,0,0,0); x.setMinutes(mn); return x; }
+function peutConfirmer(c){ if(c.pris!=='OUI'||c.type==='hotel'||c.type==='commande') return false; const s=suiviOf(c); if(s.recu) return false; const d=parseDate(c.date); if(!d) return false;
+    const j=Math.round((d-new Date(new Date().setHours(0,0,0,0)))/864e5); if(j>0||j<-2) return false; const hp=heurePrevue(c); return !hp||Date.now()>=hp.getTime()-90*60000; }
+function confirmerReception(id){
+    const c=state.data.find(x=>String(x.id)===String(id)); if(!c) return;
+    const now=new Date(), hp=heurePrevue(c), retard=hp?Math.round((now-hp)/60000):null, qui=userName()||adminName()||'Demandeur';
+    setSuivi([c.id],cur=>({recu:now.toISOString(),recuBy:qui,retard:retard!==null&&retard>0?retard:0,fait:cur.fait||now.toISOString(),faitBy:cur.faitBy||qui,cmd:cur.cmd||now.toISOString()}));
+    logAction('Bien reçu',c,retard>5?`${retard} min après l’heure prévue`:'à l’heure');
+    showToast('✓ Merci ! Réception confirmée');
+}
+function recuInfo(s){ if(!s.recu) return ''; const t=new Date(s.recu).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
+    return `Reçu à ${t}${s.recuBy?' par '+esc(s.recuBy):''}${s.retard>5?` · <b style="color:#b45309;">${s.retard} min après l’heure prévue</b>`:' · à l’heure'}`; }
+
+/* ══════════════════════════════════════
+   ÉCRAN LIVE (PC / TV)
+══════════════════════════════════════ */
+let _liveTimer=null;
+function renderLive(){
+    const now=new Date(), todayK=isoDay(now), tom=new Date(now); tom.setDate(now.getDate()+1);
+    const ev=eventsByDay(); const today=(ev[todayK]||[]), demain=(ev[isoDay(tom)]||[]);
+    const n=countStages(); const recus=today.filter(c=>suiviOf(c).recu||stageOf(c)==='fait').length;
+    const hrs=today.map(c=>heureMin(c.heure)).filter(x=>x!==9999).map(x=>x/60);
+    const H0=Math.min(7,Math.floor(Math.min(24,...hrs))), H1=Math.max(21,Math.ceil(Math.max(0,...hrs))+1), pos=c=>{ const mn=heureMin(c.heure); return mn===9999?null:Math.max(0,Math.min(100,(mn/60-H0)/(H1-H0)*100)); };
+    const nowPos=Math.max(0,Math.min(100,((now.getHours()+now.getMinutes()/60)-H0)/(H1-H0)*100)); window._lvRange=[H0,H1];
+    const COL={avalider:'#f59e0b',acommander:'#60a5fa',commandee:'#2dd4bf',fait:'#4ade80',refusee:'#f87171'};
+    const timed=today.filter(c=>pos(c)!==null);
+    const lanes=[]; timed.sort((a,b)=>heureMin(a.heure)-heureMin(b.heure)).forEach(c=>{ const p=pos(c); let l=lanes.findIndex(x=>p-x>14); if(l<0){ l=lanes.length; lanes.push(p);} else lanes[l]=p; c._lane=l; });
+    const prochaines=today.filter(c=>{ const hp=heurePrevue(c); return !hp||hp>=new Date(now.getTime()-30*60000); }).slice(0,6);
+    const cpt=(v,l,col,i)=>`<div class="lv-kpi" style="animation-delay:${i*120}ms;"><span class="lv-kpi-v" data-count="${v}" style="color:${col};">0</span><span class="lv-kpi-l">${l}</span></div>`;
+    const ligne=c=>{ const st=stageOf(c), s=suiviOf(c), hp=heurePrevue(c), bientot=hp&&hp-now<45*60000&&hp>now;
+        return `<div class="lv-item ${bientot?'pulse':''}" style="--c:${COL[st]};"><span class="lv-h">${esc(c.heure||'—')}</span><div style="min-width:0;flex:1;"><b>${esc(titreDe(c))}${c.type==='repas'?` · ${c.nb||1} pers.`:''}</b><span>${esc([c.type==='taxi'?`${c.depart||''} → ${c.arrivee||''}`:c.lieu,c.presta,c.demandeur].filter(Boolean).join(' · '))}</span></div><span class="lv-st">${s.recu?'Livré ✓':bientot?'Imminent':STAGES[st].court}</span></div>`; };
+    const ticker=demain.length?demain.map(c=>`<span>${icon(c.type==='taxi'?'car':c.type==='hotel'?'bed':'utensils',16)} ${esc(c.heure||'')} ${esc(titreDe(c))}${c.type==='repas'?` · ${c.nb||1} pers.`:''}${c.lieu?' · '+esc(c.lieu):''}</span>`).join(''):'<span>Rien de prévu demain pour l’instant</span>';
+    return `<div class="lv">
+        <div class="lv-bg"></div>
+        <header class="lv-top">
+            <div class="lv-brand"><span class="logo-sq">${icon('clipboard',18)}</span><div><b>${esc(marqueNom())}</b><span>Écran live · ${dateLongue(now)} ${now.getFullYear()}</span></div></div>
+            <div class="lv-clock" id="lvClock">${now.toLocaleTimeString('fr-FR')}</div>
+            <button data-live-exit class="lv-exit" title="Quitter (Échap)">${icon('x',18)}</button>
+        </header>
+        <div class="lv-kpis">
+            ${cpt(today.length,'prestations aujourd’hui','#fff',0)}${cpt(recus,'déjà livrées','#4ade80',1)}${cpt(n.acommander,'à commander','#60a5fa',2)}${cpt(n.avalider,'à valider','#fbbf24',3)}
+        </div>
+        <section class="lv-tl">
+            <div class="lv-tl-h">${Array.from({length:H1-H0+1},(_,i)=>`<span style="left:${i/(H1-H0)*100}%;">${H0+i}h</span>`).join('')}</div>
+            <div class="lv-tl-b" style="height:${Math.max(3,lanes.length)*76+20}px;">
+                ${Array.from({length:H1-H0+1},(_,i)=>`<i style="left:${i/(H1-H0)*100}%;"></i>`).join('')}
+                <div class="lv-now" id="lvNow" style="left:${nowPos}%;"><span>${now.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})}</span></div>
+                ${timed.map((c,i)=>{ const st=stageOf(c), s=suiviOf(c); return `<div class="lv-ev ${s.recu?'ok':''}" style="left:${pos(c)}%;top:${c._lane*76+10}px;width:13%;--c:${COL[st]};animation-delay:${300+i*90}ms;"><b>${esc(c.heure)} ${esc(titreDe(c))}</b><span>${esc(c.type==='repas'?`${c.nb||1} pers. · ${c.lieu||''}`:c.type==='taxi'?(c.arrivee||''):(c.lieu||''))}</span></div>`; }).join('')}
+                ${timed.length?'':'<div class="lv-empty">Aucune prestation aujourd’hui</div>'}
+            </div>
+        </section>
+        ${(()=>{ const nx=today.map(c=>({c,hp:heurePrevue(c)})).filter(x=>x.hp&&x.hp>now).sort((a,b)=>a.hp-b.hp)[0];
+            return `<section class="lv-next">${nx?`<div class="lv-next-l">Prochaine prestation dans</div><div class="lv-next-cd" id="lvCd" data-t="${nx.hp.getTime()}">—</div><div class="lv-next-d"><b>${esc(nx.c.heure)} · ${esc(titreDe(nx.c))}${nx.c.type==='repas'?` · ${nx.c.nb||1} pers.`:''}</b><span>${esc([nx.c.type==='taxi'?`${nx.c.depart||''} → ${nx.c.arrivee||''}`:nx.c.lieu,nx.c.presta,nx.c.demandeur].filter(Boolean).join(' · '))}</span></div>`:`<div class="lv-next-l">Plus de prestation aujourd’hui</div><div class="lv-next-cd" style="color:#4ade80;">✓ Journée terminée</div>`}</section>`; })()}
+        <section class="lv-list"><h3>Prochaines prestations</h3>${prochaines.length?prochaines.map(ligne).join(''):'<div class="lv-empty" style="position:static;">Tout est passé pour aujourd’hui ✓</div>'}</section>
+        <footer class="lv-ticker"><b>Demain</b><div class="lv-tk"><div class="lv-tk-in">${ticker}${ticker}</div></div></footer>
+    </div>`;
+}
+function liveTick(){
+    const el=document.getElementById('lvClock'); if(!el){ clearInterval(_liveTimer); _liveTimer=null; return; }
+    const now=new Date(); el.textContent=now.toLocaleTimeString('fr-FR');
+    const cd=document.getElementById('lvCd'); if(cd){ const ms=+cd.getAttribute('data-t')-now; if(ms<=0) cd.textContent='Maintenant'; else { const h=Math.floor(ms/36e5), mi=Math.floor(ms%36e5/6e4), se=Math.floor(ms%6e4/1e3); cd.textContent=(h?h+' h ':'')+String(mi).padStart(h?2:1,'0')+' min '+String(se).padStart(2,'0')+' s'; } }
+    const [a0,a1]=window._lvRange||[7,21]; const nw=document.getElementById('lvNow'); if(nw){ nw.style.left=Math.max(0,Math.min(100,((now.getHours()+now.getMinutes()/60)-a0)/(a1-a0)*100))+'%'; nw.firstElementChild.textContent=now.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}); }
+}
+function liveAnimateCounters(){
+    document.querySelectorAll('[data-count]').forEach(el=>{ const to=+el.getAttribute('data-count'); const t0=performance.now(), d=900;
+        const step=t=>{ const k=Math.min(1,(t-t0)/d); el.textContent=Math.round(to*(1-Math.pow(1-k,3))); if(k<1) requestAnimationFrame(step); }; requestAnimationFrame(step); });
+}
+
+/* ══════════════════════════════════════
+   VUE EXPRESS (façon widget iPhone)
+══════════════════════════════════════ */
+function renderExpress(){
+    const now=new Date(), ev=eventsByDay(), today=(ev[isoDay(now)]||[]); const tom=new Date(now); tom.setDate(now.getDate()+1); const demain=(ev[isoDay(tom)]||[]);
+    const n=countStages(), ano=anomalies().filter(a=>a.niv>=2).length;
+    const prochaines=[...today.filter(c=>{ const hp=heurePrevue(c); return !hp||hp>=new Date(now.getTime()-30*60000); }),...demain].slice(0,5);
+    const tile=(v,l,col,nav)=>`<button class="ex-tile" data-express-go='${nav}' style="--c:${col};"><b>${v}</b><span>${l}</span></button>`;
+    return `<div class="ex">
+        <div class="ex-top"><div><span>${dateLongue(now)}</span><b>${esc(marqueNom())}</b></div><span class="ex-maj">Mis à jour ${now.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})}</span></div>
+        <div class="ex-grid">
+            ${tile(n.avalider,'à valider','#f59e0b','{"adminTab":"suivi","suiviStage":"avalider"}')}
+            ${tile(n.acommander,'à commander','#3b82f6','{"adminTab":"suivi","suiviStage":"acommander"}')}
+            ${tile(today.length,'aujourd’hui','#14b8a6','{"adminTab":"calendrier"}')}
+            ${tile(ano,'points d’attention','#ef4444','{"adminTab":"dashboard"}')}
+        </div>
+        <div class="ex-card"><div class="ex-card-h">Prochaines prestations</div>
+            ${prochaines.length?prochaines.map(c=>{ const st=stageOf(c), d=parseDate(c.date); const auj=isoDay(d)===isoDay(now);
+                return `<div class="ex-row"><span class="ex-h"><b>${esc(c.heure||'—')}</b><span>${auj?'auj.':'demain'}</span></span><div style="flex:1;min-width:0;"><b>${esc(titreDe(c))}${c.type==='repas'?` · ${c.nb||1} p.`:''}</b><span>${esc(c.type==='taxi'?(c.arrivee||''):(c.lieu||''))}${c.presta?' · '+esc(c.presta):''}</span></div>${stagePill(st)}</div>`; }).join('')
+            :'<div class="ex-empty">Rien de prévu d’ici demain</div>'}
+        </div>
+        <button class="ex-open" data-express-go='{"adminTab":"dashboard"}'>Ouvrir l’application ${icon('arrow',16)}</button>
+    </div>`;
+}
+
+/* ══════════════════════════════════════
+   MARQUE (nom, logo, couleurs)
+══════════════════════════════════════ */
+function marqueNom(){ return (settings.marque&&settings.marque.nom)||'Gestion des commandes'; }
+
+/* ══════════════════════════════════════
    SUIVI DES CONNEXIONS (pour les analyses)
 ══════════════════════════════════════ */
 let _cxChain=Promise.resolve();
@@ -2858,6 +3025,9 @@ function renderAnalyse(m){
         ${card('Destinations taxi','',bars(topDest,'#1d4ed8'))}
         ${card('Villes d’hôtel','',bars(topVilles,'#0f766e'))}
         ${card('Activité des administrateurs','actions enregistrées',bars(parAdmin,'#2c5f85'))}
+        ${(()=>{ const P={}; scope.forEach(c=>{ const su=(state.suivi||{})[c.id]; if(!su||!su.recu||!c.presta) return; const o=P[c.presta]=P[c.presta]||{n:0,ok:0,ret:0}; o.n++; if((su.retard||0)<=5) o.ok++; else o.ret+=su.retard; });
+            const L=Object.entries(P).sort((a,b)=>b[1].n-a[1].n).slice(0,8);
+            return card('Ponctualité des prestataires','livraisons confirmées « Bien reçu »',L.length?L.map(([k,o])=>`<div class="an-bar"><div class="an-bar-l"><span>${esc(k)}</span><b>${pct(o.ok,o.n)} % à l’heure<i>${o.n} livraison${o.n>1?'s':''}${o.n>o.ok?` · retard moy. ${Math.round(o.ret/(o.n-o.ok))} min`:''}</i></b></div><div class="an-track"><div style="width:${pct(o.ok,o.n)}%;background:${pct(o.ok,o.n)>=80?'#15803d':pct(o.ok,o.n)>=50?'#b45309':'#b91c1c'};"></div></div></div>`).join(''):'<div class="empty-note" style="padding:8px 0;">Se remplit quand les assistantes appuient sur « Bien reçu » à l’arrivée des prestations.</div>'); })()}
     </div>
 
     <div class="an-grid" style="grid-template-columns:${g2};margin-top:16px;">
@@ -3540,6 +3710,14 @@ function renderSettings(){
             <li><b>iPhone</b> : l’appli doit être installée sur l’écran d’accueil, puis activée ici depuis l’appli installée.</li>
             <li>Le chiffre et les alertes se mettent à jour quand l’appli est ouverte ou réduite. Appli fermée, ce sont les emails admin qui préviennent.</li>
         </ul>
+    </div>
+    <div class="settings-section">
+        ${secHead("dashboard","Vue express et écran live","Une vue « widget » à épingler sur l’écran d’accueil de l’iPhone, et un écran animé pour un PC ou une TV.")}
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <a href="express.html" target="_blank" class="btn-sm" style="text-decoration:none;padding:9px 14px;">${icon('phone',14)} Installer la vue express (iPhone)</a>
+            <button data-live-open class="btn-sm" style="padding:9px 14px;">${icon('dashboard',14)} Ouvrir l’écran live</button>
+        </div>
+        <div style="font-size:12px;color:#8b93a1;margin-top:8px;">Écran live sur une TV : ouvrez l’adresse de l’appli suivie de <b>#live</b> et connectez-vous une fois.</div>
     </div>
     ${isStandalone()?'':`<div class="settings-section">
         ${secHead("download","Installer l’appli sur cet appareil","Elle s’ouvre alors dans sa propre fenêtre, comme un logiciel.")}
@@ -4385,6 +4563,11 @@ function attachEvents(){
         }
     };
     if(sb)sb.onclick=_submitForm;
+    // ── Écran live / vue express / bien reçu ──
+    document.querySelectorAll('[data-live-open]').forEach(el=>el.onclick=()=>{ state.live=true; render(); try{ document.documentElement.requestFullscreen?.(); }catch(e){} });
+    document.querySelectorAll('[data-live-exit]').forEach(el=>el.onclick=()=>{ state.live=false; clearInterval(_liveTimer); _liveTimer=null; try{ if(document.fullscreenElement) document.exitFullscreen(); }catch(e){} if(location.hash==='#live') history.replaceState(null,'',location.pathname); render(); });
+    document.querySelectorAll('[data-express-go]').forEach(el=>el.onclick=()=>{ let nav={}; try{ nav=JSON.parse(el.getAttribute('data-express-go')); }catch(e){} history.replaceState(null,'',location.pathname); setState({express:false,vue:'admin',authed:isAdmin(),...nav}); });
+    document.querySelectorAll('[data-recu]').forEach(el=>el.onclick=e=>{ e.stopPropagation(); confirmerReception(el.getAttribute('data-recu')); });
     // ── Fiches prestataires ──
     document.querySelectorAll('[data-presta-fiche]').forEach(el=>el.onclick=()=>setState({prestaEdit:el.getAttribute('data-presta-fiche')}));
     document.querySelectorAll('[data-presta-close]').forEach(el=>el.onclick=()=>setState({prestaEdit:null}));
@@ -4707,6 +4890,8 @@ if ('serviceWorker' in navigator && location.protocol === 'https:') {
             state.loginScreen=true; history.replaceState(null,'',location.pathname+location.search);
         }
     }catch(e){ console.error('Lien de connexion:',e); }
+    if(location.hash==='#express') state.express=true;
+    if(location.hash==='#live'){ state.live=true; state.vue='admin'; }
     if(AUTH && AUTH.expires_at < Date.now()+60000) await authRefresh();
     setInterval(()=>{ if(AUTH && AUTH.expires_at < Date.now()+5*60000) authRefresh(); }, 10*60000);
     render(); // affiche l'écran de chargement
@@ -4721,7 +4906,7 @@ if ('serviceWorker' in navigator && location.protocol === 'https:') {
     // Session admin encore valide → on revient directement dans l'admin
     if (sessionValid()) {
         await Promise.all([loadTrash(), loadJournal()]);
-        if (lsGet('last_vue') === 'admin') { state.vue = 'admin'; state.authed = true; state.adminTab = 'dashboard'; }
+        if (lsGet('last_vue') === 'admin' || state.live) { state.vue = 'admin'; state.authed = true; state.adminTab = 'dashboard'; }
     }
     state.loading = false;
     render();
@@ -4740,6 +4925,7 @@ if ('serviceWorker' in navigator && location.protocol === 'https:') {
             state.data=fresh;
             trackFirstSeen(fresh);
             if(state.vue==='admin' && state.authed){ await Promise.all([loadTrash(), loadJournal(), loadSuivi()]); }
+            else if(AUTH){ await loadSuivi(); }
             render();
             if(sessionValid() && nouvelles.length){
                 const n=nouvelles.length, c=nouvelles[0];
