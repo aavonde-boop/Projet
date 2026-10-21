@@ -6,29 +6,29 @@
     <title>Gestion des commandes — 2026</title>
     <!-- Appli installable (écran d'accueil) -->
     <link rel="manifest" href="manifest.webmanifest">
-    <meta name="theme-color" content="#2c5f85">
+    <meta name="theme-color" content="#0f1b2d">
     <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
     <link rel="apple-touch-icon" href="apple-touch-icon.png">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-title" content="Commandes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
     <script>emailjs.init("n04JbAxmU3mf9UuXz"); /* Public Key OK */</script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
         :root {
-            --bg: #f8f7f4; --surface: #ffffff; --white: #fff;
-            --border: #ece8e1; --border-light: #f4f2ed;
-            --ink: #36322b; --ink-soft: #a8a29a; --ink-mid: #858075;
+            --bg: #f5f6f8; --surface: #ffffff; --white: #fff;
+            --border: #e6e8ec; --border-light: #f0f1f4;
+            --ink: #111827; --ink-soft: #8b93a1; --ink-mid: #4b5563;
             --accent: #2c5f85; --accent-soft: #e3edf3;
         }
-        body { font-family:'DM Sans',sans-serif; background:var(--bg); overscroll-behavior:none; -webkit-font-smoothing:antialiased; min-height:100vh; }
-        input,select,textarea,button { font-family:'DM Sans',sans-serif; }
+        body { font-family:var(--fb); background:var(--bg); overscroll-behavior:none; -webkit-font-smoothing:antialiased; min-height:100vh; }
+        input,select,textarea,button { font-family:var(--fb); }
 
         /* ─── TOAST ─── */
-        .toast { position:fixed; bottom:calc(80px + env(safe-area-inset-bottom,0px)); left:50%; transform:translateX(-50%); background:var(--accent); color:#fff; padding:12px 24px; border-radius:40px; font-size:14px; font-weight:600; z-index:9000; white-space:nowrap; box-shadow:0 4px 20px rgba(0,0,0,0.25); animation:toastIn 0.3s ease; }
+        .toast { position:fixed; bottom:calc(80px + env(safe-area-inset-bottom,0px)); left:50%; transform:translateX(-50%); background:var(--accent); color:#fff; padding:12px 24px; border-radius:6px; font-size:14px; font-weight:600; z-index:9000; white-space:nowrap; box-shadow:0 4px 20px rgba(0,0,0,0.25); animation:toastIn 0.3s ease; }
         @keyframes toastIn { from{opacity:0;transform:translateX(-50%) translateY(10px)} to{opacity:1;transform:translateX(-50%) translateY(0)} }
         @media(min-width:768px){ .toast{bottom:30px;} }
 
@@ -38,7 +38,7 @@
         @media(min-width:768px){ .modal-overlay{align-items:center;} }
         .modal-content { background:var(--surface); border-radius:24px 24px 0 0; width:100%; max-height:92vh; display:flex; flex-direction:column; box-shadow:0 -8px 40px rgba(0,0,0,0.15); animation:slideUp 0.35s cubic-bezier(0.32,0.72,0,1); }
         @keyframes slideUp { from{transform:translateY(60px);opacity:0} to{transform:translateY(0);opacity:1} }
-        @media(min-width:768px){ .modal-content{border-radius:24px;max-width:min(580px,calc(100vw - 32px));max-height:88vh;max-height:calc(100dvh - 48px);animation:scaleIn 0.25s ease;} }
+        @media(min-width:768px){ .modal-content{border-radius:8px;max-width:min(580px,calc(100vw - 32px));max-height:88vh;max-height:calc(100dvh - 48px);animation:scaleIn 0.25s ease;} }
         @supports(height:100dvh){ .modal-content{max-height:92dvh;} }
         /* En-tête admin : sur fenêtre moyenne, menu sur sa propre ligne défilante et boutons en icônes */
         @media(max-width:1199px){
@@ -53,24 +53,24 @@
         @media(min-width:768px){ .modal-handle{display:none;} }
 
         /* ─── SETTINGS ─── */
-        .settings-section { background:var(--white);border-radius:20px;padding:20px;margin-bottom:16px;border:1px solid var(--border); }
+        .settings-section { background:var(--white);border-radius:8px;padding:20px;margin-bottom:16px;border:1px solid var(--border); }
         .settings-item { display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border-light); }
         .settings-item:last-child { border-bottom:none; }
-        .badge-assistant { background:#e0f2fe;color:#0369a1;padding:3px 10px;border-radius:20px;font-size:10px;font-weight:600; }
-        .badge-director  { background:#fef3c7;color:#b45309;padding:3px 10px;border-radius:20px;font-size:10px;font-weight:600; }
+        .badge-assistant { background:#e0f2fe;color:#0369a1;padding:3px 10px;border-radius:8px;font-size:10px;font-weight:600; }
+        .badge-director  { background:#fef3c7;color:#b45309;padding:3px 10px;border-radius:8px;font-size:10px;font-weight:600; }
 
         /* ─── LAYOUT ─── */
         .desktop-app { max-width:none;margin:0;background:var(--surface);min-height:100vh; }
         .admin-grid { display:flex;flex-direction:column;gap:0;padding:20px; }
-        .admin-sidebar { background:var(--white);border-radius:24px;padding:20px;height:fit-content;border:1px solid var(--border);position:sticky;top:20px; }
-        .admin-main { background:var(--white);border-radius:24px;padding:16px;border:1px solid var(--border);min-height:400px; }
+        .admin-sidebar { background:var(--white);border-radius:8px;padding:20px;height:fit-content;border:1px solid var(--border);position:sticky;top:20px; }
+        .admin-main { background:var(--white);border-radius:8px;padding:16px;border:1px solid var(--border);min-height:400px; }
         @media(max-width:767px){ .admin-grid{flex-direction:column;padding:0;gap:0;} .admin-main{border-radius:0;border:none;border-top:1px solid var(--border);padding:16px;} }
 
         /* ─── BUTTONS ─── */
-        .btn-primary { background:var(--accent);color:#fff;border:none;border-radius:14px;padding:13px 20px;font-weight:600;cursor:pointer;transition:opacity 0.15s,transform 0.1s;font-size:15px; }
+        .btn-primary { background:var(--accent);color:#fff;border:none;border-radius:8px;padding:13px 20px;font-weight:600;cursor:pointer;transition:opacity 0.15s,transform 0.1s;font-size:15px; }
         .btn-primary:hover{opacity:0.88;} .btn-primary:active{transform:scale(0.97);}
-        .btn-secondary { background:#f5f4f0;border:1px solid var(--border);border-radius:14px;padding:10px 18px;font-weight:500;cursor:pointer;transition:background 0.15s;font-size:14px; }
-        .btn-secondary:hover{background:#ece9e3;}
+        .btn-secondary { background:#f3f4f6;border:1px solid var(--border);border-radius:8px;padding:10px 18px;font-weight:500;cursor:pointer;transition:background 0.15s;font-size:14px; }
+        .btn-secondary:hover{background:#e5e7eb;}
         .btn-danger { background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:6px 12px;color:#b91c1c;font-weight:600;cursor:pointer;font-size:13px; }
         .btn-danger:hover{background:#fee2e2;}
 
@@ -80,9 +80,9 @@
         #formDesc,#formLieu,#formDe,#formVers,#formVol,#formCom,#formParticipants,#pourQuiAutreInput,
         #afDesc,#afLieu,#afDe,#afVers,#afVol,#afCom,#afYooz,#afPqAutre,
         #editDesc,#editLieu,#editDe,#editVers,#editComment,#editPqAutre { text-transform:uppercase; }
-        .form-input { width:100%;border:1.5px solid var(--border);border-radius:14px;padding:13px 14px;font-size:15px;background:var(--white);transition:border 0.2s;-webkit-appearance:none; }
+        .form-input { width:100%;border:1.5px solid var(--border);border-radius:8px;padding:13px 14px;font-size:15px;background:var(--white);transition:border 0.2s;-webkit-appearance:none; }
         .form-input:focus{outline:none;border-color:var(--accent);}
-        .form-select { width:100%;border:1.5px solid var(--border);border-radius:14px;padding:13px 36px 13px 14px;font-size:15px;background:var(--white);cursor:pointer;-webkit-appearance:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='7' viewBox='0 0 12 7'%3E%3Cpath fill='%239e9a93' d='M6 7L0 0h12z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center; }
+        .form-select { width:100%;border:1.5px solid var(--border);border-radius:8px;padding:13px 36px 13px 14px;font-size:15px;background:var(--white);cursor:pointer;-webkit-appearance:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='7' viewBox='0 0 12 7'%3E%3Cpath fill='%239e9a93' d='M6 7L0 0h12z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center; }
         .form-select:focus{outline:none;border-color:var(--accent);}
         .form-row-2 { display:grid;grid-template-columns:1fr 1fr;gap:14px; }
         @media(max-width:420px){ .form-row-2{grid-template-columns:1fr;} }
@@ -96,11 +96,11 @@
         table.grid-table td:last-child, table.grid-table th:last-child { border-right:none; }
 
         /* ─── CHIPS ─── */
-        .chip { display:inline-flex;align-items:center;gap:6px;border-radius:30px;padding:4px 12px;font-size:11px;font-weight:600; }
+        .chip { display:inline-flex;align-items:center;gap:6px;border-radius:6px;padding:4px 12px;font-size:11px;font-weight:600; }
         .chips-group { display:flex;gap:8px;flex-wrap:wrap; }
-        .chip-sel { padding:9px 16px;border-radius:30px;border:1.5px solid var(--border);background:var(--white);cursor:pointer;font-size:14px;font-weight:500;transition:all 0.15s;white-space:nowrap;color:var(--ink-mid); }
+        .chip-sel { padding:9px 16px;border-radius:6px;border:1.5px solid var(--border);background:var(--white);cursor:pointer;font-size:14px;font-weight:500;transition:all 0.15s;white-space:nowrap;color:var(--ink-mid); }
         .chip-sel.active { background:var(--accent);color:#fff;border-color:var(--accent);font-weight:600; }
-        .chip-sel:hover:not(.active){background:#f5f4f0;border-color:#d0ccc5;}
+        .chip-sel:hover:not(.active){background:#f3f4f6;border-color:#d1d5db;}
 
         /* ─── STEP DOTS ─── */
         .step-indicator { display:flex;align-items:center;gap:6px;margin-bottom:22px; }
@@ -109,15 +109,15 @@
         .step-dot.done { background:var(--accent);opacity:0.35; }
 
         /* ─── COMMAND ITEMS ─── */
-        .command-item { background:var(--white);border-radius:16px;padding:14px;margin-bottom:10px;border:1px solid var(--border);cursor:pointer;transition:all 0.18s; }
-        .command-item:hover{border-color:#d0ccc5;box-shadow:0 4px 12px rgba(0,0,0,0.06);}
+        .command-item { background:var(--white);border-radius:8px;padding:14px;margin-bottom:10px;border:1px solid var(--border);cursor:pointer;transition:all 0.18s; }
+        .command-item:hover{border-color:#d1d5db;box-shadow:0 4px 12px rgba(0,0,0,0.06);}
         .command-item:active{transform:scale(0.99);}
 
         /* ─── AVATAR ─── */
         .avatar { border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:600;color:#fff;flex-shrink:0; }
 
         /* ─── SCROLLBAR ─── */
-        ::-webkit-scrollbar{width:5px;height:5px;} ::-webkit-scrollbar-track{background:var(--border);border-radius:10px;} ::-webkit-scrollbar-thumb{background:#b0aba2;border-radius:10px;}
+        ::-webkit-scrollbar{width:5px;height:5px;} ::-webkit-scrollbar-track{background:var(--border);border-radius:10px;} ::-webkit-scrollbar-thumb{background:#9ca3af;border-radius:10px;}
 
         /* ─── BACK BTNS ─── */
         .back-btn { background:none;border:none;color:rgba(255,255,255,0.5);cursor:pointer;font-size:14px;font-weight:500;padding:0;display:flex;align-items:center;gap:6px; }
@@ -145,10 +145,10 @@
         /* ─── FILTER PILLS ─── */
         .filter-pills { display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none; }
         .filter-pills::-webkit-scrollbar{display:none;}
-        .filter-pill { padding:7px 16px;border-radius:30px;font-size:13px;border:none;cursor:pointer;white-space:nowrap;font-weight:500;transition:all 0.15s;flex-shrink:0; }
+        .filter-pill { padding:7px 16px;border-radius:6px;font-size:13px;border:none;cursor:pointer;white-space:nowrap;font-weight:500;transition:all 0.15s;flex-shrink:0; }
 
         /* ─── SEARCH ─── */
-        .search-input { border:1.5px solid var(--border);border-radius:30px;padding:9px 18px;font-size:14px;width:100%;background:#f5f4f0;transition:all 0.2s;-webkit-appearance:none; }
+        .search-input { border:1.5px solid var(--border);border-radius:6px;padding:9px 18px;font-size:14px;width:100%;background:#f3f4f6;transition:all 0.2s;-webkit-appearance:none; }
         .search-input:focus{outline:none;border-color:var(--accent);background:var(--white);}
 
         /* ─── FAB ─── */
@@ -156,7 +156,7 @@
         @media(min-width:768px){ .fab-area{display:none;} }
         .fab-menu { display:flex;flex-direction:column;gap:8px;align-items:flex-end;animation:fabIn 0.2s ease; }
         @keyframes fabIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
-        .fab-item { background:var(--white);border:1px solid var(--border);border-radius:30px;padding:10px 18px;font-size:14px;font-weight:600;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,0.1);display:flex;align-items:center;gap:8px;transition:all 0.15s; }
+        .fab-item { background:var(--white);border:1px solid var(--border);border-radius:6px;padding:10px 18px;font-size:14px;font-weight:600;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,0.1);display:flex;align-items:center;gap:8px;transition:all 0.15s; }
         .fab-item:active{transform:scale(0.96);}
         .fab-main { width:52px;height:52px;border-radius:50%;background:var(--accent);color:#fff;border:none;cursor:pointer;font-size:24px;box-shadow:0 6px 20px rgba(0,0,0,0.25);transition:transform 0.25s;display:flex;align-items:center;justify-content:center; }
         .fab-main.open{transform:rotate(45deg);}
@@ -167,10 +167,10 @@
 
         /* ─── LOGIN ─── */
         .login-wrap { min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px; }
-        .login-card { background:var(--white);border-radius:32px;padding:40px 32px;max-width:420px;width:100%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.06); }
+        .login-card { background:var(--white);border-radius:6px;padding:40px 32px;max-width:420px;width:100%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.06); }
 
         /* ─── STAT CARD ─── */
-        .stat-card { background:var(--white);border-radius:20px;padding:18px;border:1px solid var(--border);transition:all 0.2s; }
+        .stat-card { background:var(--white);border-radius:8px;padding:18px;border:1px solid var(--border);transition:all 0.2s; }
         .stat-card:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(0,0,0,0.06);}
 
         /* ─── PENDING BADGE ─── */
@@ -180,10 +180,132 @@
         @media(max-width:767px){ .stats-3col{grid-template-columns:1fr 1fr !important;} .stats-3col>*:first-child{grid-column:1/-1;} }
 
 
-        .pac-container { z-index:9999 !important;border-radius:14px !important;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,0.12) !important;border:1px solid var(--border) !important;margin-top:4px; }
-        .pac-item { padding:10px 14px !important;font-size:14px !important;font-family:'DM Sans',sans-serif !important;cursor:pointer; }
-        .pac-item:hover{background:#f5f4f0 !important;}
+        .pac-container { z-index:9999 !important;border-radius:8px !important;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,0.12) !important;border:1px solid var(--border) !important;margin-top:4px; }
+        .pac-item { padding:10px 14px !important;font-size:14px !important;font-family:var(--fb) !important;cursor:pointer; }
+        .pac-item:hover{background:#f3f4f6 !important;}
         .pac-item-query{font-weight:600;}
+
+        /* ═══ THÈME PRO (J) ═══ */
+        :root{ --ft:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif; --fb:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif; --side:#0f1b2d; --side-act:#1c2b42; --side-tx:#aab6c6; }
+        body{ font-size:14px; color:var(--ink); background:var(--bg); }
+        .desktop-app{ background:var(--bg); }
+        /* Coque : barre latérale + contenu */
+        .shell{ display:flex; min-height:100vh; }
+        .side{ width:240px; flex-shrink:0; background:var(--side); color:var(--side-tx); display:flex; flex-direction:column; position:sticky; top:0; height:100vh; height:100dvh; z-index:300; }
+        .side-brand{ display:flex; align-items:center; gap:10px; padding:16px 16px 15px; border-bottom:1px solid rgba(255,255,255,.08); }
+        .side-brand b{ display:block; font-size:13.5px; color:#fff; font-weight:650; white-space:nowrap; }
+        .side-brand span{ font-size:11px; color:var(--side-tx); }
+        .logo-sq{ width:30px; height:30px; border-radius:7px; background:var(--accent); color:#fff; display:inline-flex; align-items:center; justify-content:center; flex-shrink:0; }
+        .side-scroll{ flex:1; overflow-y:auto; min-height:0; }
+        .side-grp{ padding:14px 10px 2px; }
+        .side-grp h6{ font-size:10.5px; font-weight:600; letter-spacing:.08em; text-transform:uppercase; color:#6f7f94; padding:0 10px 6px; }
+        .side-it{ display:flex; align-items:center; gap:10px; width:100%; padding:8px 10px; border:none; background:none; border-radius:6px; color:var(--side-tx); font:500 13px var(--fb); cursor:pointer; text-align:left; margin-bottom:1px; position:relative; transition:background .15s,color .15s; }
+        .side-it:hover{ background:rgba(255,255,255,.05); color:#fff; }
+        .side-it.on{ background:var(--side-act); color:#fff; box-shadow:inset 3px 0 0 #5b9bd5; }
+        .side-n{ margin-left:auto; background:#d97706; color:#fff; font-size:10.5px; font-weight:700; border-radius:9px; padding:1px 7px; }
+        .side-user{ display:flex; align-items:center; gap:10px; padding:12px 14px; border-top:1px solid rgba(255,255,255,.08); }
+        .side-user b{ display:block; font-size:12.5px; color:#fff; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .side-user span{ font-size:11px; }
+        .side-av{ width:30px; height:30px; border-radius:50%; background:#3b6e96; color:#fff; font-size:11px; font-weight:700; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+        .side-out{ background:none; border:none; color:var(--side-tx); cursor:pointer; padding:6px; border-radius:6px; display:flex; }
+        .side-out:hover{ background:rgba(255,255,255,.08); color:#fff; }
+        @media(max-width:1099px){
+            .side{ width:64px; } .side-lbl{ display:none!important; } .side-brand{ justify-content:center; padding:16px 0 15px; }
+            .side-it{ justify-content:center; padding:10px 0; } .side-n{ position:absolute; top:3px; right:6px; padding:0 5px; font-size:9.5px; }
+            .side-user{ flex-direction:column; padding:12px 0; } .side-grp{ padding:10px 8px 2px; }
+        }
+        .shell-main{ flex:1; min-width:0; display:flex; flex-direction:column; }
+        .topbar{ height:56px; background:#fff; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:14px; padding:0 28px; position:sticky; top:0; z-index:250; }
+        .crumb{ color:var(--ink-soft); font-size:12.5px; white-space:nowrap; } .crumb b{ color:var(--ink); font-weight:600; }
+        .ic-btn{ width:34px; height:34px; border:1px solid var(--border); border-radius:6px; display:flex; align-items:center; justify-content:center; color:var(--ink-mid); position:relative; background:#fff; cursor:pointer; }
+        .ic-btn i{ position:absolute; top:6px; right:7px; width:7px; height:7px; border-radius:50%; background:#d97706; border:2px solid #fff; }
+        .drop-menu{ position:absolute; top:42px; right:0; background:#fff; border:1px solid var(--border); border-radius:8px; box-shadow:0 10px 30px rgba(15,27,45,.12); padding:6px; z-index:9999; min-width:180px; flex-direction:column; gap:2px; }
+        .drop-menu button{ display:flex; align-items:center; gap:9px; background:none; border:none; border-radius:6px; padding:9px 12px; font:500 13px var(--fb); cursor:pointer; text-align:left; width:100%; color:var(--ink); }
+        .drop-menu button:hover{ background:#f3f4f6; }
+        .subtabs{ display:flex; gap:2px; padding:0 28px; background:#fff; border-bottom:1px solid var(--border); overflow-x:auto; scrollbar-width:none; }
+        .subtabs::-webkit-scrollbar{ display:none; }
+        .subtab{ display:flex; align-items:center; gap:7px; padding:11px 12px 10px; border:none; background:none; border-bottom:2px solid transparent; font:500 13px var(--fb); color:var(--ink-mid); cursor:pointer; white-space:nowrap; }
+        .subtab:hover{ color:var(--ink); } .subtab.on{ color:var(--accent); border-bottom-color:var(--accent); font-weight:600; }
+        .admin-grid{ padding:24px 28px 40px; }
+        .admin-main{ background:transparent!important; border:none!important; border-radius:0!important; padding:0!important; min-height:0; }
+        @media(max-width:1099px){ .topbar,.subtabs{ padding-left:20px; padding-right:20px; } .admin-grid{ padding:20px 20px 32px; } }
+        /* Boutons compacts */
+        .btn-sm{ display:inline-flex; align-items:center; gap:6px; border-radius:6px; padding:6px 11px; font:600 12.5px var(--fb); border:1px solid var(--border); background:#fff; color:var(--ink); cursor:pointer; white-space:nowrap; transition:background .15s,border-color .15s; }
+        .btn-sm:hover{ background:#f6f7f9; border-color:#d5d9e0; }
+        .btn-sm.pri{ background:var(--accent); border-color:var(--accent); color:#fff; } .btn-sm.pri:hover{ background:#24506f; }
+        /* En-tête de page */
+        .page-head{ display:flex; justify-content:space-between; align-items:flex-end; gap:12px; flex-wrap:wrap; margin-bottom:18px; }
+        .page-head h1{ font:650 22px var(--ft); letter-spacing:-.01em; color:var(--ink); }
+        .page-head p{ color:var(--ink-soft); margin-top:3px; font-size:13px; } .page-head p b{ color:var(--ink-mid); font-weight:600; }
+        .page-actions{ display:flex; gap:8px; flex-wrap:wrap; }
+        /* KPI */
+        .kpis{ display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:14px; margin-bottom:18px; }
+        @media(max-width:899px){ .kpis{ grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; } }
+        .stat-card.kpi{ display:flex; flex-direction:column; text-align:left; cursor:pointer; width:100%; min-width:0; font:inherit; padding:14px 16px; color:var(--ink); }
+        .kpi-l{ display:flex; align-items:center; justify-content:space-between; gap:6px; color:var(--ink-mid); font-size:12px; font-weight:500; }
+        .kpi-v{ font:700 28px var(--ft); letter-spacing:-.02em; margin:6px 0 2px; line-height:1.15; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .kpi-s{ font-size:11.5px; color:var(--ink-soft); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .dot{ width:8px; height:8px; border-radius:50%; display:inline-block; flex-shrink:0; }
+        /* Cartes */
+        .card{ background:#fff; border:1px solid var(--border); border-radius:8px; overflow:hidden; margin-bottom:16px; }
+        .card-h{ display:flex; align-items:center; justify-content:space-between; gap:10px; padding:12px 16px; border-bottom:1px solid var(--border); }
+        .card-h h3{ font-size:13.5px; font-weight:650; color:var(--ink); } .card-h .sub{ color:var(--ink-soft); font-weight:400; margin-left:7px; }
+        .card-link{ background:none; border:none; color:var(--accent); font:600 12px var(--fb); cursor:pointer; padding:0; white-space:nowrap; }
+        .empty-note{ text-align:center; color:var(--ink-soft); font-size:12.5px; padding:20px 16px; }
+        .tl{ padding:4px 16px; }
+        .tl-row{ display:grid; grid-template-columns:46px 10px minmax(0,1fr) auto; gap:10px; align-items:start; padding:10px 0; border-bottom:1px solid var(--border-light); cursor:pointer; }
+        .tl-row:last-child{ border-bottom:none; }
+        .tl-h{ font-weight:700; font-size:12.5px; } .tl-t{ font-weight:600; font-size:13px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .tl-m{ color:var(--ink-soft); font-size:12px; margin-top:1px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        /* Tableau pro */
+        .tbl-wrap{ overflow-x:auto; }
+        table.pro-table{ width:100%; border-collapse:collapse; font-size:13px; }
+        .pro-table th{ text-align:left; font-size:11px; font-weight:600; color:var(--ink-soft); text-transform:uppercase; letter-spacing:.05em; padding:9px 16px; background:#fafbfc; border-bottom:1px solid var(--border); white-space:nowrap; }
+        .pro-table td{ padding:11px 16px; border-bottom:1px solid var(--border-light); vertical-align:middle; white-space:nowrap; }
+        .pro-table tr:last-child td{ border-bottom:none; } .pro-table tbody tr:hover td{ background:#fafbfc; }
+        .pro-table .t{ font-weight:600; display:flex; align-items:center; gap:7px; } .pro-table .ty{ color:var(--ink-soft); display:inline-flex; }
+        .pro-table .m{ color:var(--ink-soft); font-size:12px; margin-top:2px; }
+        .urg{ font-size:11px; font-weight:600; color:#b91c1c; margin-left:7px; }
+        .row-act{ display:flex; gap:6px; justify-content:flex-end; }
+        /* Composants existants, version sobre */
+        .stat-card{ border-radius:8px; padding:16px; border:1px solid var(--border); box-shadow:none; }
+        .stat-card:hover{ transform:none; box-shadow:0 1px 3px rgba(15,27,45,.06); border-color:#d5d9e0; }
+        .settings-section{ border-radius:8px; }
+        .command-item{ border-radius:8px; }
+        .suivi-card{ border-radius:8px!important; }
+        .btn-primary{ border-radius:6px; font-size:14px; padding:11px 18px; }
+        .btn-secondary{ border-radius:6px; background:#fff; font-size:13px; }
+        .btn-secondary:hover{ background:#f6f7f9; }
+        .btn-danger{ border-radius:6px; }
+        .form-input,.form-select{ border-radius:6px; border-width:1px; font-size:14px; padding:10px 12px; }
+        .form-select{ padding-right:34px; }
+        .form-input:focus,.form-select:focus{ box-shadow:0 0 0 3px var(--accent-soft); }
+        .chip-sel{ border-radius:6px; border-width:1px; font-size:13px; padding:8px 14px; }
+        .filter-pill{ border-radius:6px; }
+        .search-input{ border-radius:6px; border-width:1px; background:#fff; padding:9px 14px; }
+        .modal-content{ border-radius:12px 12px 0 0; }
+        @media(min-width:768px){ .modal-content{ border-radius:12px; } }
+        .login-card{ border-radius:12px; border:1px solid var(--border); box-shadow:0 10px 30px rgba(15,27,45,.06); }
+        .toast{ border-radius:8px; background:var(--side); }
+        ::-webkit-scrollbar-track{ background:transparent; } ::-webkit-scrollbar-thumb{ background:#cfd4dc; }
+        /* Mobile (iPhone) */
+        .mobile-header{ background:var(--side); padding:calc(12px + env(safe-area-inset-top,0px)) 16px 14px; position:sticky; top:0; z-index:200; }
+        .mh-btn{ width:38px; height:38px; border-radius:8px; border:1px solid rgba(255,255,255,.12); background:rgba(255,255,255,.06); color:#dbe3ee; display:flex; align-items:center; justify-content:center; cursor:pointer; }
+        .mh-btn.on{ background:#fff; color:var(--side); }
+        .mh-dot{ position:absolute; top:7px; right:8px; width:8px; height:8px; border-radius:50%; background:#f59e0b; border:2px solid var(--side); }
+        .m-page{ padding:16px 14px calc(96px + env(safe-area-inset-bottom,0px)); }
+        @media(max-width:767px){
+            .page-head{ margin-bottom:14px; } .page-head h1{ font-size:20px; }
+            .stat-card.kpi{ padding:12px 13px; } .kpi-v{ font-size:24px; }
+            .card{ margin-bottom:12px; }
+            .mobile-nav{ background:rgba(255,255,255,.96); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px); box-shadow:none; border-top:1px solid var(--border); padding-top:6px; }
+            .mobile-nav-btn{ font-size:10.5px; font-weight:500; letter-spacing:0; gap:2px; }
+            .mobile-nav-btn.active{ font-weight:650; }
+            .mobile-nav-btn .nav-dot{ display:none; }
+            .fab-main{ width:52px; height:52px; border-radius:14px; box-shadow:0 6px 18px rgba(15,27,45,.25); }
+            .fab-item{ border-radius:8px; }
+            .form-input,.form-select,.search-input{ font-size:16px; } /* évite le zoom auto d'iOS */
+        }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
@@ -473,6 +595,7 @@ const ST={"OUI":{label:"Validé",dot:"#22c55e",bg:"#f0fdf4",tx:"#15803d"},"En at
    ICÔNES (SVG trait, remplacent les emojis dans l'UI d'administration)
 ══════════════════════════════════════ */
 const ICON_PATHS = {
+    menu: '<line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="20" y2="17"/>',
     dashboard: '<line x1="5" y1="20" x2="5" y2="11"/><line x1="12" y1="20" x2="12" y2="5"/><line x1="19" y1="20" x2="19" y2="14"/>',
     clipboard: '<rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4V3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1"/><line x1="8" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="16" y2="14"/><line x1="8" y1="18" x2="13" y2="18"/>',
     sliders: '<line x1="4" y1="7" x2="20" y2="7"/><circle cx="9" cy="7" r="2" fill="currentColor" stroke="none"/><line x1="4" y1="12" x2="20" y2="12"/><circle cx="15" cy="12" r="2" fill="currentColor" stroke="none"/><line x1="4" y1="17" x2="20" y2="17"/><circle cx="7" cy="17" r="2" fill="currentColor" stroke="none"/>',
@@ -954,8 +1077,8 @@ function bulkBarHtml() {
     const n = (state.sel || []).length;
     if (!n) return '';
     const m = isMobile();
-    const b = (act, bg, bd, col, ic, label) => `<button data-bulk="${act}" style="display:flex;align-items:center;gap:5px;background:${bg};border:1px solid ${bd};color:${col};border-radius:20px;padding:7px ${m?'10px':'14px'};font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;">${icon(ic,14)}${m?'':' '+label}</button>`;
-    return `<div style="position:fixed;left:50%;transform:translateX(-50%);bottom:${m?'calc(84px + env(safe-area-inset-bottom,0px))':'24px'};z-index:9000;background:#1a1f36;color:#fff;border-radius:30px;padding:8px 10px 8px 18px;display:flex;align-items:center;gap:8px;box-shadow:0 10px 30px rgba(0,0,0,.25);max-width:calc(100vw - 24px);">
+    const b = (act, bg, bd, col, ic, label) => `<button data-bulk="${act}" style="display:flex;align-items:center;gap:5px;background:${bg};border:1px solid ${bd};color:${col};border-radius:8px;padding:7px ${m?'10px':'14px'};font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;">${icon(ic,14)}${m?'':' '+label}</button>`;
+    return `<div style="position:fixed;left:50%;transform:translateX(-50%);bottom:${m?'calc(84px + env(safe-area-inset-bottom,0px))':'24px'};z-index:9000;background:#1a1f36;color:#fff;border-radius:6px;padding:8px 10px 8px 18px;display:flex;align-items:center;gap:8px;box-shadow:0 10px 30px rgba(0,0,0,.25);max-width:calc(100vw - 24px);">
         <span style="font-size:13px;font-weight:600;white-space:nowrap;">${n} sélectionnée${n>1?'s':''}</span>
         ${b('OUI','#f0fdf4','#bbf7d0','#15803d','check','Valider')}
         ${b('Annulé','#fff7ed','#fed7aa','#c2410c','x','Annuler')}
@@ -1051,7 +1174,7 @@ function showToast(msg){ state.toast=msg; render(); setTimeout(()=>{ if(state.to
 ══════════════════════════════════════ */
 function avatar(name,size=40){ return `<div class="avatar" style="width:${size}px;height:${size}px;min-width:${size}px;background:${$col(name)};font-size:${Math.floor(size*.35)}px;">${$ini(name)}</div>`; }
 function chip(s){ const c=ST[s]||ST["En attente"]; return `<span class="chip" style="background:${c.bg};color:${c.tx};"><span style="width:7px;height:7px;border-radius:50%;background:${c.dot};display:inline-block;"></span>${c.label}</span>`; }
-function typeTag(t){ return `<span style="font-size:11px;font-weight:600;color:#b0aba2;">${TYPE_ICON[t]||"•"} ${TYPE_LABEL[t]||t}</span>`; }
+function typeTag(t){ return `<span style="font-size:11px;font-weight:600;color:#9ca3af;">${TYPE_ICON[t]||"•"} ${TYPE_LABEL[t]||t}</span>`; }
 
 /* ══════════════════════════════════════
    RENDER
@@ -1062,7 +1185,7 @@ function render(){
     if(state.loading){
         app.innerHTML=`<div style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;background:var(--bg);gap:16px;">
             <div style="font-size:48px;animation:spin 1.5s linear infinite;color:var(--accent);">⟳</div>
-            <div style="font-family:'DM Serif Display',serif;font-size:24px;color:var(--ink);">Chargement…</div>
+            <div style="font-family:var(--ft);font-weight:650;letter-spacing:-.01em;font-size:24px;color:var(--ink);">Chargement…</div>
             <div style="font-size:13px;color:var(--ink-soft);">Connexion à la base de données</div>
             <style>@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}</style>
         </div>`;
@@ -1100,22 +1223,22 @@ function renderTrackCode(m){
         if(result.pris==='En attente'){
             cancelHtml='<button id="cancelTrackBtn" style="width:100%;margin-top:16px;background:#fef2f2;border:1px solid #fecaca;border-radius:12px;padding:10px;color:#b91c1c;cursor:pointer;font-size:13px;font-weight:600;">Annuler cette demande</button>';
         }
-        resultHtml='<div style="background:#f8fafc;border-radius:16px;padding:20px;border:1px solid #e2e8f0;margin-top:16px;">'
+        resultHtml='<div style="background:#f8fafc;border-radius:8px;padding:20px;border:1px solid #e2e8f0;margin-top:16px;">'
             +'<div style="font-size:20px;margin-bottom:8px;">'+typeIcon(result.type)+' <strong>'+(result.desc||'—')+'</strong></div>'
             +'<div style="font-size:12px;color:#94a3b8;margin-bottom:14px;">'+result.code+'</div>'
             +trackSteps(state.data.find(c=>c.id===result.id)||result)
-            +'<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #f0eeea;font-size:13px;"><span style="color:#94a3b8;">Statut</span><span style="font-weight:600;">'+(ST_LABEL[result.pris]||result.pris)+'</span></div>'
-            +'<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #f0eeea;font-size:13px;"><span style="color:#94a3b8;">Date</span><span>'+$d(result.date)+'</span></div>'
+            +'<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #f1f2f4;font-size:13px;"><span style="color:#94a3b8;">Statut</span><span style="font-weight:600;">'+(ST_LABEL[result.pris]||result.pris)+'</span></div>'
+            +'<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #f1f2f4;font-size:13px;"><span style="color:#94a3b8;">Date</span><span>'+$d(result.date)+'</span></div>'
             +'<div style="display:flex;justify-content:space-between;padding:6px 0;font-size:13px;"><span style="color:#94a3b8;">Pour qui</span><span>'+(result.pourQui||'—')+'</span></div>'
             +cancelHtml+'</div>';
     }
 
     const code=state.trackCode||'';
     return '<div style="min-height:100vh;background:var(--bg);padding:'+(m?'20px 16px':'40px')+';display:flex;align-items:center;justify-content:center;">'
-        +'<div style="background:var(--white);border-radius:24px;padding:'+(m?'28px 20px':'40px')+';border:1px solid var(--border);width:100%;max-width:400px;">'
+        +'<div style="background:var(--white);border-radius:8px;padding:'+(m?'28px 20px':'40px')+';border:1px solid var(--border);width:100%;max-width:400px;">'
         +'<button id="closeTrackBtn" style="background:none;border:none;color:#94a3b8;cursor:pointer;font-size:13px;margin-bottom:16px;">← Retour</button>'
-        +'<div style="font-family:DM Serif Display,serif;font-size:22px;margin-bottom:6px;">'+icon('search',19)+' Suivre ma demande</div>'
-        +'<div style="color:#9e9a93;font-size:13px;margin-bottom:20px;">Entrez votre code AAG-XXXXX</div>'
+        +'<div style="font-family:var(--ft);font-weight:650;letter-spacing:-.01em;font-size:22px;margin-bottom:6px;">'+icon('search',19)+' Suivre ma demande</div>'
+        +'<div style="color:#8b93a1;font-size:13px;margin-bottom:20px;">Entrez votre code AAG-XXXXX</div>'
         +'<div style="display:flex;gap:8px;margin-bottom:4px;">'
         +'<input id="trackInput" type="text" value="'+code+'" placeholder="AAG-R2847" style="flex:1;border:1.5px solid var(--border);border-radius:12px;padding:12px;font-family:monospace;font-size:16px;letter-spacing:2px;">'
         +'<button id="trackSearchBtn" style="background:var(--accent);color:#fff;border:none;border-radius:12px;padding:12px 16px;font-size:13px;font-weight:600;cursor:pointer;">OK</button>'
@@ -1134,7 +1257,7 @@ const isIOS = () => /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.
 function installHintHtml(){
     if (isStandalone() || lsGet('install_hint_off')) return '';
     const how = _installPrompt
-        ? `<button id="installAppBtn" style="background:var(--accent);color:#fff;border:none;border-radius:20px;padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;">Installer</button>`
+        ? `<button id="installAppBtn" style="background:var(--accent);color:#fff;border:none;border-radius:8px;padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;">Installer</button>`
         : '';
     const txt = _installPrompt
         ? (isMobile() ? 'Ajoutez l’appli sur votre écran d’accueil pour l’ouvrir en un geste.' : 'Installez l’appli sur ce PC : elle s’ouvrira dans sa propre fenêtre, sans la barre du navigateur.')
@@ -1145,19 +1268,19 @@ function installHintHtml(){
                 : /Edg\//.test(navigator.userAgent)
                     ? `Dans Edge : menu <b>…</b> › <b>Applications</b> › <b>« Installer ce site en tant qu’application »</b>.`
                     : `Dans Chrome : icône <b>⊕</b> à droite de la barre d’adresse, ou menu <b>⋮</b> › <b>Caster, enregistrer et partager</b> › <b>Installer</b>.`;
-    return `<div style="display:flex;align-items:center;gap:12px;background:#fff;border:1px solid var(--border);border-radius:16px;padding:12px 12px 12px 14px;margin-bottom:16px;">
+    return `<div style="display:flex;align-items:center;gap:12px;background:#fff;border:1px solid var(--border);border-radius:8px;padding:12px 12px 12px 14px;margin-bottom:16px;">
         <img src="icon-192.png" alt="" style="width:40px;height:40px;border-radius:10px;flex-shrink:0;">
         <div style="flex:1;min-width:0;">
             <div style="font-weight:700;font-size:14px;color:var(--ink);">Installer l’appli</div>
-            <div style="font-size:12px;color:#7a7570;line-height:1.4;margin-top:1px;">${txt}</div>
+            <div style="font-size:12px;color:#6b7280;line-height:1.4;margin-top:1px;">${txt}</div>
         </div>
         ${how}
-        <button id="installHintClose" aria-label="Fermer" style="background:none;border:none;color:#b0aba2;cursor:pointer;padding:4px;display:flex;flex-shrink:0;">${icon('x',16)}</button>
+        <button id="installHintClose" aria-label="Fermer" style="background:none;border:none;color:#9ca3af;cursor:pointer;padding:4px;display:flex;flex-shrink:0;">${icon('x',16)}</button>
     </div>`;
 }
 
 const CLIENT_LBL={avalider:['En attente','hourglass','avalider'],acommander:['Validée','check','commandee'],commandee:['Commandée','check','commandee'],fait:['Faite','check','fait'],refusee:['Annulée','x','refusee']};
-function clientPill(st){ const [l,ic,k]=CLIENT_LBL[st]; const S=STAGES[k]; return `<span style="display:inline-flex;align-items:center;gap:4px;background:${S.bg};color:${S.color};border:1px solid ${S.border};border-radius:20px;padding:2px 9px;font-size:11px;font-weight:700;white-space:nowrap;">${icon(ic,11)} ${l}</span>`; }
+function clientPill(st){ const [l,ic,k]=CLIENT_LBL[st]; const S=STAGES[k]; return `<span style="display:inline-flex;align-items:center;gap:4px;background:${S.bg};color:${S.color};border:1px solid ${S.border};border-radius:8px;padding:2px 9px;font-size:11px;font-weight:700;white-space:nowrap;">${icon(ic,11)} ${l}</span>`; }
 function mesDemandesHtml(m){
     const moi=assistanteName()||userName();
     const today=new Date(); today.setHours(0,0,0,0);
@@ -1165,21 +1288,21 @@ function mesDemandesHtml(m){
     const aVenir=toutes.filter(c=>{ const d=parseDate(c.date); return d&&d>=today; }).sort(byDateAsc);
     const passees=toutes.filter(c=>{ const d=parseDate(c.date); return !d||d<today; }).sort((a,b)=>byDateAsc(b,a)).slice(0,state.mesPasseesAll?50:5);
     const ligne=c=>{ const st=stageOf(c);
-        return `<div style="background:#fff;border:1px solid var(--border);border-left:3px solid ${STAGES[CLIENT_LBL[st][2]].color};border-radius:14px;padding:12px 14px;">
+        return `<div style="background:#fff;border:1px solid var(--border);border-left:3px solid ${STAGES[CLIENT_LBL[st][2]].color};border-radius:8px;padding:12px 14px;">
             <div style="display:flex;align-items:center;gap:8px;"><span style="color:var(--ink-mid);">${typeIc(c.type,14)}</span>
                 <span style="font-weight:700;font-size:14px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(titreDe(c))}</span>${clientPill(st)}</div>
-            <div style="font-size:12px;color:#5a5650;margin-top:3px;">${dateCourte(c)}${c.heure?' · '+esc(c.heure):''}${c.lieu?' · '+esc(c.lieu):''}${c.type==='repas'?` · ${c.nb||1} pers.`:''}${c.code?` · <span style="font-family:monospace;color:#9e9a93;">${esc(c.code)}</span>`:''}</div>
+            <div style="font-size:12px;color:#4b5563;margin-top:3px;">${dateCourte(c)}${c.heure?' · '+esc(c.heure):''}${c.lieu?' · '+esc(c.lieu):''}${c.type==='repas'?` · ${c.nb||1} pers.`:''}${c.code?` · <span style="font-family:monospace;color:#8b93a1;">${esc(c.code)}</span>`:''}</div>
             <div style="margin-top:8px;">${trackSteps(c)}</div>
             ${c.pris==='En attente'?`<button data-mes-annuler="${c.id}" style="background:#fff;border:1px solid #fecaca;color:#b91c1c;border-radius:10px;padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer;">${icon('x',12)} Annuler ma demande</button>`:''}
         </div>`; };
     return `<div style="margin-top:28px;">
         <div style="display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:12px;">
-            <div style="font-family:'DM Serif Display',serif;font-size:${m?'20px':'24px'};">Mes demandes</div>
-            <div style="font-size:12px;color:#9e9a93;">${aVenir.length} à venir</div>
+            <div style="font-family:var(--ft);font-weight:650;letter-spacing:-.01em;font-size:${m?'20px':'24px'};">Mes demandes</div>
+            <div style="font-size:12px;color:#8b93a1;">${aVenir.length} à venir</div>
         </div>
-        ${aVenir.length?`<div style="display:grid;grid-template-columns:${m?'1fr':'1fr 1fr'};gap:10px;">${aVenir.map(ligne).join('')}</div>`:`<div style="text-align:center;color:#b0aba2;font-size:13px;padding:18px;border:1.5px dashed var(--border);border-radius:14px;">Aucune demande à venir</div>`}
-        ${passees.length?`<div style="font-size:12px;font-weight:700;color:#9e9a93;text-transform:uppercase;letter-spacing:.05em;margin:18px 0 8px;">Passées</div>
-        <div style="display:flex;flex-direction:column;gap:6px;">${passees.map(c=>`<div style="display:flex;align-items:center;gap:8px;font-size:13px;color:#5a5650;padding:8px 12px;background:#faf9f7;border-radius:10px;"><span>${typeIc(c.type,13)}</span><span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(titreDe(c))}</span><span style="color:#9e9a93;">${dateCourte(c)}</span>${clientPill(stageOf(c))}</div>`).join('')}</div>
+        ${aVenir.length?`<div style="display:grid;grid-template-columns:${m?'1fr':'1fr 1fr'};gap:10px;">${aVenir.map(ligne).join('')}</div>`:`<div style="text-align:center;color:#9ca3af;font-size:13px;padding:18px;border:1.5px dashed var(--border);border-radius:8px;">Aucune demande à venir</div>`}
+        ${passees.length?`<div style="font-size:12px;font-weight:700;color:#8b93a1;text-transform:uppercase;letter-spacing:.05em;margin:18px 0 8px;">Passées</div>
+        <div style="display:flex;flex-direction:column;gap:6px;">${passees.map(c=>`<div style="display:flex;align-items:center;gap:8px;font-size:13px;color:#4b5563;padding:8px 12px;background:#fafbfc;border-radius:10px;"><span>${typeIc(c.type,13)}</span><span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(titreDe(c))}</span><span style="color:#8b93a1;">${dateCourte(c)}</span>${clientPill(stageOf(c))}</div>`).join('')}</div>
         ${!state.mesPasseesAll&&toutes.length-aVenir.length>5?`<button data-nav='{"mesPasseesAll":true}' style="background:none;border:none;color:var(--accent);font-size:12px;font-weight:700;cursor:pointer;margin-top:8px;">Voir plus</button>`:''}`:''}
     </div>`;
 }
@@ -1189,11 +1312,11 @@ function renderHome(m){
     return `
     <div style="min-height:100vh;display:flex;flex-direction:column;">
         <!-- ── TOP BAR ── -->
-        <div style="background:var(--accent);padding:${m?'calc(16px + env(safe-area-inset-top,0px)) 20px 18px':'28px 40px'};">
+        <div style="background:var(--side);padding:${m?'calc(16px + env(safe-area-inset-top,0px)) 20px 18px':'28px 40px'};">
             <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;">
                 <div>
                     <div style="font-size:10px;font-weight:600;letter-spacing:2px;color:rgba(255,255,255,.35);margin-bottom:5px;">GESTION DES COMMANDES</div>
-                    <div style="font-family:'DM Serif Display',serif;font-size:${m?'26px':'34px'};color:#fff;">2026</div>
+                    <div style="font-family:var(--ft);font-weight:650;letter-spacing:-.01em;font-size:${m?'26px':'34px'};color:#fff;">2026</div>
                 </div>
                 <div style="display:flex;align-items:center;gap:${m?'8px':'12px'};">
                     ${AUTH?`<div style="display:flex;align-items:center;gap:8px;color:#fff;">
@@ -1229,10 +1352,10 @@ function renderInlineForm(m){
     if(f.sent) return `
     <div style="background:var(--white);border-radius:${m?'20px':'28px'};padding:${m?'32px 20px':'48px'};border:1px solid var(--border);text-align:center;box-shadow:0 8px 32px rgba(0,0,0,0.06);">
         <div style="width:70px;height:70px;border-radius:50%;background:#f0fdf4;border:2px solid #22c55e;display:flex;align-items:center;justify-content:center;font-size:38px;margin:0 auto 18px;">✓</div>
-        <div style="font-family:'DM Serif Display',serif;font-size:24px;margin-bottom:8px;">Demande envoyée !</div>
-        <div style="color:#9e9a93;font-size:14px;margin-bottom:24px;">En attente de validation par l'admin.</div>
+        <div style="font-family:var(--ft);font-weight:650;letter-spacing:-.01em;font-size:24px;margin-bottom:8px;">Demande envoyée !</div>
+        <div style="color:#8b93a1;font-size:14px;margin-bottom:24px;">En attente de validation par l'admin.</div>
 
-        <div style="background:#f8fafc;border:2px dashed #e2e8f0;border-radius:16px;padding:20px;margin-bottom:24px;display:inline-block;min-width:200px;">
+        <div style="background:#f8fafc;border:2px dashed #e2e8f0;border-radius:8px;padding:20px;margin-bottom:24px;display:inline-block;min-width:200px;">
             <div style="font-size:11px;color:#94a3b8;margin-bottom:8px;text-transform:uppercase;letter-spacing:.08em;">Code de suivi</div>
             <div style="font-family:monospace;font-size:30px;font-weight:800;color:#1a1f36;letter-spacing:6px;">${f.code||'—'}</div>
             <div style="font-size:11px;color:#94a3b8;margin-top:8px;">Notez ce code pour suivre ou modifier votre demande</div>
@@ -1247,26 +1370,26 @@ function renderInlineForm(m){
     /* ─ STEP 1 : TYPE ─ */
     if(!f.type) return `
     <div>
-        <div style="font-family:'DM Serif Display',serif;font-size:${m?'26px':'34px'};margin-bottom:6px;line-height:1.1;">Faire une<br>demande</div>
+        <div style="font-family:var(--ft);font-weight:650;letter-spacing:-.01em;font-size:${m?'26px':'34px'};margin-bottom:6px;line-height:1.1;">Faire une<br>demande</div>
         <div style="color:var(--ink-soft);font-size:14px;margin-bottom:24px;">Choisissez le type</div>
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:${m?'10px':'14px'};">
-            <div data-set-type="repas" style="background:var(--white);border:2px solid var(--border);border-radius:22px;padding:${m?'18px 10px':'36px 20px'};cursor:pointer;transition:all 0.2s;text-align:center;" onmouseover="this.style.borderColor='var(--accent)';this.style.boxShadow='0 8px 24px rgba(0,0,0,0.08)'" onmouseout="this.style.borderColor='var(--border)';this.style.boxShadow='none'">
+            <div data-set-type="repas" style="background:var(--white);border:2px solid var(--border);border-radius:8px;padding:${m?'18px 10px':'36px 20px'};cursor:pointer;transition:all 0.2s;text-align:center;" onmouseover="this.style.borderColor='var(--accent)';this.style.boxShadow='0 8px 24px rgba(0,0,0,0.08)'" onmouseout="this.style.borderColor='var(--border)';this.style.boxShadow='none'">
                 <div style="color:var(--accent);margin-bottom:10px;">${icon('utensils',m?30:44)}</div>
                 <div style="font-size:${m?'14px':'17px'};font-weight:700;margin-bottom:4px;">Repas</div>
                 <div style="color:var(--ink-soft);font-size:11px;">Déjeuner, petit-dej, goûter</div>
             </div>
-            <div data-set-type="taxi" style="background:var(--white);border:2px solid var(--border);border-radius:22px;padding:${m?'18px 10px':'36px 20px'};cursor:pointer;transition:all 0.2s;text-align:center;" onmouseover="this.style.borderColor='var(--accent)';this.style.boxShadow='0 8px 24px rgba(0,0,0,0.08)'" onmouseout="this.style.borderColor='var(--border)';this.style.boxShadow='none'">
+            <div data-set-type="taxi" style="background:var(--white);border:2px solid var(--border);border-radius:8px;padding:${m?'18px 10px':'36px 20px'};cursor:pointer;transition:all 0.2s;text-align:center;" onmouseover="this.style.borderColor='var(--accent)';this.style.boxShadow='0 8px 24px rgba(0,0,0,0.08)'" onmouseout="this.style.borderColor='var(--border)';this.style.boxShadow='none'">
                 <div style="color:var(--accent);margin-bottom:10px;">${icon('car',m?30:44)}</div>
                 <div style="font-size:${m?'14px':'17px'};font-weight:700;margin-bottom:4px;">Taxi</div>
                 <div style="color:var(--ink-soft);font-size:11px;">Véhicule avec chauffeur</div>
             </div>
-            <div data-set-type="hotel" style="background:var(--white);border:2px solid var(--border);border-radius:22px;padding:${m?'18px 10px':'36px 20px'};cursor:pointer;transition:all 0.2s;text-align:center;" onmouseover="this.style.borderColor='var(--accent)';this.style.boxShadow='0 8px 24px rgba(0,0,0,0.08)'" onmouseout="this.style.borderColor='var(--border)';this.style.boxShadow='none'">
+            <div data-set-type="hotel" style="background:var(--white);border:2px solid var(--border);border-radius:8px;padding:${m?'18px 10px':'36px 20px'};cursor:pointer;transition:all 0.2s;text-align:center;" onmouseover="this.style.borderColor='var(--accent)';this.style.boxShadow='0 8px 24px rgba(0,0,0,0.08)'" onmouseout="this.style.borderColor='var(--border)';this.style.boxShadow='none'">
                 <div style="color:var(--accent);margin-bottom:10px;">${icon('bed',m?30:44)}</div>
                 <div style="font-size:${m?'14px':'17px'};font-weight:700;margin-bottom:4px;">Hôtel</div>
                 <div style="color:var(--ink-soft);font-size:11px;">Nuit(s) d'hôtel</div>
             </div>
         </div>
-    <button id="goTrackHome" style="width:100%;margin-top:14px;background:none;border:1.5px solid var(--border);border-radius:16px;padding:12px;font-size:13px;color:var(--ink-soft);cursor:pointer;">${icon('search',14)} Suivre ou modifier ma demande</button>
+    <button id="goTrackHome" style="width:100%;margin-top:14px;background:none;border:1.5px solid var(--border);border-radius:8px;padding:12px;font-size:13px;color:var(--ink-soft);cursor:pointer;">${icon('search',14)} Suivre ou modifier ma demande</button>
     </div>`;
 
     const card = (inner) => `<div style="background:var(--white);border-radius:${m?'20px':'28px'};padding:${m?'20px 16px':'28px 32px'};border:1px solid var(--border);box-shadow:0 8px 32px rgba(0,0,0,0.05);">${inner}</div>`;
@@ -1278,14 +1401,14 @@ function renderInlineForm(m){
         <button data-form-back-type class="back-btn-dark" style="margin-bottom:16px;">← Retour</button>
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:22px;">
             <span style="color:var(--accent);">${icon(isRepas?'utensils':isHotel?'bed':'car',24)}</span>
-            <div style="font-family:'DM Serif Display',serif;font-size:${m?'20px':'24px'};">${isRepas?'Commande repas':isHotel?'Réservation hôtel':'Réservation taxi'}</div>
+            <div style="font-family:var(--ft);font-weight:650;letter-spacing:-.01em;font-size:${m?'20px':'24px'};">${isRepas?'Commande repas':isHotel?'Réservation hôtel':'Réservation taxi'}</div>
         </div>
         <div class="step-indicator"><div class="step-dot done"></div><div class="step-dot active"></div><div class="step-dot"></div></div>
 
         <!-- Assistante -->
         <div class="form-group">
             <label class="form-label">Votre nom (assistante) *</label>
-            ${assistanteName()?`<div class="form-input" style="background:#f4f2ee;display:flex;align-items:center;gap:8px;">${icon('user',14)} <b>${esc(assistanteName())}</b> <span style="color:#9e9a93;font-size:12px;">(connectée)</span></div><input type="hidden" id="formDem" value="${esc(assistanteName())}">`:`
+            ${assistanteName()?`<div class="form-input" style="background:#f3f4f6;display:flex;align-items:center;gap:8px;">${icon('user',14)} <b>${esc(assistanteName())}</b> <span style="color:#8b93a1;font-size:12px;">(connectée)</span></div><input type="hidden" id="formDem" value="${esc(assistanteName())}">`:`
             <select id="formDem" class="form-select">
                 <option value="">— Choisir votre nom —</option>
                 ${settings.assistantes.map(d=>`<option ${f.dem===d?'selected':''}>${d}</option>`).join('')}
@@ -1303,17 +1426,17 @@ function renderInlineForm(m){
         <div class="form-group">
             <label class="form-label">Pour qui ? *</label>
             <div style="position:relative;" id="pqWrapper">
-                <button type="button" id="pqToggle" style="width:100%;border:1.5px solid var(--border);border-radius:14px;padding:13px 14px;font-size:15px;background:var(--white);text-align:left;cursor:pointer;display:flex;justify-content:space-between;align-items:center;font-family:'DM Sans',sans-serif;color:var(--ink);">
+                <button type="button" id="pqToggle" style="width:100%;border:1.5px solid var(--border);border-radius:8px;padding:13px 14px;font-size:15px;background:var(--white);text-align:left;cursor:pointer;display:flex;justify-content:space-between;align-items:center;font-family:var(--fb);color:var(--ink);">
                     <span id="pqLabel">${f.pourQui.length?f.pourQui.filter(v=>v!=='__autre__').join(', ')+(f.pourQui.includes('__autre__')?(f.pourQui.length>1?', Autre':'Autre'):'') || '— Choisir —':'— Choisir —'}</span>
                     <span style="font-size:11px;color:var(--ink-soft);">▼</span>
                 </button>
-                <div id="pqDropdown" style="display:none;position:absolute;top:calc(100% + 4px);left:0;right:0;background:var(--white);border:1.5px solid var(--border);border-radius:14px;box-shadow:0 8px 24px rgba(0,0,0,0.10);z-index:999;overflow:hidden;max-height:220px;overflow-y:auto;">
+                <div id="pqDropdown" style="display:none;position:absolute;top:calc(100% + 4px);left:0;right:0;background:var(--white);border:1.5px solid var(--border);border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,0.10);z-index:999;overflow:hidden;max-height:220px;overflow-y:auto;">
                     ${settings.directeurs.map(d=>`
-                    <label style="display:flex;align-items:center;gap:12px;padding:11px 16px;cursor:pointer;border-bottom:1px solid var(--border-light);" onmouseover="this.style.background='#f5f4f0'" onmouseout="this.style.background=''">
+                    <label style="display:flex;align-items:center;gap:12px;padding:11px 16px;cursor:pointer;border-bottom:1px solid var(--border-light);" onmouseover="this.style.background='#f3f4f6'" onmouseout="this.style.background=''">
                         <input type="checkbox" class="pq-check" value="${d}" ${f.pourQui.includes(d)?'checked':''} style="width:17px;height:17px;accent-color:var(--accent);cursor:pointer;flex-shrink:0;">
                         <span style="font-size:14px;">${d}</span>
                     </label>`).join('')}
-                    <label style="display:flex;align-items:center;gap:12px;padding:11px 16px;cursor:pointer;" onmouseover="this.style.background='#f5f4f0'" onmouseout="this.style.background=''">
+                    <label style="display:flex;align-items:center;gap:12px;padding:11px 16px;cursor:pointer;" onmouseover="this.style.background='#f3f4f6'" onmouseout="this.style.background=''">
                         <input type="checkbox" class="pq-check" value="__autre__" ${f.pourQui.includes('__autre__')?'checked':''} style="width:17px;height:17px;accent-color:var(--accent);cursor:pointer;flex-shrink:0;">
                         <span style="font-size:14px;color:var(--ink-mid);">Autre…</span>
                     </label>
@@ -1367,7 +1490,7 @@ function renderInlineForm(m){
 
         <div class="form-group"><label class="form-label">Commentaire (optionnel)</label><textarea id="formCom" class="form-input" style="min-height:72px;resize:vertical;" placeholder="Informations complémentaires...">${f.com}</textarea></div>
         <p style="font-size:13px;color:var(--ink-soft);text-align:center;margin-bottom:10px;">Lorsque votre demande sera prise en compte, vous recevrez une confirmation par email.</p>
-        <label style="display:flex;align-items:center;gap:10px;padding:13px 16px;background:var(--white);border:1.5px solid var(--border);border-radius:14px;cursor:pointer;margin-bottom:10px;">
+        <label style="display:flex;align-items:center;gap:10px;padding:13px 16px;background:var(--white);border:1.5px solid var(--border);border-radius:8px;cursor:pointer;margin-bottom:10px;">
             <input type="checkbox" id="formCopyMail" ${f.copyMail?'checked':''} style="width:18px;height:18px;accent-color:var(--accent);cursor:pointer;flex-shrink:0;">
             <span style="font-size:14px;font-weight:500;">Recevoir une copie de ma demande par mail</span>
         </label>
@@ -1385,10 +1508,10 @@ function renderInlineForm(m){
 
     return card(`
         <button data-form-step2 class="back-btn-dark" style="margin-bottom:18px;">← Modifier</button>
-        <div style="font-family:'DM Serif Display',serif;font-size:${m?'20px':'24px'};margin-bottom:4px;">Récapitulatif</div>
+        <div style="font-family:var(--ft);font-weight:650;letter-spacing:-.01em;font-size:${m?'20px':'24px'};margin-bottom:4px;">Récapitulatif</div>
         <div style="color:var(--ink-soft);font-size:13px;margin-bottom:20px;">Vérifiez avant d'envoyer</div>
         <div class="step-indicator"><div class="step-dot done"></div><div class="step-dot done"></div><div class="step-dot active"></div></div>
-        <div style="background:#fafaf8;border-radius:16px;padding:14px;margin-bottom:18px;">
+        <div style="background:#fafaf8;border-radius:8px;padding:14px;margin-bottom:18px;">
             ${[
                 ["Type",`${TYPE_ICON[f.type]} ${TYPE_LABEL[f.type]}`],
                 ["Demandeur",f.dem||'—'],
@@ -1399,8 +1522,8 @@ function renderInlineForm(m){
                 isRepas?["Lieu",f.lieu||'—']:isHotel?["Ville",f.lieu||'—']:["Trajet",`${(f.de||'?').split(',')[0]} → ${(f.vers||'?').split(',')[0]}`],
                 ["Prestataire",f.presta||'—'],
             ].map(([k,v],i,arr)=>`
-                <div style="display:flex;justify-content:space-between;align-items:flex-start;padding:10px 0;${i<arr.length-1?'border-bottom:1px solid #e8e5df;':''}gap:10px;">
-                    <span style="color:#9e9a93;font-size:13px;white-space:nowrap;">${k}</span>
+                <div style="display:flex;justify-content:space-between;align-items:flex-start;padding:10px 0;${i<arr.length-1?'border-bottom:1px solid #e6e8ec;':''}gap:10px;">
+                    <span style="color:#8b93a1;font-size:13px;white-space:nowrap;">${k}</span>
                     <span style="font-weight:600;font-size:14px;text-align:right;">${v}</span>
                 </div>`).join('')}
         </div>
@@ -1429,30 +1552,30 @@ function renderLogin(){
            <div style="display:flex;justify-content:space-between;gap:8px;margin-top:12px;flex-wrap:wrap;">${lien('signup','Première connexion ?')}${lien('forgot','Mot de passe oublié ?')}</div>`;
     else if (mode === 'signup') corps = champ('authEmail','email','Email professionnel','username',lsGet('auth_last_email')||'') + champ('authNom','text','Prénom NOM','name') + champ('authPass','password','Mot de passe (6 caractères min.)','new-password') + champ('authPass2','password','Confirmez le mot de passe','new-password')
         + `<button id="authSubmit" class="btn-primary" style="width:100%;padding:14px;">Créer mon compte</button>
-           <div style="font-size:11px;color:#9e9a93;margin-top:10px;text-align:left;">Seuls les emails enregistrés par l’administration peuvent créer un compte.</div>
+           <div style="font-size:11px;color:#8b93a1;margin-top:10px;text-align:left;">Seuls les emails enregistrés par l’administration peuvent créer un compte.</div>
            <div style="margin-top:8px;">${lien('login','J’ai déjà un compte')}</div>`;
     else if (mode === 'forgot') corps = champ('authEmail','email','Email professionnel','username',lsGet('auth_last_email')||'')
         + `<button id="authSubmit" class="btn-primary" style="width:100%;padding:14px;">Recevoir le lien</button><div style="margin-top:8px;">${lien('login','Retour à la connexion')}</div>`;
     else corps = champ('authPass','password','Nouveau mot de passe (6 caractères min.)','new-password') + champ('authPass2','password','Confirmez le mot de passe','new-password')
         + `<button id="authSubmit" class="btn-primary" style="width:100%;padding:14px;">Enregistrer</button>`;
     const sortie = (!settings.loginObligatoire || pourAdmin) && mode !== 'reset'
-        ? `<button data-auth-exit style="background:none;border:none;color:#9e9a93;cursor:pointer;margin-top:14px;font-size:14px;display:block;width:100%;padding:8px;">${pourAdmin?'← Retour':'Continuer sans compte →'}</button>` : '';
+        ? `<button data-auth-exit style="background:none;border:none;color:#8b93a1;cursor:pointer;margin-top:14px;font-size:14px;display:block;width:100%;padding:8px;">${pourAdmin?'← Retour':'Continuer sans compte →'}</button>` : '';
     return `<div class="login-wrap">
         <div class="login-card">
-            <div style="width:64px;height:64px;border-radius:20px;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;margin:0 auto 18px;">${icon(mode==='login'?'lock':mode==='signup'?'user':'mail',28)}</div>
-            <div style="font-family:'DM Serif Display',serif;font-size:24px;margin-bottom:6px;">${titre}</div>
-            <div style="color:#9e9a93;margin-bottom:20px;font-size:14px;">${sous}</div>
+            <div style="width:64px;height:64px;border-radius:8px;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;margin:0 auto 18px;">${icon(mode==='login'?'lock':mode==='signup'?'user':'mail',28)}</div>
+            <div style="font-family:var(--ft);font-weight:650;letter-spacing:-.01em;font-size:24px;margin-bottom:6px;">${titre}</div>
+            <div style="color:#8b93a1;margin-bottom:20px;font-size:14px;">${sous}</div>
             ${err}${info}${corps}${sortie}
         </div>
     </div>`;
 }
 function renderPasAdmin(){
     return `<div class="login-wrap"><div class="login-card">
-        <div style="width:64px;height:64px;border-radius:20px;background:#fef3c7;color:#b45309;display:flex;align-items:center;justify-content:center;margin:0 auto 18px;">${icon('shield',28)}</div>
-        <div style="font-family:'DM Serif Display',serif;font-size:22px;margin-bottom:6px;">Accès réservé</div>
-        <div style="color:#7a7570;margin-bottom:20px;font-size:14px;">Vous êtes connecté·e en tant que <b>${esc(userName())}</b>. L’administration est réservée aux adresses déclarées comme admin.</div>
+        <div style="width:64px;height:64px;border-radius:8px;background:#fef3c7;color:#b45309;display:flex;align-items:center;justify-content:center;margin:0 auto 18px;">${icon('shield',28)}</div>
+        <div style="font-family:var(--ft);font-weight:650;letter-spacing:-.01em;font-size:22px;margin-bottom:6px;">Accès réservé</div>
+        <div style="color:#6b7280;margin-bottom:20px;font-size:14px;">Vous êtes connecté·e en tant que <b>${esc(userName())}</b>. L’administration est réservée aux adresses déclarées comme admin.</div>
         <button data-back-home class="btn-primary" style="width:100%;padding:13px;">Retour au formulaire</button>
-        <button data-admin-logout style="background:none;border:none;color:#9e9a93;cursor:pointer;margin-top:12px;font-size:13px;width:100%;">Changer de compte</button>
+        <button data-admin-logout style="background:none;border:none;color:#8b93a1;cursor:pointer;margin-top:12px;font-size:13px;width:100%;">Changer de compte</button>
     </div></div>`;
 }
 
@@ -1466,7 +1589,7 @@ function renderAdminView(m){
 
     const activiteSubTabs=[['tout','grid','Toutes'],['reservations','utensils','Repas & taxis'],['commandes','box','Fournitures'],['hotels','bed','Hôtels'],['historique','wallet','Dépenses & export'],['journal','edit','Journal'],['corbeille','trash','Corbeille']].map(([k,ic,label])=>{
         const active=(state.activiteTab||'tout')===k;
-        return `<button data-activite-tab="${k}" style="display:flex;align-items:center;gap:6px;padding:6px 12px;border-radius:30px;border:none;cursor:pointer;font-size:13px;font-weight:500;white-space:nowrap;background:${active?'#fff':'rgba(255,255,255,.14)'};color:${active?'var(--accent)':'rgba(255,255,255,.9)'};transition:all 0.15s;">${icon(ic,15)} ${label}</button>`;
+        return `<button data-activite-tab="${k}" class="subtab ${active?'on':''}">${icon(ic,15)} ${label}</button>`;
     }).join('');
 
     let main='';
@@ -1478,21 +1601,24 @@ function renderAdminView(m){
 
     else main=renderDashboard(total,attente,m);
 
+    const TITRES={dashboard:'Tableau de bord',suivi:'Suivi des demandes',calendrier:'Agenda',activite:'Registre',stats:'Statistiques',settings:'Réglages'};
     if(m) return `
     <div class="mobile-header">
-        <div style="display:flex;align-items:center;justify-content:space-between;">
-            <div>
-                <div style="font-size:10px;font-weight:600;letter-spacing:2px;color:rgba(255,255,255,.35);margin-bottom:4px;">ADMIN</div>
-                <div style="font-family:'DM Serif Display',serif;font-size:19px;color:#fff;">${{dashboard:icon('dashboard',17)+" Tableau de bord",suivi:icon('clipboard',17)+" Suivi des demandes",calendrier:icon('calendar',17)+" Agenda",activite:icon('grid',17)+" Registre",stats:icon('chart',17)+" Statistiques",settings:icon('sliders',17)+" Réglages"}[state.adminTab]}</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
+            <div style="display:flex;align-items:center;gap:10px;min-width:0;">
+                <span class="logo-sq">${icon('clipboard',16)}</span>
+                <div style="min-width:0;">
+                    <div style="font-size:10.5px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#8fa0b5;">Gestion des commandes</div>
+                    <div style="font-size:17px;font-weight:650;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${TITRES[state.adminTab]||''}</div>
+                </div>
             </div>
-            <div style="display:flex;gap:8px;">
-                <button data-activate-notifs aria-label="Notifications" style="background:${notifsReady()?'rgba(255,255,255,.1)':'#f59e0b'};border:none;border-radius:10px;padding:8px 11px;color:#fff;cursor:pointer;display:flex;align-items:center;">${icon('bell',16)}</button>
-                <button data-admin-tab="settings" aria-label="Réglages" style="background:${state.adminTab==='settings'?'#fff':'rgba(255,255,255,.1)'};border:none;border-radius:10px;padding:8px 11px;color:${state.adminTab==='settings'?'var(--accent)':'#fff'};cursor:pointer;display:flex;align-items:center;">${icon('sliders',16)}</button>
-                <button data-admin-logout style="background:rgba(255,255,255,.1);border:none;border-radius:10px;padding:8px 13px;color:rgba(255,255,255,.7);cursor:pointer;display:flex;align-items:center;">${icon('logout',16)}</button>
+            <div style="display:flex;gap:6px;flex-shrink:0;">
+                <button data-activate-notifs aria-label="Notifications" class="mh-btn" style="position:relative;">${icon('bell',17)}${notifsReady()?'':'<i class="mh-dot"></i>'}</button>
+                <button data-admin-tab="settings" aria-label="Réglages" class="mh-btn ${state.adminTab==='settings'?'on':''}">${icon('sliders',17)}</button>
             </div>
         </div>
     </div>
-    <div style="padding:16px;padding-bottom:calc(80px + env(safe-area-inset-bottom,0px) + 16px);">${main}</div>
+    <div class="m-page">${main}</div>
     ${state.saisieType?renderSaisieModal():''}
     <div id="bulkBarSlot">${bulkBarHtml()}</div>
     ${state.toast?`<div class="toast">${state.toast}</div>`:''}
@@ -1500,49 +1626,51 @@ function renderAdminView(m){
         ${state.fabOpen?`<div class="fab-menu">
             ${[["commande","box","Commande"],["taxi","car","Taxi"],["repas","utensils","Repas"],["hotel","bed","Hôtel"]].map(([t,ic,l])=>`<button data-saisie-type="${t}" class="fab-item">${icon(ic,15)} ${l}</button>`).join('')}
         </div>`:''}
-        <button id="fabMain" class="fab-main ${state.fabOpen?'open':''}">+</button>
+        <button id="fabMain" class="fab-main ${state.fabOpen?'open':''}">${icon('plus',22)}</button>
     </div>
     ${mobileNavHtml()}`;
 
+    const nAF=aFaireCount();
+    const item=(tab,ic,label)=>`<button data-admin-tab="${tab}" class="side-it ${state.adminTab===tab?'on':''}" title="${label}">${icon(ic,17)}<span class="side-lbl">${label}</span>${tab==='suivi'&&nAF?`<span class="side-n">${nAF}</span>`:''}</button>`;
+    const nom=adminName()||'Administrateur';
+    const init=nom.split(/\s+/).map(w=>w[0]||'').join('').slice(0,2).toUpperCase();
     return `
-    <div style="background:var(--accent);padding:12px 32px;">
-        <div style="max-width:none;margin:0;">
-            <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px 20px;">
-                <div style="display:flex;align-items:center;gap:10px;">
-                    <div>
-                        <div style="font-size:9px;font-weight:600;letter-spacing:2px;color:rgba(255,255,255,.4);margin-bottom:2px;">ADMINISTRATION</div>
-                        <div style="font-family:'DM Serif Display',serif;font-size:17px;color:#fff;white-space:nowrap;">Gestion des commandes 2026</div>
-                    </div>
-                </div>
-                <nav class="admin-nav" style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;">
-                    ${[["dashboard","dashboard","Tableau de bord"],["suivi","clipboard","Suivi des demandes"],["calendrier","calendar","Agenda"],["activite","grid","Registre"],["stats","chart","Statistiques"]].map(([tab,ic,label])=>`
-                        <button data-admin-tab="${tab}" style="display:flex;align-items:center;gap:6px;padding:6px 12px;border-radius:30px;border:none;cursor:pointer;font-size:13px;font-weight:500;white-space:nowrap;background:${state.adminTab===tab?'#fff':'transparent'};color:${state.adminTab===tab?'var(--accent)':'rgba(255,255,255,.9)'};transition:all 0.15s;">
-                            ${icon(ic,15)} ${label}${tab==='suivi'&&aFaireCount()?` <span style="background:#f59e0b;color:#fff;border-radius:10px;min-width:16px;height:16px;padding:0 4px;font-size:10px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;margin-left:2px;">${aFaireCount()}</span>`:''}
-                        </button>`).join('')}
-                </nav>
-                <div style="display:flex;gap:8px;align-items:center;">
-                    <button data-activate-notifs title="${notifsReady()?'Notifications activées':'Activer les notifications et la pastille'}" style="position:relative;display:flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:50%;border:1px solid rgba(255,255,255,.35);background:${notifsReady()?'rgba(255,255,255,.15)':'#f59e0b'};color:#fff;cursor:pointer;">${icon('bell',16)}</button>
-                    <button data-admin-tab="settings" title="Réglages" style="display:flex;align-items:center;gap:6px;padding:6px 12px;border-radius:30px;border:1px solid ${state.adminTab==='settings'?'#fff':'rgba(255,255,255,.35)'};cursor:pointer;font-size:13px;font-weight:600;color:${state.adminTab==='settings'?'var(--accent)':'#fff'};background:${state.adminTab==='settings'?'#fff':'transparent'};white-space:nowrap;">${icon('sliders',15)}<span class="hdr-lbl"> Réglages</span></button>
-                    <span style="width:1px;height:22px;background:rgba(255,255,255,.25);"></span>
-                    <button data-back-home title="Formulaire de demande" style="display:flex;align-items:center;gap:6px;padding:6px 12px;border-radius:30px;border:1px solid rgba(255,255,255,.35);cursor:pointer;font-size:13px;color:#fff;background:transparent;white-space:nowrap;">${icon('home',15)}<span class="hdr-lbl"> Formulaire</span></button>
-                    <button data-admin-logout style="display:flex;align-items:center;gap:6px;background:#fef2f2;border:1px solid #fecaca;border-radius:30px;padding:6px 12px;color:#b91c1c;cursor:pointer;font-size:13px;font-weight:600;white-space:nowrap;">${icon('logout',15)}<span class="hdr-lbl"> Déconnexion</span></button>
-                    <div style="position:relative;display:inline-block;">
-                        <button id="fabAdminMain" style="width:34px;height:34px;border-radius:50%;background:#fff;color:var(--accent);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;">${icon('plus',18)}</button>
-                        <div id="fabAdminMenu" style="display:none;position:absolute;top:42px;right:0;background:#fff;border:1.5px solid #e8e5df;border-radius:14px;box-shadow:0 8px 24px rgba(0,0,0,.12);padding:8px;z-index:9999;min-width:160px;flex-direction:column;gap:4px;">
-                            <button data-saisie-type="repas" style="display:flex;align-items:center;gap:8px;background:none;border:none;border-radius:10px;padding:10px 14px;font-size:13px;cursor:pointer;text-align:left;width:100%;color:var(--ink);">${icon('utensils',15)} Repas</button>
-                            <button data-saisie-type="taxi" style="display:flex;align-items:center;gap:8px;background:none;border:none;border-radius:10px;padding:10px 14px;font-size:13px;cursor:pointer;text-align:left;width:100%;color:var(--ink);">${icon('car',15)} Taxi</button>
-                            <button data-saisie-type="commande" style="display:flex;align-items:center;gap:8px;background:none;border:none;border-radius:10px;padding:10px 14px;font-size:13px;cursor:pointer;text-align:left;width:100%;color:var(--ink);">${icon('box',15)} Commande</button>
-                            <button data-saisie-type="hotel" style="display:flex;align-items:center;gap:8px;background:none;border:none;border-radius:10px;padding:10px 14px;font-size:13px;cursor:pointer;text-align:left;width:100%;color:var(--ink);">${icon('bed',15)} Hôtel</button>
-                        </div>
+    <div class="shell">
+    <aside class="side">
+        <div class="side-brand"><span class="logo-sq">${icon('clipboard',16)}</span><div class="side-lbl"><b>Gestion des commandes</b><span>Administration</span></div></div>
+        <div class="side-scroll">
+            <div class="side-grp"><h6 class="side-lbl">Pilotage</h6>
+                ${item('dashboard','dashboard','Tableau de bord')}${item('suivi','clipboard','Suivi des demandes')}${item('calendrier','calendar','Agenda')}</div>
+            <div class="side-grp"><h6 class="side-lbl">Données</h6>
+                ${item('activite','grid','Registre')}${item('stats','chart','Statistiques')}</div>
+            <div class="side-grp"><h6 class="side-lbl">Administration</h6>
+                ${item('settings','sliders','Réglages')}
+                <button data-back-home class="side-it" title="Formulaire de demande">${icon('home',17)}<span class="side-lbl">Formulaire de demande</span></button></div>
+        </div>
+        <div class="side-user">
+            <span class="side-av">${esc(init||'AD')}</span>
+            <div class="side-lbl" style="min-width:0;flex:1;"><b>${esc(nom)}</b><span>Administrateur</span></div>
+            <button data-admin-logout class="side-out" title="Se déconnecter">${icon('logout',16)}</button>
+        </div>
+    </aside>
+    <div class="shell-main">
+        <header class="topbar">
+            <div class="crumb">Administration / <b>${TITRES[state.adminTab]||''}</b></div>
+            <div style="margin-left:auto;display:flex;gap:8px;align-items:center;">
+                <button data-activate-notifs class="ic-btn" title="${notifsReady()?'Notifications activées':'Activer les notifications et la pastille'}">${icon('bell',16)}${notifsReady()?'':'<i></i>'}</button>
+                <div style="position:relative;display:inline-block;">
+                    <button id="fabAdminMain" class="btn-sm pri" style="padding:8px 14px;">${icon('plus',15)} Nouvelle demande</button>
+                    <div id="fabAdminMenu" class="drop-menu" style="display:none;">
+                        ${[["repas","utensils","Repas"],["taxi","car","Taxi"],["commande","box","Commande"],["hotel","bed","Hôtel"]].map(([t,ic,l])=>`<button data-saisie-type="${t}">${icon(ic,15)} ${l}</button>`).join('')}
                     </div>
                 </div>
             </div>
-            ${state.adminTab==='activite'?`<div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,.18);">${activiteSubTabs}</div>`:''}
-        </div>
+        </header>
+        ${state.adminTab==='activite'?`<div class="subtabs">${activiteSubTabs}</div>`:''}
+        <div class="admin-grid"><div class="admin-main">${main}${state.saisieType?renderSaisieModal():''}</div></div>
     </div>
-    <div class="admin-grid"><div class="admin-main">${main}${state.saisieType?renderSaisieModal():''}</div></div>
+    </div>
     <div id="bulkBarSlot">${bulkBarHtml()}</div>
-
     ${state.toast?`<div class="toast">${state.toast}</div>`:''}`;
 }
 
@@ -1583,7 +1711,7 @@ function stageOf(c){
 }
 function titreDe(c){ return c.type==='commande' ? (c.presta||c.desc||'Commande') : (c.desc||TYPE_LABEL[c.type]||'—'); }
 function typeIc(t,s=14){ return icon(t==='taxi'?'car':t==='repas'?'utensils':t==='hotel'?'bed':'box',s); }
-function stagePill(st){ const S=STAGES[st]; return `<span style="display:inline-flex;align-items:center;gap:4px;background:${S.bg};color:${S.color};border:1px solid ${S.border};border-radius:20px;padding:2px 9px;font-size:11px;font-weight:700;white-space:nowrap;">${icon(S.icon,11)} ${S.court}</span>`; }
+function stagePill(st){ const S=STAGES[st]; return `<span style="display:inline-flex;align-items:center;gap:5px;background:${S.bg};color:${S.color};border-radius:5px;padding:3px 8px;font-size:11.5px;font-weight:600;white-space:nowrap;">${S.court}</span>`; }
 function countStages(list){ const n={avalider:0,acommander:0,commandee:0,fait:0,refusee:0}; (list||state.data).forEach(c=>n[stageOf(c)]++); return n; }
 function aFaireCount(){ const n=countStages(); return n.avalider+n.acommander; }
 
@@ -1732,24 +1860,24 @@ function suiviCard(c,{compact=false,showStage=false,select=false}={}){
     let actions='', info='';
     if(st==='avalider') actions=B.valider+B.refuser;
     else if(st==='acommander') actions=B.commande+B.annuler;
-    else if(st==='commandee'){ actions=B.fait+B.annuler; info=`${icon('check',11)} Commande passée le ${new Date(s.cmd).toLocaleDateString('fr-FR')}${s.cmdBy&&s.cmdBy!=='Admin'?' par '+esc(s.cmdBy):''} · <a href="#" data-suivi-act="uncommande" data-id="${c.id}" style="color:#9e9a93;">décocher</a>`; }
-    else if(st==='fait'){ info=s.fait?`Terminé le ${new Date(s.fait).toLocaleDateString('fr-FR')}${s.cmd?'':''} · <a href="#" data-suivi-act="unfait" data-id="${c.id}" style="color:#9e9a93;">rouvrir</a>`:'Prestation passée'; }
+    else if(st==='commandee'){ actions=B.fait+B.annuler; info=`${icon('check',11)} Commande passée le ${new Date(s.cmd).toLocaleDateString('fr-FR')}${s.cmdBy&&s.cmdBy!=='Admin'?' par '+esc(s.cmdBy):''} · <a href="#" data-suivi-act="uncommande" data-id="${c.id}" style="color:#8b93a1;">décocher</a>`; }
+    else if(st==='fait'){ info=s.fait?`Terminé le ${new Date(s.fait).toLocaleDateString('fr-FR')}${s.cmd?'':''} · <a href="#" data-suivi-act="unfait" data-id="${c.id}" style="color:#8b93a1;">rouvrir</a>`:'Prestation passée'; }
     const sel=select?`<input type="checkbox" class="sel-box" data-sel-id="${c.id}" ${(state.sel||[]).includes(c.id)?'checked':''} style="width:16px;height:16px;accent-color:var(--accent);cursor:pointer;flex-shrink:0;margin-top:3px;">`:'';
-    return `<div class="suivi-card" style="background:#fff;border:1px solid var(--border);border-left:3px solid ${STAGES[st].color};border-radius:14px;padding:${compact?'10px 12px':'12px 14px'};display:flex;gap:10px;align-items:flex-start;">
+    return `<div class="suivi-card" style="background:#fff;border:1px solid var(--border);border-left:3px solid ${STAGES[st].color};border-radius:8px;padding:${compact?'10px 12px':'12px 14px'};display:flex;gap:10px;align-items:flex-start;">
         ${sel}
         <div style="flex:1;min-width:0;">
             <div data-open-detail='${JSON.stringify(c).replace(/'/g,"&apos;")}' style="cursor:pointer;">
                 <div style="display:flex;align-items:center;gap:6px;min-width:0;">
                     <span style="color:var(--ink-mid);flex-shrink:0;">${typeIc(c.type,13)}</span>
                     <span style="font-weight:700;font-size:13px;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0;">${esc(titreDe(c))}</span>
-                    ${urg?`<span style="background:${urg.bg};border:1px solid ${urg.border};color:${urg.color};border-radius:20px;padding:1px 7px;font-size:10px;font-weight:700;white-space:nowrap;">${urg.label}</span>`:''}
+                    ${urg?`<span style="background:${urg.bg};border:1px solid ${urg.border};color:${urg.color};border-radius:8px;padding:1px 7px;font-size:10px;font-weight:700;white-space:nowrap;">${urg.label}</span>`:''}
                     ${showStage?stagePill(st):''}
                 </div>
-                <div style="font-size:12px;color:#5a5650;margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${meta.join(' · ')}</div>
-                <div style="font-size:11px;color:#9e9a93;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(c.demandeur||'—')}${c.pourQui?' · pour '+esc(c.pourQui):''}${c.presta&&c.type!=='commande'?' · '+esc(c.presta):''}</div>
+                <div style="font-size:12px;color:#4b5563;margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${meta.join(' · ')}</div>
+                <div style="font-size:11px;color:#8b93a1;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(c.demandeur||'—')}${c.pourQui?' · pour '+esc(c.pourQui):''}${c.presta&&c.type!=='commande'?' · '+esc(c.presta):''}</div>
                 ${s.note?`<div style="font-size:11px;color:#92400e;background:#fffbeb;border-radius:8px;padding:4px 8px;margin-top:6px;display:flex;gap:5px;align-items:flex-start;">${icon('message',11)} <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(s.note)}</span></div>`:''}
             </div>
-            ${info?`<div style="font-size:11px;color:#9e9a93;margin-top:6px;">${info}</div>`:''}
+            ${info?`<div style="font-size:11px;color:#8b93a1;margin-top:6px;">${info}</div>`:''}
             ${actions?`<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;">${actions}</div>`:''}
         </div>
     </div>`;
@@ -1771,30 +1899,30 @@ function renderSuivi(m){
     const types=[['all','Tout'],['repas','Repas'],['taxi','Taxi'],['hotel','Hôtel'],['commande','Commande']];
     const head=`<div style="display:flex;justify-content:space-between;align-items:flex-end;gap:10px;flex-wrap:wrap;margin-bottom:14px;">
         <div>
-            <div style="font-family:'DM Serif Display',serif;font-size:${m?'18px':'22px'};display:flex;align-items:center;gap:9px;">${icon('clipboard',m?17:20)} Suivi des demandes</div>
-            <div style="font-size:12px;color:#9e9a93;margin-top:3px;">Demande reçue → Réponse → Commande → Fait</div>
+            <div style="font-family:var(--ft);font-weight:650;letter-spacing:-.01em;font-size:${m?'18px':'22px'};display:flex;align-items:center;gap:9px;">${icon('clipboard',m?17:20)} Suivi des demandes</div>
+            <div style="font-size:12px;color:#8b93a1;margin-top:3px;">Demande reçue → Réponse → Commande → Fait</div>
         </div>
-        <div style="display:flex;gap:6px;flex-wrap:wrap;">${types.map(([k,l])=>`<button data-nav='{"suiviType":"${k}"}' style="padding:6px 12px;border:none;border-radius:16px;font-size:12px;font-weight:600;cursor:pointer;background:${(state.suiviType||'all')===k?'var(--accent)':'#f0eeea'};color:${(state.suiviType||'all')===k?'#fff':'#5a5650'};">${l}</button>`).join('')}</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;">${types.map(([k,l])=>`<button data-nav='{"suiviType":"${k}"}' style="padding:6px 12px;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;background:${(state.suiviType||'all')===k?'var(--accent)':'#f1f2f4'};color:${(state.suiviType||'all')===k?'#fff':'#4b5563'};">${l}</button>`).join('')}</div>
     </div>
     <input id="adminSearch" type="text" placeholder="Rechercher (nom, salle, prestataire, code…)" value="${esc(state.search||'')}" class="search-input" style="margin-bottom:14px;">`;
     const colHead=(k)=>{ const S=STAGES[k]; return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
         <span style="width:26px;height:26px;border-radius:8px;background:${S.bg};color:${S.color};display:flex;align-items:center;justify-content:center;">${icon(S.icon,14)}</span>
         <span style="font-weight:700;font-size:14px;color:var(--ink);">${k==='fait'?'Fait (14 derniers jours)':S.label}</span>
-        <span style="background:${S.color};color:#fff;border-radius:20px;padding:0 8px;font-size:11px;font-weight:700;line-height:18px;">${cols[k].length}</span></div>${k==='acommander'?'<div style="font-size:11px;color:#7a7570;margin:-4px 0 10px;">Commandez auprès du prestataire, puis cochez « J’ai passé la commande ».</div>':''}`; };
-    const empty=k=>`<div style="text-align:center;color:#b0aba2;font-size:12px;padding:18px 8px;border:1.5px dashed var(--border);border-radius:14px;">${k==='avalider'?'Aucune demande à valider':k==='acommander'?'Rien à commander':k==='commandee'?'Aucune commande en cours':'Rien de terminé récemment'}</div>`;
+        <span style="background:${S.color};color:#fff;border-radius:8px;padding:0 8px;font-size:11px;font-weight:700;line-height:18px;">${cols[k].length}</span></div>${k==='acommander'?'<div style="font-size:11px;color:#6b7280;margin:-4px 0 10px;">Commandez auprès du prestataire, puis cochez « J’ai passé la commande ».</div>':''}`; };
+    const empty=k=>`<div style="text-align:center;color:#9ca3af;font-size:12px;padding:18px 8px;border:1.5px dashed var(--border);border-radius:8px;">${k==='avalider'?'Aucune demande à valider':k==='acommander'?'Rien à commander':k==='commandee'?'Aucune commande en cours':'Rien de terminé récemment'}</div>`;
     const list=k=>cols[k].length?`<div style="display:flex;flex-direction:column;gap:8px;">${cols[k].map(c=>suiviCard(c,{select:k==='avalider'})).join('')}</div>`:empty(k);
     if(m){
         const cur=state.suiviStage||STAGE_ORDER.find(k=>cols[k].length)||'avalider';
         return `<div>${head}
-        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px;background:#f0eeea;border-radius:14px;padding:4px;margin-bottom:12px;">
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px;background:#f1f2f4;border-radius:8px;padding:4px;margin-bottom:12px;">
             ${STAGE_ORDER.map(k=>`<button data-nav='{"suiviStage":"${k}"}' style="border:none;border-radius:10px;padding:7px 2px;cursor:pointer;background:${cur===k?'#fff':'transparent'};box-shadow:${cur===k?'0 1px 3px rgba(0,0,0,.08)':'none'};">
-                <div style="font-size:16px;font-weight:700;color:${STAGES[k].color};line-height:1.1;">${cols[k].length}</div><div style="font-size:10px;font-weight:600;color:#5a5650;">${STAGES[k].court}</div></button>`).join('')}
+                <div style="font-size:16px;font-weight:700;color:${STAGES[k].color};line-height:1.1;">${cols[k].length}</div><div style="font-size:10px;font-weight:600;color:#4b5563;">${STAGES[k].court}</div></button>`).join('')}
         </div>
         ${list(cur)}</div>`;
     }
     return `<div>${head}
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,250px),1fr));gap:14px;align-items:start;">
-        ${STAGE_ORDER.map(k=>`<div style="background:#faf9f7;border:1px solid var(--border);border-radius:18px;padding:12px;min-height:200px;">${colHead(k)}${list(k)}</div>`).join('')}
+        ${STAGE_ORDER.map(k=>`<div style="background:#fafbfc;border:1px solid var(--border);border-radius:8px;padding:12px;min-height:200px;">${colHead(k)}${list(k)}</div>`).join('')}
     </div></div>`;
 }
 
@@ -1822,12 +1950,12 @@ function miniCalendar(){
     const {y,mo,today}=calState(), ev=eventsByDay(), days=monthGrid(y,mo);
     return `<div>
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
-            <button data-cal-nav="-1" style="background:none;border:none;cursor:pointer;color:#7a7570;font-size:16px;padding:2px 8px;">‹</button>
+            <button data-cal-nav="-1" style="background:none;border:none;cursor:pointer;color:#6b7280;font-size:16px;padding:2px 8px;">‹</button>
             <span style="font-weight:700;font-size:13px;">${moisAn(mo,y)}</span>
-            <button data-cal-nav="1" style="background:none;border:none;cursor:pointer;color:#7a7570;font-size:16px;padding:2px 8px;">›</button>
+            <button data-cal-nav="1" style="background:none;border:none;cursor:pointer;color:#6b7280;font-size:16px;padding:2px 8px;">›</button>
         </div>
         <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;text-align:center;">
-            ${['L','M','M','J','V','S','D'].map(d=>`<div style="font-size:10px;color:#b0aba2;font-weight:700;padding:2px 0;">${d}</div>`).join('')}
+            ${['L','M','M','J','V','S','D'].map(d=>`<div style="font-size:10px;color:#9ca3af;font-weight:700;padding:2px 0;">${d}</div>`).join('')}
             ${days.map(d=>{ const k=isoDay(d), l=ev[k]||[], out=d.getMonth()!==mo, isT=k===today;
                 const dots=[...new Set(l.map(stageOf))].slice(0,3).map(st=>`<span style="width:5px;height:5px;border-radius:50%;background:${STAGES[st].color};display:inline-block;"></span>`).join('');
                 return `<button data-cal-day="${k}" data-goto-cal="1" style="border:none;background:${isT?'var(--accent)':'transparent'};color:${isT?'#fff':out?'#cfcac2':'var(--ink)'};border-radius:8px;padding:4px 0 3px;cursor:pointer;font-size:12px;font-weight:${l.length?700:400};">
@@ -1842,34 +1970,34 @@ function renderCalendrier(m){
         const k=isoDay(d), l=ev[k]||[], out=d.getMonth()!==mo, isT=k===today, isS=k===sel, we=d.getDay()===0||d.getDay()===6;
         const chips=m
             ? `<div style="display:flex;gap:2px;justify-content:center;flex-wrap:wrap;margin-top:3px;">${l.slice(0,4).map(c=>`<span style="width:6px;height:6px;border-radius:50%;background:${STAGES[stageOf(c)].color};"></span>`).join('')}</div>`
-            : l.slice(0,3).map(c=>{ const S=STAGES[stageOf(c)]; return `<div style="font-size:11px;background:${S.bg};color:${S.color};border-left:2px solid ${S.color};border-radius:4px;padding:1px 5px;margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:left;">${c.heure?`<b>${esc(c.heure)}</b> `:''}${esc(titreDe(c))}</div>`; }).join('')+(l.length>3?`<div style="font-size:10px;color:#9e9a93;margin-top:2px;text-align:left;">+${l.length-3} autre${l.length-3>1?'s':''}</div>`:'');
-        return `<button data-cal-day="${k}" style="display:block;width:100%;text-align:${m?'center':'left'};vertical-align:top;min-height:${m?'48px':window.innerWidth<1100?'76px':'96px'};border:1px solid ${isS?'var(--accent)':'#efece7'};outline:${isS?'1px solid var(--accent)':'none'};background:${out?'#fbfaf8':we?'#fcfbf9':'#fff'};border-radius:10px;padding:${m?'5px 2px':'6px 7px'};cursor:pointer;color:${out?'#c9c4bb':'var(--ink)'};">
+            : l.slice(0,3).map(c=>{ const S=STAGES[stageOf(c)]; return `<div style="font-size:11px;background:${S.bg};color:${S.color};border-left:2px solid ${S.color};border-radius:4px;padding:1px 5px;margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:left;">${c.heure?`<b>${esc(c.heure)}</b> `:''}${esc(titreDe(c))}</div>`; }).join('')+(l.length>3?`<div style="font-size:10px;color:#8b93a1;margin-top:2px;text-align:left;">+${l.length-3} autre${l.length-3>1?'s':''}</div>`:'');
+        return `<button data-cal-day="${k}" style="display:flex;flex-direction:column;justify-content:flex-start;width:100%;text-align:${m?'center':'left'};vertical-align:top;min-height:${m?'48px':window.innerWidth<1100?'76px':'96px'};border:1px solid ${isS?'var(--accent)':'#e9ebef'};outline:${isS?'1px solid var(--accent)':'none'};background:${out?'#fafbfc':we?'#fafbfc':'#fff'};border-radius:10px;padding:${m?'5px 2px':'6px 7px'};cursor:pointer;color:${out?'#c3c8d0':'var(--ink)'};">
             <span style="display:inline-flex;align-items:center;justify-content:center;min-width:22px;height:22px;border-radius:11px;font-size:12px;font-weight:700;background:${isT?'var(--accent)':'transparent'};color:${isT?'#fff':'inherit'};">${d.getDate()}</span>${chips}</button>`;
     };
-    const legend=STAGE_ORDER.map(k=>`<span style="display:inline-flex;align-items:center;gap:5px;font-size:11px;color:#5a5650;"><span style="width:8px;height:8px;border-radius:50%;background:${STAGES[k].color};"></span>${STAGES[k].label}</span>`).join('');
+    const legend=STAGE_ORDER.map(k=>`<span style="display:inline-flex;align-items:center;gap:5px;font-size:11px;color:#4b5563;"><span style="width:8px;height:8px;border-radius:50%;background:${STAGES[k].color};"></span>${STAGES[k].label}</span>`).join('');
     const side=!m&&window.innerWidth>=1100;
-    const dayPanel=`<div style="background:#fff;border:1px solid var(--border);border-radius:18px;padding:14px;${side?'position:sticky;top:16px;':'margin-top:14px;'}">
+    const dayPanel=`<div style="background:#fff;border:1px solid var(--border);border-radius:8px;padding:14px;${side?'position:sticky;top:16px;':'margin-top:14px;'}">
         <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px;">
-            <div><div style="font-family:'DM Serif Display',serif;font-size:18px;">${selD?dateLongue(selD):''}</div>
-            <div style="font-size:12px;color:#9e9a93;">${selList.length?`${selList.length} prestation${selList.length>1?'s':''}`:'Rien de prévu'}</div></div>
-            ${selList.length?`<button data-print-day="${sel}" style="background:#f0eeea;border:none;border-radius:16px;padding:6px 12px;font-size:12px;font-weight:600;color:#5a5650;cursor:pointer;display:flex;align-items:center;gap:5px;">${icon('download',12)} Feuille du jour</button>`:''}
+            <div><div style="font-family:var(--ft);font-weight:650;letter-spacing:-.01em;font-size:18px;">${selD?dateLongue(selD):''}</div>
+            <div style="font-size:12px;color:#8b93a1;">${selList.length?`${selList.length} prestation${selList.length>1?'s':''}`:'Rien de prévu'}</div></div>
+            ${selList.length?`<button data-print-day="${sel}" style="background:#f1f2f4;border:none;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:600;color:#4b5563;cursor:pointer;display:flex;align-items:center;gap:5px;">${icon('download',12)} Feuille du jour</button>`:''}
         </div>
-        <div style="display:flex;flex-direction:column;gap:8px;">${selList.map(c=>suiviCard(c,{compact:true,showStage:true})).join('')||`<div style="text-align:center;color:#b0aba2;font-size:12px;padding:20px 0;">${icon('calendar',22)}<br>Journée libre</div>`}</div>
+        <div style="display:flex;flex-direction:column;gap:8px;">${selList.map(c=>suiviCard(c,{compact:true,showStage:true})).join('')||`<div style="text-align:center;color:#9ca3af;font-size:12px;padding:20px 0;">${icon('calendar',22)}<br>Journée libre</div>`}</div>
     </div>`;
     return `<div>
     <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px;">
-        <div style="font-family:'DM Serif Display',serif;font-size:${m?'18px':'22px'};display:flex;align-items:center;gap:9px;">${icon('calendar',m?17:20)} Agenda</div>
+        <div style="font-family:var(--ft);font-weight:650;letter-spacing:-.01em;font-size:${m?'18px':'22px'};display:flex;align-items:center;gap:9px;">${icon('calendar',m?17:20)} Agenda</div>
         <div style="display:flex;align-items:center;gap:6px;">
             <button data-cal-nav="-1" style="width:32px;height:32px;border-radius:50%;border:1px solid var(--border);background:#fff;cursor:pointer;font-size:16px;">‹</button>
             <div style="min-width:${m?'120px':'150px'};text-align:center;font-weight:700;font-size:15px;">${moisAn(mo,y)}</div>
             <button data-cal-nav="1" style="width:32px;height:32px;border-radius:50%;border:1px solid var(--border);background:#fff;cursor:pointer;font-size:16px;">›</button>
-            <button data-cal-nav="0" style="border:1px solid var(--border);background:#fff;border-radius:16px;padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer;">Aujourd’hui</button>
+            <button data-cal-nav="0" style="border:1px solid var(--border);background:#fff;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer;">Aujourd’hui</button>
         </div>
     </div>
-    <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:10px;">${legend}<span style="font-size:11px;color:#9e9a93;margin-left:auto;">${inMonth} prestation${inMonth>1?'s':''} ce mois</span></div>
+    <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:10px;">${legend}<span style="font-size:11px;color:#8b93a1;margin-left:auto;">${inMonth} prestation${inMonth>1?'s':''} ce mois</span></div>
     <div style="${side?'display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:16px;align-items:start;':''}">
         <div>
-            <div style="display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;margin-bottom:4px;">${(m?['L','M','M','J','V','S','D']:['Lun.','Mar.','Mer.','Jeu.','Ven.','Sam.','Dim.']).map(d=>`<div style="text-align:center;font-size:11px;font-weight:700;color:#9e9a93;padding:4px 0;">${d}</div>`).join('')}</div>
+            <div style="display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;margin-bottom:4px;">${(m?['L','M','M','J','V','S','D']:['Lun.','Mar.','Mer.','Jeu.','Ven.','Sam.','Dim.']).map(d=>`<div style="text-align:center;font-size:11px;font-weight:700;color:#8b93a1;padding:4px 0;">${d}</div>`).join('')}</div>
             <div style="display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;">${days.map(cell).join('')}</div>
         </div>
         ${dayPanel}
@@ -1881,8 +2009,8 @@ function printDay(day){
     const d=parseDate(day), list=(eventsByDay()[day]||[]);
     const rows=list.map(c=>`<tr><td>${esc(c.heure||'')}</td><td>${TYPE_LABEL[c.type]||''}</td><td><b>${esc(titreDe(c))}</b><br><small>${c.type==='taxi'?esc((c.depart||'')+' → '+(c.arrivee||'')):esc(c.lieu||'')}</small></td><td>${c.type==='repas'||c.type==='hotel'?(c.nb||1):''}</td><td>${esc(c.demandeur||'')}<br><small>${esc(c.pourQui||'')}</small></td><td>${esc(c.presta||'')}</td><td>${STAGES[stageOf(c)].label}</td><td>${esc(c.comment||'')}${suiviOf(c).note?`<br><small>Note : ${esc(suiviOf(c).note)}</small>`:''}</td></tr>`).join('');
     const html=`<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>Feuille du ${day}</title><style>
-        body{font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:#1a1f36;margin:28px;} h1{font-size:20px;margin:0 0 2px;} p{color:#7a7570;margin:0 0 16px;font-size:12px;}
-        table{width:100%;border-collapse:collapse;font-size:12px;} th{text-align:left;border-bottom:2px solid #2c5f85;padding:6px;color:#2c5f85;font-size:11px;text-transform:uppercase;} td{border-bottom:1px solid #e8e5df;padding:7px 6px;vertical-align:top;} small{color:#7a7570;}
+        body{font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:#1a1f36;margin:28px;} h1{font-size:20px;margin:0 0 2px;} p{color:#6b7280;margin:0 0 16px;font-size:12px;}
+        table{width:100%;border-collapse:collapse;font-size:12px;} th{text-align:left;border-bottom:2px solid #2c5f85;padding:6px;color:#2c5f85;font-size:11px;text-transform:uppercase;} td{border-bottom:1px solid #e6e8ec;padding:7px 6px;vertical-align:top;} small{color:#6b7280;}
     </style></head><body><h1>${d?dateLongue(d)+' '+d.getFullYear():day}</h1><p>Gestion des commandes · ${list.length} prestation${list.length>1?'s':''} · imprimé le ${new Date().toLocaleString('fr-FR')}</p>
     <table><thead><tr><th>Heure</th><th>Type</th><th>Prestation</th><th>Pers.</th><th>Demandeur / pour</th><th>Prestataire</th><th>Étape</th><th>Remarques</th></tr></thead><tbody>${rows}</tbody></table>
     <script>window.onload=()=>{window.print();}<\/script></body></html>`;
@@ -1899,22 +2027,22 @@ function suiviBlock(d){
         : `<div style="display:flex;align-items:center;gap:0;">${steps.map(([l,ok],i)=>`<div style="display:flex;align-items:center;${i<steps.length-1?'flex:1;':''}">
             <div style="display:flex;flex-direction:column;align-items:center;gap:4px;min-width:62px;">
                 <span style="width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:${ok?STAGES.fait.color:'#fff'};border:2px solid ${ok?STAGES.fait.color:'#d9d4cc'};color:#fff;">${ok?icon('check',13):''}</span>
-                <span style="font-size:11px;font-weight:${ok?700:500};color:${ok?'var(--ink)':'#9e9a93'};">${l}</span></div>
+                <span style="font-size:11px;font-weight:${ok?700:500};color:${ok?'var(--ink)':'#8b93a1'};">${l}</span></div>
             ${i<steps.length-1?`<div style="flex:1;height:2px;background:${steps[i+1][1]?STAGES.fait.color:'#e4e0d9'};margin:0 2px 18px;"></div>`:''}</div>`).join('')}</div>`;
     const btn=(act,label,ic,style)=>`<button data-suivi-act="${act}" data-id="${d.id}" style="display:inline-flex;align-items:center;gap:6px;border-radius:12px;padding:10px 14px;font-size:13px;font-weight:700;cursor:pointer;${style}">${icon(ic,14)} ${label}</button>`;
     let actions='';
     if(st==='avalider') actions=btn('valider','Valider la demande','check','background:#15803d;border:1px solid #15803d;color:#fff;')+btn('refuser','Refuser','x','background:#fff;border:1px solid #fecaca;color:#b91c1c;');
-    else if(st==='acommander') actions=`<div style="width:100%;font-size:12px;color:#5a5650;background:#eff6ff;border-radius:10px;padding:8px 10px;margin-bottom:2px;">① Commandez auprès de <b>${esc(d.presta||'du prestataire')}</b> ② puis cochez « J’ai passé la commande ».</div>`+btn('commande','J’ai passé la commande','check','background:#fff;border:1.5px dashed #93c5fd;color:#1d4ed8;')+btn('annuler','Annuler la demande','x','background:#fff;border:1px solid #fecaca;color:#b91c1c;')
-    else if(st==='commandee') actions=btn('fait','Prestation terminée','check','background:#fff;border:1.5px dashed #a5f3fc;color:#0e7490;')+btn('uncommande','Je n’ai pas encore commandé','arrow','background:#fff;border:1px solid var(--border);color:#7a7570;')+btn('annuler','Annuler la demande','x','background:#fff;border:1px solid #fecaca;color:#b91c1c;')
-    else if(st==='fait'&&s.fait) actions=btn('unfait','Rouvrir','arrow','background:#fff;border:1px solid var(--border);color:#7a7570;');
+    else if(st==='acommander') actions=`<div style="width:100%;font-size:12px;color:#4b5563;background:#eff6ff;border-radius:10px;padding:8px 10px;margin-bottom:2px;">① Commandez auprès de <b>${esc(d.presta||'du prestataire')}</b> ② puis cochez « J’ai passé la commande ».</div>`+btn('commande','J’ai passé la commande','check','background:#fff;border:1.5px dashed #93c5fd;color:#1d4ed8;')+btn('annuler','Annuler la demande','x','background:#fff;border:1px solid #fecaca;color:#b91c1c;')
+    else if(st==='commandee') actions=btn('fait','Prestation terminée','check','background:#fff;border:1.5px dashed #a5f3fc;color:#0e7490;')+btn('uncommande','Je n’ai pas encore commandé','arrow','background:#fff;border:1px solid var(--border);color:#6b7280;')+btn('annuler','Annuler la demande','x','background:#fff;border:1px solid #fecaca;color:#b91c1c;')
+    else if(st==='fait'&&s.fait) actions=btn('unfait','Rouvrir','arrow','background:#fff;border:1px solid var(--border);color:#6b7280;');
     const histo=[s.cmd?`Commandé le ${new Date(s.cmd).toLocaleString('fr-FR',{dateStyle:'short',timeStyle:'short'})}${s.cmdBy&&s.cmdBy!=='Admin'?' par '+esc(s.cmdBy):''}`:'', s.fait?`Terminé le ${new Date(s.fait).toLocaleString('fr-FR',{dateStyle:'short',timeStyle:'short'})}${s.faitBy&&s.faitBy!=='Admin'?' par '+esc(s.faitBy):''}`:''].filter(Boolean).join(' · ');
-    return `<div style="background:#fff;border:1px solid var(--border);border-radius:16px;padding:16px;margin-bottom:14px;">
+    return `<div style="background:#fff;border:1px solid var(--border);border-radius:8px;padding:16px;margin-bottom:14px;">
         <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:14px;"><div style="font-weight:700;font-size:13px;color:var(--ink-soft);">${icon('clipboard',13)} Suivi</div>${stagePill(st)}</div>
         ${stepper}
-        ${histo?`<div style="font-size:11px;color:#9e9a93;margin-top:10px;">${histo}</div>`:''}
+        ${histo?`<div style="font-size:11px;color:#8b93a1;margin-top:10px;">${histo}</div>`:''}
         ${actions?`<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;">${actions}</div>`:''}
         <div style="margin-top:14px;">
-            <label class="form-label" style="display:flex;align-items:center;gap:6px;">${icon('message',13)} Note interne <span style="font-weight:400;color:#b0aba2;">(visible seulement par l’admin)</span></label>
+            <label class="form-label" style="display:flex;align-items:center;gap:6px;">${icon('message',13)} Note interne <span style="font-weight:400;color:#9ca3af;">(visible seulement par l’admin)</span></label>
             <div style="display:flex;gap:8px;align-items:flex-start;min-width:0;">
                 <textarea id="suiviNote" class="form-input" style="min-height:44px;resize:vertical;font-size:13px;flex:1;min-width:0;width:auto;" placeholder="Ex : commandé par téléphone, confirmation n° 1234…">${esc(s.note||'')}</textarea>
                 <button data-suivi-act="note" data-id="${d.id}" class="btn-primary" style="padding:11px 14px;font-size:13px;">${icon('save',13)}</button>
@@ -1931,7 +2059,7 @@ function trackSteps(c){
     return `<div style="display:flex;align-items:center;margin:4px 0 14px;">${steps.map(([l,ok],i)=>`<div style="display:flex;align-items:center;${i<steps.length-1?'flex:1;':''}">
         <div style="display:flex;flex-direction:column;align-items:center;gap:3px;min-width:56px;">
             <span style="width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:${ok?'#15803d':'#fff'};border:2px solid ${ok?'#15803d':'#d9d4cc'};color:#fff;">${ok?icon('check',11):''}</span>
-            <span style="font-size:10px;font-weight:${ok?700:500};color:${ok?'#1a1f36':'#9e9a93'};">${l}</span></div>
+            <span style="font-size:10px;font-weight:${ok?700:500};color:${ok?'#1a1f36':'#8b93a1'};">${l}</span></div>
         ${i<steps.length-1?`<div style="flex:1;height:2px;background:${steps[i+1][1]?'#15803d':'#e4e0d9'};margin:0 2px 16px;"></div>`:''}</div>`).join('')}</div>`;
 }
 
@@ -1944,12 +2072,12 @@ function mobileNavHtml(){
             <span class="nav-icon">${icon(ic,18)}</span><span>${label}</span><span class="nav-dot"></span>
             ${tab==='suivi'&&n?`<span style="position:absolute;top:2px;left:calc(50% + 6px);background:#ef4444;color:#fff;border-radius:10px;min-width:16px;height:16px;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0 4px;">${n}</span>`:''}
         </button>`).join('')}
-        <button class="mobile-nav-btn ${state.adminTab==='stats'&&!state.detail?'active':''}" data-nav='{"moreOpen":true}'><span class="nav-icon">${icon('grid',18)}</span><span>Plus</span><span class="nav-dot"></span></button>
+        <button class="mobile-nav-btn ${state.adminTab==='stats'&&!state.detail?'active':''}" data-nav='{"moreOpen":true}'><span class="nav-icon">${icon('menu',18)}</span><span>Plus</span><span class="nav-dot"></span></button>
     </div></nav>
     ${state.moreOpen?`<div data-nav='{"moreOpen":false}' style="position:fixed;inset:0;background:rgba(15,23,42,.35);z-index:9500;display:flex;align-items:flex-end;">
         <div style="background:#fff;width:100%;border-radius:20px 20px 0 0;padding:14px 14px calc(14px + env(safe-area-inset-bottom,0px));">
-            ${[["stats","chart","Statistiques"]].map(([t,ic,l])=>`<button data-admin-tab="${t}" style="display:flex;align-items:center;gap:12px;width:100%;background:none;border:none;padding:14px 8px;font-size:15px;font-weight:600;color:var(--ink);cursor:pointer;border-bottom:1px solid #f1efeb;">${icon(ic,18)} ${l}</button>`).join('')}
-            <button data-back-home style="display:flex;align-items:center;gap:12px;width:100%;background:none;border:none;padding:14px 8px;font-size:15px;font-weight:600;color:var(--ink);cursor:pointer;border-bottom:1px solid #f1efeb;">${icon('home',18)} Formulaire de demande</button>
+            ${[["stats","chart","Statistiques"]].map(([t,ic,l])=>`<button data-admin-tab="${t}" style="display:flex;align-items:center;gap:12px;width:100%;background:none;border:none;padding:14px 8px;font-size:15px;font-weight:600;color:var(--ink);cursor:pointer;border-bottom:1px solid #f0f1f4;">${icon(ic,18)} ${l}</button>`).join('')}
+            <button data-back-home style="display:flex;align-items:center;gap:12px;width:100%;background:none;border:none;padding:14px 8px;font-size:15px;font-weight:600;color:var(--ink);cursor:pointer;border-bottom:1px solid #f0f1f4;">${icon('home',18)} Formulaire de demande</button>
             <button data-admin-logout style="display:flex;align-items:center;gap:12px;width:100%;background:none;border:none;padding:14px 8px;font-size:15px;font-weight:600;color:#b91c1c;cursor:pointer;">${icon('logout',18)} Se déconnecter</button>
         </div></div>`:''}`;
 }
@@ -1996,10 +2124,10 @@ function renderDetail(d,m){
 
     const pqHtml = isCmd
         ? '<label class="form-label">Fournisseur</label><select id="editPresta2" class="form-select"><option value="">—</option>'+(d.presta&&!P_CMD.includes(d.presta)?'<option selected>'+d.presta+'</option>':'')+P_CMD.map(p=>'<option '+(d.presta===p?'selected':'')+'>'+p+'</option>').join('')+'</select>'
-        : '<label class="form-label">Pour qui</label><div style="position:relative;" id="editPqWrapper"><button type="button" id="editPqToggle" style="width:100%;border:1.5px solid var(--border);border-radius:14px;padding:12px 14px;font-size:14px;background:var(--white);text-align:left;cursor:pointer;display:flex;justify-content:space-between;align-items:center;font-family:DM Sans,sans-serif;color:var(--ink);"><span id="editPqLabel">'+(d.pourQui||'— Choisir —')+'</span><span style="font-size:11px;color:var(--ink-soft);">▼</span></button><div id="editPqDropdown" style="display:none;position:absolute;top:calc(100% + 4px);left:0;right:0;background:var(--white);border:1.5px solid var(--border);border-radius:14px;box-shadow:0 8px 24px rgba(0,0,0,0.10);z-index:999;overflow:hidden;max-height:220px;overflow-y:auto;">'+settings.directeurs.map(dir=>'<label style="display:flex;align-items:center;gap:12px;padding:11px 16px;cursor:pointer;border-bottom:1px solid var(--border-light);"><input type="checkbox" class="edit-pq-check" value="'+dir+'" '+((d.pourQui||'').toUpperCase().includes(dir.toUpperCase())?'checked':'')+' style="width:17px;height:17px;accent-color:var(--accent);cursor:pointer;flex-shrink:0;"><span style="font-size:14px;">'+dir+'</span></label>').join('')+'<div style="padding:10px 16px;border-top:1px solid var(--border-light);"><input id="editPqAutre" type="text" placeholder="Autre nom..." value="'+(settings.directeurs.some(d2=>(d.pourQui||'').toUpperCase().includes(d2.toUpperCase()))?'':d.pourQui||'')+'" class="form-input" style="font-size:13px;padding:7px 10px;"></div></div></div>';
+        : '<label class="form-label">Pour qui</label><div style="position:relative;" id="editPqWrapper"><button type="button" id="editPqToggle" style="width:100%;border:1.5px solid var(--border);border-radius:8px;padding:12px 14px;font-size:14px;background:var(--white);text-align:left;cursor:pointer;display:flex;justify-content:space-between;align-items:center;font-family:var(--fb);color:var(--ink);"><span id="editPqLabel">'+(d.pourQui||'— Choisir —')+'</span><span style="font-size:11px;color:var(--ink-soft);">▼</span></button><div id="editPqDropdown" style="display:none;position:absolute;top:calc(100% + 4px);left:0;right:0;background:var(--white);border:1.5px solid var(--border);border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,0.10);z-index:999;overflow:hidden;max-height:220px;overflow-y:auto;">'+settings.directeurs.map(dir=>'<label style="display:flex;align-items:center;gap:12px;padding:11px 16px;cursor:pointer;border-bottom:1px solid var(--border-light);"><input type="checkbox" class="edit-pq-check" value="'+dir+'" '+((d.pourQui||'').toUpperCase().includes(dir.toUpperCase())?'checked':'')+' style="width:17px;height:17px;accent-color:var(--accent);cursor:pointer;flex-shrink:0;"><span style="font-size:14px;">'+dir+'</span></label>').join('')+'<div style="padding:10px 16px;border-top:1px solid var(--border-light);"><input id="editPqAutre" type="text" placeholder="Autre nom..." value="'+(settings.directeurs.some(d2=>(d.pourQui||'').toUpperCase().includes(d2.toUpperCase()))?'':d.pourQui||'')+'" class="form-input" style="font-size:13px;padding:7px 10px;"></div></div></div>';
 
     const editForm=`
-    <div style="background:#fafaf8;border-radius:16px;padding:16px;margin-bottom:14px;">
+    <div style="background:#fafaf8;border-radius:8px;padding:16px;margin-bottom:14px;">
         <div style="font-weight:700;font-size:13px;margin-bottom:14px;color:var(--ink-soft);">${icon('edit',13)} Modifier la commande</div>
 
         <div class="form-group"><label class="form-label">${isRepas?"Type de repas":"Description"}</label>
@@ -2051,13 +2179,13 @@ function renderDetail(d,m){
     </div>`;
 
     const inner=`
-    ${m?`<div style="background:var(--accent);padding:calc(16px + env(safe-area-inset-top,0px)) 20px 20px;">
+    ${m?`<div style="background:var(--side);padding:calc(16px + env(safe-area-inset-top,0px)) 20px 20px;">
         <button data-back-detail class="back-btn">← Retour</button>
-        <div style="font-family:'DM Serif Display',serif;font-size:19px;color:#fff;margin-top:8px;">${typeIcon} ${d.desc}</div>
+        <div style="font-family:var(--ft);font-weight:650;letter-spacing:-.01em;font-size:19px;color:#fff;margin-top:8px;">${typeIcon} ${d.desc}</div>
         <div style="color:rgba(255,255,255,.5);font-size:13px;margin-top:3px;">${d.demandeur}${d.pourQui?' · Pour '+d.pourQui:''}</div>
     </div><div style="padding:16px;padding-bottom:calc(80px + env(safe-area-inset-bottom,0px));">`:`
     <button data-back-detail class="back-btn-dark" style="margin-bottom:18px;">← Retour à la liste</button>
-    <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px;">${avatar(d.demandeur,48)}<div><div style="font-family:'DM Serif Display',serif;font-size:19px;">${typeIcon} ${d.desc}</div><div style="color:#9e9a93;font-size:12px;">${d.demandeur}${d.pourQui?' · Pour '+d.pourQui:''}</div></div></div>`}
+    <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px;">${avatar(d.demandeur,48)}<div><div style="font-family:var(--ft);font-weight:650;letter-spacing:-.01em;font-size:19px;">${typeIcon} ${d.desc}</div><div style="color:#8b93a1;font-size:12px;">${d.demandeur}${d.pourQui?' · Pour '+d.pourQui:''}</div></div></div>`}
 
     <div style="display:flex;gap:8px;margin-bottom:16px;">${chip(d.pris)} ${typeTag(d.type)}</div>
 
@@ -2068,12 +2196,12 @@ function renderDetail(d,m){
     <div style="margin-bottom:14px;">
         <div class="form-label" style="margin-bottom:10px;">Statut de la commande</div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
-            <button data-set-status='${JSON.stringify({id:d.id,status:"En cours"})}' style="padding:8px 16px;border-radius:20px;font-size:13px;border:1.5px solid ${d.pris==='En cours'?'var(--accent)':'var(--border)'};background:${d.pris==='En cours'?'var(--accent)':'#fff'};color:${d.pris==='En cours'?'#fff':'#5a5550'};cursor:pointer;">${ST['En cours'].label}</button>
-            <button data-set-status='${JSON.stringify({id:d.id,status:"OUI"})}' style="padding:9px 18px;border-radius:20px;font-size:13px;font-weight:700;border:1.5px solid ${d.pris==='OUI'?'var(--accent)':'#22c55e'};background:${d.pris==='OUI'?'var(--accent)':'#f0fdf4'};color:${d.pris==='OUI'?'#fff':'#15803d'};cursor:pointer;">${icon('check',14)} Commande validée</button>
+            <button data-set-status='${JSON.stringify({id:d.id,status:"En cours"})}' style="padding:8px 16px;border-radius:8px;font-size:13px;border:1.5px solid ${d.pris==='En cours'?'var(--accent)':'var(--border)'};background:${d.pris==='En cours'?'var(--accent)':'#fff'};color:${d.pris==='En cours'?'#fff':'#5a5550'};cursor:pointer;">${ST['En cours'].label}</button>
+            <button data-set-status='${JSON.stringify({id:d.id,status:"OUI"})}' style="padding:9px 18px;border-radius:8px;font-size:13px;font-weight:700;border:1.5px solid ${d.pris==='OUI'?'var(--accent)':'#22c55e'};background:${d.pris==='OUI'?'var(--accent)':'#f0fdf4'};color:${d.pris==='OUI'?'#fff':'#15803d'};cursor:pointer;">${icon('check',14)} Commande validée</button>
         </div>
     </div>
     ${state.confirmDelete===d.id?`
-    <div style="background:#fef2f2;border:1.5px solid #fecaca;border-radius:14px;padding:14px 16px;margin-bottom:10px;">
+    <div style="background:#fef2f2;border:1.5px solid #fecaca;border-radius:8px;padding:14px 16px;margin-bottom:10px;">
         <div style="font-weight:700;font-size:14px;color:#b91c1c;margin-bottom:10px;display:flex;align-items:center;gap:7px;">${icon('alert',15)} Confirmer la suppression ?</div>
         <div style="font-size:13px;color:#5a5550;margin-bottom:12px;">Cette commande sera déplacée dans la corbeille.</div>
         <div style="display:flex;gap:8px;">
@@ -2081,7 +2209,7 @@ function renderDetail(d,m){
             <button id="confirmDeleteNo" style="flex:1;background:#f1f5f9;color:#5a5550;border:none;border-radius:10px;padding:10px;font-weight:600;font-size:14px;cursor:pointer;">Annuler</button>
         </div>
     </div>`:`
-    <button data-delete-item="${d.id}" class="btn-danger" style="width:100%;padding:12px;border-radius:14px;">${icon('trash',14)} Supprimer la commande</button>`}
+    <button data-delete-item="${d.id}" class="btn-danger" style="width:100%;padding:12px;border-radius:8px;">${icon('trash',14)} Supprimer la commande</button>`}
     ${m?'</div>':''}`;
 
     if(m) return `<div class="detail-view">${inner}</div>${state.toast?`<div class="toast">${state.toast}</div>`:''}${mobileNavHtml()}`;
@@ -2104,14 +2232,14 @@ function notifBannerHtml(){
         : help
             ? 'Sur iPhone, installez d’abord l’appli : <b>Partager</b> ⬆︎ › <b>« Sur l’écran d’accueil »</b>, ouvrez-la depuis l’icône, puis touchez ce bouton.'
             : 'Soyez prévenu à chaque nouvelle demande, avec le nombre en attente sur l’icône de l’appli.';
-    return `<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:#eff6ff;border:1px solid #bfdbfe;border-radius:16px;padding:12px 14px;margin-bottom:16px;">
+    return `<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:12px 14px;margin-bottom:16px;">
         <span style="width:36px;height:36px;border-radius:10px;background:#dbeafe;color:#1d4ed8;display:flex;align-items:center;justify-content:center;flex-shrink:0;">${icon('bell',18)}</span>
         <div style="flex:1;min-width:200px;">
             <div style="font-weight:700;font-size:14px;color:var(--ink);">Notifications et pastille</div>
-            <div style="font-size:12px;color:#5a5650;line-height:1.45;margin-top:2px;">${txt}</div>
+            <div style="font-size:12px;color:#4b5563;line-height:1.45;margin-top:2px;">${txt}</div>
         </div>
         ${bloque||help?'':`<button data-activate-notifs class="btn-primary" style="padding:10px 18px;font-size:14px;white-space:nowrap;display:flex;align-items:center;gap:7px;">${icon('bell',14)} Activer</button>`}
-        ${bloque||help?`<button data-notif-banner-off style="background:none;border:none;color:#9e9a93;cursor:pointer;padding:4px;display:flex;" aria-label="Fermer">${icon('x',16)}</button>`:''}
+        ${bloque||help?`<button data-notif-banner-off style="background:none;border:none;color:#8b93a1;cursor:pointer;padding:4px;display:flex;" aria-label="Fermer">${icon('x',16)}</button>`:''}
     </div>`;
 }
 function renderDashboard(total,attente,m){
@@ -2134,57 +2262,65 @@ function renderDashboard(total,attente,m){
     if(n.acommander) phrase.push(`<b>${n.acommander}</b> à commander`);
     phrase.push(today.length?`<b>${today.length}</b> prestation${today.length>1?'s':''} aujourd’hui`:'aucune prestation aujourd’hui');
 
-    const tile=(k,val,label,sub,navJson)=>{ const S=STAGES[k]||{color:'#15803d',bg:'#f0fdf4',icon:'wallet'};
-        return `<button data-nav='${navJson}' class="stat-card" style="display:flex;align-items:center;gap:${isMobile()?'9px':'12px'};padding:${isMobile()?'11px 10px':'13px 15px'};text-align:left;cursor:pointer;width:100%;min-width:0;box-sizing:border-box;font:inherit;overflow:hidden;">
-            <span style="width:38px;height:38px;border-radius:11px;background:${S.bg};color:${S.color};display:flex;align-items:center;justify-content:center;flex-shrink:0;">${icon(S.icon,18)}</span>
-            <span style="min-width:0;"><span style="display:block;font-size:10px;color:#9e9a93;text-transform:uppercase;letter-spacing:.05em;">${label}</span>
-            <span style="display:block;font-family:'DM Serif Display',serif;font-size:24px;line-height:1.2;color:${S.color};">${val}</span>
-            <span style="display:block;font-size:11px;color:#9e9a93;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${sub}</span></span></button>`; };
+    const tile=(k,val,label,sub,navJson)=>{ const S=STAGES[k]||{color:'#15803d'};
+        return `<button data-nav='${navJson}' class="stat-card kpi">
+            <span class="kpi-l"><span>${label}</span><span class="dot" style="background:${S.color}"></span></span>
+            <span class="kpi-v">${val}</span>
+            <span class="kpi-s">${sub}</span></button>`; };
 
-    const timeline=(list,vide)=>list.length?`<div style="display:flex;flex-direction:column;">${list.map((c,i)=>{ const st=stageOf(c), S=STAGES[st];
-        return `<div style="display:flex;gap:12px;align-items:stretch;">
-            <div style="width:46px;flex-shrink:0;text-align:right;font-size:12px;font-weight:700;color:var(--ink);padding-top:11px;">${esc(c.heure||'—')}</div>
-            <div style="display:flex;flex-direction:column;align-items:center;flex-shrink:0;"><span style="width:10px;height:10px;border-radius:50%;background:${S.color};margin-top:14px;box-shadow:0 0 0 3px ${S.bg};"></span>${i<list.length-1?'<span style="flex:1;width:2px;background:#ece9e3;margin-top:4px;"></span>':''}</div>
-            <div data-open-detail='${JSON.stringify(c).replace(/'/g,"&apos;")}' style="flex:1;min-width:0;padding:8px 0 10px;cursor:pointer;">
-                <div style="display:flex;align-items:center;gap:6px;"><span style="color:var(--ink-mid);">${typeIc(c.type,13)}</span><span style="font-weight:700;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0;">${esc(titreDe(c))}</span>${stagePill(st)}</div>
-                <div style="font-size:12px;color:#7a7570;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${[c.type==='taxi'?`${esc(c.depart||'—')} → ${esc(c.arrivee||'—')}`:esc(c.lieu||''), c.type==='repas'?`${c.nb||1} pers.`:'', esc(c.demandeur||'')].filter(Boolean).join(' · ')}</div>
-            </div></div>`; }).join('')}</div>`
-        :`<div style="text-align:center;color:#b0aba2;font-size:12px;padding:16px 0;">${vide}</div>`;
+    const where=c=>[c.type==='taxi'?`${esc(c.depart||'—')} → ${esc(c.arrivee||'—')}`:esc(c.lieu||''), c.type==='repas'?`${c.nb||1} pers.`:'', c.presta&&c.type!=='commande'?esc(c.presta):''].filter(Boolean).join(' · ');
+    const timeline=(list,vide)=>list.length?`<div class="tl">${list.map(c=>{ const st=stageOf(c), S=STAGES[st];
+        return `<div class="tl-row" data-open-detail='${JSON.stringify(c).replace(/'/g,"&apos;")}'>
+            <div class="tl-h">${esc(c.heure||'—')}</div><span class="dot" style="background:${S.color};margin-top:5px;"></span>
+            <div style="min-width:0;"><div class="tl-t">${esc(titreDe(c))}</div><div class="tl-m">${[where(c),esc(c.demandeur||'')].filter(Boolean).join(' · ')}</div></div>
+            ${stagePill(st)}</div>`; }).join('')}</div>`
+        :`<div class="empty-note">${vide}</div>`;
 
-    const card=(ic,title,count,body,extra='')=>`<div class="stat-card" style="padding:16px;margin-bottom:16px;">
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
-            <span style="width:28px;height:28px;border-radius:9px;background:var(--accent-soft,#e3edf3);color:var(--accent);display:flex;align-items:center;justify-content:center;">${icon(ic,15)}</span>
-            <span style="font-weight:700;font-size:14px;color:var(--ink);flex:1;">${title}${count?` <span style="background:var(--accent);color:#fff;border-radius:20px;padding:0 8px;font-size:11px;margin-left:4px;">${count}</span>`:''}</span>${extra}
-        </div>${body}</div>`;
+    const card=(title,sub,body,extra='')=>`<div class="card">
+        <div class="card-h"><h3>${title}${sub?`<span class="sub">${sub}</span>`:''}</h3>${extra}</div>${body}</div>`;
+    const lien=(nav,txt)=>`<button data-nav='${nav}' class="card-link">${txt} →</button>`;
 
-    const left=card('alert','À faire maintenant',avalider.length+urgentCmd.length,
-        aFaire.length?`<div style="display:flex;flex-direction:column;gap:8px;">${aFaire.map(c=>suiviCard(c,{showStage:true})).join('')}</div>
-            ${resteAFaire>0?`<button data-nav='{"adminTab":"suivi"}' style="display:block;width:100%;margin-top:10px;background:none;border:none;color:var(--accent);font-size:12px;font-weight:700;cursor:pointer;">Voir les ${resteAFaire} autre${resteAFaire>1?'s':''} dans le suivi →</button>`:''}`
-        :`<div style="text-align:center;padding:22px 0;"><div style="width:44px;height:44px;border-radius:50%;background:#f0fdf4;color:#15803d;display:flex;align-items:center;justify-content:center;margin:0 auto 8px;">${icon('check',22)}</div><div style="font-weight:700;font-size:14px;">Tout est à jour</div><div style="font-size:12px;color:#9e9a93;margin-top:2px;">Aucune demande en attente, rien d’urgent à commander.</div></div>`);
-    const right=card('calendar',`Aujourd’hui <span style="font-weight:500;color:#9e9a93;font-size:12px;">· ${dateLongue(now)}</span>`,0,timeline(today,'Aucune prestation prévue aujourd’hui'),
-            today.length?`<button data-print-day="${todayK}" title="Imprimer la feuille du jour" style="background:#f0eeea;border:none;border-radius:14px;padding:5px 10px;font-size:11px;font-weight:600;color:#5a5650;cursor:pointer;display:flex;align-items:center;gap:4px;">${icon('download',11)} Imprimer</button>`:'')
-        +card('clock','Demain',0,timeline(demain,'Rien de prévu demain'))
-        +`<div class="stat-card" style="padding:14px 16px;">${miniCalendar()}<button data-nav='{"adminTab":"calendrier"}' style="display:block;width:100%;margin-top:8px;background:none;border:none;color:var(--accent);font-size:12px;font-weight:700;cursor:pointer;">Ouvrir le calendrier →</button></div>`;
+    const urgTag=c=>{ const j=daysLeft(c.date); return j!==null&&j<=2?`<span class="urg" style="margin-left:0;">${badgeColor(j).label}</span>`:''; };
+    const actionsDe=c=>{ const st=stageOf(c);
+        if(st==='avalider') return `<button class="btn-sm" data-suivi-act="refuser" data-id="${c.id}">Refuser</button><button class="btn-sm pri" data-suivi-act="valider" data-id="${c.id}">Valider</button>`;
+        if(st==='acommander') return `<button class="btn-sm" data-suivi-act="commande" data-id="${c.id}" title="À cliquer une fois la commande passée auprès du prestataire">${icon('check',13)} Commande passée</button>`;
+        return ''; };
+    const table=`<div class="tbl-wrap"><table class="pro-table"><thead><tr><th>Prestation</th><th>Date</th><th>Statut</th><th style="text-align:right;">Action</th></tr></thead><tbody>
+        ${aFaire.map(c=>`<tr>
+            <td data-open-detail='${JSON.stringify(c).replace(/'/g,"&apos;")}' style="cursor:pointer;white-space:normal;min-width:180px;"><div class="t"><span class="ty">${typeIc(c.type,14)}</span>${esc(titreDe(c))}</div><div class="m">${[where(c),esc(c.demandeur||'')].filter(Boolean).join(' · ')||'&nbsp;'}</div></td>
+            <td><div>${dateCourte(c)}${c.heure?' · '+esc(c.heure):''}</div>${urgTag(c)?`<div style="margin-top:2px;">${urgTag(c)}</div>`:''}</td>
+            <td>${stagePill(stageOf(c))}</td>
+            <td><div class="row-act">${actionsDe(c)}</div></td></tr>`).join('')}
+        </tbody></table></div>`;
+    const vide=`<div style="text-align:center;padding:28px 0;"><div style="width:40px;height:40px;border-radius:50%;background:#ecf8f0;color:#15803d;display:flex;align-items:center;justify-content:center;margin:0 auto 8px;">${icon('check',20)}</div><div style="font-weight:650;font-size:14px;">Tout est à jour</div><div style="font-size:12px;color:var(--ink-soft);margin-top:2px;">Aucune demande en attente, rien d’urgent à commander.</div></div>`;
+    const left=card('À faire maintenant',aFaire.length?`${avalider.length+urgentCmd.length} demande${avalider.length+urgentCmd.length>1?'s':''}`:'',
+        aFaire.length?(m?`<div style="display:flex;flex-direction:column;gap:8px;padding:12px;">${aFaire.map(c=>suiviCard(c,{showStage:true})).join('')}</div>`:table)
+            +(resteAFaire>0?`<div style="padding:10px 16px;border-top:1px solid var(--border-light);">${lien('{"adminTab":"suivi"}',resteAFaire>1?`Voir les ${resteAFaire} autres demandes dans le suivi`:`Voir l’autre demande dans le suivi`)}</div>`:'')
+        :vide, lien('{"adminTab":"suivi"}','Tout le suivi'));
+    const right=card('Aujourd’hui',dateLongue(now),timeline(today,'Aucune prestation prévue aujourd’hui'),lien('{"adminTab":"calendrier"}','Agenda'))
+        +card('Demain',dateLongue(tom),timeline(demain,'Rien de prévu demain'))
+        +`<div class="card" style="padding:12px 16px;">${miniCalendar()}</div>`;
 
+    const large=!m&&window.innerWidth>=1200;
     return `<div>
     ${notifBannerHtml()}
-    <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap;margin-bottom:16px;">
+    <div class="page-head">
         <div>
-            <div style="font-size:12px;color:#9e9a93;">${dateLongue(now)} ${now.getFullYear()}</div>
-            <div style="font-family:'DM Serif Display',serif;font-size:${m?'22px':'28px'};color:var(--ink);line-height:1.2;">${salut}${prenom&&prenom!=='Admin'?' '+esc(prenom):''}</div>
-            <div style="font-size:13px;color:#5a5650;margin-top:4px;">${phrase.join(', ').replace(/, ([^,]*)$/,' et $1')}.</div>
+            <h1>${m?`${salut}${prenom&&prenom!=='Admin'?' '+esc(prenom):''}`:'Tableau de bord'}</h1>
+            <p><span style="text-transform:capitalize;">${dateLongue(now)}</span> ${now.getFullYear()} · ${phrase.join(', ').replace(/, ([^,]*)$/,' et $1')}</p>
         </div>
-        <div style="display:flex;gap:6px;flex-wrap:wrap;">
-            ${[["repas","utensils","Repas"],["taxi","car","Taxi"],["hotel","bed","Hôtel"],["commande","box","Commande"]].map(([t,ic,l])=>`<button data-saisie-type="${t}" style="display:flex;align-items:center;gap:5px;background:#fff;border:1px solid var(--border);border-radius:20px;padding:7px 12px;font-size:12px;font-weight:600;color:var(--ink);cursor:pointer;">${icon('plus',12)} ${l}</button>`).join('')}
-        </div>
+        ${m?'':`<div class="page-actions">
+            <button class="btn-sm" data-print-day="${todayK}">${icon('download',14)} Feuille du jour</button>
+            <button class="btn-sm" data-nav='{"adminTab":"activite","activiteTab":"historique"}'>${icon('wallet',14)} Dépenses & export</button>
+        </div>`}
     </div>
-    <div style="display:grid;grid-template-columns:${m?'repeat(2,minmax(0,1fr))':'repeat(auto-fit,minmax(200px,1fr))'};gap:${m?'10px':'12px'};margin-bottom:18px;">
-        ${tile('avalider',n.avalider,'À valider',n.avalider?'réponse à donner':'rien en attente','{"adminTab":"suivi","suiviStage":"avalider"}')}
-        ${tile('acommander',n.acommander,'À commander',urgentCmd.length?`${urgentCmd.length} dans les 3 jours`:'auprès des prestataires','{"adminTab":"suivi","suiviStage":"acommander"}')}
-        ${tile('commandee',n.commandee,'Commandé',n.commandee?'en attente de la prestation':'aucune en cours','{"adminTab":"suivi","suiviStage":"commandee"}')}
-        ${tile('x-cal',$ms(totalMois),'Dépenses du mois',`${validesMois.length} validée${validesMois.length>1?'s':''}`,'{"adminTab":"stats","statsPeriod":"mois"}')}
+    <div class="kpis">
+        ${tile('avalider',n.avalider,'À valider',n.avalider?'Réponse à donner':'Rien en attente','{"adminTab":"suivi","suiviStage":"avalider"}')}
+        ${tile('acommander',n.acommander,'À commander',urgentCmd.length?`<b style="color:#b91c1c;">${urgentCmd.length}</b> dans les 3 jours`:'Auprès des prestataires','{"adminTab":"suivi","suiviStage":"acommander"}')}
+        ${tile('commandee',n.commandee,'Commande passée',n.commandee?'En attente de prestation':'Aucune en cours','{"adminTab":"suivi","suiviStage":"commandee"}')}
+        ${tile('x-cal',$ms(totalMois),'Dépenses du mois',`${validesMois.length} commande${validesMois.length>1?'s':''} validée${validesMois.length>1?'s':''}`,'{"adminTab":"stats","statsPeriod":"mois"}')}
     </div>
-    <div style="${m||window.innerWidth<1000?'':'display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:16px;align-items:start;'}">
+    <div style="${large?'display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:16px;align-items:start;':''}">
         <div>${left}</div><div>${right}</div>
     </div>
     </div>`;
@@ -2241,27 +2377,27 @@ function renderStats(m){
     const maxM=Math.max(1,...monthly.map(x=>x.total));
 
     const PERIODS=[['mois','Ce mois'],['moisPrec','Mois dernier'],['trim','3 mois'],['annee','Cette année'],['anneePrec','Année dernière'],['tout','Tout'],['perso','Personnalisé']];
-    const kpi=(label,val,sub,col)=>`<div class="stat-card" style="padding:13px 15px;min-width:0;"><div style="font-size:10px;color:#9e9a93;text-transform:uppercase;letter-spacing:.05em;">${label}</div><div style="font-family:'DM Serif Display',serif;font-size:22px;line-height:1.3;color:${col||'var(--ink)'};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${val}</div><div style="font-size:11px;color:#9e9a93;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${sub||'&nbsp;'}</div></div>`;
+    const kpi=(label,val,sub,col)=>`<div class="stat-card" style="padding:13px 15px;min-width:0;"><div style="font-size:10px;color:#8b93a1;text-transform:uppercase;letter-spacing:.05em;">${label}</div><div style="font-family:var(--ft);font-weight:650;letter-spacing:-.01em;font-size:22px;line-height:1.3;color:${col||'var(--ink)'};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${val}</div><div style="font-size:11px;color:#8b93a1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${sub||'&nbsp;'}</div></div>`;
     const hbars=(titre,ic,rows,col)=>{
         const mx=Math.max(1,...rows.map(([,v])=>v.total));
         return `<div class="stat-card" style="min-width:0;">
             <div style="font-weight:700;font-size:14px;margin-bottom:12px;display:flex;align-items:center;gap:8px;">${icon(ic,15)} ${titre}</div>
             ${rows.length?rows.map(([k,v])=>`<div style="margin-bottom:9px;">
-                <div style="display:flex;justify-content:space-between;gap:8px;font-size:12px;margin-bottom:3px;"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--ink);">${esc(k)}</span><span style="white-space:nowrap;color:#7a7570;"><b style="color:var(--ink);">${$m(v.total)}</b> · ${v.n}</span></div>
-                <div style="height:8px;background:#f0eeea;border-radius:6px;overflow:hidden;"><div style="height:100%;width:${Math.max(2,v.total/mx*100)}%;background:${col};border-radius:6px;"></div></div>
-            </div>`).join(''):'<div style="color:#9e9a93;font-size:13px;padding:10px 0;">Aucune donnée sur la période</div>'}
+                <div style="display:flex;justify-content:space-between;gap:8px;font-size:12px;margin-bottom:3px;"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--ink);">${esc(k)}</span><span style="white-space:nowrap;color:#6b7280;"><b style="color:var(--ink);">${$m(v.total)}</b> · ${v.n}</span></div>
+                <div style="height:8px;background:#f1f2f4;border-radius:6px;overflow:hidden;"><div style="height:100%;width:${Math.max(2,v.total/mx*100)}%;background:${col};border-radius:6px;"></div></div>
+            </div>`).join(''):'<div style="color:#8b93a1;font-size:13px;padding:10px 0;">Aucune donnée sur la période</div>'}
         </div>`;
     };
 
     return `<div>
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px;">
-        <div style="font-family:'DM Serif Display',serif;font-size:${m?'18px':'22px'};display:flex;align-items:center;gap:9px;">${icon('chart',m?18:20)} Statistiques</div>
-        <div style="font-size:12px;color:#9e9a93;">${rg.label}</div>
+        <div style="font-family:var(--ft);font-weight:650;letter-spacing:-.01em;font-size:${m?'18px':'22px'};display:flex;align-items:center;gap:9px;">${icon('chart',m?18:20)} Statistiques</div>
+        <div style="font-size:12px;color:#8b93a1;">${rg.label}</div>
     </div>
-    <div style="display:flex;gap:4px;flex-wrap:wrap;background:#f0eeea;border-radius:20px;padding:4px;margin-bottom:${period==='perso'?'10px':'16px'};">
-        ${PERIODS.map(([k,l])=>`<button data-stats-period="${k}" style="padding:6px 12px;border:none;border-radius:16px;font-size:12px;font-weight:500;cursor:pointer;background:${period===k?'var(--accent)':'transparent'};color:${period===k?'#fff':'#7a7570'};">${l}</button>`).join('')}
+    <div style="display:flex;gap:4px;flex-wrap:wrap;background:#f1f2f4;border-radius:8px;padding:4px;margin-bottom:${period==='perso'?'10px':'16px'};">
+        ${PERIODS.map(([k,l])=>`<button data-stats-period="${k}" style="padding:6px 12px;border:none;border-radius:8px;font-size:12px;font-weight:500;cursor:pointer;background:${period===k?'var(--accent)':'transparent'};color:${period===k?'#fff':'#6b7280'};">${l}</button>`).join('')}
     </div>
-    ${period==='perso'?`<div style="display:flex;gap:8px;align-items:center;margin-bottom:16px;flex-wrap:wrap;font-size:13px;color:#7a7570;">Du <input type="date" id="statsFrom" class="form-input" value="${rg.fromIso||''}" style="width:auto;padding:7px 10px;"> au <input type="date" id="statsTo" class="form-input" value="${rg.toIso||''}" style="width:auto;padding:7px 10px;"></div>`:''}
+    ${period==='perso'?`<div style="display:flex;gap:8px;align-items:center;margin-bottom:16px;flex-wrap:wrap;font-size:13px;color:#6b7280;">Du <input type="date" id="statsFrom" class="form-input" value="${rg.fromIso||''}" style="width:auto;padding:7px 10px;"> au <input type="date" id="statsTo" class="form-input" value="${rg.toIso||''}" style="width:auto;padding:7px 10px;"></div>`:''}
 
     <div style="display:grid;grid-template-columns:${m?'repeat(2,minmax(0,1fr))':'repeat(auto-fit,minmax(180px,1fr))'};gap:12px;margin-bottom:16px;">
         ${kpi('Dépenses validées',total?$m(total):'0 €',delta===null?'':`${delta>=0?'+':''}${delta} % vs période préc.`,'#15803d')}
@@ -2276,9 +2412,9 @@ function renderStats(m){
         <div style="overflow-x:auto;">
             <div style="display:flex;align-items:flex-end;gap:${months.length>18?4:8}px;height:170px;min-width:${months.length*(m?34:28)}px;padding-top:18px;">
                 ${monthly.map(x=>`<div title="${MONTHS[x.d.getMonth()+1]} ${x.d.getFullYear()} : ${$m(x.total)} (${x.n} commande${x.n>1?'s':''})" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;min-width:0;">
-                    <div style="font-size:10px;color:#7a7570;margin-bottom:3px;white-space:nowrap;">${x.total?$ms(x.total):''}</div>
+                    <div style="font-size:10px;color:#6b7280;margin-bottom:3px;white-space:nowrap;">${x.total?$ms(x.total):''}</div>
                     <div style="width:100%;max-width:38px;height:${x.total?Math.max(3,x.total/maxM*120):0}px;background:var(--accent);border-radius:6px 6px 2px 2px;"></div>
-                    <div style="font-size:10px;color:#9e9a93;margin-top:5px;white-space:nowrap;">${MONTHS[x.d.getMonth()+1]}${months.length>12||x.d.getMonth()===0?` ${String(x.d.getFullYear()).slice(2)}`:''}</div>
+                    <div style="font-size:10px;color:#8b93a1;margin-top:5px;white-space:nowrap;">${MONTHS[x.d.getMonth()+1]}${months.length>12||x.d.getMonth()===0?` ${String(x.d.getFullYear()).slice(2)}`:''}</div>
                 </div>`).join('')}
             </div>
         </div>
@@ -2290,7 +2426,7 @@ function renderStats(m){
         ${hbars('Par demandeur','clipboard',parDemandeur,'#0e7490')}
         ${hbars('Par type','grid',parType,'#c2410c')}
     </div>
-    <div style="font-size:11px;color:#b0aba2;margin-top:12px;">Montants des commandes validées, selon la date de la prestation. Une commande pour plusieurs directeurs est répartie à parts égales.</div>
+    <div style="font-size:11px;color:#9ca3af;margin-top:12px;">Montants des commandes validées, selon la date de la prestation. Une commande pour plusieurs directeurs est répartie à parts égales.</div>
     </div>`;
 }
 
@@ -2306,33 +2442,33 @@ function renderJournal(m){
     const rows=list.map(e=>{
         const d=new Date(e.t);
         const day=d.toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
-        const head=day!==lastDay?`<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#9e9a93;padding:12px 16px 6px;background:#fafaf8;border-bottom:1px solid #f1f5f9;">${day}</div>`:'';
+        const head=day!==lastDay?`<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#8b93a1;padding:12px 16px 6px;background:#fafaf8;border-bottom:1px solid #f1f5f9;">${day}</div>`:'';
         lastDay=day;
         const [bg,fg]=COL[e.action]||['#f1f5f9','#5a6a85'];
         const item=e.id!=null?state.data.find(c=>c.id===e.id):null;
         const typeIc=e.type?icon(e.type==='taxi'?'car':e.type==='repas'?'utensils':e.type==='hotel'?'bed':'box',12):'';
         return head+`<div ${item?`data-open-detail='${JSON.stringify(item).replace(/'/g,"&apos;")}'`:''} style="display:flex;gap:10px;align-items:flex-start;padding:10px 16px;border-bottom:1px solid #f1f5f9;${item?'cursor:pointer;':''}">
-            <div style="font-size:12px;color:#9e9a93;min-width:38px;padding-top:2px;">${d.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})}</div>
+            <div style="font-size:12px;color:#8b93a1;min-width:38px;padding-top:2px;">${d.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})}</div>
             ${avatar(e.qui,26)}
             <div style="flex:1;min-width:0;">
-                <div style="font-size:13px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;"><b>${esc(e.qui)}</b><span style="background:${bg};color:${fg};border-radius:12px;padding:1px 8px;font-size:11px;font-weight:600;">${esc(e.action)}</span>${e.code?`<span style="font-family:monospace;font-size:11px;color:#7a7570;">${esc(e.code)}</span>`:''}</div>
-                <div style="font-size:12px;color:#5a5650;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:${m?'normal':'nowrap'};">${typeIc} ${esc(e.desc||'—')}${e.detail?` <span style="color:#9e9a93;">· ${esc(e.detail)}</span>`:''}</div>
+                <div style="font-size:13px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;"><b>${esc(e.qui)}</b><span style="background:${bg};color:${fg};border-radius:12px;padding:1px 8px;font-size:11px;font-weight:600;">${esc(e.action)}</span>${e.code?`<span style="font-family:monospace;font-size:11px;color:#6b7280;">${esc(e.code)}</span>`:''}</div>
+                <div style="font-size:12px;color:#4b5563;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:${m?'normal':'nowrap'};">${typeIc} ${esc(e.desc||'—')}${e.detail?` <span style="color:#8b93a1;">· ${esc(e.detail)}</span>`:''}</div>
             </div>
         </div>`;
     }).join('');
     return `<div>
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:10px;">
         <div>
-            <div style="font-family:'DM Serif Display',serif;font-size:${m?'18px':'22px'};display:flex;align-items:center;gap:8px;">${icon('edit',m?16:19)} Journal des actions</div>
-            <div style="font-size:12px;color:#9e9a93;margin-top:3px;">Qui a modifié quoi, et quand · ${JOURNAL_MAX} dernières actions conservées</div>
+            <div style="font-family:var(--ft);font-weight:650;letter-spacing:-.01em;font-size:${m?'18px':'22px'};display:flex;align-items:center;gap:8px;">${icon('edit',m?16:19)} Journal des actions</div>
+            <div style="font-size:12px;color:#8b93a1;margin-top:3px;">Qui a modifié quoi, et quand · ${JOURNAL_MAX} dernières actions conservées</div>
         </div>
-        <button id="journalRefresh" style="background:#f0eeea;border:none;border-radius:20px;padding:7px 14px;font-size:12px;font-weight:600;color:#5a5650;cursor:pointer;">Actualiser</button>
+        <button id="journalRefresh" style="background:#f1f2f4;border:none;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:600;color:#4b5563;cursor:pointer;">Actualiser</button>
     </div>
     <input id="journalSearch" type="text" placeholder="Rechercher (nom, code, action…)" value="${esc(state.journalSearch||'')}" class="search-input" style="margin-bottom:12px;">
-    <div style="background:#fff;border-radius:16px;border:1px solid #e4e7ec;overflow:hidden;">
-        ${rows||`<div style="text-align:center;padding:40px;color:#9e9a93;font-size:14px;">${q?'Aucun résultat':'Aucune action enregistrée pour l’instant.<br><span style="font-size:12px;">Les validations, annulations, changements de prix et suppressions apparaîtront ici.</span>'}</div>`}
+    <div style="background:#fff;border-radius:8px;border:1px solid #e4e7ec;overflow:hidden;">
+        ${rows||`<div style="text-align:center;padding:40px;color:#8b93a1;font-size:14px;">${q?'Aucun résultat':'Aucune action enregistrée pour l’instant.<br><span style="font-size:12px;">Les validations, annulations, changements de prix et suppressions apparaîtront ici.</span>'}</div>`}
     </div>
-    ${all.length>list.length?`<div style="text-align:center;font-size:12px;color:#9e9a93;margin-top:8px;">${all.length-list.length} actions plus anciennes masquées : affinez la recherche.</div>`:''}
+    ${all.length>list.length?`<div style="text-align:center;font-size:12px;color:#8b93a1;margin-top:8px;">${all.length-list.length} actions plus anciennes masquées : affinez la recherche.</div>`:''}
     </div>`;
 }
 
@@ -2343,7 +2479,7 @@ function statusEditCell(c){
     const st=STATUS_MAP[c.pris]||{bg:'#f1f5f9',color:'#5a6a85'};
     const opts=Object.keys(STATUS_MAP).map(k=>`<option value="${k}" ${c.pris===k?'selected':''}>${STATUS_MAP[k].label}</option>`).join('');
     return `<td style="padding:3px 8px;text-align:center;" onclick="event.stopPropagation()">
-        <select class="cell-input" data-inline-edit data-id="${c.id}" data-field="pris" style="width:100%;padding:2px 5px;border-radius:20px;font-size:11px;font-weight:600;background:${st.bg};color:${st.color};border:1px solid transparent;cursor:pointer;">${opts}</select>
+        <select class="cell-input" data-inline-edit data-id="${c.id}" data-field="pris" style="width:100%;padding:2px 5px;border-radius:8px;font-size:11px;font-weight:600;background:${st.bg};color:${st.color};border:1px solid transparent;cursor:pointer;">${opts}</select>
     </td>`;
 }
 function prixEditCell(c){
@@ -2381,7 +2517,7 @@ function renderActiviteTout(m){
     const statusBadge=s=>{
         const map={'OUI':{bg:'#f0fdf4',color:'#15803d',label:'Validé'},'En attente':{bg:'#fffbeb',color:'#b45309',label:'En attente'},'En cours':{bg:'#eff6ff',color:'#1e40af',label:'En cours'},'Annulé':{bg:'#fef2f2',color:'#b91c1c',label:'Annulé'},'Reçu':{bg:'#f0f9ff',color:'#0369a1',label:'Reçu'}};
         const st=map[s]||{bg:'#f1f5f9',color:'#5a6a85',label:s};
-        return `<span style="padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;background:${st.bg};color:${st.color};">${st.label}</span>`;
+        return `<span style="padding:3px 10px;border-radius:8px;font-size:11px;font-weight:600;background:${st.bg};color:${st.color};">${st.label}</span>`;
     };
 
     const typeIcon=t=>icon(t==='taxi'?'car':t==='repas'?'utensils':t==='hotel'?'bed':'box',14);
@@ -2391,7 +2527,7 @@ function renderActiviteTout(m){
     // Filtres : uniquement Tout et À venir
     const FILTERS=[['all','Tout',0],['avenir','À venir',nbAvenir]];
     const filterBtns = FILTERS.map(([k,l,n])=>
-        '<button id="f-'+k+'" style="padding:6px 16px;border:none;border-radius:24px;font-size:13px;font-weight:500;cursor:pointer;background:'+(filter===k?'var(--accent)':'#f0eeea')+';color:'+(filter===k?'#fff':'#7a7570')+';transition:all 0.15s;">'+l+(n?' <span style="background:#22c55e;color:#fff;border-radius:50%;min-width:16px;height:16px;font-size:10px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;padding:0 3px;">'+n+'</span>':'')+'</button>'
+        '<button id="f-'+k+'" style="padding:6px 16px;border:none;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;background:'+(filter===k?'var(--accent)':'#f1f2f4')+';color:'+(filter===k?'#fff':'#6b7280')+';transition:all 0.15s;">'+l+(n?' <span style="background:#22c55e;color:#fff;border-radius:50%;min-width:16px;height:16px;font-size:10px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;padding:0 3px;">'+n+'</span>':'')+'</button>'
     ).join('');
 
     // En-têtes triables
@@ -2405,12 +2541,12 @@ function renderActiviteTout(m){
     return `<div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;align-items:center;">
         <input id="adminSearch" type="text" placeholder="Rechercher..." value="${state.search||''}" class="search-input" style="flex:1;min-width:140px;margin-bottom:0;">
-        <div style="display:flex;gap:4px;background:#f0eeea;border-radius:30px;padding:3px;" id="filterBtns">
+        <div style="display:flex;gap:4px;background:#f1f2f4;border-radius:6px;padding:3px;" id="filterBtns">
             ${filterBtns}
         </div>
     </div>
 
-    <div style="background:#fff;border-radius:16px;border:1px solid #e4e7ec;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.04);">
+    <div style="background:#fff;border-radius:8px;border:1px solid #e4e7ec;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.04);">
         <div style="overflow:auto;max-height:max(340px, calc(100vh - 290px));">
             <table class="grid-table" style="width:100%;border-collapse:collapse;font-size:13px;min-width:${m?'480px':'600px'};">
                 <thead>
@@ -2454,8 +2590,8 @@ function renderActiviteTout(m){
 function renderActivite(m){
     const tab=state.activiteTab||'tout';
     const TABS=[['tout','grid','Toutes'],['reservations','utensils','Repas & taxis'],['commandes','box','Fournitures'],['hotels','bed','Hôtels'],['historique','wallet','Dépenses & export'],['journal','edit','Journal'],['corbeille','trash','Corbeille']];
-    const subNav=`<div style="display:flex;gap:4px;flex-wrap:wrap;background:var(--border-light);padding:4px;border-radius:30px;width:fit-content;margin-bottom:10px;">
-        ${TABS.map(([k,ic,l])=>`<button data-activite-tab="${k}" style="display:flex;align-items:center;gap:6px;padding:6px 13px;border:none;border-radius:24px;font-size:13px;font-weight:500;cursor:pointer;white-space:nowrap;background:${tab===k?'var(--white)':'transparent'};color:${tab===k?'var(--ink)':'var(--ink-soft)'};box-shadow:${tab===k?'0 1px 3px rgba(0,0,0,0.08)':'none'};transition:all 0.15s;">${icon(ic,14)} ${l}</button>`).join('')}
+    const subNav=`<div style="display:flex;gap:4px;flex-wrap:wrap;background:var(--border-light);padding:4px;border-radius:6px;width:fit-content;margin-bottom:10px;">
+        ${TABS.map(([k,ic,l])=>`<button data-activite-tab="${k}" style="display:flex;align-items:center;gap:6px;padding:6px 13px;border:none;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;white-space:nowrap;background:${tab===k?'var(--white)':'transparent'};color:${tab===k?'var(--ink)':'var(--ink-soft)'};box-shadow:${tab===k?'0 1px 3px rgba(0,0,0,0.08)':'none'};transition:all 0.15s;">${icon(ic,14)} ${l}</button>`).join('')}
     </div>`;
     let body;
     if(tab==='commandes') body=renderCommandes(m);
@@ -2467,9 +2603,9 @@ function renderActivite(m){
     else body=renderReservations(m);
     // Sur desktop, les icônes de sous-onglets sont déjà dans la barre du haut (voir renderAdminView) :
     // pas besoin de les répéter ici. Sur mobile, il n'y a pas de barre du haut équivalente.
-    const addBar=`<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:14px;padding:10px 12px;background:var(--accent-soft,#e3edf3);border-radius:14px;">
+    const addBar=`<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:14px;padding:10px 12px;background:var(--accent-soft,#e3edf3);border-radius:8px;">
         <span style="font-size:13px;font-weight:700;color:var(--accent);margin-right:4px;display:flex;align-items:center;gap:5px;">${icon('plus',15)} Ajouter</span>
-        ${[["commande","box","Commande"],["repas","utensils","Repas"],["taxi","car","Taxi"],["hotel","bed","Hôtel"]].map(([t,ic,l])=>`<button data-saisie-type="${t}" style="display:flex;align-items:center;gap:5px;background:#fff;border:1px solid var(--border);border-radius:20px;padding:6px 12px;font-size:13px;font-weight:600;color:var(--ink);cursor:pointer;">${icon(ic,13)} ${l}</button>`).join('')}
+        ${[["commande","box","Commande"],["repas","utensils","Repas"],["taxi","car","Taxi"],["hotel","bed","Hôtel"]].map(([t,ic,l])=>`<button data-saisie-type="${t}" style="display:flex;align-items:center;gap:5px;background:#fff;border:1px solid var(--border);border-radius:8px;padding:6px 12px;font-size:13px;font-weight:600;color:var(--ink);cursor:pointer;">${icon(ic,13)} ${l}</button>`).join('')}
     </div>`;
     return `<div>${m?subNav:''}${tab==='corbeille'||tab==='journal'?'':addBar}${body}</div>`;
 }
@@ -2505,7 +2641,7 @@ function renderReservations(m){
     const statusBadge=s=>{
         const map={'OUI':{bg:'#f0fdf4',color:'#15803d',label:'Validé'},'En attente':{bg:'#fffbeb',color:'#b45309',label:'En attente'},'En cours':{bg:'#eff6ff',color:'#1e40af',label:'En cours'},'Annulé':{bg:'#fef2f2',color:'#b91c1c',label:'Annulé'},'Reçu':{bg:'#f0f9ff',color:'#0369a1',label:'Reçu'}};
         const st=map[s]||{bg:'#f1f5f9',color:'#5a6a85',label:s};
-        return `<span style="padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;background:${st.bg};color:${st.color};">${st.label}</span>`;
+        return `<span style="padding:3px 10px;border-radius:8px;font-size:11px;font-weight:600;background:${st.bg};color:${st.color};">${st.label}</span>`;
     };
 
     function th(col, label){
@@ -2523,20 +2659,20 @@ function renderReservations(m){
 
     return `<div>
     <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:10px;">
-        <div style="font-family:'DM Serif Display',serif;font-size:${m?'18px':'22px'};">${icon('utensils',m?16:19)} Repas & taxis <span style="font-size:13px;color:#94a3b8;font-weight:400;">${all.length} entrée${all.length>1?'s':''}</span></div>
+        <div style="font-family:var(--ft);font-weight:650;letter-spacing:-.01em;font-size:${m?'18px':'22px'};">${icon('utensils',m?16:19)} Repas & taxis <span style="font-size:13px;color:#94a3b8;font-weight:400;">${all.length} entrée${all.length>1?'s':''}</span></div>
 
     </div>
 
     <!-- Barre filtres + recherche -->
     <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
         <input type="text" id="adminSearch" placeholder="Rechercher..." value="${search}" class="search-input" style="flex:1;min-width:160px;margin-bottom:0;">
-        <div style="display:flex;gap:4px;background:#f1f5f9;border-radius:30px;padding:3px;">
-            ${FILTERS.filter(([k])=>k==='all'||k==='passees'||(k==='attente'&&nbAttente>0)||(k==='avenir'&&nbAvenir>0)).map(([k,l,count])=>`<button data-resa-filter="${k}" style="display:flex;align-items:center;gap:5px;padding:5px 12px;border:none;border-radius:24px;font-size:12px;font-weight:500;cursor:pointer;background:${filter===k?'#fff':'transparent'};color:${filter===k?'#1a1f36':'#64748b'};box-shadow:${filter===k?'0 1px 3px rgba(0,0,0,0.1)':'none'};white-space:nowrap;transition:all 0.15s;">${l}${count?`<span style="background:${k==='attente'?'#f59e0b':'#22c55e'};color:#fff;border-radius:50%;min-width:16px;height:16px;font-size:10px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;padding:0 3px;">${count}</span>`:''}</button>`).join('')}
+        <div style="display:flex;gap:4px;background:#f1f5f9;border-radius:6px;padding:3px;">
+            ${FILTERS.filter(([k])=>k==='all'||k==='passees'||(k==='attente'&&nbAttente>0)||(k==='avenir'&&nbAvenir>0)).map(([k,l,count])=>`<button data-resa-filter="${k}" style="display:flex;align-items:center;gap:5px;padding:5px 12px;border:none;border-radius:8px;font-size:12px;font-weight:500;cursor:pointer;background:${filter===k?'#fff':'transparent'};color:${filter===k?'#1a1f36':'#64748b'};box-shadow:${filter===k?'0 1px 3px rgba(0,0,0,0.1)':'none'};white-space:nowrap;transition:all 0.15s;">${l}${count?`<span style="background:${k==='attente'?'#f59e0b':'#22c55e'};color:#fff;border-radius:50%;min-width:16px;height:16px;font-size:10px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;padding:0 3px;">${count}</span>`:''}</button>`).join('')}
         </div>
     </div>
 
     <!-- Tableau unique -->
-    <div style="background:#fff;border-radius:16px;border:1px solid #e4e7ec;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.04);">
+    <div style="background:#fff;border-radius:8px;border:1px solid #e4e7ec;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.04);">
         <div style="overflow:auto;max-height:max(340px, calc(100vh - 290px));">
             <table class="grid-table" style="width:100%;border-collapse:collapse;font-size:13px;min-width:${m?'480px':'560px'};">
                 <thead>
@@ -2602,7 +2738,7 @@ function renderCommandes(m){
     const statusBadge=s=>{
         const map={'OUI':{bg:'#f0fdf4',color:'#15803d',label:'Validé'},'En attente':{bg:'#fffbeb',color:'#b45309',label:'En attente'},'En cours':{bg:'#eff6ff',color:'#1e40af',label:'En cours'},'Annulé':{bg:'#fef2f2',color:'#b91c1c',label:'Annulé'},'Reçu':{bg:'#f0f9ff',color:'#0369a1',label:'Reçu'}};
         const st=map[s]||{bg:'#f1f5f9',color:'#5a6a85',label:s};
-        return `<span style="padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;background:${st.bg};color:${st.color};">${st.label}</span>`;
+        return `<span style="padding:3px 10px;border-radius:8px;font-size:11px;font-weight:600;background:${st.bg};color:${st.color};">${st.label}</span>`;
     };
 
     function thc(col,label){
@@ -2620,18 +2756,18 @@ function renderCommandes(m){
 
     return `<div>
     <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:10px;">
-        <div style="font-family:'DM Serif Display',serif;font-size:${m?'18px':'22px'};">${icon('box',m?16:19)} Fournitures <span style="font-size:13px;color:#94a3b8;font-weight:400;">${all.length} entrée${all.length>1?'s':''}</span></div>
+        <div style="font-family:var(--ft);font-weight:650;letter-spacing:-.01em;font-size:${m?'18px':'22px'};">${icon('box',m?16:19)} Fournitures <span style="font-size:13px;color:#94a3b8;font-weight:400;">${all.length} entrée${all.length>1?'s':''}</span></div>
 
     </div>
 
     <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
         <input type="text" id="adminSearch" placeholder="Rechercher..." value="${search}" class="search-input" style="flex:1;min-width:160px;margin-bottom:0;">
-        <div style="display:flex;gap:4px;background:#f1f5f9;border-radius:30px;padding:3px;">
-            ${FILTERS.filter(([k])=>k==='all'||k==='passees'||(k==='attente'&&nbAttente>0)||(k==='avenir'&&nbAvenir>0)).map(([k,l,count])=>`<button data-cmd-filter="${k}" style="display:flex;align-items:center;gap:5px;padding:5px 12px;border:none;border-radius:24px;font-size:12px;font-weight:500;cursor:pointer;background:${filter===k?'#fff':'transparent'};color:${filter===k?'#1a1f36':'#64748b'};box-shadow:${filter===k?'0 1px 3px rgba(0,0,0,0.1)':'none'};white-space:nowrap;transition:all 0.15s;">${l}${count?`<span style="background:${k==='attente'?'#f59e0b':'#22c55e'};color:#fff;border-radius:50%;min-width:16px;height:16px;font-size:10px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;padding:0 3px;">${count}</span>`:''}</button>`).join('')}
+        <div style="display:flex;gap:4px;background:#f1f5f9;border-radius:6px;padding:3px;">
+            ${FILTERS.filter(([k])=>k==='all'||k==='passees'||(k==='attente'&&nbAttente>0)||(k==='avenir'&&nbAvenir>0)).map(([k,l,count])=>`<button data-cmd-filter="${k}" style="display:flex;align-items:center;gap:5px;padding:5px 12px;border:none;border-radius:8px;font-size:12px;font-weight:500;cursor:pointer;background:${filter===k?'#fff':'transparent'};color:${filter===k?'#1a1f36':'#64748b'};box-shadow:${filter===k?'0 1px 3px rgba(0,0,0,0.1)':'none'};white-space:nowrap;transition:all 0.15s;">${l}${count?`<span style="background:${k==='attente'?'#f59e0b':'#22c55e'};color:#fff;border-radius:50%;min-width:16px;height:16px;font-size:10px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;padding:0 3px;">${count}</span>`:''}</button>`).join('')}
         </div>
     </div>
 
-    <div style="background:#fff;border-radius:16px;border:1px solid #e4e7ec;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.04);">
+    <div style="background:#fff;border-radius:8px;border:1px solid #e4e7ec;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.04);">
         <div style="overflow:auto;max-height:max(340px, calc(100vh - 290px));">
             <table class="grid-table" style="width:100%;border-collapse:collapse;font-size:13px;min-width:${m?'480px':'560px'};">
                 <thead>
@@ -2707,18 +2843,18 @@ function renderHotels(m){
 
     return `<div>
     <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:10px;">
-        <div style="font-family:'DM Serif Display',serif;font-size:${m?'18px':'22px'};">${icon('bed',m?16:19)} Hôtels <span style="font-size:13px;color:#94a3b8;font-weight:400;">${all.length} entrée${all.length>1?'s':''}</span></div>
+        <div style="font-family:var(--ft);font-weight:650;letter-spacing:-.01em;font-size:${m?'18px':'22px'};">${icon('bed',m?16:19)} Hôtels <span style="font-size:13px;color:#94a3b8;font-weight:400;">${all.length} entrée${all.length>1?'s':''}</span></div>
 
     </div>
 
     <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
         <input type="text" id="adminSearch" placeholder="Rechercher..." value="${search}" class="search-input" style="flex:1;min-width:160px;margin-bottom:0;">
-        <div style="display:flex;gap:4px;background:#f1f5f9;border-radius:30px;padding:3px;">
-            ${FILTERS.filter(([k])=>k==='all'||k==='passees'||(k==='attente'&&nbAttente>0)||(k==='avenir'&&nbAvenir>0)).map(([k,l,count])=>`<button data-hotel-filter="${k}" style="display:flex;align-items:center;gap:5px;padding:5px 12px;border:none;border-radius:24px;font-size:12px;font-weight:500;cursor:pointer;background:${filter===k?'#fff':'transparent'};color:${filter===k?'#1a1f36':'#64748b'};box-shadow:${filter===k?'0 1px 3px rgba(0,0,0,0.1)':'none'};white-space:nowrap;transition:all 0.15s;">${l}${count?`<span style="background:${k==='attente'?'#f59e0b':'#22c55e'};color:#fff;border-radius:50%;min-width:16px;height:16px;font-size:10px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;padding:0 3px;">${count}</span>`:''}</button>`).join('')}
+        <div style="display:flex;gap:4px;background:#f1f5f9;border-radius:6px;padding:3px;">
+            ${FILTERS.filter(([k])=>k==='all'||k==='passees'||(k==='attente'&&nbAttente>0)||(k==='avenir'&&nbAvenir>0)).map(([k,l,count])=>`<button data-hotel-filter="${k}" style="display:flex;align-items:center;gap:5px;padding:5px 12px;border:none;border-radius:8px;font-size:12px;font-weight:500;cursor:pointer;background:${filter===k?'#fff':'transparent'};color:${filter===k?'#1a1f36':'#64748b'};box-shadow:${filter===k?'0 1px 3px rgba(0,0,0,0.1)':'none'};white-space:nowrap;transition:all 0.15s;">${l}${count?`<span style="background:${k==='attente'?'#f59e0b':'#22c55e'};color:#fff;border-radius:50%;min-width:16px;height:16px;font-size:10px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;padding:0 3px;">${count}</span>`:''}</button>`).join('')}
         </div>
     </div>
 
-    <div style="background:#fff;border-radius:16px;border:1px solid #e4e7ec;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.04);">
+    <div style="background:#fff;border-radius:8px;border:1px solid #e4e7ec;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.04);">
         <div style="overflow:auto;max-height:max(340px, calc(100vh - 290px));">
             <table class="grid-table" style="width:100%;border-collapse:collapse;font-size:13px;min-width:${m?'560px':'680px'};">
                 <thead>
@@ -2766,25 +2902,25 @@ function renderCorbeille(m){
     return `<div>
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:10px;">
         <div>
-            <div style="font-family:'DM Serif Display',serif;font-size:${m?'18px':'22px'};">${icon('trash',m?16:19)} Corbeille</div>
-            <div style="font-size:12px;color:#9e9a93;margin-top:3px;">${deleted.length} élément${deleted.length>1?'s':''} supprimé${deleted.length>1?'s':''}</div>
+            <div style="font-family:var(--ft);font-weight:650;letter-spacing:-.01em;font-size:${m?'18px':'22px'};">${icon('trash',m?16:19)} Corbeille</div>
+            <div style="font-size:12px;color:#8b93a1;margin-top:3px;">${deleted.length} élément${deleted.length>1?'s':''} supprimé${deleted.length>1?'s':''}</div>
         </div>
-        ${deleted.length?`<button id="emptyTrash" style="display:flex;align-items:center;gap:6px;background:#fef2f2;border:1px solid #fecaca;border-radius:30px;padding:7px 16px;color:#b91c1c;cursor:pointer;font-size:13px;font-weight:600;">${icon('trash',14)} Vider la corbeille</button>`:''}
+        ${deleted.length?`<button id="emptyTrash" style="display:flex;align-items:center;gap:6px;background:#fef2f2;border:1px solid #fecaca;border-radius:6px;padding:7px 16px;color:#b91c1c;cursor:pointer;font-size:13px;font-weight:600;">${icon('trash',14)} Vider la corbeille</button>`:''}
     </div>
 
     ${deleted.length===0?`
-    <div style="text-align:center;padding:48px;color:#9e9a93;">
+    <div style="text-align:center;padding:48px;color:#8b93a1;">
         <div style="color:#d4d0c8;margin-bottom:12px;display:flex;justify-content:center;">${icon('trash',44)}</div>
         <div style="font-size:15px;">La corbeille est vide</div>
     </div>`:`
-    <div style="background:#fff;border-radius:20px;border:1px solid #e4e7ec;overflow:hidden;">
+    <div style="background:#fff;border-radius:8px;border:1px solid #e4e7ec;overflow:hidden;">
         ${deleted.map((c,i)=>`
         <div style="display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid #f1f5f9;${i===deleted.length-1?'border-bottom:none;':''}">
             <div style="font-size:24px;">${typeIcon(c.type)}</div>
             <div style="flex:1;min-width:0;">
                 <div style="font-weight:600;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${c.desc||'—'}</div>
-                <div style="font-size:11px;color:#9e9a93;margin-top:2px;">${c.demandeur||'—'} · ${$d(c.date)}${c.prix?' · '+$m(c.prix):''}</div>
-                ${c.deletedAt?`<div style="font-size:11px;color:#b0aba2;margin-top:1px;">Supprimée le ${new Date(c.deletedAt).toLocaleDateString('fr-FR')}${c.deletedBy?' par '+esc(c.deletedBy):''} · effacée définitivement dans ${Math.max(0,TRASH_DAYS-Math.floor((Date.now()-new Date(c.deletedAt).getTime())/864e5))} j</div>`:''}
+                <div style="font-size:11px;color:#8b93a1;margin-top:2px;">${c.demandeur||'—'} · ${$d(c.date)}${c.prix?' · '+$m(c.prix):''}</div>
+                ${c.deletedAt?`<div style="font-size:11px;color:#9ca3af;margin-top:1px;">Supprimée le ${new Date(c.deletedAt).toLocaleDateString('fr-FR')}${c.deletedBy?' par '+esc(c.deletedBy):''} · effacée définitivement dans ${Math.max(0,TRASH_DAYS-Math.floor((Date.now()-new Date(c.deletedAt).getTime())/864e5))} j</div>`:''}
             </div>
             <button data-restore="${i}" style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:6px 12px;font-size:12px;font-weight:600;color:#15803d;cursor:pointer;white-space:nowrap;">↩ Restaurer</button>
         </div>`).join('')}
@@ -2798,12 +2934,12 @@ function renderHistorique(m){
     const typeBadge=t=>{
         const map={repas:{bg:'linear-gradient(135deg,#fff7ed,#fed7aa)',color:'#c2410c',border:'#fdba74'},taxi:{bg:'linear-gradient(135deg,#dbeafe,#bfdbfe)',color:'#1e40af',border:'#93c5fd'},commande:{bg:'linear-gradient(135deg,#f3e8ff,#e9d5ff)',color:'#6b21a5',border:'#d8b4fe'},hotel:{bg:'linear-gradient(135deg,#ecfeff,#a5f3fc)',color:'#0e7490',border:'#67e8f9'}};
         const s=map[t]||{bg:'#f1f5f9',color:'#5a6a85',border:'#e4e7ec'};
-        return `<span style="display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:30px;font-size:11px;font-weight:600;background:${s.bg};color:${s.color};border:1px solid ${s.border};">${typeIcon(t)} ${typeLabel(t)}</span>`;
+        return `<span style="display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:6px;font-size:11px;font-weight:600;background:${s.bg};color:${s.color};border:1px solid ${s.border};">${typeIcon(t)} ${typeLabel(t)}</span>`;
     };
     const statusBadge=s=>{
         const map={'OUI':{bg:'#f0fdf4',color:'#15803d',border:'#86efac',label:'Validé'},'En attente':{bg:'#fffbeb',color:'#b45309',border:'#fde68a',label:'En attente'},'Annulé':{bg:'#fef2f2',color:'#b91c1c',border:'#fecaca',label:'Annulé'},'En cours':{bg:'#eff6ff',color:'#1e40af',border:'#93c5fd',label:'En cours'},'Reçu':{bg:'#f0f9ff',color:'#0369a1',border:'#7dd3fc',label:'Reçu'}};
         const st=map[s]||{bg:'#f1f5f9',color:'#5a6a85',border:'#e4e7ec',label:s||'—'};
-        return `<span style="display:inline-flex;align-items:center;padding:3px 10px;border-radius:30px;font-size:11px;font-weight:700;background:${st.bg};color:${st.color};border:1px solid ${st.border};">${st.label}</span>`;
+        return `<span style="display:inline-flex;align-items:center;padding:3px 10px;border-radius:6px;font-size:11px;font-weight:700;background:${st.bg};color:${st.color};border:1px solid ${st.border};">${st.label}</span>`;
     };
 
     const PAGE=30;
@@ -2825,25 +2961,25 @@ function renderHistorique(m){
     <!-- Header -->
     <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:10px;">
         <div>
-            <div style="font-family:'DM Serif Display',serif;font-size:${m?'18px':'22px'};">${icon('wallet',m?16:19)} Dépenses & export</div>
+            <div style="font-family:var(--ft);font-weight:650;letter-spacing:-.01em;font-size:${m?'18px':'22px'};">${icon('wallet',m?16:19)} Dépenses & export</div>
             <div style="font-size:12px;color:#7f8c9b;margin-top:3px;">${allSorted.length} entrée${allSorted.length>1?'s':''} au total</div>
         </div>
-        <button id="exportExcel" style="background:#1d6f42;color:#fff;border:none;border-radius:30px;padding:9px 20px;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:7px;box-shadow:0 2px 8px rgba(29,111,66,0.2);">
+        <button id="exportExcel" style="background:#1d6f42;color:#fff;border:none;border-radius:6px;padding:9px 20px;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:7px;box-shadow:0 2px 8px rgba(29,111,66,0.2);">
             ${icon('download',14)} Exporter Excel
         </button>
     </div>
 
     <!-- Filtres tri -->
-    <div style="background:#fff;border-radius:16px;padding:9px 14px;margin-bottom:10px;border:1px solid #e4e7ec;box-shadow:0 1px 2px rgba(0,0,0,0.04);">
+    <div style="background:#fff;border-radius:8px;padding:9px 14px;margin-bottom:10px;border:1px solid #e4e7ec;box-shadow:0 1px 2px rgba(0,0,0,0.04);">
         <div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;">
             <span style="font-size:12px;color:#7f8c9b;font-weight:500;margin-right:4px;">Trier par</span>
             ${[['date','Date'],['demandeur','Demandeur'],['desc','Titre'],['prix','Prix'],['type','Type']].map(([k,l])=>`
-            <button data-hist-sort="${k}" style="display:inline-flex;align-items:center;gap:5px;padding:6px 14px;background:${(state.histSort||'date')===k?'var(--accent)':'#f1f5f9'};color:${(state.histSort||'date')===k?'#fff':'#5a6a85'};border:1px solid ${(state.histSort||'date')===k?'transparent':'transparent'};border-radius:30px;font-size:12px;font-weight:500;cursor:pointer;transition:all 0.15s;">${l}${(state.histSort||'date')===k?' ↓':''}</button>`).join('')}
+            <button data-hist-sort="${k}" style="display:inline-flex;align-items:center;gap:5px;padding:6px 14px;background:${(state.histSort||'date')===k?'var(--accent)':'#f1f5f9'};color:${(state.histSort||'date')===k?'#fff':'#5a6a85'};border:1px solid ${(state.histSort||'date')===k?'transparent':'transparent'};border-radius:6px;font-size:12px;font-weight:500;cursor:pointer;transition:all 0.15s;">${l}${(state.histSort||'date')===k?' ↓':''}</button>`).join('')}
         </div>
     </div>
 
     <!-- Tableau moderne -->
-    <div style="background:#fff;border-radius:20px;border:1px solid #e4e7ec;overflow:hidden;box-shadow:0 1px 2px rgba(0,0,0,0.04);">
+    <div style="background:#fff;border-radius:8px;border:1px solid #e4e7ec;overflow:hidden;box-shadow:0 1px 2px rgba(0,0,0,0.04);">
         <div style="overflow:auto;max-height:max(340px, calc(100vh - 290px));">
             <table class="grid-table" style="width:100%;border-collapse:collapse;font-size:13px;min-width:700px;">
                 <thead id="histTableHead">
@@ -2887,9 +3023,9 @@ function renderHistorique(m){
 
         ${totalPages>1?`
         <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-top:2px solid #e2e8f0;background:#f8fafc;">
-            <button data-hist-prev style="background:${page===0?'#e2e8f0':'var(--accent)'};color:${page===0?'#9e9a93':'#fff'};border:none;border-radius:30px;padding:7px 18px;font-size:13px;font-weight:600;cursor:${page===0?'default':'pointer'};">← Précédent</button>
+            <button data-hist-prev style="background:${page===0?'#e2e8f0':'var(--accent)'};color:${page===0?'#8b93a1':'#fff'};border:none;border-radius:6px;padding:7px 18px;font-size:13px;font-weight:600;cursor:${page===0?'default':'pointer'};">← Précédent</button>
             <span style="font-size:13px;color:#64748b;font-weight:500;">Page ${page+1} / ${totalPages}</span>
-            <button data-hist-next style="background:${page>=totalPages-1?'#e2e8f0':'var(--accent)'};color:${page>=totalPages-1?'#9e9a93':'#fff'};border:none;border-radius:30px;padding:7px 18px;font-size:13px;font-weight:600;cursor:${page>=totalPages-1?'default':'pointer'};">Suivant →</button>
+            <button data-hist-next style="background:${page>=totalPages-1?'#e2e8f0':'var(--accent)'};color:${page>=totalPages-1?'#8b93a1':'#fff'};border:none;border-radius:6px;padding:7px 18px;font-size:13px;font-weight:600;cursor:${page>=totalPages-1?'default':'pointer'};">Suivant →</button>
         </div>`:''}
 
         ${allSorted.length===0?'<div style="text-align:center;color:#94a3b8;padding:48px;font-size:14px;">Aucune entrée</div>':''}
@@ -2907,8 +3043,8 @@ function renderSettings(){
     const m=isMobile();
     const tab=state.settingsTab||'compte';
     const secHead=(ic,title,desc)=>`<div style="display:flex;gap:12px;align-items:flex-start;margin-bottom:16px;">
-            <div style="width:34px;height:34px;border-radius:10px;background:var(--border-light,#f4f2ee);color:var(--accent);display:flex;align-items:center;justify-content:center;flex-shrink:0;">${icon(ic,16)}</div>
-            <div style="min-width:0;"><div style="font-weight:700;font-size:15px;color:var(--ink);">${title}</div>${desc?`<div style="font-size:12px;color:#9e9a93;margin-top:2px;">${desc}</div>`:''}</div>
+            <div style="width:34px;height:34px;border-radius:10px;background:var(--border-light,#f3f4f6);color:var(--accent);display:flex;align-items:center;justify-content:center;flex-shrink:0;">${icon(ic,16)}</div>
+            <div style="min-width:0;"><div style="font-weight:700;font-size:15px;color:var(--ink);">${title}</div>${desc?`<div style="font-size:12px;color:#8b93a1;margin-top:2px;">${desc}</div>`:''}</div>
         </div>`;
     const section=list=>`${list.map(s=>`<div class="settings-section">
         ${secHead(s.icon,s.title,s.desc)}
@@ -2944,13 +3080,13 @@ function renderSettings(){
             <input id="acctNom" class="form-input" value="${esc(userName())}" placeholder="Prénom NOM">
             <button id="acctSaveNom" class="btn-primary" style="padding:0 16px;">Enregistrer</button>
         </div>
-        <div style="font-size:11px;color:#9e9a93;margin:-4px 0 12px;">Nom affiché dans le journal et sur l’accueil.</div>
+        <div style="font-size:11px;color:#8b93a1;margin:-4px 0 12px;">Nom affiché dans le journal et sur l’accueil.</div>
         <div style="display:grid;grid-template-columns:1fr auto;gap:8px;">
             <input id="acctPass" type="password" class="form-input" placeholder="Nouveau mot de passe" autocomplete="new-password">
             <button id="acctSavePass" style="background:#fff;border:1.5px solid var(--border);border-radius:12px;padding:0 14px;font-size:13px;font-weight:600;cursor:pointer;">Changer</button>
         </div>
         <div style="display:flex;justify-content:flex-end;margin-top:12px;">
-            <button data-admin-logout style="background:#fef2f2;border:1px solid #fecaca;color:#b91c1c;border-radius:20px;padding:6px 14px;font-size:12px;font-weight:600;cursor:pointer;">Se déconnecter</button>
+            <button data-admin-logout style="background:#fef2f2;border:1px solid #fecaca;color:#b91c1c;border-radius:8px;padding:6px 14px;font-size:12px;font-weight:600;cursor:pointer;">Se déconnecter</button>
         </div>
     </div>
     <div class="settings-section">
@@ -2958,7 +3094,7 @@ function renderSettings(){
         ${(()=>{ const perm=('Notification' in window)?Notification.permission:'na';
             const etat=perm==='granted'?'<span style="color:#15803d;font-weight:600;">Activées sur cet appareil</span>':perm==='denied'?'<span style="color:#b91c1c;font-weight:600;">Bloquées : à réactiver dans les réglages du navigateur (cadenas à gauche de l’adresse)</span>':'<span style="color:#b45309;font-weight:600;">Pas encore activées</span>';
             return `<div style="font-size:13px;margin-bottom:12px;">${etat}</div>${perm!=='granted'&&perm!=='na'?`<button id="enableNotifs" class="btn-primary" style="width:100%;padding:12px;margin-bottom:12px;">Activer sur cet appareil</button>`:''}`; })()}
-        <ul style="font-size:12px;color:#7a7570;line-height:1.6;margin:0;padding-left:18px;">
+        <ul style="font-size:12px;color:#6b7280;line-height:1.6;margin:0;padding-left:18px;">
             <li><b>PC</b> : installez l’appli (ci-dessous) pour avoir le chiffre sur l’icône de la barre des tâches.</li>
             <li><b>iPhone</b> : l’appli doit être installée sur l’écran d’accueil, puis activée ici depuis l’appli installée.</li>
             <li>Le chiffre et les alertes se mettent à jour quand l’appli est ouverte ou réduite. Appli fermée, ce sont les emails admin qui préviennent.</li>
@@ -2966,7 +3102,7 @@ function renderSettings(){
     </div>
     ${isStandalone()?'':`<div class="settings-section">
         ${secHead("download","Installer l’appli sur cet appareil","Elle s’ouvre alors dans sa propre fenêtre, comme un logiciel.")}
-        ${_installPrompt?`<button id="installAppBtn" class="btn-primary" style="width:100%;padding:12px;">Installer maintenant</button>`:`<div style="font-size:13px;color:#5a5650;line-height:1.5;">${/Edg\//.test(navigator.userAgent)?'Dans Edge : menu <b>…</b> › <b>Applications</b> › <b>« Installer ce site en tant qu’application »</b>.':'Dans Chrome : icône <b>⊕</b> à droite de la barre d’adresse, ou menu <b>⋮</b> › <b>Caster, enregistrer et partager</b> › <b>Installer</b>.'}</div>`}
+        ${_installPrompt?`<button id="installAppBtn" class="btn-primary" style="width:100%;padding:12px;">Installer maintenant</button>`:`<div style="font-size:13px;color:#4b5563;line-height:1.5;">${/Edg\//.test(navigator.userAgent)?'Dans Edge : menu <b>…</b> › <b>Applications</b> › <b>« Installer ce site en tant qu’application »</b>.':'Dans Chrome : icône <b>⊕</b> à droite de la barre d’adresse, ou menu <b>⋮</b> › <b>Caster, enregistrer et partager</b> › <b>Installer</b>.'}</div>`}
     </div>`}
 `;
     else if(cur[0]==='equipe') body=`
@@ -3014,10 +3150,10 @@ function renderSettings(){
     <div class="settings-section">
         ${secHead("lock","Connexion obligatoire",settings.loginObligatoire?'Activée : chacun doit se connecter pour faire une demande.':'Désactivée : les assistantes peuvent encore faire une demande sans compte.')}
         <label style="display:flex;align-items:center;justify-content:space-between;gap:12px;cursor:pointer;">
-            <span style="font-size:13px;color:#5a5650;">Exiger un compte pour faire une demande</span>
+            <span style="font-size:13px;color:#4b5563;">Exiger un compte pour faire une demande</span>
             <input type="checkbox" id="loginObligatoire" ${settings.loginObligatoire?'checked':''} style="width:20px;height:20px;accent-color:var(--accent);">
         </label>
-        <div style="font-size:11px;color:#9e9a93;margin-top:8px;">À activer une fois que chaque assistante a créé son compte (« Première connexion ? » sur l’écran de connexion, avec l’email renseigné dans la liste des assistantes ci-dessus).</div>
+        <div style="font-size:11px;color:#8b93a1;margin-top:8px;">À activer une fois que chaque assistante a créé son compte (« Première connexion ? » sur l’écran de connexion, avec l’email renseigné dans la liste des assistantes ci-dessus).</div>
     </div>
 `;
     else if(cur[0]==='prestataires') body=`
@@ -3047,19 +3183,19 @@ function renderSettings(){
         <button data-nav='{"adminTab":"activite","activiteTab":"historique"}' style="width:100%;background:#fff;border:1.5px solid var(--border);border-radius:12px;padding:11px;font-size:14px;font-weight:600;color:var(--ink);cursor:pointer;">Ouvrir l’historique et exporter ${icon('arrow',14)}</button>
     </div>`;
     const nav=m
-        ? `<div style="display:flex;gap:6px;overflow-x:auto;margin:0 -16px 16px;padding:0 16px 4px;scrollbar-width:none;">
-            ${TABS.map(([k,ic,l])=>`<button data-settings-tab="${k}" style="display:flex;align-items:center;gap:6px;flex-shrink:0;padding:8px 14px;border-radius:20px;border:1px solid ${k===cur[0]?'var(--accent)':'var(--border)'};background:${k===cur[0]?'var(--accent)':'#fff'};color:${k===cur[0]?'#fff':'var(--ink)'};font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;">${icon(ic,14)} ${l}</button>`).join('')}
+        ? `<div style="display:flex;gap:6px;overflow-x:auto;margin:0 -14px 16px;padding:0 14px 4px;scrollbar-width:none;">
+            ${TABS.map(([k,ic,l])=>`<button data-settings-tab="${k}" style="display:flex;align-items:center;gap:6px;flex-shrink:0;padding:8px 14px;border-radius:8px;border:1px solid ${k===cur[0]?'var(--accent)':'var(--border)'};background:${k===cur[0]?'var(--accent)':'#fff'};color:${k===cur[0]?'#fff':'var(--ink)'};font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;">${icon(ic,14)} ${l}</button>`).join('')}
         </div>`
-        : `<div style="background:#fff;border:1px solid var(--border);border-radius:18px;padding:8px;position:sticky;top:16px;">
-            ${TABS.map(([k,ic,l,sub])=>`<button data-settings-tab="${k}" style="display:flex;align-items:center;gap:11px;width:100%;text-align:left;padding:10px 12px;border:none;border-radius:12px;cursor:pointer;background:${k===cur[0]?'var(--border-light,#f4f2ee)':'transparent'};margin-bottom:2px;">
-                <span style="width:30px;height:30px;border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0;background:${k===cur[0]?'var(--accent)':'#f4f2ee'};color:${k===cur[0]?'#fff':'var(--ink-soft)'};">${icon(ic,15)}</span>
-                <span style="min-width:0;"><span style="display:block;font-size:14px;font-weight:600;color:var(--ink);">${l}</span><span style="display:block;font-size:11px;color:#9e9a93;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${sub}</span></span>
+        : `<div style="background:#fff;border:1px solid var(--border);border-radius:8px;padding:8px;position:sticky;top:16px;">
+            ${TABS.map(([k,ic,l,sub])=>`<button data-settings-tab="${k}" style="display:flex;align-items:center;gap:11px;width:100%;text-align:left;padding:10px 12px;border:none;border-radius:12px;cursor:pointer;background:${k===cur[0]?'var(--border-light,#f3f4f6)':'transparent'};margin-bottom:2px;">
+                <span style="width:30px;height:30px;border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0;background:${k===cur[0]?'var(--accent)':'#f3f4f6'};color:${k===cur[0]?'#fff':'var(--ink-soft)'};">${icon(ic,15)}</span>
+                <span style="min-width:0;"><span style="display:block;font-size:14px;font-weight:600;color:var(--ink);">${l}</span><span style="display:block;font-size:11px;color:#8b93a1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${sub}</span></span>
             </button>`).join('')}
         </div>`;
 
     return `<div>
     <div style="display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:16px;flex-wrap:wrap;">
-        <div style="font-family:'DM Serif Display',serif;font-size:${m?'18px':'22px'};display:flex;align-items:center;gap:9px;color:var(--ink);">${icon('sliders',m?18:20)} Réglages</div>
+        <div style="font-family:var(--ft);font-weight:650;letter-spacing:-.01em;font-size:${m?'18px':'22px'};display:flex;align-items:center;gap:9px;color:var(--ink);">${icon('sliders',m?18:20)} Réglages</div>
         <div style="font-size:12px;color:#15803d;display:flex;align-items:center;gap:5px;">${icon('check',13)} Enregistré dans la base, partagé avec tous les postes</div>
     </div>
     ${m?nav:''}
@@ -3099,19 +3235,19 @@ function renderSaisieModal(){
         <div class="form-group">
             <label class="form-label">${t==='commande'?'Fournisseur':'Pour qui ?'}</label>
             <div style="position:relative;" id="afPqWrapper">
-                <button type="button" id="afPqToggle" style="width:100%;border:1.5px solid var(--border);border-radius:14px;padding:13px 14px;font-size:15px;background:var(--white);text-align:left;cursor:pointer;display:flex;justify-content:space-between;align-items:center;font-family:'DM Sans',sans-serif;color:var(--ink);">
+                <button type="button" id="afPqToggle" style="width:100%;border:1.5px solid var(--border);border-radius:8px;padding:13px 14px;font-size:15px;background:var(--white);text-align:left;cursor:pointer;display:flex;justify-content:space-between;align-items:center;font-family:var(--fb);color:var(--ink);">
                     <span id="afPqLabel">${af.pourQui.length?af.pourQui.filter(v=>v!=='__autre__').join(', ')+(af.pourQui.includes('__autre__')?(af.pourQui.length>1?', Autre':'Autre'):''):'— Choisir —'}</span>
                     <span style="font-size:11px;color:var(--ink-soft);">▼</span>
                 </button>
-                <div id="afPqDropdown" style="display:none;position:absolute;top:calc(100% + 4px);left:0;right:0;background:var(--white);border:1.5px solid var(--border);border-radius:14px;box-shadow:0 8px 24px rgba(0,0,0,0.10);z-index:999;overflow:hidden;max-height:220px;overflow-y:auto;">
+                <div id="afPqDropdown" style="display:none;position:absolute;top:calc(100% + 4px);left:0;right:0;background:var(--white);border:1.5px solid var(--border);border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,0.10);z-index:999;overflow:hidden;max-height:220px;overflow-y:auto;">
                     ${t==='commande'
-                        ? P_CMD.map(p=>`<label style="display:flex;align-items:center;gap:12px;padding:11px 16px;cursor:pointer;border-bottom:1px solid var(--border-light);" onmouseover="this.style.background='#f5f4f0'" onmouseout="this.style.background=''"><input type="checkbox" class="af-pq-check" value="${p}" ${af.pourQui.includes(p)?'checked':''} style="width:17px;height:17px;accent-color:var(--accent);cursor:pointer;flex-shrink:0;"><span style="font-size:14px;">${p}</span></label>`).join('')
+                        ? P_CMD.map(p=>`<label style="display:flex;align-items:center;gap:12px;padding:11px 16px;cursor:pointer;border-bottom:1px solid var(--border-light);" onmouseover="this.style.background='#f3f4f6'" onmouseout="this.style.background=''"><input type="checkbox" class="af-pq-check" value="${p}" ${af.pourQui.includes(p)?'checked':''} style="width:17px;height:17px;accent-color:var(--accent);cursor:pointer;flex-shrink:0;"><span style="font-size:14px;">${p}</span></label>`).join('')
                         : settings.directeurs.map(d=>`
-                    <label style="display:flex;align-items:center;gap:12px;padding:11px 16px;cursor:pointer;border-bottom:1px solid var(--border-light);" onmouseover="this.style.background='#f5f4f0'" onmouseout="this.style.background=''">
+                    <label style="display:flex;align-items:center;gap:12px;padding:11px 16px;cursor:pointer;border-bottom:1px solid var(--border-light);" onmouseover="this.style.background='#f3f4f6'" onmouseout="this.style.background=''">
                         <input type="checkbox" class="af-pq-check" value="${d}" ${af.pourQui.includes(d)?'checked':''} style="width:17px;height:17px;accent-color:var(--accent);cursor:pointer;flex-shrink:0;">
                         <span style="font-size:14px;">${d}</span>
                     </label>`).join('')}
-                    <label style="display:flex;align-items:center;gap:12px;padding:11px 16px;cursor:pointer;" onmouseover="this.style.background='#f5f4f0'" onmouseout="this.style.background=''">
+                    <label style="display:flex;align-items:center;gap:12px;padding:11px 16px;cursor:pointer;" onmouseover="this.style.background='#f3f4f6'" onmouseout="this.style.background=''">
                         <input type="checkbox" class="af-pq-check" value="__autre__" ${af.pourQui.includes('__autre__')?'checked':''} style="width:17px;height:17px;accent-color:var(--accent);cursor:pointer;flex-shrink:0;">
                         <span style="font-size:14px;color:var(--ink-mid);">Autre…</span>
                     </label>
@@ -3168,7 +3304,7 @@ function renderSaisieModal(){
         <div class="modal-handle"></div>
         <div style="padding:14px 20px;background:#fff;border-radius:24px 24px 0 0;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border);flex-shrink:0;">
             <span style="font-weight:700;font-size:16px;">${title}</span>
-            <button data-close-modal style="background:#f5f4f0;border:none;border-radius:50%;width:30px;height:30px;cursor:pointer;display:flex;align-items:center;justify-content:center;">✕</button>
+            <button data-close-modal style="background:#f3f4f6;border:none;border-radius:50%;width:30px;height:30px;cursor:pointer;display:flex;align-items:center;justify-content:center;">✕</button>
         </div>
         <div class="scroll-content">${step1}</div>
     </div></div>`;
@@ -3185,7 +3321,7 @@ function initAutocomplete(){
         el.parentNode.insertBefore(wrap,el);
         wrap.appendChild(el);
         const dd=document.createElement('div');
-        dd.style.cssText='position:absolute;top:100%;left:0;right:0;background:#fff;border:1px solid #e8e5df;border-radius:14px;box-shadow:0 8px 24px rgba(0,0,0,0.12);z-index:9999;margin-top:4px;overflow:hidden;display:none;max-height:220px;overflow-y:auto;';
+        dd.style.cssText='position:absolute;top:100%;left:0;right:0;background:#fff;border:1px solid #e6e8ec;border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,0.12);z-index:9999;margin-top:4px;overflow:hidden;display:none;max-height:220px;overflow-y:auto;';
         wrap.appendChild(dd);
 
         let timer;
@@ -3215,7 +3351,7 @@ function initAutocomplete(){
                         }
                         return short||it.display_name.split(',').slice(0,2).join(',').trim();
                     }
-                    dd.innerHTML=items.map((it,i)=>`<div data-idx="${i}" style="padding:10px 14px;font-size:14px;cursor:pointer;border-bottom:1px solid #f0eeea;font-family:'DM Sans',sans-serif;" onmouseover="this.style.background='#f5f4f0'" onmouseout="this.style.background=''"><div style="font-weight:500;">${shortAddr(it)}</div></div>`).join('');
+                    dd.innerHTML=items.map((it,i)=>`<div data-idx="${i}" style="padding:10px 14px;font-size:14px;cursor:pointer;border-bottom:1px solid #f1f2f4;font-family:var(--fb);" onmouseover="this.style.background='#f3f4f6'" onmouseout="this.style.background=''"><div style="font-weight:500;">${shortAddr(it)}</div></div>`).join('');
                     dd.style.display='block';
                     dd.querySelectorAll('[data-idx]').forEach((div,i)=>{
                         div.onclick=()=>{
