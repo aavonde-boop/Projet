@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Commandes Express</title>
+<link rel="manifest" href="express.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Express">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0f1b2d">
+<script>
+  // Ouverte depuis l'icône de l'écran d'accueil : on affiche directement la vue express
+  if (window.navigator.standalone === true || window.matchMedia('(display-mode: standalone)').matches) {
+    location.replace('index.html#express');
+  }
+</script>
+<style>
+  body{margin:0;min-height:100vh;background:#0f1b2d;color:#fff;font-family:-apple-system,Inter,system-ui,sans-serif;display:flex;align-items:center;justify-content:center;padding:24px;box-sizing:border-box}
+  .c{max-width:420px;text-align:center}
+  h1{font-size:24px;margin:16px 0 8px} p{color:#aab6c6;line-height:1.5;font-size:15px}
+  ol{text-align:left;color:#dbe3ee;line-height:1.7;font-size:15px;background:rgba(255,255,255,.06);border-radius:14px;padding:16px 16px 16px 36px}
+  a{display:inline-block;margin-top:14px;background:#fff;color:#0f1b2d;text-decoration:none;font-weight:700;padding:13px 20px;border-radius:12px}
+  img{width:72px;height:72px;border-radius:16px}
+</style>
+</head>
+<body>
+<div class="c">
+  <img src="icon-192.png" alt="">
+  <h1>Vue express</h1>
+  <p>Les chiffres clés et les prochaines prestations d’un coup d’œil, comme un widget.</p>
+  <ol>
+    <li>Dans Safari, touchez <b>Partager</b> (le carré avec une flèche).</li>
+    <li>Choisissez <b>« Sur l’écran d’accueil »</b>.</li>
+    <li>Gardez le nom <b>Express</b> et touchez <b>Ajouter</b>.</li>
+  </ol>
+  <a href="index.html#express">Voir la vue express maintenant</a>
+</div>
+</body>
+</html>
