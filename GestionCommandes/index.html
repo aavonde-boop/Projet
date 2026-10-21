@@ -387,6 +387,51 @@
             .form-input{ font-size:16px; }
         }
         @media(max-width:767px){ .pub ~ .toast{ bottom:calc(130px + env(safe-area-inset-bottom,0px)); } .toast{ white-space:normal; max-width:92vw; text-align:center; } }
+        /* ═══ PAGE DE CHOIX ═══ */
+        .ch-top{ background:radial-gradient(1200px 400px at 85% -10%, #1e3a5f 0%, rgba(30,58,95,0) 60%), var(--side); }
+        .ch-hero{ padding-top:22px; padding-bottom:96px; }
+        .ch-hello{ color:#8fa0b5; font-size:14px; font-weight:500; }
+        .ch-hero h1{ color:#fff; font:700 34px var(--ft); letter-spacing:-.02em; margin-top:6px; line-height:1.15; }
+        .ch-hero p{ color:#aab6c6; font-size:15px; margin-top:10px; max-width:560px; line-height:1.5; }
+        .ch-main{ margin-top:-64px; padding-bottom:48px; }
+        .ch-grid{ display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:18px; }
+        .ch-card{ display:flex; flex-direction:column; text-align:left; background:#fff; border:1px solid var(--border); border-radius:16px; overflow:hidden; cursor:pointer; font:inherit; color:var(--ink); padding:0; box-shadow:0 10px 30px rgba(15,27,45,.10); transition:transform .18s, box-shadow .18s, border-color .18s; position:relative; }
+        .ch-card:hover{ transform:translateY(-4px); box-shadow:0 18px 40px rgba(15,27,45,.16); border-color:var(--c); }
+        .ch-vis{ position:relative; height:132px; background:linear-gradient(135deg,var(--t1),var(--t2)); display:flex; align-items:center; justify-content:center; overflow:hidden; }
+        .ch-ring{ position:absolute; border-radius:50%; border:1.5px solid var(--c); opacity:.12; }
+        .ch-ring.r1{ width:150px; height:150px; } .ch-ring.r2{ width:230px; height:230px; opacity:.07; }
+        .ch-ic{ position:relative; width:68px; height:68px; border-radius:20px; background:#fff; color:var(--c); display:flex; align-items:center; justify-content:center; box-shadow:0 8px 20px rgba(15,27,45,.12); }
+        .ch-body{ display:flex; flex-direction:column; padding:20px 22px 22px; flex:1; }
+        .ch-title{ font:700 20px var(--ft); letter-spacing:-.01em; }
+        .ch-desc{ color:var(--ink-mid); font-size:13.5px; margin-top:6px; line-height:1.5; }
+        .ch-list{ display:flex; flex-direction:column; gap:7px; margin:16px 0 20px; }
+        .ch-list span{ display:flex; align-items:center; gap:8px; font-size:13px; color:var(--ink-mid); }
+        .ch-list svg{ color:var(--c); }
+        .ch-go{ margin-top:auto; display:flex; align-items:center; justify-content:center; gap:8px; height:44px; border-radius:10px; background:var(--c); color:#fff; font-weight:600; font-size:14.5px; }
+        .ch-chev{ display:none; }
+        .ch-sub{ display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:14px; margin-top:18px; }
+        .ch-link{ display:flex; align-items:center; gap:14px; text-align:left; background:#fff; border:1px solid var(--border); border-radius:12px; padding:14px 16px; cursor:pointer; font:inherit; color:var(--ink-soft); }
+        .ch-link:hover{ border-color:#c9d3df; }
+        .ch-link > span:nth-child(2){ flex:1; } .ch-link b{ display:block; color:var(--ink); font-size:14px; font-weight:600; } .ch-link span span{ display:block; font-size:12.5px; color:var(--ink-soft); margin-top:2px; }
+        .ch-link-ic{ width:38px; height:38px; border-radius:10px; background:#f3f4f6; color:var(--ink-mid); display:inline-flex; align-items:center; justify-content:center; flex-shrink:0; }
+        /* En-tête du formulaire */
+        .nf-head{ display:flex; flex-direction:column; gap:14px; }
+        .nf-backbtn{ align-self:flex-start; display:inline-flex; align-items:center; gap:7px; height:32px; padding:0 12px 0 10px; border-radius:16px; border:1px solid rgba(255,255,255,.18); background:rgba(255,255,255,.06); color:#dbe3ee; font:600 12.5px var(--fb); cursor:pointer; }
+        .nf-backbtn svg{ transform:rotate(180deg); } .nf-backbtn:hover{ background:rgba(255,255,255,.14); color:#fff; }
+        .nf-head-t{ display:flex; align-items:center; gap:14px; } .nf-head-ic{ width:48px; height:48px; border-radius:12px; display:inline-flex; align-items:center; justify-content:center; flex-shrink:0; }
+        @media(max-width:1023px){ .ch-grid{ grid-template-columns:1fr; } .ch-card{ display:grid; grid-template-columns:150px minmax(0,1fr); } .ch-vis{ height:auto; min-height:150px; } .ch-list{ display:none; } .ch-go{ margin-top:14px; align-self:flex-start; padding:0 18px; height:40px; } }
+        @media(max-width:767px){
+            .ch-hero{ padding-top:10px; padding-bottom:64px; } .ch-hero h1{ font-size:25px; } .ch-hero p{ font-size:13.5px; margin-top:6px; }
+            .ch-main{ margin-top:-46px; }
+            .ch-grid{ gap:12px; }
+            .ch-card{ grid-template-columns:88px minmax(0,1fr) 30px; align-items:stretch; border-radius:14px; box-shadow:0 6px 18px rgba(15,27,45,.10); }
+            .ch-vis{ min-height:0; } .ch-ring.r1{ width:90px; height:90px; } .ch-ring.r2{ display:none; }
+            .ch-ic{ width:50px; height:50px; border-radius:14px; }
+            .ch-body{ padding:16px 4px 16px 16px; justify-content:center; } .ch-title{ font-size:17.5px; } .ch-desc{ font-size:12.5px; margin-top:3px; }
+            .ch-go{ display:none; } .ch-chev{ display:flex; align-items:center; color:var(--c); }
+            .ch-sub{ grid-template-columns:1fr; gap:10px; margin-top:14px; }
+            .nf-hero{ padding-bottom:12px; } .nf-head{ gap:0; }
+        }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
@@ -1397,36 +1442,77 @@ function mesDemandesHtml(m){
 function renderHome(m){
     const att=state.data.filter(c=>c.pris==="En attente").length;
     const f=state.form;
-    if(!f.type&&!f.sent) f.type='repas';
     if(!f.dem&&!assistanteName()){ const last=lsGet('nf_dem'); if(last&&settings.assistantes.includes(last)) f.dem=last; }
     const prenom=AUTH?String(userName()||'').split(' ')[0]:'';
-    const seg=`<div class="nf-seg">${[['repas','utensils','Repas'],['taxi','car','Taxi'],['hotel','bed','Hôtel']].map(([k,ic,l])=>`<button data-nf="type" data-v="${k}" class="${f.type===k?'on':''}">${icon(ic,16)} ${l}</button>`).join('')}</div>`;
     const actions=`<div class="nf-acts">
-        <button id="goTrackHome" class="pub-btn" title="Suivre une demande">${icon('search',15)}${m?'':' Suivre une demande'}</button>
+        <button class="pub-btn go-track" title="Suivre une demande">${icon('search',15)}${m?'':' Suivre une demande'}</button>
         ${AUTH?`<button data-admin-logout class="pub-btn" title="Se déconnecter (${esc(userName())})"><span class="nf-av">${esc($ini(userName()))}</span>${icon('logout',14)}</button>`
             :`<button data-login class="pub-btn light">${icon('user',15)}${m?'':' Se connecter'}</button>`}
         ${AUTH&&!isAdmin()?'':`<button data-action="admin" class="pub-btn" title="Administration">${icon('shield',15)}${m?'':' Admin'}${att>0&&isAdmin()?`<span class="nf-badge">${att}</span>`:''}</button>`}
     </div>`;
+    const bar=titre=>`<div class="pub-in pub-bar"><div class="nf-brand"><span class="logo-sq">${icon('clipboard',16)}</span><b>${titre}</b></div>${actions}</div>`;
+    const toast=state.toast?`<div class="toast">${state.toast}</div>`:'';
     if(f.sent) return `<div class="pub">
-        <header class="pub-top"><div class="pub-in pub-bar"><div class="nf-brand"><span class="logo-sq">${icon('clipboard',16)}</span><b>${m?'Demande envoyée':'Gestion des commandes'}</b></div>${actions}</div></header>
-        <main class="pub-in" style="padding-top:28px;padding-bottom:40px;">${renderInlineForm(m)}${AUTH?mesDemandesHtml(m):''}</main></div>
-        ${state.toast?`<div class="toast">${state.toast}</div>`:''}`;
+        <header class="pub-top">${bar(m?'Envoyée':'Gestion des commandes')}</header>
+        <main class="pub-in" style="padding-top:28px;padding-bottom:40px;">${renderInlineForm(m)}${AUTH?mesDemandesHtml(m):''}</main></div>${toast}`;
+
+    /* ── Page de choix ── */
+    if(!f.type){
+        const C=NF_CHOIX();
+        return `<div class="pub">
+        <header class="pub-top ch-top">
+            ${bar(m?'Commandes':'Gestion des commandes')}
+            <div class="pub-in ch-hero">
+                <div class="ch-hello">${prenom?`Bonjour ${esc(prenom)}`:'Espace demandes'}</div>
+                <h1>Que souhaitez-vous réserver ?</h1>
+                <p>Choisissez le type de demande. Elle sera transmise à l’administration pour validation.</p>
+            </div>
+        </header>
+        <main class="pub-in ch-main">
+            ${installHintHtml()}
+            <div class="ch-grid">
+                ${C.map(c=>`<button data-nf="type" data-v="${c.k}" class="ch-card" style="--c:${c.col};--t1:${c.t1};--t2:${c.t2};">
+                    <span class="ch-vis"><span class="ch-ring r1"></span><span class="ch-ring r2"></span><span class="ch-ic">${icon(c.ic,m?24:30)}</span></span>
+                    <span class="ch-body">
+                        <span class="ch-title">${c.titre}</span>
+                        <span class="ch-desc">${c.desc}</span>
+                        <span class="ch-list">${c.items.map(x=>`<span>${icon('check',13)} ${esc(x)}</span>`).join('')}</span>
+                        <span class="ch-go">Commencer ${icon('arrow',15)}</span>
+                    </span>
+                    <span class="ch-chev">${icon('arrow',18)}</span>
+                </button>`).join('')}
+            </div>
+            <div class="ch-sub">
+                <button class="ch-link go-track"><span class="ch-link-ic">${icon('search',17)}</span><span><b>Suivre ou modifier une demande</b><span>Avec votre code de suivi (AAG-…)</span></span>${icon('arrow',16)}</button>
+                ${AUTH?'':`<button data-login class="ch-link"><span class="ch-link-ic">${icon('user',17)}</span><span><b>Se connecter</b><span>Pour retrouver toutes vos demandes</span></span>${icon('arrow',16)}</button>`}
+            </div>
+            ${AUTH?mesDemandesHtml(m):''}
+        </main>
+    </div>${toast}`;
+    }
+
+    /* ── Formulaire ── */
+    const T=NF_CHOIX().find(c=>c.k===f.type)||NF_CHOIX()[0];
     return `<div class="pub">
         <header class="pub-top">
-            <div class="pub-in pub-bar"><div class="nf-brand"><span class="logo-sq">${icon('clipboard',16)}</span><b>${m?'Nouvelle demande':'Gestion des commandes'}</b></div>${actions}</div>
+            ${bar(m?T.form:'Gestion des commandes')}
             <div class="pub-in nf-hero">
-                ${m?'':`<div><div class="nf-hello">${prenom?`Bonjour ${esc(prenom)}`:'Espace demandes'}</div><h1>Nouvelle demande</h1></div>`}
-                ${seg}
+                <div class="nf-head">
+                    <button data-nf="back" class="nf-backbtn">${icon('arrow',15)} ${m?'Changer':'Changer de type'}</button>
+                    ${m?'':`<div class="nf-head-t"><span class="nf-head-ic" style="background:${T.t1};color:${T.col};">${icon(T.ic,22)}</span><div><div class="nf-hello">${prenom?`Bonjour ${esc(prenom)} · `:''}Nouvelle demande</div><h1>${T.form}</h1></div></div>`}
+                </div>
             </div>
         </header>
         <main class="pub-in nf-main">
-            ${installHintHtml()}
             ${renderInlineForm(m)}
-            ${AUTH?`<div style="margin-top:8px;">${mesDemandesHtml(m)}</div>`:''}
         </main>
-    </div>
-    ${state.toast?`<div class="toast">${state.toast}</div>`:''}`;
+    </div>${toast}`;
 }
+function NF_CHOIX(){ return [
+    {k:'repas',ic:'utensils',titre:'Repas',form:'Commande de repas',desc:'Petit-déjeuner, déjeuner, goûter, cocktail ou plateau repas.',col:'#c2410c',t1:'#fff4e5',t2:'#ffe2c2',items:['Livraison en salle ou au bureau','Choix du restaurant',`${P_REPAS.length} prestataires`]},
+    {k:'taxi',ic:'car',titre:'Taxi',form:'Réservation de taxi',desc:'Un véhicule avec chauffeur pour un rendez-vous, une gare ou un aéroport.',col:'#1d4ed8',t1:'#eaf1fb',t2:'#d3e2fa',items:['Départ et arrivée à l’adresse','N° de vol ou de train',P_TAXI.slice(0,3).join(', ')]},
+    {k:'hotel',ic:'bed',titre:'Hôtel',form:'Réservation d’hôtel',desc:'Une ou plusieurs nuits d’hôtel pour un déplacement.',col:'#0f766e',t1:'#e9f7f5',t2:'#cdeee7',items:['Dates d’arrivée et de départ','Toutes villes',P_HOTEL.slice(0,3).join(', ')]},
+]; }
 
 /* ══════════════════════════════════════
    FORMULAIRE « tout sur un écran »
@@ -3620,6 +3706,7 @@ function attachEvents(){
     });
 
     // Track mode handlers
+    document.querySelectorAll('.go-track').forEach(el=>el.onclick=()=>setState({trackMode:true, trackResult:null}));
     document.getElementById('goTrackHome')?.addEventListener('click',()=>{
         setState({trackMode:true, trackResult:null});
     });
@@ -3987,7 +4074,8 @@ function attachEvents(){
     document.querySelectorAll('[data-nf]').forEach(el=>el.onclick=e=>{
         e.preventDefault(); nfSave();
         const f=state.form, act=el.getAttribute('data-nf'), k=el.getAttribute('data-k'), v=el.getAttribute('data-v');
-        if(act==='type'){ if(f.type!==v){ f.type=v; f.presta=''; f.desc=''; f.lieu=''; f.heureAutre=false; } }
+        if(act==='type'){ if(f.type!==v){ f.type=v; f.presta=''; f.desc=''; f.lieu=''; f.heureAutre=false; } window.scrollTo(0,0); }
+        else if(act==='back'){ f.type=null; window.scrollTo(0,0); }
         else if(act==='set'){ f[k]=(f[k]===v&&k!=='date'&&k!=='lieu'&&k!=='de'&&k!=='vers')?'':v; if(k==='date') f.dateAutre=false; if(k==='heure') f.heureAutre=false; if(k==='dem') lsSet('nf_dem',v); }
         else if(act==='toggle'){ const a=f[k]||[]; f[k]=a.includes(v)?a.filter(x=>x!==v):[...a,v]; }
         else if(act==='addpart'){ const cur=String(f.participants||'').trim(); f.participants=cur?cur.replace(/,\s*$/,'')+', '+v:v; }
