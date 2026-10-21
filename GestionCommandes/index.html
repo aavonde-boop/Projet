@@ -306,6 +306,7 @@
             .fab-item{ border-radius:8px; }
             .form-input,.form-select,.search-input{ font-size:16px; } /* évite le zoom auto d'iOS */
         }
+        select.form-select,select.form-input{ text-transform:none!important; }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
@@ -1459,11 +1460,11 @@ function renderInlineForm(m){
         `}
 
         ${isRepas?`
-        <div class="form-group"><label class="form-label">Type de repas</label><select id="formDesc" class="form-select"><option value="">— Choisir —</option>${["Petit-déjeuner","Déjeuner","Goûter","Dîner","Cocktail","Plateau repas"].map(o=>`<option ${f.desc===o?'selected':''}>${o}</option>`).join('')}</select></div>
+        <div class="form-group"><label class="form-label">Type de repas</label><select id="formDesc" class="form-select"><option value="">— Choisir —</option>${P_TYPES.map(o=>`<option ${f.desc===o?'selected':''}>${o}</option>`).join('')}</select></div>
         <div class="form-group"><label class="form-label">Lieu de livraison</label><input id="formLieu" type="text" value="${f.lieu}" placeholder="Bureau, Salle France, adresse..." class="form-input"></div>
         <div class="form-row-2">
             <div class="form-group"><label class="form-label">Nb personnes</label><select id="formNb" class="form-select">${NBS.map(n=>`<option ${f.nb===n?'selected':''}>${n}</option>`).join('')}</select></div>
-            <div class="form-group"><label class="form-label">Type de repas souhaité</label><select id="formPresta" class="form-select"><option value="">— Choisir —</option>${P_REPAS.map(p=>`<option ${f.presta===p?"selected":""}>${p}</option>`).join("")}</select></div>
+            <div class="form-group"><label class="form-label">Restaurant / prestataire</label><select id="formPresta" class="form-select"><option value="">— Choisir —</option>${P_REPAS.map(p=>`<option ${f.presta===p?"selected":""}>${p}</option>`).join("")}</select></div>
         </div>
         `:isHotel?`
         <div class="form-group"><label class="form-label">Voyageur(s)</label><input id="formDesc" type="text" value="${f.desc}" placeholder="Ex: Jean Dupont" class="form-input"></div>
@@ -3858,8 +3859,11 @@ function attachEvents(){
             state.form.dateDepart=document.getElementById('formDateDepart')?.value||state.form.dateDepart;
             state.form.heure=document.getElementById('formHeure')?.value||state.form.heure;
             const lbl=document.getElementById('pqLabel');
+            state.form.tel=document.getElementById('formTel')?.value||state.form.tel;
+            state.form.vol=document.getElementById('formVol')?.value||state.form.vol;
             if(lbl){const names=state.form.pourQui.filter(v=>v!=='__autre__');const hasAutre=state.form.pourQui.includes('__autre__');lbl.textContent=names.join(', ')+(hasAutre?(names.length?', Autre':'Autre'):'') || '— Choisir —';}
             render();
+            const _dd=document.getElementById('pqDropdown'); if(_dd) _dd.style.display='block';
         };
     });
 
