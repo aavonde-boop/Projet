@@ -547,6 +547,32 @@
         .mq-prev-main button{ align-self:flex-start; border:none; color:#fff; font:600 12px var(--fb); padding:7px 12px; border-radius:7px; }
         .nf-email{ display:flex; align-items:center; gap:10px; background:#eef6ff; border:1px solid #cfe1f7; color:#1e3a5f; border-radius:10px; padding:10px 14px; margin-bottom:12px; font-size:13px; }
         .nf-email button{ margin-left:auto; background:none; border:none; color:var(--accent); font:600 12.5px var(--fb); cursor:pointer; white-space:nowrap; }
+        /* ═══ MON ESPACE ═══ */
+        .g2{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:16px;align-items:start;}
+        .f-back{ display:inline-flex; align-items:center; gap:6px; background:none; border:none; color:var(--ink-mid); font:500 13px var(--fb); cursor:pointer; padding:0; } .f-back svg{ transform:rotate(180deg); } .f-back:hover{ color:var(--ink); }
+        .sx{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--border-light);cursor:pointer;} .sx:last-child{border-bottom:none;} .sx:hover b{color:var(--accent);}
+        .sx b{display:block;font-size:13.5px;font-weight:600;} .sx span:not(.an-tag):not(.sx-u){display:block;font-size:12px;color:var(--ink-soft);}
+        .sx-u{width:9px;height:9px;border-radius:50%;flex-shrink:0;display:inline-block;}
+        .memo-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;} .memo-wall{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px;}
+        .pi{border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:6px;font-size:13px;line-height:1.45;color:#374151;min-height:96px;box-shadow:0 1px 2px rgba(15,27,45,.06);position:relative;white-space:pre-wrap;word-break:break-word;}
+        .pi b{font-size:13.5px;color:#111827;white-space:normal;} .pi i{font-style:normal;font-size:11.5px;color:#6b7280;margin-top:auto;white-space:normal;}
+        .pi.y{background:#fff7d6;} .pi.b{background:#e7f0fb;} .pi.g{background:#e6f6ec;} .pi.p{background:#f3e8ff;} .pi.w{background:#fff;border:1px solid var(--border);}
+        .pi.due{box-shadow:0 0 0 2px #d97706;}
+        .mm-ck{display:flex;gap:7px;align-items:flex-start;cursor:pointer;white-space:normal;} .mm-ck input{margin-top:3px;accent-color:var(--accent);}
+        .mm-act{display:flex;gap:2px;justify-content:flex-end;opacity:.0;transition:opacity .15s;margin-top:4px;} .pi:hover .mm-act{opacity:1;}
+        .mm-act button{border:none;background:rgba(255,255,255,.7);border-radius:6px;width:28px;height:26px;cursor:pointer;color:#4b5563;display:flex;align-items:center;justify-content:center;font-size:12px;}
+        .me-qa{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:10px;}
+        .kb{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;align-items:start;} .kb-col{background:#eef0f3;border-radius:12px;padding:10px;display:flex;flex-direction:column;gap:8px;}
+        .kb-h{display:flex;justify-content:space-between;align-items:center;padding:4px 4px 2px;font-size:13px;} .kb-h span{background:#fff;border-radius:9px;padding:0 8px;font-size:11.5px;font-weight:700;color:var(--ink-mid);}
+        .kb-empty{text-align:center;color:#b6bcc6;font-size:12px;padding:10px;}
+        .kc{background:#fff;border:1px solid var(--border);border-radius:10px;padding:11px 12px;display:flex;flex-direction:column;gap:3px;font-size:12px;color:var(--ink-soft);cursor:pointer;} .kc:hover{border-color:#c9d3df;} .kc.urg{border-left:3px solid #b91c1c;} .kc.done{opacity:.7;}
+        .kc-t{display:flex;align-items:center;gap:7px;} .kc-t b{font-size:13.5px;color:var(--ink);font-weight:600;} .kc-m{font-weight:600;color:var(--ink-mid);margin-top:3px;} .kc-p{margin-top:4px;font-size:11.5px;}
+        .ph{position:relative;width:110px;height:80px;border-radius:10px;background:#dfe7ef;display:inline-flex;align-items:center;justify-content:center;gap:5px;font-size:12px;color:#4b5563;flex-shrink:0;} .ph.add{background:#fff;border:1.5px dashed var(--border);color:var(--ink-soft);}
+        .ph-x{position:absolute;top:4px;right:4px;width:22px;height:22px;border-radius:50%;border:none;background:rgba(17,24,39,.6);color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+        .tl2{display:flex;gap:12px;padding:9px 0;align-items:flex-start;} .tl2-d{width:10px;height:10px;border-radius:50%;background:#2c5f85;margin-top:4px;flex-shrink:0;} .tl2 b{display:block;font-size:13px;font-weight:600;white-space:pre-wrap;} .tl2 span{display:block;font-size:12px;color:var(--ink-soft);}
+        .side-grp.perso .side-it.on{ box-shadow:inset 3px 0 0 #f59e0b; }
+        @media(max-width:1100px){ .kb{grid-template-columns:repeat(2,minmax(0,1fr));} }
+        @media(max-width:767px){ .g2{display:block;} .kb{grid-template-columns:1fr;} .memo-wall{grid-template-columns:1fr 1fr;gap:10px;} .mm-act{opacity:1;} .me-qa > div:last-child{margin-left:0;} }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
@@ -642,7 +668,7 @@ function saveSettingsLocal(s) {
 
 async function loadSettingsFromDB() {
     try {
-        const r = await fetch(`${SB_PARAMS}?select=cle,valeur`, { headers: SB_HDR });
+        const r = await fetch(`${SB_PARAMS}?select=cle,valeur&cle=in.(assistantes,directeurs,prestatairesRepas,typesRepas,prestatairesTaxi,prestatairesCommande,prestatairesHotel,emails,adminEmails,yoozMap,loginObligatoire,prestaInfo,marque)`, { headers: SB_HDR });
         if (!r.ok) throw new Error(await r.text());
         const rows = await r.json();
         if (!rows || rows.length === 0) {
@@ -1837,12 +1863,13 @@ function renderAdminView(m){
     else if(state.adminTab==='activite')     main=renderActivite(m);
     else if(state.adminTab==='stats')        main=renderStats(m);
     else if(state.adminTab==='analyse')      main=renderAnalyse(m);
+    else if(String(state.adminTab).startsWith('me')) main=meOk()||!state.meLoaded?renderMe(m):renderDashboard(total,attente,m);
     else if(state.adminTab==='suivi')        main=renderSuivi(m);
     else if(state.adminTab==='calendrier')   main=renderCalendrier(m);
 
     else main=renderDashboard(total,attente,m);
 
-    const TITRES={dashboard:'Tableau de bord',suivi:'Suivi des demandes',calendrier:'Agenda',activite:'Registre',stats:'Statistiques',analyse:'Analyses',settings:'Réglages'};
+    const TITRES={dashboard:'Tableau de bord',suivi:'Suivi des demandes',calendrier:'Agenda',activite:'Registre',stats:'Statistiques',analyse:'Analyses',me:'Mon espace','me-bat':'Suivi du bâtiment','me-memo':'Mémo perso',settings:'Réglages'};
     if(m) return `
     <div class="mobile-header">
         <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
@@ -1872,7 +1899,7 @@ function renderAdminView(m){
     ${mobileNavHtml()}`;
 
     const nAF=aFaireCount();
-    const item=(tab,ic,label)=>`<button data-admin-tab="${tab}" class="side-it ${state.adminTab===tab?'on':''}" title="${label}">${icon(ic,17)}<span class="side-lbl">${label}</span>${tab==='suivi'&&nAF?`<span class="side-n">${nAF}</span>`:''}</button>`;
+    const item=(tab,ic,label)=>`<button data-admin-tab="${tab}" class="side-it ${state.adminTab===tab?'on':''}" title="${label}">${icon(ic,17)}<span class="side-lbl">${label}</span>${tab==='suivi'&&nAF?`<span class="side-n">${nAF}</span>`:''}${tab==='me-bat'&&meBadge()?`<span class="side-n" style="background:#b91c1c;">${meBadge()}</span>`:''}</button>`;
     const nom=adminName()||'Administrateur';
     const init=nom.split(/\s+/).map(w=>w[0]||'').join('').slice(0,2).toUpperCase();
     return `
@@ -1880,6 +1907,7 @@ function renderAdminView(m){
     <aside class="side">
         <div class="side-brand">${logoHtml(16)}<div class="side-lbl"><b>${esc(marqueNom())}</b><span>Administration</span></div></div>
         <div class="side-scroll">
+            ${meOk()?`<div class="side-grp perso"><h6 class="side-lbl">Personnel</h6>${item('me','lock','Mon espace')}${item('me-bat','tool','Suivi du bâtiment')}${item('me-memo','edit','Mémo perso')}</div>`:''}
             <div class="side-grp"><h6 class="side-lbl">Pilotage</h6>
                 ${item('dashboard','dashboard','Tableau de bord')}${item('suivi','clipboard','Suivi des demandes')}${item('calendrier','calendar','Agenda')}</div>
             <div class="side-grp"><h6 class="side-lbl">Données</h6>
@@ -1896,7 +1924,7 @@ function renderAdminView(m){
     </aside>
     <div class="shell-main">
         <header class="topbar">
-            <div class="crumb">Administration / <b>${TITRES[state.adminTab]||''}</b></div>
+            <div class="crumb">${String(state.adminTab).startsWith('me')?'Mon espace 🔒':'Administration'} / <b>${TITRES[state.adminTab]||''}</b></div>
             <div style="margin-left:auto;display:flex;gap:8px;align-items:center;">
                 <button data-live-open class="btn-sm" title="Écran live (plein écran, pour un PC ou une TV)">${icon('dashboard',15)} Écran live</button>
                 <button data-activate-notifs class="ic-btn" title="${notifsReady()?'Notifications activées':'Activer les notifications et la pastille'}">${icon('bell',16)}${notifsReady()?'':'<i></i>'}</button>
@@ -2309,11 +2337,11 @@ function mobileNavHtml(){
             <span class="nav-icon">${icon(ic,18)}</span><span>${label}</span><span class="nav-dot"></span>
             ${tab==='suivi'&&n?`<span style="position:absolute;top:2px;left:calc(50% + 6px);background:#ef4444;color:#fff;border-radius:10px;min-width:16px;height:16px;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0 4px;">${n}</span>`:''}
         </button>`).join('')}
-        <button class="mobile-nav-btn ${(state.adminTab==='stats'||state.adminTab==='analyse')&&!state.detail?'active':''}" data-nav='{"moreOpen":true}'><span class="nav-icon">${icon('menu',18)}</span><span>Plus</span><span class="nav-dot"></span></button>
+        <button class="mobile-nav-btn ${(state.adminTab==='stats'||state.adminTab==='analyse'||String(state.adminTab).startsWith('me'))&&!state.detail?'active':''}" data-nav='{"moreOpen":true}'><span class="nav-icon">${icon('menu',18)}</span><span>Plus</span><span class="nav-dot"></span></button>
     </div></nav>
     ${state.moreOpen?`<div data-nav='{"moreOpen":false}' style="position:fixed;inset:0;background:rgba(15,23,42,.35);z-index:9500;display:flex;align-items:flex-end;">
         <div style="background:#fff;width:100%;border-radius:20px 20px 0 0;padding:14px 14px calc(14px + env(safe-area-inset-bottom,0px));">
-            ${[["stats","chart","Statistiques"],["analyse","users","Analyses"]].map(([t,ic,l])=>`<button data-admin-tab="${t}" style="display:flex;align-items:center;gap:12px;width:100%;background:none;border:none;padding:14px 8px;font-size:15px;font-weight:600;color:var(--ink);cursor:pointer;border-bottom:1px solid #f0f1f4;">${icon(ic,18)} ${l}</button>`).join('')}
+            ${[...(meOk()?[["me","lock","Mon espace"],["me-bat","tool","Suivi du bâtiment"],["me-memo","edit","Mémo perso"]]:[]),["stats","chart","Statistiques"],["analyse","users","Analyses"]].map(([t,ic,l])=>`<button data-admin-tab="${t}" style="display:flex;align-items:center;gap:12px;width:100%;background:none;border:none;padding:14px 8px;font-size:15px;font-weight:600;color:var(--ink);cursor:pointer;border-bottom:1px solid #f0f1f4;">${icon(ic,18)} ${l}</button>`).join('')}
             <button data-back-home style="display:flex;align-items:center;gap:12px;width:100%;background:none;border:none;padding:14px 8px;font-size:15px;font-weight:600;color:var(--ink);cursor:pointer;border-bottom:1px solid #f0f1f4;">${icon('home',18)} Formulaire de demande</button>
             <button data-admin-logout style="display:flex;align-items:center;gap:12px;width:100%;background:none;border:none;padding:14px 8px;font-size:15px;font-weight:600;color:#b91c1c;cursor:pointer;">${icon('logout',18)} Se déconnecter</button>
         </div></div>`:''}`;
@@ -2990,6 +3018,248 @@ function renderEmailModal(){
         </div></div></div>`;
 }
 
+
+/* ══════════════════════════════════════
+   MON ESPACE (privé : suivi du bâtiment + mémo perso)
+══════════════════════════════════════ */
+const ME_CATS=[['clim','Clim / chauffage','❄️'],['elec','Électricité','💡'],['plomb','Plomberie','🚰'],['menage','Ménage','🧹'],['acces','Accès / sécurité','🔑'],['info','Informatique','🖨️'],['mobilier','Mobilier','🪑'],['autre','Autre','🔧']];
+const ME_ST=[['signale','Signalé','gris'],['contacte','Intervenant contacté','ambre'],['prevu','Intervention prévue','bleu'],['resolu','Résolu','vert']];
+const ME_URG={normal:['Normal','#9ca3af'],semaine:['Cette semaine','#d97706'],urgent:['Urgent','#b91c1c']};
+const ME_TAGS=[['bat','Bâtiment','b'],['achats','Achats','p'],['idees','Idées','g'],['infos','Infos utiles','y'],['autre','Autre','w']];
+const ME_LIEUX_DEF=['Accueil','Salle France','Salle Conseil','Cuisine','Open space','Sanitaires','Parking'];
+let _meChain=Promise.resolve();
+function meOk(){ if(!AUTH||!isAdmin()) return false; const e=userEmail(); const o=state.me&&state.me.owner; return o? o===e : /avonde/i.test(`${e} ${userName()}`); }
+async function loadMe(){ try{ state.me=(await paramGet('monEspace'))||null; }catch(e){ state.me=state.me||null; } if(!state.me) state.me={soucis:[],memos:[],lieux:[...ME_LIEUX_DEF]}; state.me.soucis=state.me.soucis||[]; state.me.memos=state.me.memos||[]; state.me.lieux=state.me.lieux||[...ME_LIEUX_DEF]; state.meLoaded=true; }
+function meSave(){ if(!meOk()) return; const e=userEmail(); state.me.owner=state.me.owner||e; const snap=JSON.parse(JSON.stringify(state.me));
+    _meChain=_meChain.then(()=>paramSet('monEspace',snap)).catch(err=>{ console.error('Mon espace:',err); showToast(`${icon('alert',13)} Enregistrement impossible, réessayez`); }); render(); }
+const meLocal=iso=>{ if(!iso) return ''; const d=new Date(iso); const z=n=>String(n).padStart(2,'0'); return `${d.getFullYear()}-${z(d.getMonth()+1)}-${z(d.getDate())}T${z(d.getHours())}:${z(d.getMinutes())}`; };
+const meId=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+const meCat=k=>ME_CATS.find(c=>c[0]===k)||ME_CATS[7];
+const meStI=k=>ME_ST.findIndex(s=>s[0]===k);
+function meDate(iso,h){ if(!iso) return ''; const d=new Date(iso); return d.toLocaleDateString('fr-FR',{weekday:h?'short':undefined,day:'numeric',month:'short'})+(h&&(d.getHours()||d.getMinutes())?' · '+d.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}).replace(':','h'):''); }
+function meRelanceDue(s){ return s.statut!=='resolu'&&s.relance&&new Date(s.relance)<=new Date(); }
+function meEnCours(){ return (state.me?.soucis||[]).filter(s=>s.statut!=='resolu').sort((a,b)=>(b.urgence==='urgent')-(a.urgence==='urgent')||(meRelanceDue(b)-meRelanceDue(a))||new Date(a.t)-new Date(b.t)); }
+function meRepetes(){ const il=Date.now()-120*864e5, mp={}; (state.me?.soucis||[]).filter(s=>new Date(s.t)>=il).forEach(s=>{ const k=s.lieu+'|'+s.cat; (mp[k]=mp[k]||[]).push(s); }); return Object.values(mp).filter(l=>l.length>=3); }
+function meBadge(){ return meOk()&&state.me? meEnCours().filter(s=>s.urgence==='urgent'||meRelanceDue(s)).length : 0; }
+function meUrgDot(s){ return `<span class="sx-u" style="background:${ME_URG[s.urgence||'normal'][1]}"></span>`; }
+function meStTag(s){ if(meRelanceDue(s)) return `<span class="an-tag ambre">À relancer</span>`; const S=ME_ST[meStI(s.statut)]||ME_ST[0]; return `<span class="an-tag ${S[2]}">${s.statut==='prevu'&&s.interv?'Intervention '+meDate(s.interv,true):S[1]}</span>`; }
+function meSxRow(s){ return `<div class="sx" data-me="open" data-id="${s.id}">${meUrgDot(s)}<div style="flex:1;min-width:0;"><b>${esc(s.titre)}</b><span>${esc([s.lieu,meCat(s.cat)[1],'signalé '+meDate(s.t)].filter(Boolean).join(' · '))}</span></div>${meStTag(s)}</div>`; }
+function meMemoCls(m){ return (ME_TAGS.find(t=>t[0]===m.tag)||ME_TAGS[4])[2]; }
+function meMemoCard(m,small){
+    const lignes=String(m.texte||'').split('\n'); const titre=lignes[0]; const corps=lignes.slice(1);
+    const body=corps.map((l,i)=>{ const c=l.match(/^\s*(?:-\s*)?\[( |x)\]\s*(.*)$/i); return c?`<label class="mm-ck"><input type="checkbox" data-me="ck" data-id="${m.id}" data-l="${i+1}" ${c[1].toLowerCase()==='x'?'checked':''}><span style="${c[1].toLowerCase()==='x'?'text-decoration:line-through;color:#9ca3af;':''}">${esc(c[2])}</span></label>`:`<span>${esc(l)}</span>`; }).join('');
+    const tag=ME_TAGS.find(t=>t[0]===m.tag);
+    const meta=[m.pin?'📌 Épinglé':'', m.rappel?(m.fait?'✓ Fait':`⏰ ${meDate(m.rappel,true)}`):'', tag&&tag[0]!=='autre'?tag[1]:''].filter(Boolean).join(' · ');
+    return `<div class="pi ${meMemoCls(m)} ${m.rappel&&!m.fait&&new Date(m.rappel)<=new Date()?'due':''}"><b>${esc(titre)}</b>${small?'':body}${small&&corps.length?`<span>${esc(corps.filter(x=>!/^\s*(-\s*)?\[/.test(x)).join(' ').slice(0,80))}</span>`:''}${meta?`<i>${meta}</i>`:''}
+        ${small?'':`<div class="mm-act"><button data-me="pin" data-id="${m.id}" title="${m.pin?'Désépingler':'Épingler'}">📌</button>${m.rappel&&!m.fait?`<button data-me="fait" data-id="${m.id}" title="Marquer fait">✓</button>`:''}<button data-me="editm" data-id="${m.id}" title="Modifier">${icon('edit',13)}</button><button data-me="delm" data-id="${m.id}" title="Supprimer">${icon('trash',13)}</button></div>`}</div>`;
+}
+function renderMe(m){
+    if(!state.meLoaded){ loadMe().then(render); return `<div class="empty-note" style="padding:60px;">Chargement de ton espace…</div>`; }
+    if(!meOk()) return `<div class="empty-note" style="padding:60px;">Cet espace est privé.</div>`;
+    const tab=state.adminTab, S=state.me;
+    if(state.meNew) return meSignaler(m);
+    if(state.meSouci){ const s=S.soucis.find(x=>x.id===state.meSouci); if(s) return meFiche(s,m); }
+    if(tab==='me-bat') return meBatiment(m);
+    if(tab==='me-memo') return meMemo(m);
+    // Accueil
+    const enc=meEnCours(), urg=enc.filter(s=>s.urgence==='urgent').length, now=new Date(), j7=new Date(Date.now()+7*864e5);
+    const prevus=enc.filter(s=>s.statut==='prevu'&&s.interv&&new Date(s.interv)<=j7).length;
+    const res=S.soucis.filter(s=>s.statut==='resolu'&&s.resolu&&new Date(s.resolu).getMonth()===now.getMonth()&&new Date(s.resolu).getFullYear()===now.getFullYear());
+    const delai=res.length?Math.round(res.reduce((a,s)=>a+(new Date(s.resolu)-new Date(s.t)),0)/res.length/864e5*10)/10:null;
+    const rapAuj=S.memos.filter(x=>x.rappel&&!x.fait&&isoDay(new Date(x.rappel))<=isoDay(now)).length;
+    const memosVus=[...S.memos.filter(x=>x.rappel&&!x.fait).sort((a,b)=>new Date(a.rappel)-new Date(b.rappel)),...S.memos.filter(x=>x.pin&&!(x.rappel&&!x.fait))].slice(0,4);
+    const rep=meRepetes();
+    return `<div>
+    <div class="page-head"><div><h1>Mon espace</h1><p>${dateLongue(now)} ${now.getFullYear()} · ${enc.length} souci${enc.length>1?'s':''} en cours${urg?`, dont ${urg} urgent${urg>1?'s':''}`:''} · ${rapAuj} rappel${rapAuj>1?'s':''} aujourd’hui</p></div>
+    <div class="page-actions"><button class="btn-sm" data-me="newmemo">${icon('edit',14)} Nouveau mémo</button><button class="btn-sm pri" data-me="new">${icon('plus',14)} Signaler un souci</button></div></div>
+    <div class="kpis">
+        <button class="stat-card kpi" data-nav='{"adminTab":"me-bat"}'><span class="kpi-l"><span>Soucis en cours</span><span class="dot" style="background:#2c5f85"></span></span><span class="kpi-v">${enc.length}</span><span class="kpi-s">${urg?`<b style="color:#b91c1c">${urg}</b> urgent${urg>1?'s':''} · `:''}${enc.filter(meRelanceDue).length} à relancer</span></button>
+        <button class="stat-card kpi" data-nav='{"adminTab":"me-bat"}'><span class="kpi-l"><span>Interventions prévues</span><span class="dot" style="background:#0f766e"></span></span><span class="kpi-v">${prevus}</span><span class="kpi-s">dans les 7 jours</span></button>
+        <button class="stat-card kpi" data-nav='{"adminTab":"me-bat"}'><span class="kpi-l"><span>Résolus ce mois</span><span class="dot" style="background:#15803d"></span></span><span class="kpi-v">${res.length}</span><span class="kpi-s">${delai!==null?`délai moyen ${String(delai).replace('.',',')} j`:'—'}</span></button>
+        <button class="stat-card kpi" data-nav='{"adminTab":"me-memo"}'><span class="kpi-l"><span>Mémos</span><span class="dot" style="background:#d97706"></span></span><span class="kpi-v">${S.memos.length}</span><span class="kpi-s">${rapAuj} rappel${rapAuj>1?'s':''} aujourd’hui</span></button>
+    </div>
+    <div class="g2">
+        <div class="card"><div class="card-h"><h3>Soucis du bâtiment<span class="sub">en cours</span></h3><button class="card-link" data-nav='{"adminTab":"me-bat"}'>Tout le suivi →</button></div>
+            <div style="padding:4px 16px 8px;">${enc.length?enc.slice(0,8).map(meSxRow).join(''):`<div class="empty-note">Aucun souci en cours. ${icon('check',14)}</div>`}</div></div>
+        <div>
+            <div class="card"><div class="card-h"><h3>Mémo</h3><button class="card-link" data-nav='{"adminTab":"me-memo"}'>Tous les mémos →</button></div>
+                ${memosVus.length?`<div class="memo-grid" style="padding:14px 16px;">${memosVus.map(x=>meMemoCard(x,true)).join('')}</div>`:`<div class="empty-note">Les rappels et les mémos épinglés s’affichent ici.</div>`}</div>
+            ${rep.length?`<div class="card"><div class="card-h"><h3>À surveiller</h3></div><div style="padding:12px 16px;display:flex;flex-direction:column;gap:10px;">${rep.map(l=>`<div style="display:flex;gap:10px;align-items:flex-start;font-size:13px;"><span style="color:#b45309;">${icon('alert',15)}</span><span><b>${esc(l[0].lieu||'Lieu non précisé')} : ${l.length} soucis « ${meCat(l[0].cat)[1]} » en 4 mois.</b><br><span style="color:var(--ink-soft);">Penser à demander un diagnostic complet.</span></span></div>`).join('')}</div></div>`:''}
+        </div>
+    </div></div>`;
+}
+function meBatiment(m){
+    const S=state.me, f=state.meCat||'all';
+    const L=S.soucis.filter(s=>f==='all'||s.cat===f);
+    const col=k=>{ let l=L.filter(s=>s.statut===k); if(k==='resolu') l=l.sort((a,b)=>new Date(b.resolu||0)-new Date(a.resolu||0)); else l=l.sort((a,b)=>(b.urgence==='urgent')-(a.urgence==='urgent')||new Date(a.t)-new Date(b.t)); return l; };
+    const card=s=>{ const due=meRelanceDue(s); const meta=s.statut==='resolu'?`Résolu en ${Math.max(1,Math.round((new Date(s.resolu)-new Date(s.t))/864e5))} j`:s.statut==='prevu'&&s.interv?`📅 ${meDate(s.interv,true)}`:due?`À relancer depuis le ${meDate(s.relance)}`:`Signalé ${meDate(s.t)}`;
+        return `<div class="kc ${s.urgence==='urgent'&&s.statut!=='resolu'?'urg':''} ${s.statut==='resolu'?'done':''}" data-me="open" data-id="${s.id}"><div class="kc-t">${meUrgDot(s)}<b>${esc(s.titre)}</b></div><span>${esc([s.lieu,meCat(s.cat)[1]].filter(Boolean).join(' · '))}</span><span class="kc-m" style="${due?'color:#b91c1c;':s.statut==='prevu'?'color:#2c5f85;':''}">${meta}</span>${(s.photos||[]).length||(s.notes||[]).length?`<div class="kc-p">${(s.photos||[]).length?`📷 ${s.photos.length}`:''} ${(s.notes||[]).length?`💬 ${s.notes.length}`:''}</div>`:''}</div>`; };
+    return `<div>
+    <div class="page-head"><div><h1>Suivi du bâtiment</h1><p>Privé · ${meEnCours().length} en cours · ${S.soucis.filter(s=>s.statut==='resolu').length} résolus</p></div>
+    <div class="page-actions"><button class="btn-sm" data-me="lieux">${icon('pin',14)} Mes lieux (${S.lieux.length})</button><button class="btn-sm pri" data-me="new">${icon('plus',14)} Signaler un souci</button></div></div>
+    ${state.meLieux?meLieuxHtml():''}
+    <div class="nf-row" style="margin-bottom:14px;">${[['all','Tout'],...ME_CATS.map(c=>[c[0],c[1]])].map(([k,l])=>`<button class="nf-chip ${f===k?'on':''}" style="height:32px;font-size:12.5px;" data-nav='{"meCat":"${k}"}'>${l}</button>`).join('')}</div>
+    <div class="kb">${ME_ST.map(([k,l])=>{ const c=col(k); const vis=k==='resolu'&&!state.meAllRes?c.slice(0,8):c;
+        return `<div class="kb-col"><div class="kb-h"><b>${l}</b><span>${c.length}</span></div>${vis.map(card).join('')||'<div class="kb-empty">—</div>'}${k==='resolu'&&c.length>8&&!state.meAllRes?`<button class="card-link" data-nav='{"meAllRes":true}' style="padding:4px;">Voir les ${c.length-8} autres</button>`:''}</div>`; }).join('')}</div>
+    </div>`;
+}
+function meLieuxHtml(){
+    const L=state.me.lieux;
+    return `<div class="card" style="padding:16px;margin-bottom:16px;"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;"><b style="font-size:14px;">Mes lieux</b><button class="card-link" data-nav='{"meLieux":false}'>Fermer</button></div>
+        <div style="font-size:12.5px;color:var(--ink-soft);margin-bottom:10px;">Salles, étages, zones… Ils sont proposés quand tu signales un souci. Enregistrés automatiquement.</div>
+        <div class="nf-row" style="margin-bottom:12px;">${L.map((l,i)=>`<span class="nf-chip" style="cursor:default;padding-right:6px;">${esc(l)}<button data-me="dellieu" data-i="${i}" title="Retirer" style="border:none;background:none;cursor:pointer;color:#9ca3af;display:flex;padding:2px;">${icon('x',13)}</button></span>`).join('')||'<span class="nf-hint">Aucun lieu pour l’instant.</span>'}</div>
+        <div style="display:flex;gap:8px;"><input id="meLieuNew" class="form-input" placeholder="Ex : Salle Opéra · 3e étage" style="flex:1;"><button class="btn-sm pri" data-me="addlieu" style="padding:0 16px;">${icon('plus',14)} Ajouter</button></div></div>`;
+}
+function meSignaler(m){
+    const d=state.meDraft||(state.meDraft={cat:'clim',lieu:'',urgence:'normal',relance:3,photos:[]});
+    const chip=(k,v,l,on,ext='')=>`<button type="button" class="nf-chip ${on?'on':''}" data-me="draft" data-k="${k}" data-v="${esc(v)}" ${ext}>${l}</button>`;
+    return `<div style="max-width:820px;">
+    <button class="f-back" data-me="cancel" style="margin-bottom:12px;">${icon('arrow',14)} Retour</button>
+    <div class="page-head"><div><h1>Signaler un souci</h1><p>Privé · visible par toi seul</p></div></div>
+    <div class="card" style="padding:18px;">
+        <div class="nf-lbl">Quel est le souci ? *</div><input id="meTitre" class="form-input" value="${esc(d.titre||'')}" placeholder="Ex : Clim en panne, fuite sous l’évier…" style="margin-bottom:14px;">
+        <div class="nf-lbl">Catégorie</div><div class="nf-row" style="margin-bottom:14px;">${ME_CATS.map(c=>chip('cat',c[0],`${c[2]} ${c[1]}`,d.cat===c[0])).join('')}</div>
+        <div class="nf-lbl">Où ? <span>· <a href="#" data-me="golieux" style="color:var(--accent);">gérer mes lieux</a></span></div><div class="nf-row" style="margin-bottom:8px;">${state.me.lieux.map(l=>chip('lieu',l,esc(l),d.lieu===l)).join('')}</div>
+        <input id="meLieuLibre" class="form-input" value="${esc(state.me.lieux.includes(d.lieu)?'':(d.lieu||''))}" placeholder="…ou un autre lieu (ex. bureau 214)" style="margin-bottom:14px;">
+        <div class="nf-lbl">Urgence</div><div class="nf-row" style="margin-bottom:14px;">${Object.entries(ME_URG).map(([k,[l,c]])=>chip('urgence',k,l,d.urgence===k,d.urgence===k&&k==='urgent'?'style="background:#b91c1c;border-color:#b91c1c;"':'')).join('')}</div>
+        <div class="nf-lbl">Description</div><textarea id="meDesc" class="form-input" style="min-height:80px;resize:vertical;margin-bottom:12px;text-transform:none;" placeholder="Ce qui se passe, depuis quand, ce qui est prévu dans la salle…">${esc(d.desc||'')}</textarea>
+        <div class="nf-lbl">Photos</div><div class="nf-row" style="margin-bottom:14px;">${(d.photos||[]).map((p,i)=>`<span class="ph" style="background-image:url(${p});background-size:cover;background-position:center;"><button data-me="draftdelph" data-i="${i}" class="ph-x">${icon('x',12)}</button></span>`).join('')}<label class="ph add" style="cursor:pointer;">${icon('plus',14)} Photo<input type="file" accept="image/*" capture="environment" data-me-file="draft" style="display:none;"></label></div>
+        <div class="nf-lbl">Me rappeler de relancer</div><div class="nf-row" style="margin-bottom:18px;">${[[0,'Pas de rappel'],[1,'Demain'],[3,'Dans 3 jours'],[7,'Dans 1 semaine']].map(([v,l])=>chip('relance',v,l,+d.relance===v)).join('')}</div>
+        <div style="display:flex;gap:8px;justify-content:flex-end;"><button class="btn-sm" data-me="cancel" style="padding:10px 16px;">Annuler</button><button class="btn-sm pri" data-me="create" style="padding:10px 18px;">${icon('check',14)} Enregistrer le souci</button></div>
+    </div></div>`;
+}
+function meFiche(s,m){
+    const i=meStI(s.statut), next=ME_ST[i+1];
+    const prestas=[...new Set([...(settings.prestatairesCommande||[]),...Object.keys(settings.prestaInfo||{})])];
+    const P=pInfo(s.interv_par||'');
+    const hist=(state.me.soucis||[]).filter(x=>x.id!==s.id&&x.lieu&&x.lieu===s.lieu).sort((a,b)=>new Date(b.t)-new Date(a.t));
+    const nbCat=hist.filter(x=>x.cat===s.cat&&new Date(x.t)>=Date.now()-120*864e5).length;
+    const sujet=`${s.titre} – ${s.lieu||''}`;
+    const corps=`Bonjour,\n\nJe reviens vers vous concernant : ${s.titre}${s.lieu?` (${s.lieu})`:''}, signalé le ${new Date(s.t).toLocaleDateString('fr-FR')}.\n${s.desc?`\n${s.desc}\n`:''}\nPouvez-vous me confirmer une date d’intervention ?\n\nMerci,\n${userName()}`;
+    const evts=[...(s.notes||[]).map(n=>({t:n.t,txt:n.txt,k:'note'})),...(s.journal||[])].sort((a,b)=>new Date(b.t)-new Date(a.t));
+    return `<div>
+    <button class="f-back" data-me="close" style="margin-bottom:12px;">${icon('arrow',14)} Suivi du bâtiment</button>
+    <div class="page-head"><div><h1 style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">${esc(s.titre)} ${meStTag(s)}</h1><p>${esc([s.lieu,meCat(s.cat)[1],'signalé le '+new Date(s.t).toLocaleDateString('fr-FR'),'urgence : '+ME_URG[s.urgence||'normal'][0].toLowerCase()].filter(Boolean).join(' · '))}</p></div>
+    <div class="page-actions">${P.tel?`<a class="btn-sm" href="tel:${esc(String(P.tel).replace(/\s/g,''))}" style="text-decoration:none;">${icon('phone',14)} Appeler ${esc(s.interv_par)}</a>`:''}${P.email?`<a class="btn-sm" href="mailto:${esc(P.email)}?subject=${encodeURIComponent(sujet)}&body=${encodeURIComponent(corps)}" style="text-decoration:none;">${icon('mail',14)} Email de relance</a>`:''}
+        ${next?`<button class="btn-sm pri" data-me="step" data-id="${s.id}">${icon('check',14)} ${next[0]==='resolu'?'Marquer résolu':next[0]==='contacte'?'Intervenant contacté':'Intervention prévue'}</button>`:`<button class="btn-sm" data-me="reopen" data-id="${s.id}">Rouvrir</button>`}</div></div>
+    <div class="g2">
+        <div>
+            <div class="card"><div class="card-h"><h3>Description</h3></div><div style="padding:14px 16px;">
+                <textarea id="meFDesc" class="form-input" style="min-height:70px;resize:vertical;text-transform:none;" placeholder="Ajouter une description…">${esc(s.desc||'')}</textarea>
+                <div style="display:flex;justify-content:flex-end;margin-top:6px;"><button class="card-link" data-me="savedesc" data-id="${s.id}">Enregistrer la description</button></div>
+                <div class="nf-row" style="margin-top:8px;">${(s.photos||[]).map((p,k)=>`<a class="ph" href="${p}" target="_blank" style="background-image:url(${p});background-size:cover;background-position:center;"><button data-me="delph" data-id="${s.id}" data-i="${k}" class="ph-x" onclick="event.preventDefault()">${icon('x',12)}</button></a>`).join('')}<label class="ph add" style="cursor:pointer;">${icon('plus',14)} Photo<input type="file" accept="image/*" capture="environment" data-me-file="${s.id}" style="display:none;"></label></div>
+            </div></div>
+            <div class="card"><div class="card-h"><h3>Historique et notes</h3></div><div style="padding:6px 16px 14px;">
+                ${evts.map(e=>`<div class="tl2"><span class="tl2-d" style="background:${e.k==='note'?'#2c5f85':'#9ca3af'}"></span><div><b>${esc(e.txt)}</b><span>${meDate(e.t,true)}</span></div></div>`).join('')}
+                <div class="tl2"><span class="tl2-d" style="background:#9ca3af"></span><div><b>Souci signalé</b><span>${meDate(s.t,true)}</span></div></div>
+                <div style="display:flex;gap:8px;margin-top:10px;"><input id="meNote" class="form-input" placeholder="Ajouter une note…" style="flex:1;text-transform:none;"><button class="btn-sm pri" data-me="note" data-id="${s.id}" style="padding:0 14px;">${icon('send',14)}</button></div>
+            </div></div>
+        </div>
+        <div>
+            <div class="card"><div class="card-h"><h3>Suivi</h3></div><div style="padding:14px 16px;display:flex;flex-direction:column;gap:12px;">
+                <div><div class="nf-lbl">Statut</div><div class="nf-row">${ME_ST.map(([k,l])=>`<button class="nf-chip ${s.statut===k?'on':''}" style="height:32px;font-size:12.5px;" data-me="statut" data-id="${s.id}" data-v="${k}">${l}</button>`).join('')}</div></div>
+                <div><div class="nf-lbl">Urgence</div><div class="nf-row">${Object.entries(ME_URG).map(([k,[l]])=>`<button class="nf-chip ${s.urgence===k?'on':''}" style="height:32px;font-size:12.5px;" data-me="urg" data-id="${s.id}" data-v="${k}">${l}</button>`).join('')}</div></div>
+                <div><div class="nf-lbl">Intervenant</div><input id="meInterv" class="form-input" list="meIntervList" value="${esc(s.interv_par||'')}" placeholder="Prestataire, technicien, gardien…" style="text-transform:none;"><datalist id="meIntervList">${prestas.map(p=>`<option value="${esc(p)}">`).join('')}</datalist>
+                    <div style="font-size:11.5px;color:var(--ink-soft);margin-top:4px;">Avec une fiche prestataire (Réglages → Prestataires), les boutons Appeler / Email apparaissent.</div></div>
+                <div class="form-row-2"><div><div class="nf-lbl">Date d’intervention</div><input id="meIntervDate" type="datetime-local" class="form-input" value="${meLocal(s.interv)}"></div>
+                    <div><div class="nf-lbl">Relance le</div><input id="meRelance" type="date" class="form-input" value="${s.relance?isoDay(new Date(s.relance)):''}"></div></div>
+                <button class="btn-sm pri" data-me="savesuivi" data-id="${s.id}" style="justify-content:center;padding:10px;">${icon('save',14)} Enregistrer le suivi</button>
+            </div></div>
+            <div class="card"><div class="card-h"><h3>Historique du lieu</h3><span style="font-size:12px;color:var(--ink-soft);">${esc(s.lieu||'—')}</span></div><div style="padding:6px 16px 12px;">
+                ${hist.length?hist.slice(0,6).map(x=>`<div class="sx" data-me="open" data-id="${x.id}" style="padding:8px 0;"><div style="flex:1;"><b>${esc(x.titre)}</b><span>${meDate(x.t)} · ${x.statut==='resolu'?`résolu en ${Math.max(1,Math.round((new Date(x.resolu)-new Date(x.t))/864e5))} j`:'en cours'}</span></div></div>`).join(''):'<div class="empty-note" style="padding:10px 0;">Premier souci signalé ici.</div>'}
+                ${nbCat>=2?`<div style="font-size:12.5px;color:#b45309;background:#fef6e7;border-radius:8px;padding:8px 10px;margin-top:6px;">${nbCat+1}ᵉ souci « ${meCat(s.cat)[1]} » ici en 4 mois</div>`:''}
+            </div></div>
+            <button class="btn-sm" data-me="delsouci" data-id="${s.id}" style="color:#b91c1c;width:100%;justify-content:center;padding:10px;">${icon('trash',14)} Supprimer ce souci</button>
+        </div>
+    </div></div>`;
+}
+function meMemo(m){
+    const S=state.me, f=state.meTag||'all', ed=state.meEdit?S.memos.find(x=>x.id===state.meEdit):null;
+    let L=[...S.memos];
+    if(f==='pin') L=L.filter(x=>x.pin); else if(f==='rappel') L=L.filter(x=>x.rappel&&!x.fait); else if(f!=='all') L=L.filter(x=>x.tag===f);
+    L.sort((a,b)=>(b.pin?1:0)-(a.pin?1:0)||((a.rappel&&!a.fait?0:1)-(b.rappel&&!b.fait?0:1))||new Date(b.t)-new Date(a.t));
+    const dr=state.meMDraft||{tag:'bat'};
+    const rapAuj=S.memos.filter(x=>x.rappel&&!x.fait&&isoDay(new Date(x.rappel))<=isoDay(new Date())).length;
+    return `<div>
+    <div class="page-head"><div><h1>Mémo perso</h1><p>${S.memos.length} mémo${S.memos.length>1?'s':''} · ${rapAuj} rappel${rapAuj>1?'s':''} aujourd’hui · rien que pour toi</p></div></div>
+    <div class="card" style="padding:14px 16px;margin-bottom:16px;">
+        <textarea id="meMTxt" class="form-input" style="min-height:${ed?'110':'52'}px;resize:vertical;text-transform:none;" placeholder="Note rapide… La 1re ligne sert de titre. Pour une liste, commence les lignes par [ ]">${esc(ed?ed.texte:(dr.texte||''))}</textarea>
+        <div class="me-qa">
+            <div class="nf-row">${ME_TAGS.map(([k,l])=>`<button type="button" class="nf-chip ${(ed?ed.tag:dr.tag)===k?'on':''}" style="height:32px;font-size:12.5px;" data-me="mtag" data-v="${k}">${l}</button>`).join('')}</div>
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-left:auto;">
+                <label class="nf-chip" style="height:36px;gap:6px;">⏰ <input id="meMRappel" type="datetime-local" value="${ed&&ed.rappel?meLocal(ed.rappel):(dr.rappel||'')}" style="border:none;background:none;font:inherit;color:inherit;max-width:190px;"></label>
+                <label class="nf-chip" style="height:36px;"><input type="checkbox" id="meMPin" ${(ed?ed.pin:dr.pin)?'checked':''} style="accent-color:var(--accent);"> 📌 Épingler</label>
+                ${ed?`<button class="btn-sm" data-me="mcancel" style="height:36px;">Annuler</button>`:''}
+                <button class="btn-sm pri" data-me="${ed?'msave':'madd'}" style="height:36px;padding:0 16px;">${ed?'Enregistrer':'Ajouter'}</button>
+            </div>
+        </div>
+    </div>
+    <div class="nf-row" style="margin-bottom:14px;">${[['all','Tout'],['pin','Épinglés'],['rappel','Rappels'],...ME_TAGS.map(t=>[t[0],t[1]])].map(([k,l])=>`<button class="nf-chip ${f===k?'on':''}" style="height:32px;font-size:12.5px;" data-nav='{"meTag":"${k}"}'>${l}</button>`).join('')}</div>
+    ${L.length?`<div class="memo-wall">${L.map(x=>meMemoCard(x,false)).join('')}</div>`:`<div class="empty-note" style="padding:30px;">Aucun mémo ici pour l’instant.</div>`}
+    </div>`;
+}
+function meCompress(file,cb){ const rd=new FileReader(); rd.onload=()=>{ const img=new Image(); img.onload=()=>{ const S=900, k=Math.min(1,S/Math.max(img.width,img.height)); const cv=document.createElement('canvas'); cv.width=Math.round(img.width*k); cv.height=Math.round(img.height*k); cv.getContext('2d').drawImage(img,0,0,cv.width,cv.height); cb(cv.toDataURL('image/jpeg',0.62)); }; img.src=rd.result; }; rd.readAsDataURL(file); }
+function meJ(s,txt){ s.journal=[...(s.journal||[]),{t:new Date().toISOString(),txt}]; }
+function meDraftRead(){ const d=state.meDraft; if(!d) return; const g=id=>document.getElementById(id); if(g('meTitre')) d.titre=g('meTitre').value; if(g('meDesc')) d.desc=g('meDesc').value; if(g('meLieuLibre')&&g('meLieuLibre').value.trim()) d.lieu=g('meLieuLibre').value.trim(); }
+function meMDraftRead(){ const g=id=>document.getElementById(id); const d=state.meMDraft=state.meMDraft||{tag:'bat'}; if(g('meMTxt')) d.texte=g('meMTxt').value; if(g('meMRappel')) d.rappel=g('meMRappel').value; if(g('meMPin')) d.pin=g('meMPin').checked; return d; }
+document.addEventListener('click',e=>{
+    const el=e.target.closest('[data-me]'); if(!el||!state.me) return;
+    const a=el.getAttribute('data-me'), id=el.getAttribute('data-id'), v=el.getAttribute('data-v'), S=state.me, s=id?S.soucis.find(x=>x.id===id):null, mm=id?S.memos.find(x=>x.id===id):null;
+    if(a!=='ck') e.preventDefault();
+    const g=k=>document.getElementById(k);
+    switch(a){
+        case 'new': state.meDraft={cat:'clim',lieu:'',urgence:'normal',relance:3,photos:[]}; state.meNew=true; state.meSouci=null; if(!String(state.adminTab).startsWith('me')) state.adminTab='me-bat'; window.scrollTo(0,0); render(); break;
+        case 'cancel': state.meNew=false; render(); break;
+        case 'draft': meDraftRead(); state.meDraft[el.getAttribute('data-k')]=el.getAttribute('data-k')==='relance'?+v:v; if(el.getAttribute('data-k')==='lieu'&&g('meLieuLibre')) g('meLieuLibre').value=''; render(); break;
+        case 'draftdelph': meDraftRead(); state.meDraft.photos.splice(+el.getAttribute('data-i'),1); render(); break;
+        case 'golieux': meDraftRead(); state.meNew=false; state.adminTab='me-bat'; state.meLieux=true; render(); break;
+        case 'create': { meDraftRead(); const d=state.meDraft; if(!String(d.titre||'').trim()){ showToast(`${icon('alert',13)} Indique le souci en quelques mots`); return; }
+            const now=new Date(); const n={id:meId(),t:now.toISOString(),titre:d.titre.trim(),cat:d.cat,lieu:d.lieu||'',urgence:d.urgence,desc:(d.desc||'').trim(),photos:d.photos||[],statut:'signale',notes:[],journal:[]};
+            if(d.relance){ const r=new Date(now); r.setDate(r.getDate()+d.relance); r.setHours(9,0,0,0); n.relance=r.toISOString(); }
+            S.soucis.unshift(n); state.meNew=false; state.meDraft=null; state.meSouci=n.id; meSave(); showToast('✓ Souci enregistré'); break; }
+        case 'open': state.meSouci=id; state.meNew=false; if(!String(state.adminTab).startsWith('me')) state.adminTab='me-bat'; window.scrollTo(0,0); render(); break;
+        case 'close': state.meSouci=null; render(); break;
+        case 'step': if(s){ const i=meStI(s.statut); const nx=ME_ST[i+1]; if(!nx) return; s.statut=nx[0]; meJ(s,`Statut : ${nx[1]}`); if(nx[0]==='resolu'){ s.resolu=new Date().toISOString(); s.relance=null; } if(nx[0]==='contacte'&&!s.relance){ const r=new Date(); r.setDate(r.getDate()+3); r.setHours(9,0,0,0); s.relance=r.toISOString(); } meSave(); } break;
+        case 'statut': if(s&&s.statut!==v){ s.statut=v; meJ(s,`Statut : ${ME_ST[meStI(v)][1]}`); s.resolu=v==='resolu'?new Date().toISOString():null; if(v==='resolu') s.relance=null; meSave(); } break;
+        case 'reopen': if(s){ s.statut='contacte'; s.resolu=null; meJ(s,'Rouvert'); meSave(); } break;
+        case 'urg': if(s){ s.urgence=v; meSave(); } break;
+        case 'savesuivi': if(s){ const iv=g('meInterv')?.value.trim()||'', dt=g('meIntervDate')?.value||'', rl=g('meRelance')?.value||'';
+            if(iv!==(s.interv_par||'')){ s.interv_par=iv; if(iv) meJ(s,`Intervenant : ${iv}`); }
+            const ni=dt?new Date(dt).toISOString():null; if(ni!==(s.interv||null)){ s.interv=ni; if(ni){ meJ(s,`Intervention prévue le ${meDate(ni,true)}`); if(meStI(s.statut)<2) s.statut='prevu'; } }
+            s.relance=rl?new Date(rl+'T09:00').toISOString():null; meSave(); showToast('✓ Suivi enregistré'); } break;
+        case 'savedesc': if(s){ s.desc=g('meFDesc')?.value||''; meSave(); showToast('✓ Description enregistrée'); } break;
+        case 'note': if(s){ const t=(g('meNote')?.value||'').trim(); if(!t) return; s.notes=[...(s.notes||[]),{t:new Date().toISOString(),txt:t}]; meSave(); } break;
+        case 'delph': if(s&&confirm('Retirer cette photo ?')){ s.photos.splice(+el.getAttribute('data-i'),1); meSave(); } break;
+        case 'delsouci': if(s&&confirm(`Supprimer définitivement « ${s.titre} » ?`)){ S.soucis=S.soucis.filter(x=>x.id!==s.id); state.meSouci=null; meSave(); showToast('Souci supprimé'); } break;
+        case 'lieux': state.meLieux=!state.meLieux; render(); break;
+        case 'addlieu': { const t=(g('meLieuNew')?.value||'').trim(); if(!t) return; if(S.lieux.some(l=>l.toLowerCase()===t.toLowerCase())){ showToast('Ce lieu existe déjà'); return; } S.lieux.push(t); meSave(); showToast('✓ Lieu ajouté'); setTimeout(()=>g('meLieuNew')?.focus(),50); break; }
+        case 'dellieu': S.lieux.splice(+el.getAttribute('data-i'),1); meSave(); break;
+        case 'newmemo': state.adminTab='me-memo'; state.meEdit=null; render(); setTimeout(()=>g('meMTxt')?.focus(),50); break;
+        case 'mtag': { if(state.meEdit){ const x=S.memos.find(y=>y.id===state.meEdit); if(x){ x.texte=g('meMTxt')?.value||x.texte; x.tag=v; } render(); } else { meMDraftRead().tag=v; render(); } break; }
+        case 'madd': { const d=meMDraftRead(); const t=String(d.texte||'').trim(); if(!t){ showToast(`${icon('alert',13)} Écris d’abord ton mémo`); return; }
+            S.memos.unshift({id:meId(),t:new Date().toISOString(),texte:t,tag:d.tag||'autre',pin:!!d.pin,rappel:d.rappel?new Date(d.rappel).toISOString():null}); state.meMDraft={tag:d.tag}; meSave(); showToast('✓ Mémo ajouté'); break; }
+        case 'editm': state.meEdit=id; window.scrollTo(0,0); render(); setTimeout(()=>g('meMTxt')?.focus(),50); break;
+        case 'mcancel': state.meEdit=null; render(); break;
+        case 'msave': { const x=S.memos.find(y=>y.id===state.meEdit); if(x){ x.texte=(g('meMTxt')?.value||'').trim()||x.texte; const r=g('meMRappel')?.value; const nr=r?new Date(r).toISOString():null; if(nr!==x.rappel){ x.rappel=nr; x.fait=false; x.notif=false; } x.pin=!!g('meMPin')?.checked; } state.meEdit=null; meSave(); showToast('✓ Mémo enregistré'); break; }
+        case 'pin': if(mm){ mm.pin=!mm.pin; meSave(); } break;
+        case 'fait': if(mm){ mm.fait=true; meSave(); } break;
+        case 'delm': if(mm&&confirm('Supprimer ce mémo ?')){ S.memos=S.memos.filter(x=>x.id!==mm.id); meSave(); } break;
+        case 'ck': if(mm){ const L=mm.texte.split('\n'); const i=+el.getAttribute('data-l'); L[i]=L[i].replace(/\[( |x)\]/i,el.checked?'[x]':'[ ]'); mm.texte=L.join('\n'); meSave(); } break;
+    }
+});
+document.addEventListener('change',e=>{
+    const inp=e.target.closest('[data-me-file]'); if(!inp||!inp.files||!inp.files[0]||!state.me) return;
+    const who=inp.getAttribute('data-me-file');
+    meCompress(inp.files[0],url=>{
+        if(who==='draft'){ meDraftRead(); state.meDraft.photos=[...(state.meDraft.photos||[]),url].slice(0,4); render(); }
+        else { const s=state.me.soucis.find(x=>x.id===who); if(!s) return; if((s.photos||[]).length>=4){ showToast('4 photos maximum par souci'); return; } s.photos=[...(s.photos||[]),url]; meJ(s,'Photo ajoutée'); meSave(); }
+    });
+});
+// Rappels (mémos et relances) : notification quand l’appli est ouverte
+setInterval(()=>{ if(!state.me||!meOk()) return; const now=new Date(); let ch=false;
+    state.me.memos.forEach(x=>{ if(x.rappel&&!x.fait&&!x.notif&&new Date(x.rappel)<=now){ x.notif=true; ch=true; systemNotify('Rappel · Mon espace',String(x.texte).split('\n')[0]); showToast(`⏰ ${esc(String(x.texte).split('\n')[0])}`); } });
+    state.me.soucis.forEach(s=>{ if(meRelanceDue(s)&&s.notifRel!==s.relance){ s.notifRel=s.relance; ch=true; systemNotify('À relancer · Mon espace',`${s.titre}${s.lieu?' · '+s.lieu:''}`); } });
+    if(ch) meSave(); }, 60000);
 
 /* ══════════════════════════════════════
    SUIVI DES CONNEXIONS (pour les analyses)
@@ -4229,7 +4499,7 @@ function attachEvents(){
         document.querySelectorAll('[data-back-detail]').forEach(el=>el.onclick=()=>setState({detail:null}));
     document.querySelectorAll('[data-admin-logout]').forEach(el=>el.onclick=()=>{sessionEnd();updateBadge();state.form.dem='';setState({vue:"select",authed:false,authMode:'login',loginScreen:false,adminTab:"dashboard",fabOpen:false,sel:[]});});
     document.querySelectorAll('[data-action="admin"]').forEach(el=>el.onclick=()=>setState({vue:"admin",authed:isAdmin(),authMode:'login',authError:'',authInfo:''}));
-    document.querySelectorAll('[data-admin-tab]').forEach(el=>el.onclick=(ev)=>{ ev.stopPropagation(); setState({vue:"admin",adminTab:el.getAttribute('data-admin-tab'),search:"",filtre:"all",detail:null,fabOpen:false,sel:[],moreOpen:false}); window.scrollTo(0,0); });
+    document.querySelectorAll('[data-admin-tab]').forEach(el=>el.onclick=(ev)=>{ ev.stopPropagation(); setState({vue:"admin",adminTab:el.getAttribute('data-admin-tab'),search:"",filtre:"all",detail:null,fabOpen:false,sel:[],moreOpen:false,meSouci:null,meNew:false,meEdit:null}); window.scrollTo(0,0); });
 
     // Sélection multiple (sans re-rendu complet, pour garder le défilement)
     document.querySelectorAll('.sel-box').forEach(el=>el.addEventListener('change',()=>{
@@ -5066,7 +5336,7 @@ if ('serviceWorker' in navigator && location.protocol === 'https:') {
     trackFirstSeen(data);
     // Session admin encore valide → on revient directement dans l'admin
     if (sessionValid()) {
-        await Promise.all([loadTrash(), loadJournal()]);
+        await Promise.all([loadTrash(), loadJournal(), /avonde/i.test(`${userEmail()} ${userName()}`)?loadMe():null]);
         if (lsGet('last_vue') === 'admin' || state.live) { state.vue = 'admin'; state.authed = true; state.adminTab = 'dashboard'; }
     }
     state.loading = false;
