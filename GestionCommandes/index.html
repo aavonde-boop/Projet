@@ -562,6 +562,29 @@
         .mm-act{display:flex;gap:2px;justify-content:flex-end;opacity:.0;transition:opacity .15s;margin-top:4px;} .pi:hover .mm-act{opacity:1;}
         .mm-act button{border:none;background:rgba(255,255,255,.7);border-radius:6px;width:28px;height:26px;cursor:pointer;color:#4b5563;display:flex;align-items:center;justify-content:center;font-size:12px;}
         .me-qa{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:10px;}
+        .me-pill{display:inline-block;font-size:11.5px;font-weight:600;padding:3px 9px;border-radius:6px;white-space:nowrap;}
+        .me-cst{font-size:12px;color:#92400e;background:#fef3c7;padding:2px 7px;border-radius:6px;white-space:nowrap;}
+        .me-bar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;}
+        .me-search{display:flex;align-items:center;gap:8px;border:1px solid var(--border);border-radius:7px;background:#fff;padding:0 10px;height:36px;flex:1 1 260px;max-width:380px;color:var(--ink-soft);}
+        .me-search input{border:0;outline:0;font:inherit;font-size:13.5px;flex:1;min-width:0;background:transparent;color:var(--ink);}
+        .me-sel{height:36px;border:1px solid var(--border);border-radius:7px;background:#fff;font:inherit;font-size:13px;padding:0 10px;color:var(--ink);}
+        .me-th{background:none;border:0;font:inherit;color:inherit;text-transform:inherit;letter-spacing:inherit;cursor:pointer;padding:0;} .me-th.on{color:var(--ink);}
+        .me-tbl .pro-table td{padding:10px 16px;} .me-td-t{white-space:normal!important;min-width:280px;} .me-td-t .t span{line-height:1.3;}
+        .me-cards{display:none;}
+        .me-card{display:flex;flex-direction:column;gap:6px;width:100%;text-align:left;background:#fff;border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:8px;font:inherit;cursor:pointer;color:var(--ink);}
+        .me-card .t{display:flex;gap:8px;align-items:flex-start;} .me-card .t b{font-size:14px;font-weight:600;line-height:1.3;} .me-card .t .sx-u{margin-top:5px;flex:0 0 auto;}
+        .me-card .m{font-size:12.5px;color:var(--ink-soft);} .me-card .r{display:flex;gap:6px;align-items:center;flex-wrap:wrap;font-size:12.5px;} .me-rel{margin-left:auto;}
+        .me-act{display:flex;align-items:center;gap:14px;padding:11px 16px;border-bottom:1px solid var(--border-light);} .me-act:last-child{border-bottom:0;}
+        .me-act-k{flex:0 0 112px;font-size:11.5px;font-weight:700;text-align:center;padding:4px 6px;border:1px solid;border-radius:6px;}
+        .me-act-t{flex:1;min-width:0;cursor:pointer;} .me-act-t .t{display:flex;gap:7px;align-items:center;} .me-act-t b{font-size:13.5px;font-weight:600;} .me-act-t .m{font-size:12.5px;color:var(--ink-soft);margin-top:2px;}
+        .me-act-b{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;}
+        .me-stat-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;align-items:start;}
+        .me-bar-row{display:grid;grid-template-columns:150px minmax(0,1fr) 54px;gap:10px;align-items:center;padding:5px 0;font-size:13px;} .me-bar-row[data-nav]{cursor:pointer;} .me-bar-row[data-nav]:hover .l{color:var(--accent);}
+        .me-bar-row .l{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--ink-mid);} .me-bar-row .b{display:flex;height:9px;border-radius:9px;background:#f1f3f6;overflow:hidden;} .me-bar-row .b span{height:100%;}
+        .me-bar-row .n{text-align:right;} .me-bar-row .n i{font-style:normal;color:#3f8f5c;font-size:12px;}
+        .me-stack{display:flex;height:30px;border-radius:7px;overflow:hidden;gap:2px;} .me-stack span{display:flex;align-items:center;justify-content:center;font-size:12.5px;font-weight:700;min-width:26px;}
+        .me-leg{display:flex;flex-wrap:wrap;gap:6px 16px;margin-top:10px;font-size:12.5px;color:var(--ink-mid);} .me-leg i{display:inline-block;width:9px;height:9px;border-radius:3px;margin-right:6px;}
+        @media(max-width:767px){ .me-hx{display:none!important;} .me-tbl{display:none;} .me-cards{display:block;} .me-stat-grid{grid-template-columns:1fr;} .me-act{flex-wrap:wrap;gap:8px 10px;} .me-act-k{flex:0 0 auto;} .me-act-t{flex:1 1 100%;order:-1;} .me-act-b{margin-left:auto;} .me-bar-row{grid-template-columns:110px minmax(0,1fr) 46px;} .me-search{max-width:none;} }
         .kb{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;align-items:start;} .kb-col{background:#eef0f3;border-radius:12px;padding:10px;display:flex;flex-direction:column;gap:8px;}
         .kb-h{display:flex;justify-content:space-between;align-items:center;padding:4px 4px 2px;font-size:13px;} .kb-h span{background:#fff;border-radius:9px;padding:0 8px;font-size:11.5px;font-weight:700;color:var(--ink-mid);}
         .kb-empty{text-align:center;color:#b6bcc6;font-size:12px;padding:10px;}
@@ -1869,7 +1892,7 @@ function renderAdminView(m){
 
     else main=renderDashboard(total,attente,m);
 
-    const TITRES={dashboard:'Tableau de bord',suivi:'Suivi des demandes',calendrier:'Agenda',activite:'Registre',stats:'Statistiques',analyse:'Analyses',me:'Mon espace','me-bat':'Suivi du bâtiment','me-memo':'Mémo perso',settings:'Réglages'};
+    const TITRES={dashboard:'Tableau de bord',suivi:'Suivi des demandes',calendrier:'Agenda',activite:'Registre',stats:'Statistiques',analyse:'Analyses',me:'Mon espace','me-bat':'Suivi du bâtiment','me-stat':'Stats et actions','me-memo':'Mémo perso',settings:'Réglages'};
     if(m) return `
     <div class="mobile-header">
         <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
@@ -1907,7 +1930,7 @@ function renderAdminView(m){
     <aside class="side">
         <div class="side-brand">${logoHtml(16)}<div class="side-lbl"><b>${esc(marqueNom())}</b><span>Administration</span></div></div>
         <div class="side-scroll">
-            ${meOk()?`<div class="side-grp perso"><h6 class="side-lbl">Personnel</h6>${item('me','lock','Mon espace')}${item('me-bat','tool','Suivi du bâtiment')}${item('me-memo','edit','Mémo perso')}</div>`:''}
+            ${meOk()?`<div class="side-grp perso"><h6 class="side-lbl">Personnel</h6>${item('me','lock','Mon espace')}${item('me-bat','tool','Suivi du bâtiment')}${item('me-stat','chart','Stats et actions')}${item('me-memo','edit','Mémo perso')}</div>`:''}
             <div class="side-grp"><h6 class="side-lbl">Pilotage</h6>
                 ${item('dashboard','dashboard','Tableau de bord')}${item('suivi','clipboard','Suivi des demandes')}${item('calendrier','calendar','Agenda')}</div>
             <div class="side-grp"><h6 class="side-lbl">Données</h6>
@@ -2341,7 +2364,7 @@ function mobileNavHtml(){
     </div></nav>
     ${state.moreOpen?`<div data-nav='{"moreOpen":false}' style="position:fixed;inset:0;background:rgba(15,23,42,.35);z-index:9500;display:flex;align-items:flex-end;">
         <div style="background:#fff;width:100%;border-radius:20px 20px 0 0;padding:14px 14px calc(14px + env(safe-area-inset-bottom,0px));">
-            ${[...(meOk()?[["me","lock","Mon espace"],["me-bat","tool","Suivi du bâtiment"],["me-memo","edit","Mémo perso"]]:[]),["stats","chart","Statistiques"],["analyse","users","Analyses"]].map(([t,ic,l])=>`<button data-admin-tab="${t}" style="display:flex;align-items:center;gap:12px;width:100%;background:none;border:none;padding:14px 8px;font-size:15px;font-weight:600;color:var(--ink);cursor:pointer;border-bottom:1px solid #f0f1f4;">${icon(ic,18)} ${l}</button>`).join('')}
+            ${[...(meOk()?[["me","lock","Mon espace"],["me-bat","tool","Suivi du bâtiment"],["me-stat","chart","Stats et actions"],["me-memo","edit","Mémo perso"]]:[]),["stats","chart","Statistiques"],["analyse","users","Analyses"]].map(([t,ic,l])=>`<button data-admin-tab="${t}" style="display:flex;align-items:center;gap:12px;width:100%;background:none;border:none;padding:14px 8px;font-size:15px;font-weight:600;color:var(--ink);cursor:pointer;border-bottom:1px solid #f0f1f4;">${icon(ic,18)} ${l}</button>`).join('')}
             <button data-back-home style="display:flex;align-items:center;gap:12px;width:100%;background:none;border:none;padding:14px 8px;font-size:15px;font-weight:600;color:var(--ink);cursor:pointer;border-bottom:1px solid #f0f1f4;">${icon('home',18)} Formulaire de demande</button>
             <button data-admin-logout style="display:flex;align-items:center;gap:12px;width:100%;background:none;border:none;padding:14px 8px;font-size:15px;font-weight:600;color:#b91c1c;cursor:pointer;">${icon('logout',18)} Se déconnecter</button>
         </div></div>`:''}`;
@@ -3060,6 +3083,7 @@ function renderMe(m){
     if(state.meNew) return meSignaler(m);
     if(state.meSouci){ const s=S.soucis.find(x=>x.id===state.meSouci); if(s) return meFiche(s,m); }
     if(tab==='me-bat') return meBatiment(m);
+    if(tab==='me-stat') return meStats(m);
     if(tab==='me-memo') return meMemo(m);
     // Accueil
     const enc=meEnCours(), urg=enc.filter(s=>s.urgence==='urgent').length, now=new Date(), j7=new Date(Date.now()+7*864e5);
@@ -3088,20 +3112,91 @@ function renderMe(m){
         </div>
     </div></div>`;
 }
-function meBatiment(m){
-    const S=state.me, f=state.meCat||'all';
-    const L=S.soucis.filter(s=>f==='all'||s.cat===f);
-    const col=k=>{ let l=L.filter(s=>s.statut===k); if(k==='resolu') l=l.sort((a,b)=>new Date(b.resolu||0)-new Date(a.resolu||0)); else l=l.sort((a,b)=>(b.urgence==='urgent')-(a.urgence==='urgent')||new Date(a.t)-new Date(b.t)); return l; };
-    const card=s=>{ const due=meRelanceDue(s); const meta=s.statut==='resolu'?`Résolu en ${Math.max(1,Math.round((new Date(s.resolu)-new Date(s.t))/864e5))} j`:s.statut==='prevu'&&s.interv?`📅 ${meDate(s.interv,true)}`:due?`À relancer depuis le ${meDate(s.relance)}`:`Signalé ${meDate(s.t)}`;
-        return `<div class="kc ${s.urgence==='urgent'&&s.statut!=='resolu'?'urg':''} ${s.statut==='resolu'?'done':''}" data-me="open" data-id="${s.id}"><div class="kc-t">${meUrgDot(s)}<b>${esc(s.titre)}</b></div><span>${esc([s.lieu,meCat(s.cat)[1]].filter(Boolean).join(' · '))}</span><span class="kc-m" style="${due?'color:#b91c1c;':s.statut==='prevu'?'color:#2c5f85;':''}">${meta}</span>${(s.photos||[]).length||(s.notes||[]).length||(s.constat||[]).length?`<div class="kc-p">${(s.constat||[]).length?`<span class="an-tag ambre" style="font-size:10.5px;">⚖️ ${s.constat.length} constat${s.constat.length>1?'s':''}</span> `:''}${(s.photos||[]).length?`📷 ${s.photos.length}`:''} ${(s.notes||[]).length?`💬 ${s.notes.length}`:''}</div>`:''}</div>`; };
+function meBatiment(m){ return meListe(); }
+const ME_STC={signale:['Signalé','#92400e','#fef3c7'],contacte:['Contacté','#1e40af','#e0e7ff'],prevu:['Intervention prévue','#5b21b6','#ede9fe'],resolu:['Résolu','#166534','#dcfce7']};
+function mePill(s){ const c=ME_STC[s.statut]||ME_STC.signale; return `<span class="me-pill" style="color:${c[1]};background:${c[2]};">${c[0]}</span>`; }
+const meZone=s=>(String(s.lieu||'').split(' · ')[0]||'').trim()||meCat(s.cat)[1];
+function meLast(s){ let d=new Date(s.t); [...(s.journal||[]),...(s.notes||[])].forEach(x=>{ const v=new Date(x.t); if(v>d) d=v; }); if(s.resolu&&new Date(s.resolu)>d) d=new Date(s.resolu); return d; }
+function meAge(d){ const j=Math.max(0,Math.round((Date.now()-new Date(d))/864e5)); return j<1?'aujourd’hui':j<45?`${j} j`:j<365?`${Math.round(j/30)} mois`:`${(j/365).toFixed(1).replace('.',',')} an`; }
+const ME_FILTRES=[['open','En cours',s=>s.statut!=='resolu'],['urg','Urgents',s=>s.statut!=='resolu'&&s.urgence==='urgent'],['relance','À relancer',s=>meRelanceDue(s)],['prevu','Intervention prévue',s=>s.statut==='prevu'],['constat','Relevés en constat',s=>s.statut!=='resolu'&&(s.constat||[]).length],['resolu','Résolus',s=>s.statut==='resolu'],['all','Tout',()=>true]];
+function meListe(){
+    const S=state.me, f=state.meF||'open', z=state.meZ||'', q=(state.meQ||'').trim().toLowerCase(), so=state.meSort||'prio';
+    const F=ME_FILTRES.find(x=>x[0]===f)||ME_FILTRES[0];
+    let L=S.soucis.filter(F[2]);
+    if(z) L=L.filter(s=>meZone(s)===z);
+    if(q) L=L.filter(s=>[s.titre,s.lieu,s.interv_par,s.desc,meCat(s.cat)[1],(s.refs||'')].join(' ').toLowerCase().includes(q));
+    const U={urgent:0,semaine:1,normal:2};
+    const cmp={prio:(a,b)=>(a.statut==='resolu')-(b.statut==='resolu')||U[a.urgence||'normal']-U[b.urgence||'normal']||meRelanceDue(b)-meRelanceDue(a)||new Date(a.t)-new Date(b.t),
+        zone:(a,b)=>meZone(a).localeCompare(meZone(b),'fr'),statut:(a,b)=>meStI(a.statut)-meStI(b.statut),qui:(a,b)=>String(a.interv_par||'~').localeCompare(String(b.interv_par||'~'),'fr'),
+        depuis:(a,b)=>new Date(a.t)-new Date(b.t),news:(a,b)=>meLast(a)-meLast(b),constat:(a,b)=>(b.constat||[]).length-(a.constat||[]).length};
+    L=[...L].sort(cmp[so]||cmp.prio);
+    const zones=[...new Set(S.soucis.map(meZone))].sort((a,b)=>a.localeCompare(b,'fr'));
+    const th=(k,l)=>`<th><button class="me-th ${so===k?'on':''}" data-nav='{"meSort":"${so===k?'prio':k}"}'>${l}${so===k?' ↑':''}</button></th>`;
+    const rel=s=>s.statut==='resolu'?`<span style="color:var(--ink-soft)">résolu ${meDate(s.resolu)}</span>`:s.statut==='prevu'&&s.interv?`<span style="color:#5b21b6;font-weight:600;">📅 ${meDate(s.interv)}</span>`:s.relance?`<span style="${meRelanceDue(s)?'color:#b91c1c;font-weight:600;':'color:var(--ink-mid)'}">${meRelanceDue(s)?'⏰ ':''}${meDate(s.relance)}</span>`:'<span style="color:#c4c9d2">—</span>';
+    const nc=s=>(s.constat||[]).length;
     return `<div>
     <div class="page-head"><div><h1>Suivi du bâtiment</h1><p>Privé · ${meEnCours().length} en cours · ${S.soucis.filter(s=>s.statut==='resolu').length} résolus</p></div>
-    <div class="page-actions"><label class="btn-sm" style="cursor:pointer;" title="Importer un fichier préparé (.json)">${icon('download',14)} Importer<input type="file" accept=".json,application/json" data-me-import style="display:none;"></label><button class="btn-sm" data-me="export" title="Télécharger une sauvegarde de Mon espace">${icon('save',14)} Sauvegarder</button><button class="btn-sm" data-me="lieux">${icon('pin',14)} Mes lieux (${S.lieux.length})</button><button class="btn-sm pri" data-me="new">${icon('plus',14)} Signaler un souci</button></div></div>
+    <div class="page-actions"><button class="btn-sm" data-nav='{"adminTab":"me-stat"}'>${icon('chart',14)} Stats et actions</button><label class="btn-sm me-hx" style="cursor:pointer;" title="Importer un fichier préparé (.json)">${icon('download',14)} Importer<input type="file" accept=".json,application/json" data-me-import style="display:none;"></label><button class="btn-sm me-hx" data-me="export" title="Télécharger une sauvegarde de Mon espace">${icon('save',14)} Sauvegarder</button><button class="btn-sm" data-me="lieux">${icon('pin',14)} Mes lieux (${S.lieux.length})</button><button class="btn-sm pri me-hx" data-me="new">${icon('plus',14)} Signaler un souci</button></div></div>
     ${state.meLieux?meLieuxHtml():''}
-    <div class="nf-row" style="margin-bottom:14px;">${[['all','Tout'],...ME_CATS.map(c=>[c[0],c[1]])].map(([k,l])=>`<button class="nf-chip ${f===k?'on':''}" style="height:32px;font-size:12.5px;" data-nav='{"meCat":"${k}"}'>${l}</button>`).join('')}</div>
-    <div class="kb">${ME_ST.map(([k,l])=>{ const c=col(k); const vis=k==='resolu'&&!state.meAllRes?c.slice(0,8):c;
-        return `<div class="kb-col"><div class="kb-h"><b>${l}</b><span>${c.length}</span></div>${vis.map(card).join('')||'<div class="kb-empty">—</div>'}${k==='resolu'&&c.length>8&&!state.meAllRes?`<button class="card-link" data-nav='{"meAllRes":true}' style="padding:4px;">Voir les ${c.length-8} autres</button>`:''}</div>`; }).join('')}</div>
+    <div class="me-bar">
+        <label class="me-search">${icon('search',14)}<input id="meQ" type="search" value="${esc(state.meQ||'')}" placeholder="Rechercher : KA252, cour, Otis…" autocomplete="off"></label>
+        <select class="me-sel" data-me-zone><option value="">Toutes les zones</option>${zones.map(x=>`<option ${x===z?'selected':''}>${esc(x)}</option>`).join('')}</select>
+    </div>
+    <div class="nf-row" style="margin-bottom:14px;">${ME_FILTRES.map(([k,l,fn])=>{ const n=S.soucis.filter(fn).length; return `<button class="nf-chip ${f===k?'on':''}" style="height:32px;font-size:12.5px;" data-nav='{"meF":"${k}"}'>${l} · ${n}</button>`; }).join('')}</div>
+    ${L.length?`<div class="card me-tbl"><div class="tbl-wrap"><table class="pro-table"><thead><tr>${th('prio','Souci')}${th('zone','Zone')}${th('statut','Statut')}${th('qui','Intervenant')}${th('news','Dernière nouvelle')}${th('prio','Relance / date')}${th('constat','Constats')}</tr></thead><tbody>
+    ${L.map(s=>`<tr data-me="open" data-id="${s.id}" style="cursor:pointer;${s.statut==='resolu'?'opacity:.6;':''}"><td class="me-td-t"><div class="t">${meUrgDot(s)}<span>${esc(s.titre)}</span></div>${s.lieu&&s.lieu!==meZone(s)?`<div class="m">${esc(s.lieu)}</div>`:''}</td><td>${esc(meZone(s))}</td><td>${mePill(s)}</td><td style="color:var(--ink-mid)">${esc(s.interv_par||'—')}</td><td style="color:var(--ink-soft)">il y a ${meAge(meLast(s))}</td><td>${rel(s)}</td><td>${nc(s)?`<span class="me-cst">⚖️ ${nc(s)}</span>`:'<span style="color:#c4c9d2">—</span>'}</td></tr>`).join('')}
+    </tbody></table></div></div>
+    <div class="me-cards">${L.map(s=>`<button class="me-card" data-me="open" data-id="${s.id}" style="${s.statut==='resolu'?'opacity:.6;':''}"><div class="t">${meUrgDot(s)}<b>${esc(s.titre)}</b></div><div class="m">${esc(meZone(s))}${s.interv_par?` · ${esc(s.interv_par)}`:''}</div><div class="r">${mePill(s)}${nc(s)?`<span class="me-cst">⚖️ ${nc(s)}</span>`:''}<span class="me-rel">${rel(s)}</span></div></button>`).join('')}</div>
+    <div style="font-size:12.5px;color:var(--ink-soft);margin-top:8px;">${L.length} souci${L.length>1?'s':''} affiché${L.length>1?'s':''} · clic sur un en-tête pour trier</div>`
+    :`<div class="card empty-note" style="padding:40px;">${S.soucis.length?'Aucun souci pour ce filtre.':'Aucun souci pour l’instant. « Signaler un souci » ou « Importer » pour commencer.'}</div>`}
     </div>`;
+}
+function meActions(){
+    const S=state.me, now=new Date(), t0=new Date(); t0.setHours(0,0,0,0);
+    const open=S.soucis.filter(s=>s.statut!=='resolu'), seen=new Set(), A=[];
+    const add=(s,k,why,btns)=>{ if(seen.has(s.id)) return; seen.add(s.id); A.push({s,k,why,btns}); };
+    const bOpen=s=>`<button class="btn-sm" data-me="open" data-id="${s.id}">Ouvrir</button>`;
+    const bRel=s=>`<button class="btn-sm pri" data-me="relance" data-id="${s.id}">${icon('check',13)} Relancé</button>`;
+    open.filter(s=>s.statut==='prevu'&&s.interv&&new Date(s.interv)<t0).forEach(s=>add(s,'verif',`Intervention prévue le ${meDate(s.interv)} : c’est fait ?`,`<button class="btn-sm pri" data-me="statut" data-id="${s.id}" data-v="resolu">${icon('check',13)} Résolu</button><button class="btn-sm" data-me="relance" data-id="${s.id}">Pas fait, relancé</button>`));
+    open.filter(meRelanceDue).forEach(s=>add(s,'relance',`Relance prévue le ${meDate(s.relance)}`,bRel(s)));
+    open.filter(s=>s.statut==='signale'&&s.urgence==='urgent').forEach(s=>add(s,'transmettre','Urgent, pas encore transmis à un intervenant',`<button class="btn-sm pri" data-me="transmis" data-id="${s.id}">${icon('check',13)} Transmis</button>`));
+    const G={}; open.filter(s=>!seen.has(s.id)&&(now-meLast(s))/864e5>30).forEach(s=>{ const k=s.interv_par||'Non attribué'; (G[k]=G[k]||[]).push(s); });
+    Object.entries(G).sort((a,b)=>b[1].length-a[1].length).forEach(([k,l])=>{ l.sort((a,b)=>meLast(a)-meLast(b));
+        A.push({s:l[0],k:'silence',group:k,list:l,why:`${l.length} point${l.length>1?'s':''} sans nouvelles depuis ${meAge(meLast(l[l.length-1]))} ou plus`,btns:`<button class="btn-sm pri" data-me="relancegrp" data-v="${esc(k)}">${icon('check',13)} Tout relancé</button><button class="btn-sm" data-nav='${esc(JSON.stringify({adminTab:'me-bat',meF:'open',meZ:'',meQ:k==='Non attribué'?'':k}))}'>Voir</button>`}); });
+    return A;
+}
+function meStats(m){
+    const S=state.me, open=S.soucis.filter(s=>s.statut!=='resolu'), res=S.soucis.filter(s=>s.statut==='resolu');
+    const A=meActions(), U={urgent:0,semaine:1,normal:2}; const KO={verif:0,relance:1,transmettre:2,silence:3}; A.sort((a,b)=>KO[a.k]-KO[b.k]||U[a.s.urgence||'normal']-U[b.s.urgence||'normal']);
+    const KL={verif:['À vérifier','#5b21b6'],relance:['À relancer','#b91c1c'],transmettre:['À transmettre','#b45309'],silence:['Sans nouvelles','#475569']};
+    const delais=res.filter(s=>s.resolu).map(s=>(new Date(s.resolu)-new Date(s.t))/864e5), dm=delais.length?Math.round(delais.reduce((a,b)=>a+b,0)/delais.length):null;
+    const oldest=open.length?Math.round((Date.now()-Math.min(...open.map(s=>+new Date(s.t))))/864e5):0;
+    const grp=(fn)=>{ const g={}; S.soucis.forEach(s=>{ const k=fn(s); (g[k]=g[k]||{o:0,r:0,u:0,old:0}); if(s.statut==='resolu') g[k].r++; else { g[k].o++; if(s.urgence==='urgent') g[k].u++; g[k].old=Math.max(g[k].old,(Date.now()-new Date(s.t))/864e5); } }); return Object.entries(g).sort((a,b)=>b[1].o-a[1].o||b[1].r-a[1].r); };
+    const bars=(rows,max)=>rows.map(([k,v])=>`<div class="me-bar-row" ${v.z?`data-nav='{"adminTab":"me-bat","meZ":"${esc(k)}","meF":"all"}'`:''}><span class="l">${esc(k)}</span><span class="b"><span style="width:${v.o/max*100}%;background:#2c5f85;"></span><span style="width:${v.r/max*100}%;background:#86c99d;"></span></span><span class="n"><b>${v.o}</b>${v.r?` <i>+${v.r}</i>`:''}</span></div>`).join('');
+    const Z=grp(meZone).map(([k,v])=>[k,{...v,z:1}]), Q=grp(s=>s.interv_par||'Non attribué');
+    const zmax=Math.max(1,...Z.map(([,v])=>v.o+v.r));
+    const ages=[['Moins d’1 mois',0,30],['1 à 3 mois',30,91],['3 à 6 mois',91,182],['Plus de 6 mois',182,1e9]].map(([l,a,b])=>[l,open.filter(s=>{ const d=(Date.now()-new Date(s.t))/864e5; return d>=a&&d<b; }).length]);
+    const amax=Math.max(1,...ages.map(x=>x[1]));
+    const st=ME_ST.map(([k,l])=>[k,l,S.soucis.filter(s=>s.statut===k).length]);
+    const cst=open.filter(s=>(s.constat||[]).length);
+    return `<div>
+    <div class="page-head"><div><h1>Stats et actions</h1><p>Privé · le bâtiment en chiffres et ce qu’il reste à faire</p></div><div class="page-actions"><button class="btn-sm" data-nav='{"adminTab":"me-bat"}'>${icon('tool',14)} Liste des soucis</button></div></div>
+    <div class="kpis">
+        <div class="stat-card kpi"><span class="kpi-l">En cours</span><span class="kpi-v">${open.length}</span><span class="kpi-s">sur ${S.soucis.length} signalés</span></div>
+        <div class="stat-card kpi"><span class="kpi-l">Urgents</span><span class="kpi-v" style="color:#b91c1c;">${open.filter(s=>s.urgence==='urgent').length}</span><span class="kpi-s">${cst.length} relevés en constat</span></div>
+        <div class="stat-card kpi"><span class="kpi-l">Résolus</span><span class="kpi-v" style="color:#15803d;">${res.length}</span><span class="kpi-s">${S.soucis.length?Math.round(res.length/S.soucis.length*100):0} % · ${dm!==null?`en ${dm} j en moyenne`:'—'}</span></div>
+        <div class="stat-card kpi"><span class="kpi-l">Plus ancien ouvert</span><span class="kpi-v">${oldest?meAge(Date.now()-oldest*864e5):'—'}</span><span class="kpi-s">${open.filter(s=>(Date.now()-meLast(s))/864e5>30).length} sans nouvelles depuis 30 j</span></div>
+    </div>
+    <div class="card"><div class="card-h"><h3>Actions à faire<span class="sub">${A.length}</span></h3></div>
+    ${A.length?`<div>${A.map(({s,k,why,btns,group,list})=>`<div class="me-act"><span class="me-act-k" style="color:${KL[k][1]};border-color:${KL[k][1]}33;background:${KL[k][1]}0f;">${KL[k][0]}</span>${group?`<div class="me-act-t"><div class="t"><b>${esc(group)}</b></div><div class="m">${why} : ${list.slice(0,3).map(x=>esc(x.titre.split(/[:(]/)[0].trim())).join(', ')}${list.length>3?`… (+${list.length-3})`:''}</div></div>`:`<div class="me-act-t" data-me="open" data-id="${s.id}"><div class="t">${meUrgDot(s)}<b>${esc(s.titre)}</b></div><div class="m">${esc(meZone(s))}${s.interv_par?` · ${esc(s.interv_par)}`:''} · ${why}</div></div>`}<div class="me-act-b">${btns}</div></div>`).join('')}</div>`:`<div class="empty-note" style="padding:28px;">Rien à faire pour l’instant. 👍</div>`}</div>
+    <div class="me-stat-grid">
+        <div class="card"><div class="card-h"><h3>Par zone<span class="sub">en cours · <i style="font-style:normal;color:#3f8f5c">+ résolus</i></span></h3></div><div style="padding:10px 16px 14px;">${bars(Z,zmax)}</div></div>
+        <div>
+        <div class="card"><div class="card-h"><h3>Par statut</h3></div><div style="padding:14px 16px;"><div class="me-stack">${st.filter(x=>x[2]).map(([k,l,n])=>`<span style="flex:${n};background:${ME_STC[k][2]};color:${ME_STC[k][1]};">${n}</span>`).join('')}</div><div class="me-leg">${st.map(([k,l,n])=>`<span><i style="background:${ME_STC[k][1]}"></i>${ME_STC[k][0]} · ${n}</span>`).join('')}</div></div></div>
+        <div class="card"><div class="card-h"><h3>Ancienneté des soucis en cours</h3></div><div style="padding:10px 16px 14px;">${ages.map(([l,n])=>`<div class="me-bar-row"><span class="l">${l}</span><span class="b"><span style="width:${n/amax*100}%;background:${l.startsWith('Plus')?'#b91c1c':'#2c5f85'};"></span></span><span class="n"><b>${n}</b></span></div>`).join('')}</div></div>
+        <div class="card"><div class="card-h"><h3>Par intervenant</h3></div><div class="tbl-wrap"><table class="pro-table"><thead><tr><th>Intervenant</th><th>En cours</th><th>Urgents</th><th>Résolus</th><th>Plus ancien</th></tr></thead><tbody>${Q.map(([k,v])=>`<tr><td><b>${esc(k)}</b></td><td>${v.o}</td><td style="${v.u?'color:#b91c1c;font-weight:600;':'color:var(--ink-soft)'}">${v.u||'—'}</td><td style="color:var(--ink-soft)">${v.r||'—'}</td><td style="color:var(--ink-soft)">${v.o?meAge(Date.now()-v.old*864e5):'—'}</td></tr>`).join('')}</tbody></table></div></div>
+        </div>
+    </div></div>`;
 }
 function meLieuxHtml(){
     const L=state.me.lieux;
@@ -3221,6 +3316,11 @@ document.addEventListener('click',e=>{
             S.soucis.unshift(n); state.meNew=false; state.meDraft=null; state.meSouci=n.id; meSave(); showToast('✓ Souci enregistré'); break; }
         case 'open': state.meSouci=id; state.meNew=false; if(!String(state.adminTab).startsWith('me')) state.adminTab='me-bat'; window.scrollTo(0,0); render(); break;
         case 'close': state.meSouci=null; render(); break;
+        case 'relance': if(s){ const r=new Date(); r.setDate(r.getDate()+7); r.setHours(9,0,0,0); s.relance=r.toISOString(); if(s.statut==='signale'||(s.statut==='prevu'&&s.interv&&new Date(s.interv)<new Date())){ s.statut='contacte'; s.interv=null; } meJ(s,'Relancé'); meSave(); showToast(`✓ Relancé · prochain rappel le ${meDate(s.relance)}`); } break;
+        case 'relancegrp': { const now=new Date(), r=new Date(); r.setDate(r.getDate()+7); r.setHours(9,0,0,0); let n=0;
+            S.soucis.filter(x=>x.statut!=='resolu'&&(x.interv_par||'Non attribué')===v&&(now-meLast(x))/864e5>30).forEach(x=>{ x.relance=r.toISOString(); if(x.statut==='signale') x.statut='contacte'; meJ(x,'Relancé'); n++; });
+            if(n){ meSave(); showToast(`✓ ${n} point${n>1?'s':''} relancé${n>1?'s':''} · rappel le ${meDate(r.toISOString())}`); } break; }
+        case 'transmis': if(s){ s.statut='contacte'; const r=new Date(); r.setDate(r.getDate()+7); r.setHours(9,0,0,0); s.relance=r.toISOString(); meJ(s,'Transmis à l’intervenant'); meSave(); showToast('✓ Transmis · rappel dans 7 jours'); } break;
         case 'step': if(s){ const i=meStI(s.statut); const nx=ME_ST[i+1]; if(!nx) return; s.statut=nx[0]; meJ(s,`Statut : ${nx[1]}`); if(nx[0]==='resolu'){ s.resolu=new Date().toISOString(); s.relance=null; } if(nx[0]==='contacte'&&!s.relance){ const r=new Date(); r.setDate(r.getDate()+3); r.setHours(9,0,0,0); s.relance=r.toISOString(); } meSave(); } break;
         case 'statut': if(s&&s.statut!==v){ s.statut=v; meJ(s,`Statut : ${ME_ST[meStI(v)][1]}`); s.resolu=v==='resolu'?new Date().toISOString():null; if(v==='resolu') s.relance=null; meSave(); } break;
         case 'reopen': if(s){ s.statut='contacte'; s.resolu=null; meJ(s,'Rouvert'); meSave(); } break;
@@ -3257,6 +3357,8 @@ document.addEventListener('change',e=>{
         else { const s=state.me.soucis.find(x=>x.id===who); if(!s) return; if((s.photos||[]).length>=4){ showToast('4 photos maximum par souci'); return; } s.photos=[...(s.photos||[]),url]; meJ(s,'Photo ajoutée'); meSave(); }
     });
 });
+document.addEventListener('input',e=>{ if(e.target.id!=='meQ') return; state.meQ=e.target.value; const pos=e.target.selectionStart; render(); const n=document.getElementById('meQ'); if(n){ n.focus(); try{ n.setSelectionRange(pos,pos); }catch(_){} } });
+document.addEventListener('change',e=>{ const z=e.target.closest('[data-me-zone]'); if(!z) return; state.meZ=z.value; render(); });
 document.addEventListener('change',e=>{
     const inp=e.target.closest('[data-me-import]'); if(!inp||!inp.files||!inp.files[0]||!meOk()) return;
     const rd=new FileReader(); rd.onload=()=>{ let d; try{ d=JSON.parse(rd.result); }catch(err){ showToast(`${icon('alert',13)} Fichier illisible`); return; }
