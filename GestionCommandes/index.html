@@ -432,6 +432,27 @@
             .ch-sub{ grid-template-columns:1fr; gap:10px; margin-top:14px; }
             .nf-hero{ padding-bottom:12px; } .nf-head{ gap:0; }
         }
+        /* ═══ ANALYSES ═══ */
+        .an-kpis{ grid-template-columns:repeat(4,minmax(0,1fr)); }
+        .an-sur{ font-size:16px; color:var(--ink-soft); font-weight:600; margin-left:2px; }
+        .an-grid{ display:grid; gap:16px; }
+        .an-bar{ margin-bottom:10px; } .an-bar:last-child{ margin-bottom:0; }
+        .an-bar-l{ display:flex; justify-content:space-between; gap:10px; font-size:12.5px; margin-bottom:4px; }
+        .an-bar-l span{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--ink); } .an-bar-l b{ white-space:nowrap; font-weight:600; } .an-bar-l i{ font-style:normal; color:var(--ink-soft); font-weight:400; margin-left:6px; }
+        .an-track{ height:7px; background:#f1f2f4; border-radius:4px; overflow:hidden; } .an-track div{ height:100%; border-radius:4px; }
+        .an-table td,.an-table th{ padding-left:11px; padding-right:11px; } .an-table td{ font-size:12.5px; } .an-table .m{ color:var(--ink-soft); font-size:11.5px; } .an-table tr.an-zero td{ color:var(--ink-soft); }
+        .an-mini{ width:56px; height:6px; background:#f1f2f4; border-radius:3px; overflow:hidden; } .an-mini div{ height:100%; background:var(--accent); }
+        .an-split{ display:flex; width:90px; height:7px; border-radius:4px; overflow:hidden; gap:1px; margin-bottom:3px; }
+        .an-tag{ display:inline-block; font-size:11px; font-weight:600; padding:2px 7px; border-radius:5px; white-space:nowrap; }
+        .an-tag.vert{ background:#ecf8f0; color:#15803d; } .an-tag.ambre{ background:#fef6e7; color:#b45309; } .an-tag.gris{ background:#f1f2f4; color:#6b7280; } .an-tag.bleu{ background:#e8f0f7; color:#2c5f85; }
+        .an-legend{ display:flex; gap:12px; flex-wrap:wrap; font-size:12px; color:var(--ink-mid); } .an-legend span{ display:flex; align-items:center; gap:5px; } .an-legend i{ width:9px; height:9px; border-radius:2px; display:inline-block; }
+        .an-cols{ display:flex; align-items:flex-end; gap:8px; height:180px; }
+        .an-col{ flex:1; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; height:100%; min-width:26px; }
+        .an-col-v{ font-size:11px; color:var(--ink-mid); margin-bottom:3px; font-weight:600; } .an-col-l{ font-size:10.5px; color:var(--ink-soft); margin-top:5px; white-space:nowrap; }
+        .an-stack{ width:100%; max-width:36px; display:flex; flex-direction:column-reverse; border-radius:4px 4px 1px 1px; overflow:hidden; gap:1px; }
+        .an-cx > div{ display:flex; align-items:center; gap:10px; padding:9px 0; border-bottom:1px solid var(--border-light); font-size:12.5px; } .an-cx > div:last-child{ border-bottom:none; }
+        .an-cx > div > div > b{ display:block; font-weight:600; } .an-cx > div > div > span{ display:block; color:var(--ink-soft); font-size:11.5px; }
+        @media(max-width:1199px){ .an-kpis{ grid-template-columns:repeat(2,minmax(0,1fr)); } }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
@@ -1330,6 +1351,7 @@ function render(){
     if(!state.loading) updateBadge();
     if(state.vue==='admin'&&state.authed) lsSet('last_admin_tab', state.adminTab||'dashboard');
     state.authed = isAdmin();
+    if(AUTH&&!state.loading) trackConnexion();
     if(state.authMode==='reset') html=renderLogin();
     else if(state.vue==="admin") html=state.authed?renderAdminView(m):(AUTH?renderPasAdmin():renderLogin());
     else if(state.loginScreen || (settings.loginObligatoire && !AUTH)) html=renderLogin();
@@ -1706,12 +1728,13 @@ function renderAdminView(m){
     if(state.adminTab==='settings')        main=renderSettings();
     else if(state.adminTab==='activite')     main=renderActivite(m);
     else if(state.adminTab==='stats')        main=renderStats(m);
+    else if(state.adminTab==='analyse')      main=renderAnalyse(m);
     else if(state.adminTab==='suivi')        main=renderSuivi(m);
     else if(state.adminTab==='calendrier')   main=renderCalendrier(m);
 
     else main=renderDashboard(total,attente,m);
 
-    const TITRES={dashboard:'Tableau de bord',suivi:'Suivi des demandes',calendrier:'Agenda',activite:'Registre',stats:'Statistiques',settings:'Réglages'};
+    const TITRES={dashboard:'Tableau de bord',suivi:'Suivi des demandes',calendrier:'Agenda',activite:'Registre',stats:'Statistiques',analyse:'Analyses',settings:'Réglages'};
     if(m) return `
     <div class="mobile-header">
         <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
@@ -1752,7 +1775,7 @@ function renderAdminView(m){
             <div class="side-grp"><h6 class="side-lbl">Pilotage</h6>
                 ${item('dashboard','dashboard','Tableau de bord')}${item('suivi','clipboard','Suivi des demandes')}${item('calendrier','calendar','Agenda')}</div>
             <div class="side-grp"><h6 class="side-lbl">Données</h6>
-                ${item('activite','grid','Registre')}${item('stats','chart','Statistiques')}</div>
+                ${item('activite','grid','Registre')}${item('stats','chart','Statistiques')}${item('analyse','users','Analyses')}</div>
             <div class="side-grp"><h6 class="side-lbl">Administration</h6>
                 ${item('settings','sliders','Réglages')}
                 <button data-back-home class="side-it" title="Formulaire de demande">${icon('home',17)}<span class="side-lbl">Formulaire de demande</span></button></div>
@@ -2182,11 +2205,11 @@ function mobileNavHtml(){
             <span class="nav-icon">${icon(ic,18)}</span><span>${label}</span><span class="nav-dot"></span>
             ${tab==='suivi'&&n?`<span style="position:absolute;top:2px;left:calc(50% + 6px);background:#ef4444;color:#fff;border-radius:10px;min-width:16px;height:16px;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0 4px;">${n}</span>`:''}
         </button>`).join('')}
-        <button class="mobile-nav-btn ${state.adminTab==='stats'&&!state.detail?'active':''}" data-nav='{"moreOpen":true}'><span class="nav-icon">${icon('menu',18)}</span><span>Plus</span><span class="nav-dot"></span></button>
+        <button class="mobile-nav-btn ${(state.adminTab==='stats'||state.adminTab==='analyse')&&!state.detail?'active':''}" data-nav='{"moreOpen":true}'><span class="nav-icon">${icon('menu',18)}</span><span>Plus</span><span class="nav-dot"></span></button>
     </div></nav>
     ${state.moreOpen?`<div data-nav='{"moreOpen":false}' style="position:fixed;inset:0;background:rgba(15,23,42,.35);z-index:9500;display:flex;align-items:flex-end;">
         <div style="background:#fff;width:100%;border-radius:20px 20px 0 0;padding:14px 14px calc(14px + env(safe-area-inset-bottom,0px));">
-            ${[["stats","chart","Statistiques"]].map(([t,ic,l])=>`<button data-admin-tab="${t}" style="display:flex;align-items:center;gap:12px;width:100%;background:none;border:none;padding:14px 8px;font-size:15px;font-weight:600;color:var(--ink);cursor:pointer;border-bottom:1px solid #f0f1f4;">${icon(ic,18)} ${l}</button>`).join('')}
+            ${[["stats","chart","Statistiques"],["analyse","users","Analyses"]].map(([t,ic,l])=>`<button data-admin-tab="${t}" style="display:flex;align-items:center;gap:12px;width:100%;background:none;border:none;padding:14px 8px;font-size:15px;font-weight:600;color:var(--ink);cursor:pointer;border-bottom:1px solid #f0f1f4;">${icon(ic,18)} ${l}</button>`).join('')}
             <button data-back-home style="display:flex;align-items:center;gap:12px;width:100%;background:none;border:none;padding:14px 8px;font-size:15px;font-weight:600;color:var(--ink);cursor:pointer;border-bottom:1px solid #f0f1f4;">${icon('home',18)} Formulaire de demande</button>
             <button data-admin-logout style="display:flex;align-items:center;gap:12px;width:100%;background:none;border:none;padding:14px 8px;font-size:15px;font-weight:600;color:#b91c1c;cursor:pointer;">${icon('logout',18)} Se déconnecter</button>
         </div></div>`:''}`;
@@ -2537,6 +2560,192 @@ function renderStats(m){
         ${hbars('Par type','grid',parType,'#c2410c')}
     </div>
     <div style="font-size:11px;color:#9ca3af;margin-top:12px;">Montants des commandes validées, selon la date de la prestation. Une commande pour plusieurs directeurs est répartie à parts égales.</div>
+    </div>`;
+}
+
+/* ══════════════════════════════════════
+   SUIVI DES CONNEXIONS (pour les analyses)
+══════════════════════════════════════ */
+let _cxChain=Promise.resolve();
+function cxUpdate(fn){
+    _cxChain=_cxChain.then(async()=>{ try{ const cur=(await paramGet('connexions'))||{}; cur.users=cur.users||{}; cur.via=cur.via||{}; cur.depuis=cur.depuis||new Date().toISOString(); fn(cur); await paramSet('connexions',cur); state.cx=cur; }catch(e){ console.error('Connexions:',e); } });
+    return _cxChain;
+}
+function trackConnexion(){
+    if(!AUTH) return; const e=userEmail(); if(!e) return;
+    const jour=isoDay(new Date()); if(lsGet('cx_jour_'+e)===jour) return; lsSet('cx_jour_'+e,jour);
+    cxUpdate(cx=>{ const u=cx.users[e]||{first:new Date().toISOString(),jours:[]};
+        u.nom=userName(); u.last=new Date().toISOString(); u.admin=isAdmin();
+        if(!u.jours.includes(jour)) u.jours=[...u.jours,jour].slice(-180);
+        cx.users[e]=u; });
+}
+function trackDemandeVia(code){
+    if(!code) return; const e=AUTH?userEmail():'';
+    cxUpdate(cx=>{ cx.via[code]=e||'-'; const k=Object.keys(cx.via); if(k.length>3000) k.slice(0,k.length-3000).forEach(x=>delete cx.via[x]); });
+}
+async function loadConnexions(){ try{ state.cx=(await paramGet('connexions'))||{users:{},via:{}}; }catch(e){ state.cx={users:{},via:{}}; } }
+
+/* ══════════════════════════════════════
+   ANALYSES
+══════════════════════════════════════ */
+function renderAnalyse(m){
+    if(state.cx===undefined){ state.cx=null; loadConnexions().then(render); }
+    const cx=state.cx||{users:{},via:{}};
+    const period=state.statsPeriod||'annee', rg=statsRange(period);
+    const inR=(c,r)=>{ if(!r||!r.from) return true; const d=parseDate(c.date); return d&&d>=r.from&&d<=r.to; };
+    const scope=state.data.filter(c=>inR(c,rg));
+    const prev=rg.prev?state.data.filter(c=>inR(c,rg.prev)):null;
+    const pct=(a,b)=>b?Math.round(a/b*100):0;
+    const nf=n=>n.toLocaleString('fr-FR');
+    const isValide=c=>c.pris==='OUI'||c.pris==='Reçu';
+    const H=ms=>{ const h=ms/36e5; return h<1?`${Math.max(1,Math.round(h*60))} min`:h<48?`${Math.round(h*10)/10} h`.replace('.',','):`${Math.round(h/24)} j`; };
+    const created=c=>c.createdAt?new Date(c.createdAt):null;
+    const anticip=c=>{ const a=created(c), d=parseDate(c.date); if(!a||!d) return null; const a0=new Date(a); a0.setHours(0,0,0,0); return Math.round((d-a0)/864e5); };
+
+    // Délai de validation (journal : 1er changement de statut après la création)
+    const firstStatut={}; [...(state.journal||[])].reverse().forEach(j=>{ if(j.action==='Statut'&&j.id!=null&&!(j.id in firstStatut)&&/→\s*(Validé|Validée|OUI)/i.test(j.detail||'')) firstStatut[j.id]=new Date(j.t); });
+    const delais=scope.map(c=>{ const a=created(c), v=firstStatut[c.id]; return a&&v&&v>a?v-a:null; }).filter(x=>x!==null);
+    const delaiMoy=delais.length?delais.reduce((a,b)=>a+b,0)/delais.length:null;
+    const ants=scope.map(anticip).filter(x=>x!==null&&x>=0);
+    const antMoy=ants.length?ants.reduce((a,b)=>a+b,0)/ants.length:null;
+    const derniereMin=ants.filter(x=>x<=1).length;
+
+    // Comptes et connexions
+    const emailDe={}; Object.entries(settings.emails||{}).forEach(([n,e])=>{ if(e) emailDe[n]=String(e).trim().toLowerCase(); });
+    const il30=new Date(); il30.setDate(il30.getDate()-30); const j30=isoDay(il30);
+    const cxU=e=>e?cx.users[e]:null;
+    const joursRecents=u=>u?(u.jours||[]).filter(j=>j>=j30).length:0;
+    const assistantes=[...settings.assistantes];
+    const connectees30=assistantes.filter(a=>{ const u=cxU(emailDe[a]); return u&&u.last&&new Date(u.last)>=il30; }).length;
+    const viaCodes=scope.filter(c=>c.code&&cx.via&&cx.via[c.code]);
+    const viaCompte=viaCodes.filter(c=>cx.via[c.code]!=='-').length;
+
+    // Par assistante
+    const noms=[...new Set([...assistantes,...scope.map(c=>c.demandeur).filter(Boolean)])];
+    const rows=noms.map(n=>{ const L=scope.filter(c=>String(c.demandeur||'').toLowerCase()===n.toLowerCase());
+        const v=L.filter(isValide), an=L.filter(c=>c.pris==='Annulé'), am=L.map(anticip).filter(x=>x!==null&&x>=0);
+        const last=L.map(c=>created(c)||parseDate(c.date)).filter(Boolean).sort((a,b)=>b-a)[0];
+        const e=emailDe[n], u=cxU(e), vc=L.filter(c=>cx.via&&cx.via[c.code]); const vcc=vc.filter(c=>cx.via[c.code]!=='-').length;
+        return {n,tot:L.length,repas:L.filter(c=>c.type==='repas').length,taxi:L.filter(c=>c.type==='taxi').length,hotel:L.filter(c=>c.type==='hotel').length,
+            val:v.length,ann:an.length,mt:v.reduce((a,c)=>a+(c.prix||0),0),ant:am.length?am.reduce((a,b)=>a+b,0)/am.length:null,last,e,u,j30:joursRecents(u),via:vc.length?pct(vcc,vc.length):null,dansListe:assistantes.includes(n)};
+    }).sort((a,b)=>b.tot-a.tot||a.n.localeCompare(b.n));
+    const maxTot=Math.max(1,...rows.map(r=>r.tot));
+
+    // Répartitions
+    const count=(list,keyFn)=>{ const mp={}; list.forEach(c=>{ [].concat(keyFn(c)).filter(Boolean).forEach(k=>{ mp[k]=(mp[k]||0)+1; }); }); return Object.entries(mp).sort((a,b)=>b[1]-a[1]); };
+    const norm=s=>String(s||'').trim().toLocaleUpperCase('fr-FR');
+    const JS=['Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi','Dimanche'];
+    const parJour=JS.map((j,i)=>[j,scope.filter(c=>{ const d=parseDate(c.date); return d&&((d.getDay()+6)%7)===i; }).length]);
+    const tranche=c=>{ const h=heureMin(c.heure); if(h===9999) return null; return h<11*60?'Matin (avant 11h)':h<14*60?'Midi (11h–14h)':h<18*60?'Après-midi (14h–18h)':'Soir (après 18h)'; };
+    const parHeure=['Matin (avant 11h)','Midi (11h–14h)','Après-midi (14h–18h)','Soir (après 18h)'].map(k=>[k,scope.filter(c=>c.type!=='hotel'&&tranche(c)===k).length]);
+    const parAnt=[['Le jour même',x=>x===0],['La veille',x=>x===1],['2 à 3 jours avant',x=>x>=2&&x<=3],['4 à 7 jours avant',x=>x>=4&&x<=7],['Plus d’une semaine avant',x=>x>7]].map(([l,f])=>[l,ants.filter(f).length]);
+    const parDelai=[['Moins d’1 h',x=>x<36e5],['1 à 4 h',x=>x>=36e5&&x<4*36e5],['4 à 24 h',x=>x>=4*36e5&&x<864e5],['Plus de 24 h',x=>x>=864e5]].map(([l,f])=>[l,delais.filter(f).length]);
+    const parStatut=[['Validées',scope.filter(isValide).length,'#15803d'],['En attente',scope.filter(c=>c.pris==='En attente'||c.pris==='En cours').length,'#b45309'],['Annulées',scope.filter(c=>c.pris==='Annulé').length,'#b91c1c']];
+    const repas=scope.filter(c=>c.type==='repas'), repasV=repas.filter(isValide);
+    const pers=repas.map(c=>+c.nb||0).filter(x=>x>0);
+    const persPrix=repasV.filter(c=>c.prix>0&&c.nb>0);
+    const coutPers=persPrix.length?persPrix.reduce((a,c)=>a+c.prix,0)/persPrix.reduce((a,c)=>a+(+c.nb),0):null;
+    const topLieux=count(repas,c=>norm(c.lieu)).slice(0,6);
+    const topRepas=count(repas,c=>c.desc?c.desc.charAt(0).toUpperCase()+c.desc.slice(1).toLowerCase():'').slice(0,6);
+    const topPresta=count(scope,c=>c.presta).slice(0,8);
+    const topDest=count(scope.filter(c=>c.type==='taxi'),c=>norm(c.arrivee)).slice(0,6);
+    const topVilles=count(scope.filter(c=>c.type==='hotel'),c=>norm(c.lieu)).slice(0,6);
+    const topPour=count(scope.filter(c=>c.type!=='repas'),c=>String(c.pourQui||'').split(/\s*,\s*/).map(norm)).slice(0,8);
+    const jr=(state.journal||[]).filter(j=>{ if(!rg.from) return true; const t=new Date(j.t); return t>=rg.from&&t<=new Date(rg.to.getTime()+864e5); });
+    const parAdmin=count(jr.filter(j=>j.qui&&j.qui!=='Demandeur'&&!/demandeu/i.test(j.detail||'')),j=>j.qui).slice(0,6);
+    const parAction=count(jr,j=>j.action).slice(0,8);
+
+    // Évolution mensuelle (empilée par type)
+    let start=rg.from, end=rg.to;
+    if(!start){ const ds=scope.map(c=>parseDate(c.date)).filter(Boolean).sort((a,b)=>a-b); start=ds[0]||new Date(); end=ds[ds.length-1]||new Date(); }
+    const months=[]; let cur=new Date(start.getFullYear(),start.getMonth(),1);
+    while(cur<=end&&months.length<24){ months.push(new Date(cur)); cur=new Date(cur.getFullYear(),cur.getMonth()+1,1); }
+    const TYC=[['repas','#c2410c'],['taxi','#1d4ed8'],['hotel','#0f766e'],['commande','#7c3aed']];
+    const mens=months.map(d=>{ const L=scope.filter(c=>{ const x=parseDate(c.date); return x&&x.getMonth()===d.getMonth()&&x.getFullYear()===d.getFullYear(); }); return {d,L}; });
+    const maxMens=Math.max(1,...mens.map(x=>x.L.length));
+
+    // Rendu
+    const PERIODS=[['mois','Ce mois'],['moisPrec','Mois dernier'],['trim','3 mois'],['annee','Cette année'],['anneePrec','Année dernière'],['tout','Tout'],['perso','Personnalisé']];
+    const delta=prev&&prev.length?Math.round((scope.length-prev.length)/prev.length*100):null;
+    const tile=(label,val,sub,dot)=>`<div class="stat-card kpi" style="cursor:default;"><span class="kpi-l"><span>${label}</span>${dot?`<span class="dot" style="background:${dot}"></span>`:''}</span><span class="kpi-v">${val}</span><span class="kpi-s">${sub}</span></div>`;
+    const card=(titre,sub,body,extra='')=>`<div class="card" style="margin-bottom:0;"><div class="card-h"><h3>${titre}${sub?`<span class="sub">${sub}</span>`:''}</h3>${extra}</div><div style="padding:14px 16px;">${body}</div></div>`;
+    const bars=(list,col,unit='')=>{ const mx=Math.max(1,...list.map(x=>x[1])); const tot=list.reduce((a,x)=>a+x[1],0);
+        return list.length&&tot?list.map(([k,v])=>`<div class="an-bar"><div class="an-bar-l"><span>${esc(k)}</span><b>${nf(v)}${unit}<i>${tot?pct(v,tot)+' %':''}</i></b></div><div class="an-track"><div style="width:${Math.max(v?2:0,v/mx*100)}%;background:${col};"></div></div></div>`).join('')
+        :'<div class="empty-note" style="padding:8px 0;">Pas encore de données sur la période</div>'; };
+    const cnxLbl=r=>{ if(!r.e) return `<span class="an-tag gris">Pas d’email</span>`; if(!r.u) return `<span class="an-tag gris">Jamais connectée</span>`;
+        const d=new Date(r.u.last), j=Math.floor((Date.now()-d)/864e5);
+        return `<span class="an-tag ${j<=7?'vert':j<=30?'ambre':'gris'}">${j===0?'Aujourd’hui':j===1?'Hier':`Il y a ${j} j`}</span>`; };
+    const table=`<div class="tbl-wrap"><table class="pro-table an-table"><thead><tr>
+        <th>Assistante</th><th style="text-align:right;">Demandes</th><th>Répartition</th><th style="text-align:right;">Validées</th><th style="text-align:right;">Montant validé</th><th style="text-align:right;">Anticipation</th><th>Dernière demande</th><th>Connexion</th><th style="text-align:right;">Via compte</th>
+        </tr></thead><tbody>
+        ${rows.map(r=>`<tr${r.tot?'':' class="an-zero"'}>
+            <td><div style="display:flex;align-items:center;gap:9px;"><span class="side-av" style="width:26px;height:26px;font-size:10px;">${esc($ini(r.n))}</span><div><div style="font-weight:600;">${esc(r.n)}</div>${r.dansListe?'':'<div class="m">hors liste des assistantes</div>'}</div></div></td>
+            <td style="text-align:right;"><b>${r.tot}</b></td>
+            <td>${r.tot?`<div class="an-split" title="Repas ${r.repas} · Taxi ${r.taxi} · Hôtel ${r.hotel}">${[['repas','#c2410c'],['taxi','#1d4ed8'],['hotel','#0f766e']].map(([k,c])=>r[k]?`<span style="flex:${r[k]};background:${c};"></span>`:'').join('')}</div><div class="m">${[r.repas?`${r.repas} repas`:'',r.taxi?`${r.taxi} taxi`:'',r.hotel?`${r.hotel} hôtel`:''].filter(Boolean).join(' · ')}</div>`:'<span class="m">—</span>'}</td>
+            <td style="text-align:right;">${r.tot?`${r.val} <span class="m">(${pct(r.val,r.tot)} %)</span>${r.ann?`<div class="m">${r.ann} annulée${r.ann>1?'s':''}</div>`:''}`:'—'}</td>
+            <td style="text-align:right;font-weight:600;">${r.mt?$m(r.mt):'—'}</td>
+            <td style="text-align:right;">${r.ant===null?'—':`${String(Math.round(r.ant*10)/10).replace('.',',')} j`}</td>
+            <td>${r.last?r.last.toLocaleDateString('fr-FR'):'—'}</td>
+            <td>${cnxLbl(r)}${r.u?`<div class="m">${r.j30} j sur 30</div>`:''}</td>
+            <td style="text-align:right;">${r.via===null?'—':r.via+' %'}</td>
+        </tr>`).join('')}
+        </tbody></table></div>`;
+    const depuis=cx.depuis?new Date(cx.depuis).toLocaleDateString('fr-FR'):new Date().toLocaleDateString('fr-FR');
+    const comptes=Object.entries(cx.users||{}).sort((a,b)=>new Date(b[1].last)-new Date(a[1].last));
+    const g2=m||window.innerWidth<1200?'minmax(0,1fr)':'repeat(2,minmax(0,1fr))';
+    const g3=m||window.innerWidth<1200?'minmax(0,1fr)':'repeat(3,minmax(0,1fr))';
+
+    return `<div>
+    <div class="page-head">
+        <div><h1>Analyses</h1><p>${rg.label} · ${nf(scope.length)} demande${scope.length>1?'s':''}, selon la date de la prestation</p></div>
+    </div>
+    <div style="display:flex;gap:4px;flex-wrap:wrap;background:#fff;border:1px solid var(--border);border-radius:8px;padding:4px;margin-bottom:${period==='perso'?'10px':'16px'};width:fit-content;max-width:100%;">
+        ${PERIODS.map(([k,l])=>`<button data-stats-period="${k}" style="padding:6px 12px;border:none;border-radius:6px;font-size:12.5px;font-weight:500;cursor:pointer;background:${period===k?'var(--accent)':'transparent'};color:${period===k?'#fff':'#4b5563'};">${l}</button>`).join('')}
+    </div>
+    ${period==='perso'?`<div style="display:flex;gap:8px;align-items:center;margin-bottom:16px;flex-wrap:wrap;font-size:13px;color:#6b7280;">Du <input type="date" id="statsFrom" class="form-input" value="${rg.fromIso||''}" style="width:auto;padding:7px 10px;"> au <input type="date" id="statsTo" class="form-input" value="${rg.toIso||''}" style="width:auto;padding:7px 10px;"></div>`:''}
+
+    <div class="kpis an-kpis">
+        ${tile('Demandes',nf(scope.length),delta===null?`${scope.filter(isValide).length} validées`:`<b style="color:${delta>=0?'#15803d':'#b91c1c'}">${delta>=0?'+':''}${delta} %</b> vs période préc.`,'#2c5f85')}
+        ${tile('Assistantes actives',`${rows.filter(r=>r.tot&&r.dansListe).length}<span class="an-sur">/${assistantes.length}</span>`,'ont fait au moins une demande','#7c3aed')}
+        ${tile('Taux de connexion',`${pct(connectees30,assistantes.length)} %`,`${connectees30} assistante${connectees30>1?'s':''} sur ${assistantes.length} · 30 derniers jours`,'#0f766e')}
+        ${tile('Demandes via un compte',viaCodes.length?`${pct(viaCompte,viaCodes.length)} %`:'—',viaCodes.length?`${viaCompte} sur ${viaCodes.length} suivies`:'mesuré sur les nouvelles demandes','#1d4ed8')}
+        ${tile('Taux de validation',scope.length?`${pct(scope.filter(isValide).length,scope.length)} %`:'—',`${scope.filter(c=>c.pris==='Annulé').length} annulée${scope.filter(c=>c.pris==='Annulé').length>1?'s':''} (${pct(scope.filter(c=>c.pris==='Annulé').length,scope.length)} %)`,'#15803d')}
+        ${tile('Délai de validation',delaiMoy===null?'—':H(delaiMoy),delais.length?`moyenne sur ${delais.length} demande${delais.length>1?'s':''}`:'pas encore mesuré','#b45309')}
+        ${tile('Anticipation moyenne',antMoy===null?'—':`${String(Math.round(antMoy*10)/10).replace('.',',')} j`,ants.length?`${pct(derniereMin,ants.length)} % la veille ou le jour même`:'pas encore mesuré','#c2410c')}
+        ${tile('Personnes par repas',pers.length?String(Math.round(pers.reduce((a,b)=>a+b,0)/pers.length*10)/10).replace('.',','):'—',coutPers?`${$m(coutPers)} par personne`:'coût par personne : —','#be185d')}
+    </div>
+
+    <div class="card" style="margin-bottom:16px;"><div class="card-h"><h3>Par assistante<span class="sub">${rows.filter(r=>r.tot).length} avec des demandes</span></h3></div>${table}</div>
+
+    <div class="card" style="margin-bottom:16px;"><div class="card-h"><h3>Évolution des demandes</h3><div class="an-legend">${TYC.map(([k,c])=>`<span><i style="background:${c}"></i>${TYPE_LABEL[k]||k}</span>`).join('')}</div></div>
+        <div style="padding:14px 16px;overflow-x:auto;"><div class="an-cols" style="min-width:${months.length*34}px;">
+        ${mens.map(x=>`<div class="an-col" title="${MONTHS[x.d.getMonth()+1]} ${x.d.getFullYear()} : ${x.L.length} demande${x.L.length>1?'s':''}"><span class="an-col-v">${x.L.length||''}</span>
+            <div class="an-stack" style="height:${x.L.length/maxMens*130}px;">${TYC.map(([k,c])=>{ const n=x.L.filter(z=>z.type===k).length; return n?`<span style="flex:${n};background:${c};"></span>`:''; }).join('')}</div>
+            <span class="an-col-l">${MONTHS[x.d.getMonth()+1]}${months.length>12||x.d.getMonth()===0?` ${String(x.d.getFullYear()).slice(2)}`:''}</span></div>`).join('')}
+        </div></div></div>
+
+    <div class="an-grid" style="grid-template-columns:${g3};">
+        ${card('Statut des demandes','',bars(parStatut.map(([a,b])=>[a,b]),'#2c5f85'))}
+        ${card('Jour de la prestation','',bars(parJour,'#7c3aed'))}
+        ${card('Moment de la journée','repas et taxis',bars(parHeure,'#0e7490'))}
+        ${card('Anticipation','délai entre la demande et la prestation',bars(parAnt,'#c2410c'))}
+        ${card('Délai de validation','par l’administration',bars(parDelai,'#b45309'))}
+        ${card('Prestataires les plus utilisés','',bars(topPresta,'#1d4ed8'))}
+        ${card('Lieux de repas','',bars(topLieux,'#c2410c'))}
+        ${card('Types de repas','',bars(topRepas,'#be185d'))}
+        ${card('Pour qui','taxis et hôtels',bars(topPour,'#4f46e5'))}
+        ${card('Destinations taxi','',bars(topDest,'#1d4ed8'))}
+        ${card('Villes d’hôtel','',bars(topVilles,'#0f766e'))}
+        ${card('Activité des administrateurs','actions enregistrées',bars(parAdmin,'#2c5f85'))}
+    </div>
+
+    <div class="an-grid" style="grid-template-columns:${g2};margin-top:16px;">
+        ${card('Connexions','tous les comptes',comptes.length?`<div class="an-cx">${comptes.map(([e,u])=>{ const d=new Date(u.last), j=Math.floor((Date.now()-d)/864e5);
+            return `<div><span class="side-av" style="width:28px;height:28px;font-size:10px;">${esc($ini(u.nom||e))}</span><div style="flex:1;min-width:0;"><b>${esc(u.nom||e)}${u.admin?' <span class="an-tag bleu">Admin</span>':''}</b><span>${esc(e)}</span></div><div style="text-align:right;"><b>${j===0?'Aujourd’hui':j===1?'Hier':`Il y a ${j} j`}</b><span>${joursRecents(u)} j sur 30 · ${(u.jours||[]).length} au total</span></div></div>`; }).join('')}</div>`
+            :'<div class="empty-note" style="padding:8px 0;">Aucune connexion enregistrée pour l’instant.</div>')}
+        ${card('Actions dans le journal','',bars(parAction,'#6b7280'))}
+    </div>
+    <div style="font-size:11.5px;color:#9ca3af;margin-top:14px;line-height:1.5;">Connexions et demandes « via un compte » suivies depuis le ${depuis}. Délai de validation calculé à partir du journal (500 dernières actions). Anticipation : écart entre l’envoi de la demande et la date de la prestation.</div>
     </div>`;
 }
 
@@ -4034,6 +4243,7 @@ function attachEvents(){
         state.data=[newItem,...state.data];
         state.form.sent=true;state.form.code=code;render();
         console.log('newItem code:', newItem.code, 'appToRow:', JSON.stringify(appToRow(newItem)));
+        trackDemandeVia(newItem.code);
         const saved=await dbInsert(newItem);
         if(saved.id!==newItem.id){state.data=state.data.map(c=>c.id===newItem.id?saved:c);}
         // Fallback localStorage si Supabase pas encore chargé
