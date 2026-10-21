@@ -453,6 +453,23 @@
         .an-cx > div{ display:flex; align-items:center; gap:10px; padding:9px 0; border-bottom:1px solid var(--border-light); font-size:12.5px; } .an-cx > div:last-child{ border-bottom:none; }
         .an-cx > div > div > b{ display:block; font-weight:600; } .an-cx > div > div > span{ display:block; color:var(--ink-soft); font-size:11.5px; }
         @media(max-width:1199px){ .an-kpis{ grid-template-columns:repeat(2,minmax(0,1fr)); } }
+        /* ═══ Lot : fiches, notes, régimes, anomalies ═══ */
+        .nt-list{ display:flex; flex-direction:column; gap:10px; margin-bottom:10px; }
+        .nt{ display:flex; gap:10px; } .nt-h{ display:flex; align-items:center; gap:8px; font-size:12px; } .nt-h b{ font-weight:600; } .nt-h span{ color:var(--ink-soft); }
+        .nt-h button{ margin-left:auto; background:none; border:none; color:#c3c8d0; cursor:pointer; padding:2px; display:flex; } .nt-h button:hover{ color:#b91c1c; }
+        .nt-t{ background:#f6f7f9; border-radius:0 10px 10px 10px; padding:8px 11px; font-size:13px; margin-top:3px; white-space:pre-wrap; word-break:break-word; }
+        .ano{ border-color:#f3d9a7; } .ano .card-h h3{ display:flex; align-items:center; gap:7px; }
+        .ano-row{ display:flex; align-items:center; gap:12px; padding:10px 16px; border-bottom:1px solid var(--border-light); cursor:pointer; color:var(--ink-soft); }
+        .ano-row:hover{ background:#fafbfc; } .ano-row b{ display:block; font-size:13px; color:var(--ink); font-weight:600; } .ano-row span:not(.ano-ic){ display:block; font-size:12px; color:var(--ink-soft); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .ano-ic{ width:30px; height:30px; border-radius:8px; display:inline-flex; align-items:center; justify-content:center; flex-shrink:0; }
+        .rg-row{ display:flex; flex-wrap:wrap; gap:8px; }
+        .rg{ display:inline-flex; align-items:center; height:36px; border-radius:18px; border:1px solid var(--border); background:#fff; overflow:hidden; font:500 13.5px var(--fb); }
+        .rg.on{ border-color:#16a34a; background:#ecf8f0; color:#15803d; font-weight:600; }
+        .rg > button{ border:none; background:none; height:100%; padding:0 13px; cursor:pointer; font:inherit; color:inherit; }
+        .rg .rg-n{ display:flex; align-items:center; gap:2px; padding-right:4px; } .rg .rg-n button{ width:26px; height:26px; border-radius:13px; border:none; background:#fff; color:#15803d; cursor:pointer; display:flex; align-items:center; justify-content:center; }
+        .rg .rg-n b{ min-width:16px; text-align:center; }
+        .nf-warn{ margin-top:10px; background:#fef6e7; color:#92400e; border-radius:8px; padding:9px 12px; font-size:12.5px; display:flex; gap:7px; align-items:flex-start; }
+        .pi-mini{ display:inline-flex; gap:3px; color:var(--ink-soft); margin-left:6px; }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
@@ -525,6 +542,8 @@ function loadSettingsLocal() {
         adminEmails:          JSON.parse(localStorage.getItem('settings_admin_emails')          ||JSON.stringify([])),
         yoozMap:              JSON.parse(localStorage.getItem('settings_yooz_map')              ||JSON.stringify({})),
         loginObligatoire:     JSON.parse(localStorage.getItem('settings_login_obligatoire')     ||'false'),
+        prestaInfo:           JSON.parse(localStorage.getItem('settings_presta_info')            ||'{}'),
+        marque:               JSON.parse(localStorage.getItem('settings_marque')                 ||'{}'),
     };
 }
 
@@ -540,6 +559,8 @@ function saveSettingsLocal(s) {
     localStorage.setItem('settings_admin_emails',         JSON.stringify(s.adminEmails||[]));
     localStorage.setItem('settings_yooz_map',              JSON.stringify(s.yoozMap||{}));
     localStorage.setItem('settings_login_obligatoire',     JSON.stringify(!!s.loginObligatoire));
+    localStorage.setItem('settings_presta_info',           JSON.stringify(s.prestaInfo||{}));
+    try{ localStorage.setItem('settings_marque',            JSON.stringify(s.marque||{})); }catch(e){}
 }
 
 async function loadSettingsFromDB() {
@@ -564,6 +585,8 @@ async function loadSettingsFromDB() {
         if (map.emails)               settings.emails               = map.emails;
         if (map.adminEmails)          settings.adminEmails          = map.adminEmails;
         if (map.loginObligatoire !== undefined && map.loginObligatoire !== null) settings.loginObligatoire = !!map.loginObligatoire;
+        if (map.prestaInfo)           settings.prestaInfo           = map.prestaInfo;
+        if (map.marque)               settings.marque               = map.marque;
         if (map.yoozMap)              { settings.yoozMap = map.yoozMap; Object.assign(YOOZ_MAP, map.yoozMap); state.yoozMap = map.yoozMap; }
         saveSettingsLocal(settings);
         refreshGlobals();
@@ -574,7 +597,7 @@ async function loadSettingsFromDB() {
 
 async function saveSettingsToDB(s) {
     saveSettingsLocal(s);
-    const keys = ['assistantes','directeurs','prestatairesRepas','typesRepas','prestatairesTaxi','prestatairesCommande','prestatairesHotel','emails','adminEmails','yoozMap','loginObligatoire'];
+    const keys = ['assistantes','directeurs','prestatairesRepas','typesRepas','prestatairesTaxi','prestatairesCommande','prestatairesHotel','emails','adminEmails','yoozMap','loginObligatoire','prestaInfo','marque'];
     for (const cle of keys) {
         try {
             await fetch(`${SB_PARAMS}?cle=eq.${cle}`, {
@@ -1556,6 +1579,7 @@ function nfSummaryRows(f){
     else if(f.type==='taxi') R.push(['Date',dl],['Heure',f.heure||'—'],['Pour',nfQui(f)||'—'],['Départ',f.de||'—'],['Arrivée',f.vers||'—'],['Téléphone',f.tel||'—'],['Prestataire',f.presta||'—']);
     else { const dd=parseDate(nfDepart(f)); R.push(['Arrivée',dl],['Départ',dd?dateLongue(dd):'—'],['Nuits',String(nfNuits(f))],['Pour',nfQui(f)||'—'],['Voyageur(s)',f.desc||'—'],['Ville',f.lieu||'—'],['Hôtel',f.presta||'—']); }
     R.unshift(['Demandeur',f.dem||'—']);
+    if(f.type==='repas'&&regimesTxt(f)) R.push(['Régimes',regimesTxt(f).replace(/^Régimes : /,'')]);
     return R;
 }
 function nfSummaryHtml(){ return nfSummaryRows(state.form).map(([k,v])=>`<div class="nf-tk"><span>${k}</span><b class="${v==='—'?'vide':''}">${esc(v)}</b></div>`).join(''); }
@@ -1632,7 +1656,8 @@ function renderInlineForm(m){
         det=lbl('Type de repas')+`<div class="nf-tiles">${P_TYPES.map(t=>`<button type="button" data-nf="set" data-k="desc" data-v="${esc(t)}" class="nf-tile ${f.desc===t?'on':''}">${icon(nfIcRepas(t),20)}<span>${esc(t)}</span></button>`).join('')}</div>`
             +`<div class="nf-step-row"><div><b>Nombre de personnes</b><span>participants compris</span></div>
                 <div class="nf-stepper"><button type="button" data-nf="nb" data-v="-1">${icon('minus',16)}</button><b>${esc(f.nb||'1')}</b><button type="button" data-nf="nb" data-v="1">${icon('plus',16)}</button></div></div>`
-            +lbl('Restaurant / prestataire *')+`<div class="nf-row">${P_REPAS.map(p=>chip('set','presta',p,esc(p),f.presta===p)).join('')}</div>`
+            +lbl('Restaurant / prestataire *')+`<div class="nf-row">${P_REPAS.map(p=>chip('set','presta',p,esc(p),f.presta===p)).join('')}</div>${(()=>{ const al=pDelaiAlerte(f.presta,f.date,f.heure); return al?`<div class="nf-warn">${icon('clock',14)} <span><b>${esc(f.presta)}</b> demande au moins ${al.h} h de délai. Cette demande risque d’arriver trop tard : choisissez une autre date ou un autre prestataire, ou prévenez l’administration en commentaire.</span></div>`:''; })()}`+`<div style="height:16px"></div>`+lbl('Régimes et allergies','optionnel')+`<div class="rg-row">${REGIMES.map(k=>{ const n=(f.regimes||{})[k]||0; return n?`<div class="rg on"><button type="button" data-nf="rg" data-k="toggle" data-v="${k}">${icon('check',13)} ${k}</button><span class="rg-n"><button type="button" data-nf="rg" data-k="-1" data-v="${k}">${icon('minus',12)}</button><b>${n}</b><button type="button" data-nf="rg" data-k="1" data-v="${k}">${icon('plus',12)}</button></span></div>`:`<div class="rg"><button type="button" data-nf="rg" data-k="toggle" data-v="${k}">${k}</button></div>`; }).join('')}</div>
+                <input id="formAllergies" type="text" class="form-input nf-in" style="margin-top:8px;" value="${esc(f.allergies||'')}" placeholder="Allergies (arachides, fruits à coque…)">`
             +`<div style="height:14px"></div>`+lbl('Lieu de livraison *')+`<input id="formLieu" type="text" class="form-input nf-in" value="${esc(f.lieu||'')}" placeholder="Bureau, salle, adresse…">`+recents(nfRecents('repas','lieu'),'lieu');
     } else if(T==='taxi'){
         detTitre='Le trajet'; detIc='car';
@@ -1640,7 +1665,7 @@ function renderInlineForm(m){
             +`<div style="height:14px"></div>`+lbl('Adresse d’arrivée *')+`<input id="formVers" type="text" class="form-input nf-in" value="${esc(f.vers||'')}" placeholder="Saisissez la destination…" autocomplete="off">`+recents(nfRecents('taxi','arrivee',3),'vers')
             +`<div class="nf-grid2" style="margin-top:14px;"><div>${lbl('Téléphone du passager *')}<input id="formTel" type="tel" class="form-input nf-in" value="${esc(f.tel||'')}" placeholder="06 12 34 56 78"></div>
                <div>${lbl('N° de vol / train','si gare ou aéroport')}<input id="formVol" type="text" class="form-input nf-in" value="${esc(f.vol||'')}" placeholder="Ex : AF1234, TGV 6201"></div></div>`
-            +`<div style="height:14px"></div>`+lbl('Prestataire')+`<div class="nf-row">${P_TAXI.map(p=>chip('set','presta',p,esc(p),f.presta===p)).join('')}</div>`;
+            +`<div style="height:14px"></div>`+lbl('Prestataire')+`<div class="nf-row">${P_TAXI.map(p=>chip('set','presta',p,esc(p),f.presta===p)).join('')}</div>${(()=>{ const al=pDelaiAlerte(f.presta,f.date,f.heure); return al?`<div class="nf-warn">${icon('clock',14)} <span><b>${esc(f.presta)}</b> demande au moins ${al.h} h de délai. Cette demande risque d’arriver trop tard : choisissez une autre date ou un autre prestataire, ou prévenez l’administration en commentaire.</span></div>`:''; })()}`;
     } else {
         detTitre='L’hébergement'; detIc='bed';
         det=`<div class="nf-grid2"><div>${lbl('Voyageur(s)')}<input id="formDesc" type="text" class="form-input nf-in" value="${esc(f.desc||'')}" placeholder="Ex : Jean Dupont"></div>
@@ -1992,7 +2017,7 @@ function suiviCard(c,{compact=false,showStage=false,select=false}={}){
     };
     let actions='', info='';
     if(st==='avalider') actions=B.valider+B.refuser;
-    else if(st==='acommander') actions=B.commande+B.annuler;
+    else if(st==='acommander') actions=B.commande+pContactHtml(c)+B.annuler;
     else if(st==='commandee'){ actions=B.fait+B.annuler; info=`${icon('check',11)} Commande passée le ${new Date(s.cmd).toLocaleDateString('fr-FR')}${s.cmdBy&&s.cmdBy!=='Admin'?' par '+esc(s.cmdBy):''} · <a href="#" data-suivi-act="uncommande" data-id="${c.id}" style="color:#8b93a1;">décocher</a>`; }
     else if(st==='fait'){ info=s.fait?`Terminé le ${new Date(s.fait).toLocaleDateString('fr-FR')}${s.cmd?'':''} · <a href="#" data-suivi-act="unfait" data-id="${c.id}" style="color:#8b93a1;">rouvrir</a>`:'Prestation passée'; }
     const sel=select?`<input type="checkbox" class="sel-box" data-sel-id="${c.id}" ${(state.sel||[]).includes(c.id)?'checked':''} style="width:16px;height:16px;accent-color:var(--accent);cursor:pointer;flex-shrink:0;margin-top:3px;">`:'';
@@ -2008,7 +2033,7 @@ function suiviCard(c,{compact=false,showStage=false,select=false}={}){
                 </div>
                 <div style="font-size:12px;color:#4b5563;margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${meta.join(' · ')}</div>
                 <div style="font-size:11px;color:#8b93a1;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(c.demandeur||'—')}${c.pourQui?' · pour '+esc(c.pourQui):''}${c.presta&&c.type!=='commande'?' · '+esc(c.presta):''}</div>
-                ${s.note?`<div style="font-size:11px;color:#92400e;background:#fffbeb;border-radius:8px;padding:4px 8px;margin-top:6px;display:flex;gap:5px;align-items:flex-start;">${icon('message',11)} <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(s.note)}</span></div>`:''}
+                ${(()=>{ const L=notesOf(s); return L.length?`<div style="font-size:11px;color:#92400e;background:#fffbeb;border-radius:8px;padding:4px 8px;margin-top:6px;display:flex;gap:5px;align-items:flex-start;">${icon('message',11)} <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${L.length>1?`<b>${L.length}</b> · `:''}${esc(L[L.length-1].txt)}</span></div>`:''; })()}
             </div>
             ${info?`<div style="font-size:11px;color:#8b93a1;margin-top:6px;">${info}</div>`:''}
             ${actions?`<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;">${actions}</div>`:''}
@@ -2174,13 +2199,8 @@ function suiviBlock(d){
         ${stepper}
         ${histo?`<div style="font-size:11px;color:#8b93a1;margin-top:10px;">${histo}</div>`:''}
         ${actions?`<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;">${actions}</div>`:''}
-        <div style="margin-top:14px;">
-            <label class="form-label" style="display:flex;align-items:center;gap:6px;">${icon('message',13)} Note interne <span style="font-weight:400;color:#9ca3af;">(visible seulement par l’admin)</span></label>
-            <div style="display:flex;gap:8px;align-items:flex-start;min-width:0;">
-                <textarea id="suiviNote" class="form-input" style="min-height:44px;resize:vertical;font-size:13px;flex:1;min-width:0;width:auto;" placeholder="Ex : commandé par téléphone, confirmation n° 1234…">${esc(s.note||'')}</textarea>
-                <button data-suivi-act="note" data-id="${d.id}" class="btn-primary" style="padding:11px 14px;font-size:13px;">${icon('save',13)}</button>
-            </div>
-        </div>
+        ${['acommander','commandee'].includes(st)&&pContactHtml(d,{grand:true})?`<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;">${pContactHtml(d,{grand:true})}</div>`:''}
+        ${notesHtml(d)}
     </div>`;
 }
 
@@ -2238,7 +2258,8 @@ document.addEventListener('click', async e=>{
     else if(act==='uncommande') unmarkCommande([c.id]);
     else if(act==='fait') markFait([c.id]);
     else if(act==='unfait') unmarkFait([c.id]);
-    else if(act==='note') saveNote(c.id, document.getElementById('suiviNote')?.value||'');
+    else if(act==='note') addNote(c.id, document.getElementById('suiviNote')?.value||'');
+    else if(act==='delnote'){ if(confirm('Supprimer ce commentaire ?')) delNote(c.id, +a.getAttribute('data-idx')); }
     else if(act==='agenda') downloadRappels(c,'both');
     else if(act==='agenda-cmd') downloadRappels(c,'cmd');
     else if(act==='agenda-mep') downloadRappels(c,'mep');
@@ -2271,7 +2292,7 @@ function renderDetail(d,m){
         </div>
 
         ${isRepas?`
-        <div class="form-group"><label class="form-label">${icon('utensils',13)} Type de repas souhaité</label><select id="editPresta" class="form-select"><option value="">—</option>${d.presta&&!P_REPAS.includes(d.presta)?`<option selected>${d.presta}</option>`:""  }${P_REPAS.map(p=>`<option ${d.presta===p?'selected':''}>${p}</option>`).join('')}</select></div>
+        <div class="form-group"><label class="form-label">${icon('utensils',13)} Restaurant / prestataire</label><select id="editPresta" class="form-select"><option value="">—</option>${d.presta&&!P_REPAS.includes(d.presta)?`<option selected>${d.presta}</option>`:""  }${P_REPAS.map(p=>`<option ${d.presta===p?'selected':''}>${p}</option>`).join('')}</select></div>
         <div class="form-group"><label class="form-label">Lieu</label><input id="editLieu" type="text" value="${d.lieu||''}" class="form-input"></div>
         <div class="form-group"><label class="form-label">Nb personnes</label><select id="editNb" class="form-select">${['1','2','3','4','5','6','7','8','9','10+'].map(n=>`<option ${String(d.nb)===n?'selected':''}>${n}</option>`).join('')}</select></div>
         `:''}
@@ -2453,6 +2474,7 @@ function renderDashboard(total,attente,m){
         ${tile('commandee',n.commandee,'Commande passée',n.commandee?'En attente de prestation':'Aucune en cours','{"adminTab":"suivi","suiviStage":"commandee"}')}
         ${tile('x-cal',$ms(totalMois),'Dépenses du mois',`${validesMois.length} commande${validesMois.length>1?'s':''} validée${validesMois.length>1?'s':''}`,'{"adminTab":"stats","statsPeriod":"mois"}')}
     </div>
+    ${anomaliesHtml(m)}
     <div style="${large?'display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:16px;align-items:start;':''}">
         <div>${left}</div><div>${right}</div>
     </div>
@@ -2560,6 +2582,105 @@ function renderStats(m){
         ${hbars('Par type','grid',parType,'#c2410c')}
     </div>
     <div style="font-size:11px;color:#9ca3af;margin-top:12px;">Montants des commandes validées, selon la date de la prestation. Une commande pour plusieurs directeurs est répartie à parts égales.</div>
+    </div>`;
+}
+
+/* ══════════════════════════════════════
+   FICHES PRESTATAIRES
+══════════════════════════════════════ */
+function pInfo(nom){ if(!nom) return {}; const M=settings.prestaInfo||{}; const k=Object.keys(M).find(x=>x.toLowerCase()===String(nom).trim().toLowerCase()); return k?M[k]:{}; }
+function pContactHtml(c,{grand=false}={}){
+    const P=pInfo(c.presta); if(!P.tel&&!P.email&&!P.url) return '';
+    const st=grand?'padding:9px 13px;font-size:13px;border-radius:10px;':'padding:5px 10px;font-size:12px;border-radius:8px;';
+    const a=(href,ic,l,ext)=>`<a href="${esc(href)}" ${ext?'target="_blank" rel="noopener"':''} onclick="event.stopPropagation()" style="display:inline-flex;align-items:center;gap:5px;${st}border:1px solid var(--border);background:#fff;color:var(--ink);font-weight:600;text-decoration:none;white-space:nowrap;">${icon(ic,grand?14:12)} ${l}</a>`;
+    const sujet=`Commande ${TYPE_LABEL[c.type]||''} – ${dateCourte(c)}${c.heure?' '+c.heure:''}`;
+    return [P.tel?a('tel:'+String(P.tel).replace(/\s/g,''),'phone',grand?`Appeler ${esc(c.presta)}`:'Appeler'):'',
+            P.email?a(`mailto:${P.email}?subject=${encodeURIComponent(sujet)}&body=${encodeURIComponent(orderMessage(c))}`,'mail',grand?'Email de commande prêt':'Email'):'',
+            P.url?a(/^https?:/.test(P.url)?P.url:'https://'+P.url,'arrow',grand?'Commander en ligne':'Site',true):''].join('');
+}
+function pDelaiAlerte(presta,date,heure){
+    const P=pInfo(presta), h=parseFloat(P.delai); if(!h||!date) return null;
+    const d=parseDate(date); if(!d) return null; const mn=heureMin(heure); d.setHours(0,0,0,0); d.setMinutes(mn===9999?12*60:mn);
+    const reste=(d-Date.now())/36e5; return reste<h?{h,reste}:null;
+}
+function renderPrestaModal(){
+    const nom=state.prestaEdit; if(!nom) return ''; const P=pInfo(nom);
+    const f=(id,l,v,ph,type='text')=>`<div class="form-group"><label class="form-label">${l}</label><input id="${id}" type="${type}" class="form-input" value="${esc(v||'')}" placeholder="${ph}"></div>`;
+    return `<div class="modal-overlay" data-presta-close><div class="modal-content" onclick="event.stopPropagation()" style="max-width:520px;">
+        <div class="modal-handle"></div>
+        <div style="padding:20px 22px;overflow-y:auto;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;"><div><div style="font-size:12px;color:var(--ink-soft);">Fiche prestataire</div><div style="font-size:19px;font-weight:650;">${esc(nom)}</div></div><button data-presta-close style="background:none;border:none;cursor:pointer;color:var(--ink-soft);">${icon('x',20)}</button></div>
+            <div class="form-row-2">${f('piTel','Téléphone',P.tel,'01 23 45 67 89','tel')}${f('piEmail','Email de commande',P.email,'commande@exemple.fr','email')}</div>
+            ${f('piUrl','Site / lien de commande',P.url,'https://…')}
+            <div class="form-row-2">${f('piDelai','Délai minimum (heures)',P.delai,'Ex : 24','number')}${f('piContact','Contact',P.contact,'Nom de l’interlocuteur')}</div>
+            <div class="form-group"><label class="form-label">Note</label><textarea id="piNote" class="form-input" style="min-height:60px;" placeholder="Horaires, minimum de commande, code client…">${esc(P.note||'')}</textarea></div>
+            <div style="font-size:12px;color:var(--ink-soft);margin:-4px 0 14px;">Les boutons Appeler / Email / Site apparaissent dans le suivi. Le délai minimum alerte l’assistante et l’administration quand une demande arrive trop tard.</div>
+            <div style="display:flex;gap:8px;justify-content:flex-end;"><button data-presta-close class="btn-sm" style="padding:10px 16px;">Annuler</button><button id="piSave" class="btn-sm pri" style="padding:10px 16px;">${icon('save',14)} Enregistrer</button></div>
+        </div></div></div>`;
+}
+
+/* ══════════════════════════════════════
+   NOTES INTERNES (fil de discussion admin)
+══════════════════════════════════════ */
+function notesOf(s){ const L=[...(s.notes||[])]; if(s.note&&!L.length) L.unshift({t:'',qui:'',txt:s.note}); return L; }
+function addNote(id,txt){ txt=(txt||'').trim(); if(!txt) return; const n={t:new Date().toISOString(),qui:adminName()||userName()||'Admin',txt};
+    setSuivi([id],cur=>({notes:[...notesOf(cur),n],note:null})); showToast('✓ Commentaire ajouté'); }
+function delNote(id,idx){ setSuivi([id],cur=>{ const L=notesOf(cur); L.splice(idx,1); return {notes:L.length?L:null,note:null}; }); }
+function notesHtml(d){
+    const s=suiviOf(d), L=notesOf(s);
+    return `<div style="margin-top:16px;border-top:1px solid var(--border-light);padding-top:14px;">
+        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:13px;font-weight:650;color:var(--ink);margin-bottom:10px;">${icon('message',14)} Commentaires internes <span style="font-weight:400;font-size:12px;color:var(--ink-soft);">· visibles seulement par les administrateurs</span></div>
+        ${L.length?`<div class="nt-list">${L.map((n,i)=>`<div class="nt"><span class="side-av" style="width:26px;height:26px;font-size:10px;">${esc($ini(n.qui||'?'))}</span><div style="flex:1;min-width:0;"><div class="nt-h"><b>${esc(n.qui||'Note')}</b>${n.t?`<span>${new Date(n.t).toLocaleString('fr-FR',{dateStyle:'short',timeStyle:'short'})}</span>`:''}<button data-suivi-act="delnote" data-id="${d.id}" data-idx="${i}" title="Supprimer">${icon('x',12)}</button></div><div class="nt-t">${esc(n.txt)}</div></div></div>`).join('')}</div>`:''}
+        <div style="display:flex;gap:8px;align-items:flex-start;">
+            <textarea id="suiviNote" class="form-input" style="min-height:42px;resize:vertical;font-size:13px;flex:1;min-width:0;width:auto;" placeholder="Ex : appelé Mimma, livraison confirmée 12h15…"></textarea>
+            <button data-suivi-act="note" data-id="${d.id}" class="btn-sm pri" style="padding:10px 14px;">${icon('send',13)}</button>
+        </div>
+    </div>`;
+}
+
+/* ══════════════════════════════════════
+   RÉGIMES ET ALLERGIES
+══════════════════════════════════════ */
+const REGIMES=['Végétarien','Végan','Sans gluten','Sans lactose','Halal','Sans porc','Casher'];
+function regimesTxt(f){ const r=f.regimes||{}; const p=REGIMES.filter(k=>r[k]>0).map(k=>`${r[k]} ${k.toLowerCase()}${r[k]>1&&/^v[ée]g/i.test(k)?'s':''}`); const a=String(f.allergies||'').trim();
+    return [p.length?`Régimes : ${p.join(', ')}`:'', a?`Allergies : ${a}`:''].filter(Boolean).join(' · '); }
+
+/* ══════════════════════════════════════
+   POINTS D'ATTENTION (anomalies)
+══════════════════════════════════════ */
+function anomalies(){
+    const out=[], now=new Date(), t0=new Date(); t0.setHours(0,0,0,0);
+    const actives=state.data.filter(c=>c.pris!=='Annulé');
+    const futur=actives.filter(c=>{ const d=parseDate(c.date); return d&&d>=t0; });
+    const norm=s=>String(s||'').trim().toUpperCase();
+    // Doublons
+    const vus={};
+    futur.forEach(c=>{ const k=[c.type,c.date,norm(c.heure),c.type==='taxi'?norm(c.depart)+'>'+norm(c.arrivee):norm(c.lieu)].join('|'); (vus[k]=vus[k]||[]).push(c); });
+    Object.values(vus).filter(l=>l.length>1).forEach(l=>out.push({niv:2,ic:'grid',titre:'Doublon possible',detail:`${l.length} demandes identiques : ${titreDe(l[0])} · ${dateCourte(l[0])}${l[0].heure?' '+l[0].heure:''} · ${l.map(x=>x.demandeur).filter(Boolean).join(', ')}`,c:l[0]}));
+    // Pas encore commandé à temps
+    futur.filter(c=>stageOf(c)==='acommander').forEach(c=>{ const d=parseDate(c.date); const j=Math.round((d-t0)/864e5); const al=pDelaiAlerte(c.presta,c.date,c.heure);
+        if(al) out.push({niv:3,ic:'clock',titre:'Délai du prestataire dépassé',detail:`${titreDe(c)} · ${dateCourte(c)} : ${c.presta} demande ${al.h} h, il reste ${Math.max(0,Math.round(al.reste))} h`,c});
+        else if(j===0||(j===1&&now.getHours()>=16)) out.push({niv:3,ic:'box',titre:j===0?'Pas commandé, c’est aujourd’hui':'Pas encore commandé pour demain',detail:`${titreDe(c)} · ${c.heure||''} · ${c.presta||'prestataire ?'} · ${c.demandeur||''}`,c}); });
+    // En attente trop longtemps
+    actives.filter(c=>c.pris==='En attente'||c.pris==='En cours').forEach(c=>{ const p=pendingSince(c); if(p&&Date.now()-p>24*36e5) out.push({niv:2,ic:'hourglass',titre:'En attente depuis plus de 24 h',detail:`${titreDe(c)} · ${c.demandeur||''} · reçue le ${new Date(p).toLocaleDateString('fr-FR')}`,c}); });
+    // Taxi gare / aéroport sans n° de vol
+    futur.filter(c=>c.type==='taxi'&&!c.vol&&/(a[ée]roport|orly|cdg|roissy|beauvais|gare)/i.test(`${c.depart} ${c.arrivee}`)).forEach(c=>out.push({niv:1,ic:'plane',titre:'N° de vol ou de train manquant',detail:`${titreDe(c)} · ${dateCourte(c)} ${c.heure||''}`,c}));
+    // Informations manquantes
+    futur.filter(c=>c.pris==='OUI'&&((c.type==='repas'&&!c.lieu)||(c.type!=='commande'&&!c.presta))).forEach(c=>out.push({niv:1,ic:'alert',titre:'Information manquante',detail:`${titreDe(c)} · ${dateCourte(c)} : ${!c.presta?'prestataire':'lieu'} non renseigné`,c}));
+    // Prix anormal (par personne, vs habitude du prestataire)
+    const il90=new Date(); il90.setDate(il90.getDate()-90);
+    const pp={}; state.data.filter(c=>c.pris==='OUI'&&c.prix>0&&c.type==='repas').forEach(c=>{ (pp[c.presta]=pp[c.presta]||[]).push(c.prix/Math.max(1,+c.nb||1)); });
+    const med=a=>{ const s=[...a].sort((x,y)=>x-y); return s[Math.floor(s.length/2)]; };
+    state.data.filter(c=>c.pris==='OUI'&&c.prix>0&&c.type==='repas'&&(pp[c.presta]||[]).length>=4&&(parseDate(c.date)||0)>=il90).forEach(c=>{ const v=c.prix/Math.max(1,+c.nb||1), m=med(pp[c.presta]); if(v>2.5*m) out.push({niv:1,ic:'wallet',titre:'Prix inhabituel',detail:`${titreDe(c)} · ${dateCourte(c)} : ${$m(v)} par personne chez ${c.presta} (habituellement ${$m(m)})`,c}); });
+    return out.sort((a,b)=>b.niv-a.niv);
+}
+function anomaliesHtml(m){
+    const L=anomalies(); if(!L.length) return '';
+    const col={3:['#b91c1c','#fef2f2'],2:['#b45309','#fef6e7'],1:['#2c5f85','#e8f0f7']};
+    const vis=state.anoAll?L:L.slice(0,5);
+    return `<div class="card ano"><div class="card-h"><h3>${icon('alert',15)} Points d’attention<span class="sub">${L.length}</span></h3></div>
+        ${vis.map(a=>`<div class="ano-row" data-open-detail='${JSON.stringify(a.c).replace(/'/g,"&apos;")}'><span class="ano-ic" style="color:${col[a.niv][0]};background:${col[a.niv][1]};">${icon(a.ic,15)}</span><div style="min-width:0;flex:1;"><b>${a.titre}</b><span>${esc(a.detail)}</span></div>${icon('arrow',14)}</div>`).join('')}
+        ${L.length>5?`<button class="card-link" data-nav='{"anoAll":${!state.anoAll}}' style="padding:10px 16px;">${state.anoAll?'Réduire':L.length-5>1?`Voir les ${L.length-5} autres`:'Voir l’autre point'}</button>`:''}
     </div>`;
 }
 
@@ -3373,6 +3494,7 @@ function renderSettings(){
                 <div style="display:flex;align-items:center;gap:8px;">
                     ${s.badge?`<span class="badge-${s.badge}">${s.badge==='assistant'?'Assistante':'Directeur'}</span>`:''}
                     <span style="font-size:14px;">${item}</span>
+                    ${s.key.startsWith('prestataires')?(()=>{ const P=pInfo(item); return `<span class="pi-mini">${P.tel?icon('phone',12):''}${P.email?icon('mail',12):''}${P.url?icon('arrow',12):''}${P.delai?`<span style="font-size:11px;">${P.delai} h</span>`:''}</span><button data-presta-fiche="${esc(item)}" class="btn-sm" style="padding:3px 9px;font-size:11.5px;margin-left:4px;">${icon('edit',11)} Fiche</button>`; })():''}
                 </div>
                 ${state.confirmRm&&state.confirmRm.attr===s.rm&&state.confirmRm.idx===i?`
                 <div style="display:flex;gap:4px;align-items:center;">
@@ -3476,6 +3598,7 @@ function renderSettings(){
     </div>
 `;
     else if(cur[0]==='prestataires') body=`
+    ${renderPrestaModal()}
     ${section(secs.slice(1))}
     <div class="settings-section">
         ${secHead("wallet","N° Yooz par fournisseur","Rempli automatiquement dans les commandes du fournisseur.")}
@@ -3590,7 +3713,7 @@ function renderSaisieModal(){
         <div class="form-group"><label class="form-label">Lieu</label><input id="afLieu" type="text" value="${af.lieu}" class="form-input"></div>
         <div class="form-row-2">
             <div class="form-group"><label class="form-label">Nb personnes</label><select id="afNb" class="form-select">${['1','2','3','4','5','6','7','8','9','10+'].map(n=>`<option ${af.nb===n?'selected':''}>${n}</option>`).join('')}</select></div>
-            <div class="form-group"><label class="form-label">Type de repas souhaité</label><select id="afPresta" class="form-select"><option value="">—</option>${P_REPAS.map(p=>`<option ${af.presta===p?"selected":""}>${p}</option>`).join("")}</select></div>
+            <div class="form-group"><label class="form-label">Restaurant / prestataire</label><select id="afPresta" class="form-select"><option value="">—</option>${P_REPAS.map(p=>`<option ${af.presta===p?"selected":""}>${p}</option>`).join("")}</select></div>
         </div>
         `:t==='taxi'?`
         <div class="form-group"><label class="form-label">Voyageur</label><input id="afDesc" type="text" value="${af.desc}" class="form-input"></div>
@@ -4262,6 +4385,13 @@ function attachEvents(){
         }
     };
     if(sb)sb.onclick=_submitForm;
+    // ── Fiches prestataires ──
+    document.querySelectorAll('[data-presta-fiche]').forEach(el=>el.onclick=()=>setState({prestaEdit:el.getAttribute('data-presta-fiche')}));
+    document.querySelectorAll('[data-presta-close]').forEach(el=>el.onclick=()=>setState({prestaEdit:null}));
+    document.getElementById('piSave')?.addEventListener('click',()=>{ const g=id=>(document.getElementById(id)?.value||'').trim(); const nom=state.prestaEdit; if(!nom) return;
+        const info={tel:g('piTel'),email:g('piEmail'),url:g('piUrl'),delai:g('piDelai'),contact:g('piContact'),note:g('piNote')}; Object.keys(info).forEach(k=>{ if(!info[k]) delete info[k]; });
+        settings.prestaInfo={...(settings.prestaInfo||{})}; if(Object.keys(info).length) settings.prestaInfo[nom]=info; else delete settings.prestaInfo[nom];
+        saveSettings(settings); state.prestaEdit=null; showToast('✓ Fiche enregistrée'); });
     // ── Nouveau formulaire : pastilles, saisie, envoi ──
     const nfSave=()=>{ const f=state.form, g=id=>document.getElementById(id);
         if(g('formParticipants')) f.participants=g('formParticipants').value;
@@ -4275,6 +4405,7 @@ function attachEvents(){
         if(g('formTel')) f.tel=g('formTel').value;
         if(g('formVol')) f.vol=g('formVol').value;
         if(g('formCom')) f.com=g('formCom').value;
+        if(g('formAllergies')) f.allergies=g('formAllergies').value;
         if(g('formCopyMail')) f.copyMail=g('formCopyMail').checked;
         if(assistanteName()) f.dem=assistanteName();
         if(f.type==='hotel') f.dateDepart=nfDepart(f);
@@ -4291,6 +4422,7 @@ function attachEvents(){
         else if(act==='addpart'){ const cur=String(f.participants||'').trim(); f.participants=cur?cur.replace(/,\s*$/,'')+', '+v:v; }
         else if(act==='nb'){ f.nb=String(Math.max(1,Math.min(500,(parseInt(f.nb)||1)+(+v)))); }
         else if(act==='nights'){ f.nights=Math.max(1,Math.min(60,nfNuits(f)+(+v))); }
+        else if(act==='rg'){ const r={...(f.regimes||{})}; const n=r[v]||0; r[v]=k==='toggle'?(n?0:1):Math.max(0,Math.min(500,n+(+k))); f.regimes=r; }
         else if(act==='dateautre'){ f.dateAutre=true; }
         else if(act==='heureautre'){ f.heureAutre=true; if(NF_HEURES[f.type]?.includes(f.heure)) f.heure=''; }
         if(f.type==='hotel') f.dateDepart=nfDepart(f);
@@ -4316,6 +4448,7 @@ function attachEvents(){
             if(needsVol&&!f.vol) return err('N° de vol / train obligatoire pour une gare ou un aéroport');
         }
         if(f.type==='hotel') f.heure=f.heure||'';
+        if(f.type==='repas'){ const rt=regimesTxt(f); if(rt&&!String(f.com||'').startsWith(rt)) f.com=rt+(f.com?' — '+f.com:''); }
         _submitForm();
     });
 
