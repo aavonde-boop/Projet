@@ -3022,7 +3022,7 @@ function renderEmailModal(){
 /* ══════════════════════════════════════
    MON ESPACE (privé : suivi du bâtiment + mémo perso)
 ══════════════════════════════════════ */
-const ME_CATS=[['clim','Clim / chauffage','❄️'],['elec','Électricité','💡'],['plomb','Plomberie','🚰'],['menage','Ménage','🧹'],['acces','Accès / sécurité','🔑'],['info','Informatique','🖨️'],['mobilier','Mobilier','🪑'],['autre','Autre','🔧']];
+const ME_CATS=[['asc','Ascenseurs','🛗'],['clim','Clim / chauffage','❄️'],['elec','Électricité','💡'],['plomb','Plomberie','🚰'],['menage','Ménage','🧹'],['acces','Accès / sécurité','🔑'],['info','Informatique','🖨️'],['mobilier','Mobilier','🪑'],['struct','Sols, murs, plafonds','🧱'],['autre','Autre','🔧']];
 const ME_ST=[['signale','Signalé','gris'],['contacte','Intervenant contacté','ambre'],['prevu','Intervention prévue','bleu'],['resolu','Résolu','vert']];
 const ME_URG={normal:['Normal','#9ca3af'],semaine:['Cette semaine','#d97706'],urgent:['Urgent','#b91c1c']};
 const ME_TAGS=[['bat','Bâtiment','b'],['achats','Achats','p'],['idees','Idées','g'],['infos','Infos utiles','y'],['autre','Autre','w']];
@@ -3034,7 +3034,7 @@ function meSave(){ if(!meOk()) return; const e=userEmail(); state.me.owner=state
     _meChain=_meChain.then(()=>paramSet('monEspace',snap)).catch(err=>{ console.error('Mon espace:',err); showToast(`${icon('alert',13)} Enregistrement impossible, réessayez`); }); render(); }
 const meLocal=iso=>{ if(!iso) return ''; const d=new Date(iso); const z=n=>String(n).padStart(2,'0'); return `${d.getFullYear()}-${z(d.getMonth()+1)}-${z(d.getDate())}T${z(d.getHours())}:${z(d.getMinutes())}`; };
 const meId=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
-const meCat=k=>ME_CATS.find(c=>c[0]===k)||ME_CATS[7];
+const meCat=k=>ME_CATS.find(c=>c[0]===k)||ME_CATS[ME_CATS.length-1];
 const meStI=k=>ME_ST.findIndex(s=>s[0]===k);
 function meDate(iso,h){ if(!iso) return ''; const d=new Date(iso); return d.toLocaleDateString('fr-FR',{weekday:h?'short':undefined,day:'numeric',month:'short'})+(h&&(d.getHours()||d.getMinutes())?' · '+d.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}).replace(':','h'):''); }
 function meRelanceDue(s){ return s.statut!=='resolu'&&s.relance&&new Date(s.relance)<=new Date(); }
@@ -3063,7 +3063,7 @@ function renderMe(m){
     if(tab==='me-memo') return meMemo(m);
     // Accueil
     const enc=meEnCours(), urg=enc.filter(s=>s.urgence==='urgent').length, now=new Date(), j7=new Date(Date.now()+7*864e5);
-    const prevus=enc.filter(s=>s.statut==='prevu'&&s.interv&&new Date(s.interv)<=j7).length;
+    const t0=new Date(); t0.setHours(0,0,0,0); const prevus=enc.filter(s=>s.statut==='prevu'&&s.interv&&new Date(s.interv)>=t0&&new Date(s.interv)<=j7).length;
     const res=S.soucis.filter(s=>s.statut==='resolu'&&s.resolu&&new Date(s.resolu).getMonth()===now.getMonth()&&new Date(s.resolu).getFullYear()===now.getFullYear());
     const delai=res.length?Math.round(res.reduce((a,s)=>a+(new Date(s.resolu)-new Date(s.t)),0)/res.length/864e5*10)/10:null;
     const rapAuj=S.memos.filter(x=>x.rappel&&!x.fait&&isoDay(new Date(x.rappel))<=isoDay(now)).length;
@@ -3093,10 +3093,10 @@ function meBatiment(m){
     const L=S.soucis.filter(s=>f==='all'||s.cat===f);
     const col=k=>{ let l=L.filter(s=>s.statut===k); if(k==='resolu') l=l.sort((a,b)=>new Date(b.resolu||0)-new Date(a.resolu||0)); else l=l.sort((a,b)=>(b.urgence==='urgent')-(a.urgence==='urgent')||new Date(a.t)-new Date(b.t)); return l; };
     const card=s=>{ const due=meRelanceDue(s); const meta=s.statut==='resolu'?`Résolu en ${Math.max(1,Math.round((new Date(s.resolu)-new Date(s.t))/864e5))} j`:s.statut==='prevu'&&s.interv?`📅 ${meDate(s.interv,true)}`:due?`À relancer depuis le ${meDate(s.relance)}`:`Signalé ${meDate(s.t)}`;
-        return `<div class="kc ${s.urgence==='urgent'&&s.statut!=='resolu'?'urg':''} ${s.statut==='resolu'?'done':''}" data-me="open" data-id="${s.id}"><div class="kc-t">${meUrgDot(s)}<b>${esc(s.titre)}</b></div><span>${esc([s.lieu,meCat(s.cat)[1]].filter(Boolean).join(' · '))}</span><span class="kc-m" style="${due?'color:#b91c1c;':s.statut==='prevu'?'color:#2c5f85;':''}">${meta}</span>${(s.photos||[]).length||(s.notes||[]).length?`<div class="kc-p">${(s.photos||[]).length?`📷 ${s.photos.length}`:''} ${(s.notes||[]).length?`💬 ${s.notes.length}`:''}</div>`:''}</div>`; };
+        return `<div class="kc ${s.urgence==='urgent'&&s.statut!=='resolu'?'urg':''} ${s.statut==='resolu'?'done':''}" data-me="open" data-id="${s.id}"><div class="kc-t">${meUrgDot(s)}<b>${esc(s.titre)}</b></div><span>${esc([s.lieu,meCat(s.cat)[1]].filter(Boolean).join(' · '))}</span><span class="kc-m" style="${due?'color:#b91c1c;':s.statut==='prevu'?'color:#2c5f85;':''}">${meta}</span>${(s.photos||[]).length||(s.notes||[]).length||(s.constat||[]).length?`<div class="kc-p">${(s.constat||[]).length?`<span class="an-tag ambre" style="font-size:10.5px;">⚖️ ${s.constat.length} constat${s.constat.length>1?'s':''}</span> `:''}${(s.photos||[]).length?`📷 ${s.photos.length}`:''} ${(s.notes||[]).length?`💬 ${s.notes.length}`:''}</div>`:''}</div>`; };
     return `<div>
     <div class="page-head"><div><h1>Suivi du bâtiment</h1><p>Privé · ${meEnCours().length} en cours · ${S.soucis.filter(s=>s.statut==='resolu').length} résolus</p></div>
-    <div class="page-actions"><button class="btn-sm" data-me="lieux">${icon('pin',14)} Mes lieux (${S.lieux.length})</button><button class="btn-sm pri" data-me="new">${icon('plus',14)} Signaler un souci</button></div></div>
+    <div class="page-actions"><label class="btn-sm" style="cursor:pointer;" title="Importer un fichier préparé (.json)">${icon('download',14)} Importer<input type="file" accept=".json,application/json" data-me-import style="display:none;"></label><button class="btn-sm" data-me="export" title="Télécharger une sauvegarde de Mon espace">${icon('save',14)} Sauvegarder</button><button class="btn-sm" data-me="lieux">${icon('pin',14)} Mes lieux (${S.lieux.length})</button><button class="btn-sm pri" data-me="new">${icon('plus',14)} Signaler un souci</button></div></div>
     ${state.meLieux?meLieuxHtml():''}
     <div class="nf-row" style="margin-bottom:14px;">${[['all','Tout'],...ME_CATS.map(c=>[c[0],c[1]])].map(([k,l])=>`<button class="nf-chip ${f===k?'on':''}" style="height:32px;font-size:12.5px;" data-nav='{"meCat":"${k}"}'>${l}</button>`).join('')}</div>
     <div class="kb">${ME_ST.map(([k,l])=>{ const c=col(k); const vis=k==='resolu'&&!state.meAllRes?c.slice(0,8):c;
@@ -3147,6 +3147,8 @@ function meFiche(s,m){
             <div class="card"><div class="card-h"><h3>Description</h3></div><div style="padding:14px 16px;">
                 <textarea id="meFDesc" class="form-input" style="min-height:70px;resize:vertical;text-transform:none;" placeholder="Ajouter une description…">${esc(s.desc||'')}</textarea>
                 <div style="display:flex;justify-content:flex-end;margin-top:6px;"><button class="card-link" data-me="savedesc" data-id="${s.id}">Enregistrer la description</button></div>
+                ${(s.constat||[]).length?`<div style="font-size:12.5px;color:#92400e;background:#fef6e7;border-radius:8px;padding:8px 10px;margin-top:8px;">⚖️ Relevé par commissaire de justice : ${s.constat.map(d=>new Date(d).toLocaleDateString('fr-FR')).join(', ')}</div>`:''}
+                ${s.refs?`<div style="font-size:12px;color:var(--ink-soft);margin-top:6px;">Références : ${esc(s.refs)}</div>`:''}
                 <div class="nf-row" style="margin-top:8px;">${(s.photos||[]).map((p,k)=>`<a class="ph" href="${p}" target="_blank" style="background-image:url(${p});background-size:cover;background-position:center;"><button data-me="delph" data-id="${s.id}" data-i="${k}" class="ph-x" onclick="event.preventDefault()">${icon('x',12)}</button></a>`).join('')}<label class="ph add" style="cursor:pointer;">${icon('plus',14)} Photo<input type="file" accept="image/*" capture="environment" data-me-file="${s.id}" style="display:none;"></label></div>
             </div></div>
             <div class="card"><div class="card-h"><h3>Historique et notes</h3></div><div style="padding:6px 16px 14px;">
@@ -3255,6 +3257,21 @@ document.addEventListener('change',e=>{
         else { const s=state.me.soucis.find(x=>x.id===who); if(!s) return; if((s.photos||[]).length>=4){ showToast('4 photos maximum par souci'); return; } s.photos=[...(s.photos||[]),url]; meJ(s,'Photo ajoutée'); meSave(); }
     });
 });
+document.addEventListener('change',e=>{
+    const inp=e.target.closest('[data-me-import]'); if(!inp||!inp.files||!inp.files[0]||!meOk()) return;
+    const rd=new FileReader(); rd.onload=()=>{ let d; try{ d=JSON.parse(rd.result); }catch(err){ showToast(`${icon('alert',13)} Fichier illisible`); return; }
+        if(!d||!(Array.isArray(d.soucis)||Array.isArray(d.memos))){ showToast(`${icon('alert',13)} Ce fichier n’est pas un import de Mon espace`); return; }
+        const S=state.me, ids=new Set(S.soucis.map(x=>x.id)), mids=new Set(S.memos.map(x=>x.id));
+        const ns=(d.soucis||[]).filter(x=>x&&x.id&&x.titre&&!ids.has(x.id)), nm=(d.memos||[]).filter(x=>x&&x.id&&!mids.has(x.id));
+        const nl=(d.lieux||[]).filter(l=>l&&!S.lieux.some(x=>x.toLowerCase()===String(l).toLowerCase()));
+        if(!ns.length&&!nm.length&&!nl.length){ showToast('Rien de nouveau : tout est déjà importé'); inp.value=''; return; }
+        if(!confirm(`Importer ${d.titre?`« ${d.titre} » `:''}?\n\n• ${ns.length} souci${ns.length>1?'s':''} (dont ${ns.filter(x=>x.statut!=='resolu').length} en cours)\n• ${nm.length} mémo${nm.length>1?'s':''}\n• ${nl.length} lieu${nl.length>1?'x':''}\n\nCe qui existe déjà n’est pas modifié.`)){ inp.value=''; return; }
+        S.soucis=[...ns,...S.soucis]; S.memos=[...nm,...S.memos]; S.lieux=[...S.lieux,...nl]; state.meLieux=false; meSave(); showToast(`✓ ${ns.length} soucis importés`); inp.value=''; };
+    rd.readAsText(inp.files[0]);
+});
+document.addEventListener('click',e=>{ const b=e.target.closest('[data-me="export"]'); if(!b||!state.me||!meOk()) return;
+    const blob=new Blob([JSON.stringify({format:'monEspace-sauvegarde',version:1,date:new Date().toISOString(),...state.me},null,1)],{type:'application/json'});
+    const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`mon-espace-sauvegarde-${isoDay(new Date())}.json`; document.body.appendChild(a); a.click(); setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); },500); showToast('✓ Sauvegarde téléchargée'); });
 // Rappels (mémos et relances) : notification quand l’appli est ouverte
 setInterval(()=>{ if(!state.me||!meOk()) return; const now=new Date(); let ch=false;
     state.me.memos.forEach(x=>{ if(x.rappel&&!x.fait&&!x.notif&&new Date(x.rappel)<=now){ x.notif=true; ch=true; systemNotify('Rappel · Mon espace',String(x.texte).split('\n')[0]); showToast(`⏰ ${esc(String(x.texte).split('\n')[0])}`); } });
