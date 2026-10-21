@@ -531,6 +531,22 @@
         .ex-empty{ padding:20px 16px; text-align:center; color:var(--ink-soft); font-size:13px; }
         .ex-open{ margin-top:auto; height:50px; border:none; border-radius:14px; background:#fff; color:var(--side); font:700 15px var(--fb); display:flex; align-items:center; justify-content:center; gap:8px; cursor:pointer; }
         .recu-btn{ display:inline-flex; align-items:center; gap:6px; border:none; border-radius:8px; padding:8px 14px; background:#15803d; color:#fff; font:600 13px var(--fb); cursor:pointer; margin-top:8px; }
+        /* ═══ Marque + email ═══ */
+        .logo-img{ border-radius:7px; object-fit:contain; background:#fff; flex-shrink:0; }
+        .mq-row{ display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+        .mq-sw{ width:34px; height:34px; border-radius:50%; border:2px solid #fff; box-shadow:0 0 0 1px var(--border); cursor:pointer; padding:0; position:relative; display:inline-flex; align-items:center; justify-content:center; }
+        .mq-sw.on{ box-shadow:0 0 0 2px var(--ink); }
+        .mq-custom{ background:#fff; color:var(--ink-mid); overflow:hidden; } .mq-custom input{ position:absolute; inset:0; opacity:0; cursor:pointer; }
+        .mq-logo{ width:52px; height:52px; border-radius:12px; border:1px solid var(--border); background:#fff; display:inline-flex; align-items:center; justify-content:center; color:var(--ink-soft); overflow:hidden; } .mq-logo img{ width:100%; height:100%; object-fit:contain; }
+        .mq-prev{ display:flex; height:150px; border:1px solid var(--border); border-radius:10px; overflow:hidden; background:#f5f6f8; }
+        .mq-prev-side{ width:150px; background:var(--s); padding:12px; display:flex; flex-direction:column; gap:7px; } .mq-prev-side b{ color:#fff; font-size:11px; margin-bottom:6px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .mq-prev-logo{ width:24px; height:24px; border-radius:6px; background:var(--a); color:#fff; display:flex; align-items:center; justify-content:center; overflow:hidden; } .mq-prev-logo img{ width:100%; height:100%; object-fit:contain; background:#fff; }
+        .mq-prev-side i{ height:8px; border-radius:4px; background:rgba(255,255,255,.12); } .mq-prev-side i.on{ background:rgba(255,255,255,.3); box-shadow:inset 3px 0 0 #5b9bd5; }
+        .mq-prev-main{ flex:1; padding:12px; display:flex; flex-direction:column; gap:10px; } .mq-prev-bar{ height:12px; width:40%; border-radius:6px; background:#dfe3e8; }
+        .mq-prev-cards{ display:flex; gap:8px; flex:1; } .mq-prev-cards span{ flex:1; background:#fff; border:1px solid var(--border); border-radius:8px; }
+        .mq-prev-main button{ align-self:flex-start; border:none; color:#fff; font:600 12px var(--fb); padding:7px 12px; border-radius:7px; }
+        .nf-email{ display:flex; align-items:center; gap:10px; background:#eef6ff; border:1px solid #cfe1f7; color:#1e3a5f; border-radius:10px; padding:10px 14px; margin-bottom:12px; font-size:13px; }
+        .nf-email button{ margin-left:auto; background:none; border:none; color:var(--accent); font:600 12.5px var(--fb); cursor:pointer; white-space:nowrap; }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
@@ -1443,6 +1459,7 @@ function render(){
     else if(state.trackMode) html=renderTrackCode(m);
     else html=renderHome(m);
     app.innerHTML=`<div class="desktop-app">${html}</div>`;
+    appliquerMarque();
     attachEvents();
     initAutocomplete();
     if(state.live&&document.getElementById('lvClock')){ if(!_liveTimer) _liveTimer=setInterval(liveTick,1000); liveAnimateCounters(); }
@@ -1559,10 +1576,10 @@ function renderHome(m){
             :`<button data-login class="pub-btn light">${icon('user',15)}${m?'':' Se connecter'}</button>`}
         ${AUTH&&!isAdmin()?'':`<button data-action="admin" class="pub-btn" title="Administration">${icon('shield',15)}${m?'':' Admin'}${att>0&&isAdmin()?`<span class="nf-badge">${att}</span>`:''}</button>`}
     </div>`;
-    const bar=titre=>`<div class="pub-in pub-bar"><div class="nf-brand"><span class="logo-sq">${icon('clipboard',16)}</span><b>${titre}</b></div>${actions}</div>`;
-    const toast=state.toast?`<div class="toast">${state.toast}</div>`:'';
+    const bar=titre=>`<div class="pub-in pub-bar"><div class="nf-brand">${logoHtml(16)}<b>${esc(titre)}</b></div>${actions}</div>`;
+    const toast=(state.toast?`<div class="toast">${state.toast}</div>`:'')+renderEmailModal();
     if(f.sent) return `<div class="pub">
-        <header class="pub-top">${bar(m?'Envoyée':'Gestion des commandes')}</header>
+        <header class="pub-top">${bar(m?'Envoyée':marqueNom())}</header>
         <main class="pub-in" style="padding-top:28px;padding-bottom:40px;">${renderInlineForm(m)}${AUTH?mesDemandesHtml(m):''}</main></div>${toast}`;
 
     /* ── Page de choix ── */
@@ -1570,9 +1587,9 @@ function renderHome(m){
         const C=NF_CHOIX();
         return `<div class="pub">
         <header class="pub-top ch-top">
-            ${bar(m?'Commandes':'Gestion des commandes')}
+            ${bar(m&&!(settings.marque||{}).nom?'Commandes':marqueNom())}
             <div class="pub-in ch-hero">
-                <div class="ch-hello">${prenom?`Bonjour ${esc(prenom)}`:'Espace demandes'}</div>
+                <div class="ch-hello">${prenom?`Bonjour ${esc(prenom)}`:esc((settings.marque||{}).sous||'Espace demandes')}</div>
                 <h1>Que souhaitez-vous réserver ?</h1>
                 <p>Choisissez le type de demande. Elle sera transmise à l’administration pour validation.</p>
             </div>
@@ -1592,6 +1609,7 @@ function renderHome(m){
                 </button>`).join('')}
             </div>
             <div class="ch-sub">
+                <button class="ch-link" data-email-open><span class="ch-link-ic" style="background:#eef6ff;color:#1d4ed8;">${icon('mail',17)}</span><span><b>Remplir depuis un email</b><span>Collez le message reçu, la demande se pré-remplit</span></span>${icon('arrow',16)}</button>
                 <button class="ch-link go-track"><span class="ch-link-ic">${icon('search',17)}</span><span><b>Suivre ou modifier une demande</b><span>Avec votre code de suivi (AAG-…)</span></span>${icon('arrow',16)}</button>
                 ${AUTH?'':`<button data-login class="ch-link"><span class="ch-link-ic">${icon('user',17)}</span><span><b>Se connecter</b><span>Pour retrouver toutes vos demandes</span></span>${icon('arrow',16)}</button>`}
             </div>
@@ -1604,15 +1622,16 @@ function renderHome(m){
     const T=NF_CHOIX().find(c=>c.k===f.type)||NF_CHOIX()[0];
     return `<div class="pub">
         <header class="pub-top">
-            ${bar(m?T.form:'Gestion des commandes')}
+            ${bar(m?T.form:marqueNom())}
             <div class="pub-in nf-hero">
                 <div class="nf-head">
-                    <button data-nf="back" class="nf-backbtn">${icon('arrow',15)} ${m?'Changer':'Changer de type'}</button>
+                    <div style="display:flex;gap:8px;flex-wrap:wrap;"><button data-nf="back" class="nf-backbtn">${icon('arrow',15)} ${m?'Changer':'Changer de type'}</button><button data-email-open class="nf-backbtn" style="padding-left:12px;">${icon('mail',14)} ${m?'Email':'Remplir depuis un email'}</button></div>
                     ${m?'':`<div class="nf-head-t"><span class="nf-head-ic" style="background:${T.t1};color:${T.col};">${icon(T.ic,22)}</span><div><div class="nf-hello">${prenom?`Bonjour ${esc(prenom)} · `:''}Nouvelle demande</div><h1>${T.form}</h1></div></div>`}
                 </div>
             </div>
         </header>
         <main class="pub-in nf-main">
+            ${f.fromEmail&&f.fromEmail.length?`<div class="nf-email">${icon('mail',16)} <span><b>Rempli depuis l’email</b> : ${f.fromEmail.join(', ')}. Vérifiez puis complétez.</span><button data-nf="emailok">OK</button></div>`:''}
             ${renderInlineForm(m)}
         </main>
     </div>${toast}`;
@@ -1828,9 +1847,9 @@ function renderAdminView(m){
     <div class="mobile-header">
         <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
             <div style="display:flex;align-items:center;gap:10px;min-width:0;">
-                <span class="logo-sq">${icon('clipboard',16)}</span>
+                ${logoHtml(16)}
                 <div style="min-width:0;">
-                    <div style="font-size:10.5px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#8fa0b5;">Gestion des commandes</div>
+                    <div style="font-size:10.5px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#8fa0b5;">${esc(marqueNom())}</div>
                     <div style="font-size:17px;font-weight:650;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${TITRES[state.adminTab]||''}</div>
                 </div>
             </div>
@@ -1859,7 +1878,7 @@ function renderAdminView(m){
     return `
     <div class="shell">
     <aside class="side">
-        <div class="side-brand"><span class="logo-sq">${icon('clipboard',16)}</span><div class="side-lbl"><b>Gestion des commandes</b><span>Administration</span></div></div>
+        <div class="side-brand">${logoHtml(16)}<div class="side-lbl"><b>${esc(marqueNom())}</b><span>Administration</span></div></div>
         <div class="side-scroll">
             <div class="side-grp"><h6 class="side-lbl">Pilotage</h6>
                 ${item('dashboard','dashboard','Tableau de bord')}${item('suivi','clipboard','Suivi des demandes')}${item('calendrier','calendar','Agenda')}</div>
@@ -2788,7 +2807,7 @@ function renderLive(){
     return `<div class="lv">
         <div class="lv-bg"></div>
         <header class="lv-top">
-            <div class="lv-brand"><span class="logo-sq">${icon('clipboard',18)}</span><div><b>${esc(marqueNom())}</b><span>Écran live · ${dateLongue(now)} ${now.getFullYear()}</span></div></div>
+            <div class="lv-brand">${logoHtml(18)}<div><b>${esc(marqueNom())}</b><span>Écran live · ${dateLongue(now)} ${now.getFullYear()}</span></div></div>
             <div class="lv-clock" id="lvClock">${now.toLocaleTimeString('fr-FR')}</div>
             <button data-live-exit class="lv-exit" title="Quitter (Échap)">${icon('x',18)}</button>
         </header>
@@ -2850,6 +2869,127 @@ function renderExpress(){
    MARQUE (nom, logo, couleurs)
 ══════════════════════════════════════ */
 function marqueNom(){ return (settings.marque&&settings.marque.nom)||'Gestion des commandes'; }
+function logoHtml(sz=16){ const L=settings.marque&&settings.marque.logo; return L?`<img src="${L}" alt="" class="logo-img" style="width:${sz+14}px;height:${sz+14}px;">`:`<span class="logo-sq">${icon('clipboard',sz)}</span>`; }
+function hexMix(hex,pct,base='#ffffff'){ const p=h=>{ h=h.replace('#',''); if(h.length===3) h=h.split('').map(x=>x+x).join(''); return [0,2,4].map(i=>parseInt(h.substr(i,2),16)); };
+    try{ const a=p(hex), b=p(base); return '#'+a.map((v,i)=>Math.round(v*pct+b[i]*(1-pct)).toString(16).padStart(2,'0')).join(''); }catch(e){ return hex; } }
+function appliquerMarque(){
+    const M=settings.marque||{}, r=document.documentElement.style;
+    if(M.accent){ r.setProperty('--accent',M.accent); r.setProperty('--accent-soft',hexMix(M.accent,.12)); } else { r.removeProperty('--accent'); r.removeProperty('--accent-soft'); }
+    if(M.side){ r.setProperty('--side',M.side); r.setProperty('--side-act',hexMix('#ffffff',.1,M.side)); } else { r.removeProperty('--side'); r.removeProperty('--side-act'); }
+    const t=marqueNom(); if(document.title!==t) document.title=t;
+}
+const MQ_ACCENTS=['#2c5f85','#1d4ed8','#0f766e','#15803d','#7c3aed','#be185d','#c2410c','#b91c1c','#374151'];
+const MQ_SIDES=['#0f1b2d','#111827','#1e293b','#0c2340','#13322b','#3b0d1f','#2a1b3d','#1f2937'];
+function renderApparence(){
+    const M={...(settings.marque||{}),...(state.mqDraft||{})};
+    const acc=M.accent||'#2c5f85', side=M.side||'#0f1b2d';
+    const sw=(list,cur,k)=>list.map(c=>`<button data-mq="${k}" data-v="${c}" title="${c}" class="mq-sw ${cur===c?'on':''}" style="background:${c};"></button>`).join('')+`<label class="mq-sw mq-custom" title="Autre couleur"><input type="color" data-mq-color="${k}" value="${cur}">${icon('plus',13)}</label>`;
+    return `<div class="settings-section">
+        <div style="display:flex;gap:12px;align-items:flex-start;margin-bottom:16px;"><div style="width:34px;height:34px;border-radius:10px;background:var(--border-light,#f3f4f6);color:var(--accent);display:flex;align-items:center;justify-content:center;flex-shrink:0;">${icon('sliders',16)}</div><div><div style="font-weight:700;font-size:15px;">Apparence de l’application</div><div style="font-size:12px;color:#8b93a1;margin-top:2px;">Nom, logo et couleurs, appliqués à toute l’appli et pour tout le monde. Les emails ne changent pas.</div></div></div>
+        <div class="form-row-2">
+            <div class="form-group"><label class="form-label">Nom de l’application</label><input id="mqNom" class="form-input" value="${esc(M.nom||'')}" placeholder="Gestion des commandes"></div>
+            <div class="form-group"><label class="form-label">Sous-titre</label><input id="mqSous" class="form-input" value="${esc(M.sous||'')}" placeholder="Espace demandes"></div>
+        </div>
+        <div class="form-group"><label class="form-label">Logo</label>
+            <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+                <span class="mq-logo">${M.logo?`<img src="${M.logo}" alt="">`:icon('clipboard',22)}</span>
+                <label class="btn-sm" style="cursor:pointer;padding:8px 14px;">${icon('download',14)} Choisir une image<input type="file" id="mqLogo" accept="image/*" style="display:none;"></label>
+                ${M.logo?`<button data-mq="logo" data-v="" class="btn-sm" style="padding:8px 14px;color:#b91c1c;">${icon('trash',14)} Retirer</button>`:''}
+                <span style="font-size:12px;color:#8b93a1;">PNG ou JPG carré de préférence, redimensionné automatiquement.</span>
+            </div></div>
+        <div class="form-group"><label class="form-label">Couleur principale (boutons, sélections)</label><div class="mq-row">${sw(MQ_ACCENTS,acc,'accent')}</div></div>
+        <div class="form-group"><label class="form-label">Couleur des bandeaux et du menu</label><div class="mq-row">${sw(MQ_SIDES,side,'side')}</div></div>
+        <div class="form-label" style="margin-top:6px;">Aperçu</div>
+        <div class="mq-prev" style="--a:${acc};--s:${side};">
+            <div class="mq-prev-side"><span class="mq-prev-logo">${M.logo?`<img src="${M.logo}" alt="">`:icon('clipboard',14)}</span><b>${esc(M.nom||'Gestion des commandes')}</b><i class="on"></i><i></i><i></i></div>
+            <div class="mq-prev-main"><div class="mq-prev-bar"></div><div class="mq-prev-cards"><span></span><span></span><span></span></div><button style="background:${acc};">Envoyer la demande</button></div>
+        </div>
+        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px;flex-wrap:wrap;">
+            <button data-mq-reset class="btn-sm" style="padding:10px 16px;">Revenir au style d’origine</button>
+            <button id="mqSave" class="btn-sm pri" style="padding:10px 16px;">${icon('save',14)} Enregistrer pour tout le monde</button>
+        </div>
+    </div>`;
+}
+
+/* ══════════════════════════════════════
+   REMPLIR UNE DEMANDE DEPUIS UN EMAIL
+══════════════════════════════════════ */
+function sansAccent(s){ return String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase(); }
+function analyserEmail(txt){
+    const T=String(txt||''), t=sansAccent(T), out={}, trouve=[];
+    const today=new Date(); today.setHours(0,0,0,0);
+    // Type
+    const sc={taxi:(t.match(/\b(taxi|vtc|chauffeur|uber|g7|allocab|aeroport|orly|roissy|cdg|beauvais|gare|train|tgv|vol)\b/g)||[]).length,
+              hotel:(t.match(/\b(hotel|hotels|nuit|nuits|chambre|chambres|hebergement|sejour)\b/g)||[]).length,
+              repas:(t.match(/\b(dejeuner|petit[- ]dejeuner|gouter|diner|cocktail|plateau|repas|traiteur|buffet|couverts|viennoiseries|cafe)\b/g)||[]).length};
+    out.type=Object.entries(sc).sort((a,b)=>b[1]-a[1])[0][1]?Object.entries(sc).sort((a,b)=>b[1]-a[1])[0][0]:'repas';
+    // Date
+    const MOIS=['janvier','fevrier','mars','avril','mai','juin','juillet','aout','septembre','octobre','novembre','decembre'];
+    const JRS=['dimanche','lundi','mardi','mercredi','jeudi','vendredi','samedi'];
+    let d=null, m;
+    if((m=t.match(new RegExp(`\\bdu\\s+(\\d{1,2})(?:er)?\\s+(?:(${MOIS.join('|')})\\s+)?au\\s+(\\d{1,2})(?:er)?\\s+(${MOIS.join('|')})`)))){ const mo=MOIS.indexOf(m[2]||m[4]); d=new Date(today.getFullYear(),mo,+m[1]); if(d<today) d.setFullYear(d.getFullYear()+1); const f2=new Date(d.getFullYear()+(MOIS.indexOf(m[4])<mo?1:0),MOIS.indexOf(m[4]),+m[3]); const nn=Math.round((f2-d)/864e5); if(nn>0) out.nights=nn; }
+    if(d){}
+    else if(/apres[- ]demain/.test(t)){ d=new Date(today); d.setDate(d.getDate()+2); }
+    else if(/\bdemain\b/.test(t)){ d=new Date(today); d.setDate(d.getDate()+1); }
+    else if(/\b(aujourd'?hui|ce midi|ce soir|ce matin)\b/.test(t)){ d=new Date(today); }
+    if(!d&&(m=t.match(/\b(\d{1,2})[\/.-](\d{1,2})(?:[\/.-](\d{2,4}))?\b/))){ const y=m[3]?(+m[3]<100?2000+ +m[3]:+m[3]):today.getFullYear(); d=new Date(y,+m[2]-1,+m[1]); if(!m[3]&&d<today) d.setFullYear(y+1); }
+    if(!d&&(m=t.match(new RegExp(`\\b(\\d{1,2})(?:er)?\\s+(${MOIS.join('|')})(?:\\s+(\\d{4}))?`)))){ d=new Date(m[3]?+m[3]:today.getFullYear(),MOIS.indexOf(m[2]),+m[1]); if(!m[3]&&d<today) d.setFullYear(d.getFullYear()+1); }
+    if(!d&&(m=t.match(new RegExp(`\\b(${JRS.join('|')})\\b(\\s+prochain)?`)))){ const w=JRS.indexOf(m[1]); d=new Date(today); let k=(w-d.getDay()+7)%7; if(k===0||m[2]) k+=k===0?7:0; d.setDate(d.getDate()+k); }
+    if(d&&!isNaN(d)){ out.date=isoDay(d); trouve.push('date'); }
+    // Heure
+    if((m=T.match(/\b([01]?\d|2[0-3])\s*(?:h|H|:)\s*([0-5]\d)?\b/))){ out.heure=`${String(+m[1]).padStart(2,'0')}h${m[2]||'00'}`; trouve.push('heure'); }
+    else if(/\bmidi\b/.test(t)){ out.heure='12h00'; trouve.push('heure'); }
+    // Personnes
+    if((m=t.match(/\b(\d{1,3})\s*(?:personnes|pers\b|pers\.|couverts|convives|participants|invites|pax)/))||(m=t.match(/\bpour\s+(\d{1,3})\b(?!\s*(?:h|:|\/|euros?|€))/))){ out.nb=String(+m[1]); trouve.push('personnes'); }
+    // Type de repas
+    const RT=[[/petit[- ]?dej/,'Petit-déjeuner'],[/\bdejeuner\b/,'Déjeuner'],[/\bgouter\b/,'Goûter'],[/\bdiner\b/,'Dîner'],[/\bcocktail\b/,'Cocktail'],[/\bplateaux?\b/,'Plateau repas']];
+    for(const [k,v] of RT){ if(k.test(t.replace(/petit[- ]?dejeuner/g,v==='Déjeuner'?'':'petit-dejeuner'))){ const hit=P_TYPES.find(x=>sansAccent(x)===sansAccent(v))||P_TYPES.find(x=>sansAccent(x).startsWith(sansAccent(v).slice(0,5)))||v; out.desc=hit; trouve.push('type de repas'); break; } }
+    // Prestataire
+    const P=out.type==='taxi'?P_TAXI:out.type==='hotel'?P_HOTEL:P_REPAS;
+    const pr=P.find(p=>new RegExp(`\\b${sansAccent(p).replace(/[.*+?^${}()|[\]\\]/g,'\\$&')}\\b`).test(t)); if(pr){ out.presta=pr; trouve.push('prestataire'); }
+    // Personnes concernées (directeurs)
+    const dirs=settings.directeurs.filter(n=>sansAccent(n).split(/\s+/).filter(x=>x.length>=4).some(x=>new RegExp(`\\b${x}\\b`).test(t)));
+    if(dirs.length){ if(out.type==='repas') out.participants=dirs.join(', '); else out.pourQui=dirs; trouve.push(out.type==='repas'?'participants':'pour qui'); }
+    // Demandeur (signature)
+    const ass=settings.assistantes.find(n=>sansAccent(n).split(/\s+/).filter(x=>x.length>=4).every(x=>t.includes(x))); if(ass&&!assistanteName()){ out.dem=ass; trouve.push('demandeur'); }
+    // Lieu (repas)
+    if(out.type==='repas'){
+        const rec=[...new Set(state.data.filter(c=>c.type==='repas'&&c.lieu).map(c=>String(c.lieu).trim()))].find(l=>l.length>3&&t.includes(sansAccent(l)));
+        if(rec) out.lieu=rec.toUpperCase();
+        else if((m=T.match(/\b((?:salle|bureau|espace|amphi(?:th[ée]âtre)?|rie)\b[^\n,.;:!?]{0,30})/i))) out.lieu=m[1].replace(/\s+(?:pour|svp|stp|merci|chez|vers|avec|à|a)(?:\s.*|$)/i,'').trim().toUpperCase();
+        if(out.lieu) trouve.push('lieu');
+    }
+    // Taxi
+    if(out.type==='taxi'){
+        const LIEUX=[['orly','AÉROPORT D’ORLY'],['roissy','AÉROPORT CDG ROISSY'],['cdg','AÉROPORT CDG ROISSY'],['charles de gaulle','AÉROPORT CDG ROISSY'],['beauvais','AÉROPORT DE BEAUVAIS'],['gare de lyon','GARE DE LYON'],['gare du nord','GARE DU NORD'],['gare de l\'est','GARE DE L’EST'],['montparnasse','GARE MONTPARNASSE'],['saint-lazare','GARE SAINT-LAZARE'],['st lazare','GARE SAINT-LAZARE'],['austerlitz','GARE D’AUSTERLITZ'],['bercy','GARE DE BERCY']];
+        if((m=T.match(/\b(?:de(?:puis)?|départ\s*:?)\s+(.{3,60}?)\s+(?:vers|jusqu'?à|direction)\s+(.{3,60}?)(?:[.,;\n]|\s+pour\s|$)/i))||(m=T.match(/\b(?:depuis|départ\s*:?)\s+(.{3,60}?)\s+(?:à|a|pour)\s+(.{3,60}?)(?:[.,;\n]|$)/i))){ out.de=m[1].trim().toUpperCase(); out.vers=m[2].trim().toUpperCase(); }
+        if((m=T.match(/arriv[ée]e\s*:\s*([^\n]{3,60})/i))) out.vers=m[1].trim().toUpperCase();
+        if((m=T.match(/d[ée]part\s*:\s*([^\n]{3,60})/i))) out.de=m[1].trim().toUpperCase();
+        const L=LIEUX.find(([k])=>t.includes(k)); if(L&&!(out.vers||'').includes(L[1].split(' ').pop())&&!(out.de||'').includes(L[1].split(' ').pop())){ if(/\b(retour|depuis|en provenance|a l'arrivee de|arrivee? a)\b/.test(t)&&!out.de) out.de=L[1]; else out.vers=L[1]; }
+        if(out.de) trouve.push('départ'); if(out.vers) trouve.push('arrivée');
+        if((m=T.match(/\b((?:TGV|TER|Ouigo|Eurostar|Thalys|Intercit[ée]s?|Lyria)\s*(?:n°|no|nº)?\s*\d{3,5}|[A-Z]{2}\s?\d{2,4})\b/))){ out.vol=m[1].toUpperCase(); trouve.push('n° de vol/train'); }
+        if((m=T.match(/(?:\+33\s?|0)[1-9](?:[\s.-]?\d{2}){4}/))){ out.tel=m[0]; trouve.push('téléphone'); }
+    }
+    // Hôtel
+    if(out.type==='hotel'){
+        if((m=t.match(/\b(\d{1,2})\s*nuits?\b/))){ out.nights=+m[1]; trouve.push('nuits'); }
+        if(out.nights&&!trouve.includes('nuits')) trouve.push('nuits');
+        if((m=T.match(/(?:^|\s)(?:à|a|sur)\s+([A-ZÉÈ][a-zéèêëàâîïôöûüç'-]{2,}(?:[- ][A-ZÉÈ][a-zéèêëàâîïôöûüç'-]+)?)/))){ out.lieu=m[1].toUpperCase(); trouve.push('ville'); }
+    }
+    return {out,trouve:[...new Set(trouve)]};
+}
+function renderEmailModal(){
+    if(!state.emailOpen) return '';
+    return `<div class="modal-overlay" data-email-close><div class="modal-content" onclick="event.stopPropagation()" style="max-width:600px;">
+        <div class="modal-handle"></div>
+        <div style="padding:20px 22px;overflow-y:auto;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;"><div style="font-size:19px;font-weight:650;">Remplir depuis un email</div><button data-email-close style="background:none;border:none;cursor:pointer;color:var(--ink-soft);">${icon('x',20)}</button></div>
+            <div style="font-size:13px;color:var(--ink-mid);margin-bottom:12px;line-height:1.5;">Collez le texte de l’email (ou d’un message Teams, d’une invitation…). L’appli repère le type, la date, l’heure, le nombre de personnes, la salle, les adresses, le n° de vol… Vous vérifiez ensuite avant d’envoyer.</div>
+            <textarea id="emailTxt" class="form-input" style="min-height:200px;resize:vertical;text-transform:none;font-size:14px;" placeholder="Ex : « Bonjour, peux-tu prévoir un déjeuner jeudi à 12h30 pour 8 personnes en salle France, chez Mimma ? Merci, Zoé »"></textarea>
+            <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px;"><button data-email-close class="btn-sm" style="padding:10px 16px;">Annuler</button><button id="emailGo" class="btn-sm pri" style="padding:10px 16px;">${icon('check',14)} Remplir le formulaire</button></div>
+        </div></div></div>`;
+}
+
 
 /* ══════════════════════════════════════
    SUIVI DES CONNEXIONS (pour les analyses)
@@ -3680,6 +3820,7 @@ function renderSettings(){
         ['compte','user','Mon compte',`${esc(userName()||'')} · notifications`],
         ['equipe','shield','Équipe & accès',`${adminList().length} admin${adminList().length>1?'s':''} · ${settings.assistantes.length} assistantes · ${(settings.directeurs||[]).length} directeurs`],
         ['prestataires','box','Prestataires',`${['prestatairesRepas','prestatairesTaxi','prestatairesCommande','prestatairesHotel'].reduce((n,k)=>n+(settings[k]||[]).length,0)} entrées · N° Yooz`],
+        ['apparence','sliders','Apparence','Nom, logo, couleurs'],
         ['donnees','grid','Données','Corbeille · export Excel'],
     ];
     const cur=TABS.find(t=>t[0]===tab)||TABS[0];
@@ -3775,6 +3916,7 @@ function renderSettings(){
         <div style="font-size:11px;color:#8b93a1;margin-top:8px;">À activer une fois que chaque assistante a créé son compte (« Première connexion ? » sur l’écran de connexion, avec l’email renseigné dans la liste des assistantes ci-dessus).</div>
     </div>
 `;
+    else if(cur[0]==='apparence') body=renderApparence();
     else if(cur[0]==='prestataires') body=`
     ${renderPrestaModal()}
     ${section(secs.slice(1))}
@@ -4568,6 +4710,24 @@ function attachEvents(){
     document.querySelectorAll('[data-live-exit]').forEach(el=>el.onclick=()=>{ state.live=false; clearInterval(_liveTimer); _liveTimer=null; try{ if(document.fullscreenElement) document.exitFullscreen(); }catch(e){} if(location.hash==='#live') history.replaceState(null,'',location.pathname); render(); });
     document.querySelectorAll('[data-express-go]').forEach(el=>el.onclick=()=>{ let nav={}; try{ nav=JSON.parse(el.getAttribute('data-express-go')); }catch(e){} history.replaceState(null,'',location.pathname); setState({express:false,vue:'admin',authed:isAdmin(),...nav}); });
     document.querySelectorAll('[data-recu]').forEach(el=>el.onclick=e=>{ e.stopPropagation(); confirmerReception(el.getAttribute('data-recu')); });
+    // ── Email collé ──
+    document.querySelectorAll('[data-email-open]').forEach(el=>el.onclick=()=>{ const f=state.form; if(document.getElementById('formParticipants')||document.getElementById('formDe')||document.getElementById('formLieu')){ /* garder la saisie */ } setState({emailOpen:true}); setTimeout(()=>document.getElementById('emailTxt')?.focus(),50); });
+    document.querySelectorAll('[data-email-close]').forEach(el=>el.onclick=()=>setState({emailOpen:false}));
+    document.getElementById('emailGo')?.addEventListener('click',()=>{ const txt=document.getElementById('emailTxt')?.value||''; if(!txt.trim()){ showToast(`${icon('alert',13)} Collez d’abord le texte de l’email`); return; }
+        const {out,trouve}=analyserEmail(txt); const f=state.form;
+        if(f.type!==out.type){ f.presta=''; f.desc=''; f.lieu=''; }
+        Object.assign(f,{type:out.type,step:2,sent:false},out); if(out.pourQui) f.pourQui=out.pourQui; f.dateAutre=false; f.heureAutre=false;
+        if(f.type==='hotel'&&out.nights) f.dateDepart=nfDepart(f);
+        f.fromEmail=trouve.length?trouve:['rien de reconnu, remplissez à la main'];
+        state.emailOpen=false; window.scrollTo(0,0); render(); });
+    // ── Apparence ──
+    const mq=()=>{ state.mqDraft={...(state.mqDraft||{})}; const n=document.getElementById('mqNom'), so=document.getElementById('mqSous'); if(n) state.mqDraft.nom=n.value.trim(); if(so) state.mqDraft.sous=so.value.trim(); return state.mqDraft; };
+    document.querySelectorAll('[data-mq]').forEach(el=>el.onclick=()=>{ mq()[el.getAttribute('data-mq')]=el.getAttribute('data-v'); render(); });
+    document.querySelectorAll('[data-mq-color]').forEach(el=>el.onchange=()=>{ mq()[el.getAttribute('data-mq-color')]=el.value; render(); });
+    document.getElementById('mqLogo')?.addEventListener('change',e=>{ const file=e.target.files&&e.target.files[0]; if(!file) return; const rd=new FileReader();
+        rd.onload=()=>{ const img=new Image(); img.onload=()=>{ const S=160, k=Math.min(1,S/Math.max(img.width,img.height)); const cv=document.createElement('canvas'); cv.width=Math.round(img.width*k); cv.height=Math.round(img.height*k); cv.getContext('2d').drawImage(img,0,0,cv.width,cv.height); mq().logo=cv.toDataURL('image/png'); render(); }; img.src=rd.result; }; rd.readAsDataURL(file); });
+    document.querySelectorAll('[data-mq-reset]').forEach(el=>el.onclick=()=>{ if(!confirm('Revenir au nom, au logo et aux couleurs d’origine pour tout le monde ?')) return; settings.marque={}; state.mqDraft=null; saveSettings(settings); showToast('✓ Style d’origine rétabli'); });
+    document.getElementById('mqSave')?.addEventListener('click',()=>{ const d=mq(); const M={...(settings.marque||{}),...d}; Object.keys(M).forEach(k=>{ if(!M[k]) delete M[k]; }); settings.marque=M; state.mqDraft=null; saveSettings(settings); showToast('✓ Apparence enregistrée pour tout le monde'); });
     // ── Fiches prestataires ──
     document.querySelectorAll('[data-presta-fiche]').forEach(el=>el.onclick=()=>setState({prestaEdit:el.getAttribute('data-presta-fiche')}));
     document.querySelectorAll('[data-presta-close]').forEach(el=>el.onclick=()=>setState({prestaEdit:null}));
@@ -4606,6 +4766,7 @@ function attachEvents(){
         else if(act==='nb'){ f.nb=String(Math.max(1,Math.min(500,(parseInt(f.nb)||1)+(+v)))); }
         else if(act==='nights'){ f.nights=Math.max(1,Math.min(60,nfNuits(f)+(+v))); }
         else if(act==='rg'){ const r={...(f.regimes||{})}; const n=r[v]||0; r[v]=k==='toggle'?(n?0:1):Math.max(0,Math.min(500,n+(+k))); f.regimes=r; }
+        else if(act==='emailok'){ f.fromEmail=null; }
         else if(act==='dateautre'){ f.dateAutre=true; }
         else if(act==='heureautre'){ f.heureAutre=true; if(NF_HEURES[f.type]?.includes(f.heure)) f.heure=''; }
         if(f.type==='hotel') f.dateDepart=nfDepart(f);
