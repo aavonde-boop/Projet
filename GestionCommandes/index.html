@@ -4473,7 +4473,7 @@ function renderHistorique(m){
             <div style="font-family:var(--ft);font-weight:650;letter-spacing:-.01em;font-size:${m?'18px':'22px'};">${icon('wallet',m?16:19)} Dépenses & prix</div>
             <div style="font-size:12px;color:#7f8c9b;margin-top:3px;">${allSorted.length} entrée${allSorted.length>1?'s':''}${state.histPrix?' sans prix':' au total'} · saisissez le prix à réception de la facture</div>
         </div>
-        <div style="display:flex;gap:6px;flex-wrap:wrap;">${(()=>{ const ne=(state.data||[]).filter(c=>suiviOf(c).prixEst).length; const ae=estimerPrixRepas().length; return `${ne?`<button data-prix-retirer class="btn-sm" title="Remettre ces prix à zéro">${ne} prix estimés · retirer</button>`:''}`; })()}
+        <div style="display:flex;gap:6px;flex-wrap:wrap;">
         <button data-nav='{"histPrix":${!state.histPrix},"histPage":0}' class="btn-sm ${state.histPrix?'pri':''}">${icon('wallet',14)} Prix à saisir · ${sansPrix.length}</button></div>
         
     </div>
