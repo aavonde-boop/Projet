@@ -216,6 +216,9 @@
         }
         .shell-main{ flex:1; min-width:0; display:flex; flex-direction:column; }
         .topbar{ height:56px; background:#fff; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:14px; padding:0 28px; position:sticky; top:0; z-index:250; }
+        .fab-note{ align-self:flex-end; background:#0f1b2d; color:#fff; font-size:12px; font-weight:600; padding:6px 11px; border-radius:99px; box-shadow:0 4px 14px rgba(15,27,45,.2); }
+        .tb-nomail{ display:inline-flex; align-items:center; gap:3px; margin-left:6px; padding:2px 7px; border-radius:99px; background:rgba(255,255,255,.18); font-size:10.5px; font-weight:600; letter-spacing:.02em; }
+        .drop-note{ padding:10px 12px 9px; margin:-4px -4px 6px; border-bottom:1px solid var(--border-light); font-size:12px; line-height:1.45; color:var(--ink-mid); max-width:240px; } .drop-note b{ display:block; color:var(--ink); font-size:12.5px; margin-bottom:2px; }
         .crumb{ color:var(--ink-soft); font-size:12.5px; white-space:nowrap; } .crumb b{ color:var(--ink); font-weight:600; }
         .ic-btn{ width:34px; height:34px; border:1px solid var(--border); border-radius:6px; display:flex; align-items:center; justify-content:center; color:var(--ink-mid); position:relative; background:#fff; cursor:pointer; }
         .ic-btn i{ position:absolute; top:6px; right:7px; width:7px; height:7px; border-radius:50%; background:#d97706; border:2px solid #fff; }
@@ -1933,7 +1936,7 @@ function renderAdminView(m){
     <div id="bulkBarSlot">${bulkBarHtml()}</div>
     ${state.toast?`<div class="toast">${state.toast}</div>`:''}
     <div class="fab-area">
-        ${state.fabOpen?`<div class="fab-menu">
+        ${state.fabOpen?`<div class="fab-menu"><div class="fab-note">Saisie directe · sans email</div>
             ${[["commande","box","Commande"],["taxi","car","Taxi"],["repas","utensils","Repas"],["hotel","bed","Hôtel"]].map(([t,ic,l])=>`<button data-saisie-type="${t}" class="fab-item">${icon(ic,15)} ${l}</button>`).join('')}
         </div>`:''}
         <button id="fabMain" class="fab-main ${state.fabOpen?'open':''}">${icon('plus',22)}</button>
@@ -1952,8 +1955,7 @@ function renderAdminView(m){
             <div class="side-grp" style="padding-top:12px;">
                 ${meOk()?`<div class="perso">${item('me','lock','Mon écran')}${item('me-memo','edit','Mémo perso')}</div>`:''}${item('dashboard','dashboard','Tableau de bord')}</div>
             <div class="side-grp"><h6 class="side-lbl">Commandes</h6>
-                ${item('suivi','clipboard','Suivi des demandes')}${item('calendrier','calendar','Agenda')}${item('activite','grid','Registre')}
-                <button data-back-home class="side-it" title="Page de demande (vue assistantes)">${icon('home',17)}<span class="side-lbl">Page de demande</span></button></div>
+                ${item('suivi','clipboard','Suivi des demandes')}${item('calendrier','calendar','Agenda')}${item('activite','grid','Registre')}</div>
             ${meOk()?`<div class="side-grp perso"><h6 class="side-lbl">Bâtiment ${icon('lock',10)}</h6>${item('me-bat','tool','Soucis')}${item('me-stat','check','Actions et stats')}</div>`:''}
             <div class="side-grp"><h6 class="side-lbl">Analyses</h6>
                 ${item('stats','chart','Statistiques')}${item('analyse','users','Assistantes et connexions')}</div>
@@ -1967,13 +1969,15 @@ function renderAdminView(m){
     </aside>
     <div class="shell-main">
         <header class="topbar">
+            <button data-back-home class="btn-sm" title="Ouvrir la page de demande des assistantes">${icon('home',15)} Page de demande</button>
             <div class="crumb">${state.adminTab==='me'||state.adminTab==='me-memo'?'Personnel 🔒':String(state.adminTab).startsWith('me')?'Bâtiment 🔒':['suivi','calendrier','activite'].includes(state.adminTab)?'Commandes':['stats','analyse'].includes(state.adminTab)?'Analyses':'Administration'} / <b>${TITRES[state.adminTab]||''}</b></div>
             <div style="margin-left:auto;display:flex;gap:8px;align-items:center;">
                 <button data-live-open class="btn-sm" title="Écran live (plein écran, pour un PC ou une TV)">${icon('dashboard',15)} Écran live</button>
                 <button data-activate-notifs class="ic-btn" title="${notifsReady()?'Notifications activées':'Activer les notifications et la pastille'}">${icon('bell',16)}${notifsReady()?'':'<i></i>'}</button>
                 <div style="position:relative;display:inline-block;">
-                    <button id="fabAdminMain" class="btn-sm pri" style="padding:8px 14px;">${icon('plus',15)} Nouvelle demande</button>
+                    <button id="fabAdminMain" class="btn-sm pri" style="padding:8px 14px;" title="Ajout direct, déjà validé, sans email">${icon('plus',15)} Saisie directe <span class="tb-nomail">${icon('x',10)} sans email</span></button>
                     <div id="fabAdminMenu" class="drop-menu" style="display:none;">
+                        <div class="drop-note"><b>Saisie directe</b>La commande est ajoutée au registre, déjà validée. Aucun email n’est envoyé.</div>
                         ${[["repas","utensils","Repas"],["taxi","car","Taxi"],["commande","box","Commande"],["hotel","bed","Hôtel"]].map(([t,ic,l])=>`<button data-saisie-type="${t}">${icon(ic,15)} ${l}</button>`).join('')}
                     </div>
                 </div>
@@ -2385,7 +2389,7 @@ function mobileNavHtml(){
     ${state.moreOpen?`<div data-nav='{"moreOpen":false}' style="position:fixed;inset:0;background:rgba(15,23,42,.35);z-index:9500;display:flex;align-items:flex-end;">
         <div style="background:#fff;width:100%;border-radius:20px 20px 0 0;padding:14px 14px calc(14px + env(safe-area-inset-bottom,0px));">
             ${[...(meOk()?[["me","lock","Mon écran"],["me-memo","edit","Mémo perso"],["me-bat","tool","Soucis du bâtiment"],["me-stat","check","Actions et stats"]]:[]),["stats","chart","Statistiques"],["analyse","users","Assistantes et connexions"]].map(([t,ic,l])=>`<button data-admin-tab="${t}" style="display:flex;align-items:center;gap:12px;width:100%;background:none;border:none;padding:14px 8px;font-size:15px;font-weight:600;color:var(--ink);cursor:pointer;border-bottom:1px solid #f0f1f4;">${icon(ic,18)} ${l}</button>`).join('')}
-            <button data-back-home style="display:flex;align-items:center;gap:12px;width:100%;background:none;border:none;padding:14px 8px;font-size:15px;font-weight:600;color:var(--ink);cursor:pointer;border-bottom:1px solid #f0f1f4;">${icon('home',18)} Formulaire de demande</button>
+            <button data-back-home style="display:flex;align-items:center;gap:12px;width:100%;background:none;border:none;padding:14px 8px;font-size:15px;font-weight:600;color:var(--ink);cursor:pointer;border-bottom:1px solid #f0f1f4;">${icon('home',18)} Page de demande</button>
             <button data-admin-logout style="display:flex;align-items:center;gap:12px;width:100%;background:none;border:none;padding:14px 8px;font-size:15px;font-weight:600;color:#b91c1c;cursor:pointer;">${icon('logout',18)} Se déconnecter</button>
         </div></div>`:''}`;
 }
@@ -4590,7 +4594,7 @@ function renderSaisieModal(){
     <div class="modal-content" onclick="event.stopPropagation()">
         <div class="modal-handle"></div>
         <div style="padding:14px 20px;background:#fff;border-radius:24px 24px 0 0;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border);flex-shrink:0;">
-            <span style="font-weight:700;font-size:16px;">${title}</span>
+            <span style="display:flex;flex-direction:column;gap:2px;"><span style="font-weight:700;font-size:16px;">${title}</span><span style="font-size:12px;color:var(--ink-soft);font-weight:500;">Saisie directe : ajoutée validée, aucun email envoyé</span></span>
             <button data-close-modal style="background:#f3f4f6;border:none;border-radius:50%;width:30px;height:30px;cursor:pointer;display:flex;align-items:center;justify-content:center;">✕</button>
         </div>
         <div class="scroll-content">${step1}</div>
@@ -5412,14 +5416,13 @@ function attachEvents(){
         state.data=[newCmd,...state.data];
         state.saisieType=null;
         state.adminForm=null;
-        showToast('✓ Commande ajoutée');
+        showToast('✓ Commande ajoutée · aucun email envoyé');
         state.adminTab='activite';state.resaFilter='all';
         render();
         const savedCmd=await dbInsert(newCmd);
         if(savedCmd.id!==newCmd.id){state.data=state.data.map(c=>c.id===newCmd.id?savedCmd:c);}
         logAction('Création', savedCmd, 'saisie admin');
-        // Notifier les admins
-        (settings.adminEmails||[]).forEach(email=>{ if(email) sendConfirmationEmail(savedCmd.id!==newCmd.id?savedCmd:newCmd,{to:email,kind:'adminAjout'}); });
+        // Saisie directe par un admin : pas d'email
     };
 
     // Settings helpers
