@@ -510,7 +510,23 @@
         .lv-next-l{ grid-column:1/-1; color:#9fb0c4; font-size:14px; text-transform:uppercase; letter-spacing:.08em; font-weight:600; margin-bottom:6px; }
         .lv-next-cd{ font:700 54px var(--ft); color:#fff; letter-spacing:-.02em; font-variant-numeric:tabular-nums; line-height:1; }
         .lv-next-d b{ display:block; font-size:22px; color:#fff; } .lv-next-d span{ display:block; color:#a9b8ca; font-size:15px; margin-top:4px; }
-        .lv-ticker{ grid-column:1/-1; display:flex; align-items:center; gap:16px; height:58px; margin:0 -36px; padding:0 36px; background:rgba(0,0,0,.3); border-top:1px solid rgba(255,255,255,.08); }
+.lv-p{ grid-template-rows:auto auto auto auto 1fr auto; } .lv-p{ overflow-y:auto; } .lv-p .lv-tl,.lv-p .lv-next,.lv-p .lv-stats{ min-height:fit-content; }
+        @media(max-height:980px){ .lv-p{ gap:16px 24px; padding-top:20px; } .lv-p .lv-kpi{ padding:12px 18px; } .lv-p .lv-kpi-v{ font-size:38px; } .lv-p .lv-kpi-l{ font-size:13.5px; margin-top:4px; } .lv-p .lv-next{ padding:14px 22px; } .lv-p .lv-next-cd{ font-size:40px; } .lv-p .lv-next-d b{ font-size:18px; } .lv-p .lv-s-v{ font-size:24px; } .lv-p .lv-bars{ height:52px; } .lv-p .lv-clock{ font-size:36px; } } .lv-p .lv-list{ grid-row:3 / span 3; } .lv-p .lv-ticker{ grid-row:6; }
+        .lv-stats{ grid-column:1; grid-row:5; align-self:start; display:flex; flex-direction:column; gap:14px; }
+        .lv-s-grid{ display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:14px; }
+        .lv-s{ background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.08); border-radius:16px; padding:14px 18px; display:flex; flex-direction:column; gap:4px; min-width:0; animation:lvUp .7s cubic-bezier(.2,.8,.2,1) both; }
+        .lv-s-l{ font-size:12px; color:#8fa0b5; text-transform:uppercase; letter-spacing:.07em; font-weight:600; }
+        .lv-s-v{ font:700 30px var(--ft); letter-spacing:-.02em; line-height:1.1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-variant-numeric:tabular-nums; }
+        .lv-s-sub{ font-size:13px; color:#a9b8ca; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .lv-s-row{ display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.4fr); gap:14px; }
+        .lv-s-bat{ flex-direction:row; align-items:center; gap:18px; } .lv-s-bat b{ display:block; font-size:19px; color:#fff; margin:3px 0 2px; } .lv-s-bat > div{ display:flex; flex-direction:column; gap:2px; min-width:0; }
+        .lv-ring{ animation:lvRing 1.4s cubic-bezier(.2,.8,.2,1) .8s both; } @keyframes lvRing{ from{ stroke-dasharray:0 999; } }
+        .lv-bars{ display:flex; align-items:flex-end; gap:5px; height:72px; margin-top:8px; }
+        .lv-bar{ flex:1; height:100%; display:flex; flex-direction:column; justify-content:flex-end; align-items:center; gap:4px; } .lv-bar i{ display:block; width:100%; border-radius:4px 4px 2px 2px; background:#2c5f85; transform-origin:bottom; animation:lvGrow .8s cubic-bezier(.2,.8,.2,1) both; }
+        .lv-bar span{ font-size:10px; color:#6f8197; } .lv-bar.today i{ background:#60a5fa; box-shadow:0 0 12px rgba(96,165,250,.6); } .lv-bar.today span{ color:#fff; font-weight:700; } .lv-bar.fut i{ background:rgba(96,165,250,.28); }
+        @keyframes lvGrow{ from{ transform:scaleY(0); } }
+        @media(max-width:1100px){ .lv-p .lv-list,.lv-stats,.lv-p .lv-ticker{ grid-row:auto; } .lv-s-grid{ grid-template-columns:1fr 1fr; } .lv-s-row{ grid-template-columns:1fr; } }
+                .lv-ticker{ grid-column:1/-1; display:flex; align-items:center; gap:16px; height:58px; margin:0 -36px; padding:0 36px; background:rgba(0,0,0,.3); border-top:1px solid rgba(255,255,255,.08); }
         .lv-ticker > b{ background:#2c5f85; color:#fff; padding:5px 12px; border-radius:6px; font-size:13px; text-transform:uppercase; letter-spacing:.06em; flex-shrink:0; }
         .lv-tk{ overflow:hidden; flex:1; mask-image:linear-gradient(90deg,transparent,#000 5%,#000 95%,transparent); }
         .lv-tk-in{ display:inline-flex; gap:48px; white-space:nowrap; animation:lvTk 40s linear infinite; font-size:16px; color:#dbe3ee; } .lv-tk-in span{ display:inline-flex; align-items:center; gap:8px; }
@@ -2850,6 +2866,7 @@ function renderLive(){
     const ACT=P?meActions():[], urgB=P?P.soucis.filter(s=>s.statut!=='resolu'&&s.urgence==='urgent').length:0;
     const rapp=P?P.memos.filter(x=>x.rappel&&!x.fait&&isoDay(new Date(x.rappel))<=todayK).sort((a,b)=>new Date(a.rappel)-new Date(b.rappel)):[];
     const hhmm=d=>new Date(d).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}).replace(':','h');
+    const LS=P?liveStats(now):null;
     const n=countStages(); const recus=today.filter(c=>suiviOf(c).recu||stageOf(c)==='fait').length;
     const hrs=[...today.map(c=>heureMin(c.heure)).filter(x=>x!==9999),...ints.map(s=>mn(s.interv))].map(x=>x/60);
     const H0=Math.min(7,Math.floor(Math.min(24,...hrs))), H1=Math.max(21,Math.ceil(Math.max(0,...hrs))+1), pos=c=>{ const mn=heureMin(c.heure); return mn===9999?null:Math.max(0,Math.min(100,(mn/60-H0)/(H1-H0)*100)); };
@@ -2865,7 +2882,7 @@ function renderLive(){
         return `<div class="lv-item ${bientot?'pulse':''}" style="--c:${COL[st]};"><span class="lv-h">${esc(c.heure||'—')}</span><div style="min-width:0;flex:1;"><b>${esc(titreDe(c))}${c.type==='repas'?` · ${c.nb||1} pers.`:''}</b><span>${esc([c.type==='taxi'?`${c.depart||''} → ${c.arrivee||''}`:c.lieu,c.presta,c.demandeur].filter(Boolean).join(' · '))}</span></div><span class="lv-st">${s.recu?'Livré ✓':bientot?'Imminent':STAGES[st].court}</span></div>`; };
     const tkI=intsDem.map(s=>`<span>🔧 ${hhmm(s.interv)} ${esc(s.titre)} · ${esc(meZone(s))}</span>`).join('');
     const ticker=(demain.length||tkI)?tkI+demain.map(c=>`<span>${icon(c.type==='taxi'?'car':c.type==='hotel'?'bed':'utensils',16)} ${esc(c.heure||'')} ${esc(titreDe(c))}${c.type==='repas'?` · ${c.nb||1} pers.`:''}${c.lieu?' · '+esc(c.lieu):''}</span>`).join(''):'<span>Rien de prévu demain pour l’instant</span>';
-    return `<div class="lv">
+    return `<div class="lv ${P?'lv-p':''}">
         <div class="lv-bg"></div>
         <header class="lv-top">
             <div class="lv-brand">${logoHtml(18)}<div><b>${esc(marqueNom())}</b><span>Écran live · ${dateLongue(now)} ${now.getFullYear()}</span></div></div>
@@ -2877,7 +2894,7 @@ function renderLive(){
         </div>
         <section class="lv-tl">
             <div class="lv-tl-h">${Array.from({length:H1-H0+1},(_,i)=>`<span style="left:${i/(H1-H0)*100}%;">${H0+i}h</span>`).join('')}</div>
-            <div class="lv-tl-b" style="height:${Math.max(3,lanes.length)*76+20}px;">
+            <div class="lv-tl-b" style="height:${Math.max(P?2:3,lanes.length)*76+20}px;">
                 ${Array.from({length:H1-H0+1},(_,i)=>`<i style="left:${i/(H1-H0)*100}%;"></i>`).join('')}
                 <div class="lv-now" id="lvNow" style="left:${nowPos}%;"><span>${now.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})}</span></div>
                 ${TL.map((x,i)=>{ if(x.s) return `<div class="lv-ev" style="left:${x.p}%;top:${x.lane*76+10}px;width:13%;--c:#a78bfa;animation-delay:${300+i*90}ms;"><b>${hhmm(x.s.interv)} 🔧 ${esc(x.s.titre)}</b><span>${esc([meZone(x.s),x.s.interv_par].filter(Boolean).join(' · '))}</span></div>`; const c=x.c; const st=stageOf(c), s=suiviOf(c); return `<div class="lv-ev ${s.recu?'ok':''}" style="left:${x.p}%;top:${x.lane*76+10}px;width:13%;--c:${COL[st]};animation-delay:${300+i*90}ms;"><b>${esc(c.heure)} ${esc(titreDe(c))}</b><span>${esc(c.type==='repas'?`${c.nb||1} pers. · ${c.lieu||''}`:c.type==='taxi'?(c.arrivee||''):(c.lieu||''))}</span></div>`; }).join('')}
@@ -2890,8 +2907,48 @@ function renderLive(){
         ${P?`<h3 style="margin-top:18px;">Bâtiment · à faire <span style="opacity:.6;font-weight:500;">${ACT.length}</span></h3>${[...ints.filter(s=>new Date(s.interv)>new Date(now.getTime()-60*60000)).map(s=>`<div class="lv-item" style="--c:#a78bfa;"><span class="lv-h">${hhmm(s.interv)}</span><div style="min-width:0;flex:1;"><b>🔧 ${esc(s.titre)}</b><span>${esc([meZone(s),s.interv_par].filter(Boolean).join(' · '))}</span></div><span class="lv-st">Intervention</span></div>`),
             ...ACT.slice(0,4).map(({s,k,why,group})=>`<div class="lv-item" style="--c:${{verif:'#a78bfa',relance:'#f87171',transmettre:'#fbbf24',silence:'#94a3b8'}[k]};"><span class="lv-h" style="font-size:12px;">${{verif:'Vérifier',relance:'Relancer',transmettre:'Transmettre',silence:'Relancer'}[k]}</span><div style="min-width:0;flex:1;"><b>${esc(group||s.titre)}</b><span>${esc(group?why:meZone(s)+' · '+why)}</span></div></div>`),
             ...rapp.slice(0,2).map(x=>`<div class="lv-item" style="--c:#fbbf24;"><span class="lv-h">${hhmm(x.rappel)}</span><div style="min-width:0;flex:1;"><b>📝 ${esc(String(x.texte).split('\n')[0])}</b><span>Rappel mémo</span></div></div>`)].slice(0,5).join('')||'<div class="lv-empty" style="position:static;">Rien à faire côté bâtiment ✓</div>'}`:''}</section>
+        ${LS||''}
         <footer class="lv-ticker"><b>Demain</b><div class="lv-tk"><div class="lv-tk-in">${ticker}${ticker}</div></div></footer>
     </div>`;
+}
+function liveStats(now){
+    const D=(state.data||[]).filter(c=>c.pris!=='Annulé'), S=state.me, eur=v=>Math.round(v).toLocaleString('fr-FR')+' €';
+    const inM=(c,y,m)=>{ const d=parseDate(c.date); return d&&d.getFullYear()===y&&d.getMonth()===m; };
+    const pm=new Date(now.getFullYear(),now.getMonth()-1,1);
+    const mois=D.filter(c=>inM(c,now.getFullYear(),now.getMonth())), prec=D.filter(c=>inM(c,pm.getFullYear(),pm.getMonth()));
+    const dep=mois.reduce((a,c)=>a+(+c.prix||0),0), depP=prec.reduce((a,c)=>a+(+c.prix||0),0);
+    const evo=prec.length?Math.round((mois.length-prec.length)/prec.length*100):null;
+    const liv=mois.filter(c=>suiviOf(c).recu&&heurePrevue(c)), alh=liv.filter(c=>new Date(suiviOf(c).recu)-heurePrevue(c)<=15*60000).length;
+    const ponct=liv.length?Math.round(alh/liv.length*100):null;
+    const pr={}; mois.forEach(c=>{ if(c.presta) pr[c.presta]=(pr[c.presta]||0)+1; }); const top=Object.entries(pr).sort((a,b)=>b[1]-a[1])[0];
+    const so=S.soucis, ouv=so.filter(s=>s.statut!=='resolu'), res=so.filter(s=>s.statut==='resolu');
+    const pct=so.length?Math.round(res.length/so.length*100):0;
+    const resM=res.filter(s=>s.resolu&&new Date(s.resolu).getMonth()===now.getMonth()&&new Date(s.resolu).getFullYear()===now.getFullYear()).length;
+    const sil=ouv.filter(s=>(now-meLast(s))/864e5>30).length, cst=ouv.filter(s=>(s.constat||[]).length).length;
+    const old=ouv.length?Math.max(...ouv.map(s=>now-new Date(s.t))):0;
+    // 14 derniers jours + 7 à venir
+    const days=Array.from({length:21},(_,i)=>{ const d=new Date(now); d.setHours(0,0,0,0); d.setDate(d.getDate()-13+i); return d; });
+    const evd=eventsByDay(), cnt=days.map(d=>(evd[isoDay(d)]||[]).length), mx=Math.max(1,...cnt);
+    const R=34, C=2*Math.PI*R;
+    const tile=(l,v,sub,col,i)=>`<div class="lv-s" style="animation-delay:${400+i*90}ms;"><span class="lv-s-l">${l}</span><span class="lv-s-v" style="color:${col};">${v}</span><span class="lv-s-sub">${sub}</span></div>`;
+    return `<section class="lv-stats">
+        <div class="lv-s-grid">
+            ${tile('Commandes ce mois',mois.length,evo===null?'—':`${evo>=0?'▲':'▼'} ${Math.abs(evo)} % vs mois dernier`,'#fff',0)}
+            ${tile('Dépenses ce mois',eur(dep),depP?`${eur(depP)} le mois dernier`:'—','#60a5fa',1)}
+            ${tile('Livrées à l’heure',ponct===null?'—':ponct+' %',liv.length?`${alh} sur ${liv.length} ce mois`:'pas encore de « bien reçu »',ponct===null?'#9fb0c4':ponct>=90?'#4ade80':ponct>=70?'#fbbf24':'#f87171',2)}
+            ${tile('Prestataire n°1',top?esc(top[0]):'—',top?`${top[1]} commande${top[1]>1?'s':''} ce mois`:'—','#2dd4bf',3)}
+        </div>
+        <div class="lv-s-row">
+            <div class="lv-s lv-s-bat" style="animation-delay:780ms;">
+                <svg width="84" height="84" viewBox="0 0 84 84" aria-hidden="true"><circle cx="42" cy="42" r="${R}" fill="none" stroke="rgba(255,255,255,.08)" stroke-width="9"/><circle cx="42" cy="42" r="${R}" fill="none" stroke="#4ade80" stroke-width="9" stroke-linecap="round" stroke-dasharray="${C*pct/100} ${C}" transform="rotate(-90 42 42)" class="lv-ring"/><text x="42" y="47" text-anchor="middle" fill="#fff" font-size="17" font-weight="700">${pct}%</text></svg>
+                <div><span class="lv-s-l">Bâtiment · avancement</span><b>${res.length} résolus sur ${so.length}</b><span class="lv-s-sub">${ouv.length} ouverts · ${resM} résolu${resM>1?'s':''} ce mois · ${cst} en constat</span><span class="lv-s-sub">${sil} sans nouvelles +30 j · plus ancien : ${old?meAge(now-old):'—'}</span></div>
+            </div>
+            <div class="lv-s lv-s-chart" style="animation-delay:860ms;">
+                <span class="lv-s-l">Prestations par jour · 2 semaines passées et semaine à venir</span>
+                <div class="lv-bars">${days.map((d,i)=>`<div class="lv-bar ${i===13?'today':i>13?'fut':''}" title="${d.toLocaleDateString('fr-FR')} : ${cnt[i]}"><i style="height:${Math.max(4,cnt[i]/mx*100)}%;animation-delay:${900+i*25}ms;"></i><span>${i===13?'auj.':['D','L','M','M','J','V','S'][d.getDay()]}</span></div>`).join('')}</div>
+            </div>
+        </div>
+    </section>`;
 }
 function liveTick(){
     const el=document.getElementById('lvClock'); if(!el){ clearInterval(_liveTimer); _liveTimer=null; return; }
