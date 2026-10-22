@@ -619,6 +619,8 @@
         .eq-inv{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 16px;} .eq-inv > div{display:flex;align-items:center;gap:10px;justify-content:space-between;font-size:13px;} .eq-inv select{width:auto;max-width:200px;padding:6px 8px;font-size:12.5px;} .eq-inv small{color:var(--ink-soft);}
         @media(max-width:767px){ .eq-roles,.eq-inv{grid-template-columns:1fr;} }
         .st-sec{display:flex;align-items:baseline;gap:10px;margin:22px 0 10px;flex-wrap:wrap;} .st-sec b{font:650 16px var(--ft);} .st-sec span{font-size:12px;color:var(--ink-soft);}
+        .nf-where{display:flex;flex-direction:column;align-items:center;gap:6px;margin:4px 0 10px;font-size:14px;} .nf-where b{display:flex;align-items:center;gap:6px;font-size:16px;} .nf-where span{display:flex;align-items:center;gap:6px;color:var(--ink-soft);font-size:13px;} .nf-where em{font-style:normal;color:#b45309;font-size:12.5px;display:flex;gap:5px;align-items:center;}
+        .suivi-card.flash{animation:flashCard 2.4s ease-out 1;box-shadow:0 0 0 2px #60a5fa;} @keyframes flashCard{0%{background:#dbeafe;}100%{background:#fff;}}
         .role-tag{display:inline-flex;align-items:center;font-size:11.5px;font-weight:600;padding:2px 8px;border-radius:6px;white-space:nowrap;vertical-align:1px;} .role-tag.sm{font-size:10.5px;padding:1px 6px;margin-left:4px;}
         .an-grp td{background:#fafbfc;padding:8px 16px!important;border-top:1px solid var(--border);}
         .kb{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;align-items:start;} .kb-col{background:#eef0f3;border-radius:12px;padding:10px;display:flex;flex-direction:column;gap:8px;}
@@ -1094,7 +1096,7 @@ function badgeColor(j){
 }
 const $ini = n => (n||"?").split(" ").map(x=>x[0]).slice(0,2).join("").toUpperCase();
 const $col = n => AVC[(n?.charCodeAt(0)||65)%AVC.length];
-const today = () => new Date().toISOString().slice(0,10);
+const today = () => { const d=new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; };
 const isMobile = () => window.innerWidth < 768;
 
 /* ══════════════════════════════════════
@@ -1853,15 +1855,18 @@ function nfBarHtml(){
 }
 function renderInlineForm(m){
     const f=state.form;
+    if(!f.sent&&f.date&&f.date<today()&&!f.dateAutre&&!f.fromEmail) f.date=today();
 
     if(f.sent) return `
     <div class="nf-card nf-ok">
         <div class="nf-ok-ic">${icon('check',28)}</div>
         <h1>${f.admin?'Commande ajoutée':'Demande envoyée'}</h1>
-        <p>${f.admin?'Elle est directement validée et apparaît dans le suivi, à l’étape « À commander ». Aucun email n’a été envoyé.':'Elle est en attente de validation. Vous recevrez une confirmation par email.'}</p>
+        ${(()=>{ const c=(state.data||[]).find(x=>x.code===f.code); if(!c) return ''; const d=parseDate(c.date);
+            return `<div class="nf-where"><b>${icon('calendar',15)} ${d?dateLongue(d)+' '+d.getFullYear():'Date non renseignée'}${c.heure&&c.type!=='hotel'?' · '+esc(c.heure):''}</b>${f.admin?`<span>Dans le suivi : ${stagePill(stageOf(c))}</span>`:''}${d&&d<parseDate(today())?`<em>${icon('alert',13)} Attention : cette date est passée.</em>`:''}</div>`; })()}
+        <p>${f.admin?'Directement validée, aucun email envoyé.':'Elle est en attente de validation. Vous recevrez une confirmation par email.'}</p>
         <div class="code-box"><div class="code-l">Code de suivi</div><div class="code-v">${f.code||'—'}</div><div class="code-s">Conservez ce code pour suivre ou modifier votre demande.</div></div>
         <div class="nf-ok-btns">
-            ${f.admin&&isAdmin()?`<button class="nf-btn ghost" data-back-admin-suivi>${icon('clipboard',15)} Voir dans le suivi</button>`:`<button id="goTrack" class="nf-btn ghost">${icon('search',15)} Suivre ma demande</button>`}
+            ${f.admin&&isAdmin()?`<button class="nf-btn ghost" data-back-admin-suivi>${icon('clipboard',15)} Voir dans le suivi</button><button class="nf-btn ghost" data-back-admin-agenda>${icon('calendar',15)} Voir dans l’agenda</button>`:`<button id="goTrack" class="nf-btn ghost">${icon('search',15)} Suivre ma demande</button>`}
             <button data-reset-form class="nf-btn">${icon('plus',15)} Nouvelle demande</button>
         </div>
     </div>`;
@@ -2289,7 +2294,7 @@ function suiviCard(c,{compact=false,showStage=false,select=false}={}){
     else if(st==='commandee'){ actions=(peutConfirmer(c)?`<button data-recu="${c.id}" style="display:inline-flex;align-items:center;gap:5px;border-radius:8px;padding:6px 10px;font-size:12px;font-weight:700;cursor:pointer;background:#15803d;border:1px solid #15803d;color:#fff;">${icon('check',12)} Bien reçu</button>`:'')+B.fait+B.annuler; info=`${icon('check',11)} Commande passée le ${new Date(s.cmd).toLocaleDateString('fr-FR')}${s.cmdBy&&s.cmdBy!=='Admin'?' par '+esc(s.cmdBy):''} · <a href="#" data-suivi-act="uncommande" data-id="${c.id}" style="color:#8b93a1;">décocher</a>`; }
     else if(st==='fait'){ info=s.recu?recuInfo(s):s.fait?`Terminé le ${new Date(s.fait).toLocaleDateString('fr-FR')}${s.cmd?'':''} · <a href="#" data-suivi-act="unfait" data-id="${c.id}" style="color:#8b93a1;">rouvrir</a>`:'Prestation passée'; }
     const sel=select?`<input type="checkbox" class="sel-box" data-sel-id="${c.id}" ${(state.sel||[]).includes(c.id)?'checked':''} style="width:16px;height:16px;accent-color:var(--accent);cursor:pointer;flex-shrink:0;margin-top:3px;">`:'';
-    return `<div class="suivi-card" style="background:#fff;border:1px solid var(--border);border-left:3px solid ${STAGES[st].color};border-radius:8px;padding:${compact?'10px 12px':'12px 14px'};display:flex;gap:10px;align-items:flex-start;">
+    return `<div class="suivi-card${state.flashId===c.id?' flash':''}" style="background:#fff;border:1px solid var(--border);border-left:3px solid ${STAGES[st].color};border-radius:8px;padding:${compact?'10px 12px':'12px 14px'};display:flex;gap:10px;align-items:flex-start;">
         ${sel}
         <div style="flex:1;min-width:0;">
             <div data-open-detail='${JSON.stringify(c).replace(/'/g,"&apos;")}' style="cursor:pointer;">
@@ -5504,7 +5509,10 @@ function attachEvents(){
     });
 
     document.querySelectorAll('[data-reset-form]').forEach(el=>el.onclick=()=>setState({form:{type:null,step:1,sent:false,dem:"",pourQui:[],pourQuiAutre:"",participants:"",vol:"",copyMail:false,date:today(),dateDepart:"",heure:"12h00",lieu:"",de:"",vers:"",presta:"",desc:"",nb:"1",com:""}}));
-    document.querySelectorAll('[data-back-admin-suivi]').forEach(el=>el.onclick=()=>setState({vue:'admin',authed:true,adminTab:'suivi',saisieDirecte:false,form:{type:null,step:1,sent:false,dem:"",pourQui:[],pourQuiAutre:"",participants:"",vol:"",copyMail:false,date:today(),dateDepart:"",heure:"12h00",lieu:"",de:"",vers:"",presta:"",desc:"",nb:"1",com:""}}));
+    document.querySelectorAll('[data-back-admin-agenda]').forEach(el=>el.onclick=()=>{ const c=(state.data||[]).find(x=>x.code===state.form.code); const d=c&&parseDate(c.date); state.flashId=c&&c.id; setState({vue:'admin',authed:true,adminTab:'calendrier',saisieDirecte:false,calDay:d?isoDay(d):null,calMonth:d?`${d.getFullYear()}-${d.getMonth()}`:null,form:{type:null,step:1,sent:false,dem:"",pourQui:[],pourQuiAutre:"",participants:"",vol:"",copyMail:false,date:today(),dateDepart:"",heure:"12h00",lieu:"",de:"",vers:"",presta:"",desc:"",nb:"1",com:""}}); });
+    document.querySelectorAll('[data-back-admin-suivi]').forEach(el=>el.onclick=()=>{ const c=(state.data||[]).find(x=>x.code===state.form.code); state.flashId=c&&c.id; if(c) state.suiviStage=stageOf(c);
+        setState({vue:'admin',authed:true,adminTab:'suivi',saisieDirecte:false,form:{type:null,step:1,sent:false,dem:"",pourQui:[],pourQuiAutre:"",participants:"",vol:"",copyMail:false,date:today(),dateDepart:"",heure:"12h00",lieu:"",de:"",vers:"",presta:"",desc:"",nb:"1",com:""}});
+        setTimeout(()=>{ const n=document.querySelector('.suivi-card.flash'); if(n) n.scrollIntoView({block:'center',behavior:'smooth'}); },150); });
 
     // Saisie save
     // Admin form dropdown
