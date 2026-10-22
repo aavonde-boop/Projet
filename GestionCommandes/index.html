@@ -217,6 +217,12 @@
         .shell-main{ flex:1; min-width:0; display:flex; flex-direction:column; }
         .topbar{ height:56px; background:#fff; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:14px; padding:0 28px; position:sticky; top:0; z-index:250; }
         .fab-note{ align-self:flex-end; background:#0f1b2d; color:#fff; font-size:12px; font-weight:600; padding:6px 11px; border-radius:99px; box-shadow:0 4px 14px rgba(15,27,45,.2); }
+        .sd-wrap .nf-layout{ margin-top:0; }
+        .sd-choix{ display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:14px; }
+        .sd-type{ display:flex; flex-direction:column; gap:6px; text-align:left; background:#fff; border:1px solid var(--border); border-radius:12px; padding:18px; cursor:pointer; font:inherit; color:var(--ink); transition:border-color .15s, box-shadow .15s; }
+        .sd-type:hover{ border-color:var(--c); box-shadow:0 0 0 1px var(--c); } .sd-type b{ font-size:16px; } .sd-type > span:last-child{ font-size:12.5px; color:var(--ink-soft); line-height:1.4; }
+        .sd-ic{ width:44px; height:44px; border-radius:11px; background:var(--b); color:var(--c); display:flex; align-items:center; justify-content:center; margin-bottom:4px; }
+        @media(max-width:767px){ .sd-choix{ grid-template-columns:1fr 1fr; } }
         .tb-nomail{ display:inline-flex; align-items:center; gap:3px; margin-left:6px; padding:2px 7px; border-radius:99px; background:rgba(255,255,255,.18); font-size:10.5px; font-weight:600; letter-spacing:.02em; }
         .drop-note{ padding:10px 12px 9px; margin:-4px -4px 6px; border-bottom:1px solid var(--border-light); font-size:12px; line-height:1.45; color:var(--ink-mid); max-width:240px; } .drop-note b{ display:block; color:var(--ink); font-size:12.5px; margin-bottom:2px; }
         .crumb{ color:var(--ink-soft); font-size:12.5px; white-space:nowrap; } .crumb b{ color:var(--ink); font-weight:600; }
@@ -1904,7 +1910,8 @@ function renderAdminView(m){
     }).join('');
 
     let main='';
-    if(state.adminTab==='settings')        main=renderSettings();
+    if(state.saisieDirecte)                  main=renderSaisieDirecte(m);
+    else if(state.adminTab==='settings')        main=renderSettings();
     else if(state.adminTab==='activite')     main=renderActivite(m);
     else if(state.adminTab==='stats')        main=renderStats(m);
     else if(state.adminTab==='analyse')      main=renderAnalyse(m);
@@ -1922,7 +1929,7 @@ function renderAdminView(m){
                 ${logoHtml(16)}
                 <div style="min-width:0;">
                     <div style="font-size:10.5px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#8fa0b5;">${esc(marqueNom())}</div>
-                    <div style="font-size:17px;font-weight:650;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${TITRES[state.adminTab]||''}</div>
+                    <div style="font-size:17px;font-weight:650;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${state.saisieDirecte?'Saisie directe':TITRES[state.adminTab]||''}</div>
                 </div>
             </div>
             <div style="display:flex;gap:6px;flex-shrink:0;">
@@ -1935,13 +1942,13 @@ function renderAdminView(m){
     ${state.saisieType?renderSaisieModal():''}
     <div id="bulkBarSlot">${bulkBarHtml()}</div>
     ${state.toast?`<div class="toast">${state.toast}</div>`:''}
-    <div class="fab-area">
+    ${state.saisieDirecte?'':`<div class="fab-area">
         ${state.fabOpen?`<div class="fab-menu"><div class="fab-note">Saisie directe · sans email</div>
             ${[["commande","box","Commande"],["taxi","car","Taxi"],["repas","utensils","Repas"],["hotel","bed","Hôtel"]].map(([t,ic,l])=>`<button data-saisie-type="${t}" class="fab-item">${icon(ic,15)} ${l}</button>`).join('')}
         </div>`:''}
         <button id="fabMain" class="fab-main ${state.fabOpen?'open':''}">${icon('plus',22)}</button>
-    </div>
-    ${mobileNavHtml()}`;
+    </div>`}
+    ${state.saisieDirecte?'':mobileNavHtml()}`;
 
     const nAF=aFaireCount();
     const item=(tab,ic,label)=>`<button data-admin-tab="${tab}" class="side-it ${state.adminTab===tab?'on':''}" title="${label}">${icon(ic,17)}<span class="side-lbl">${label}</span>${tab==='suivi'&&nAF?`<span class="side-n">${nAF}</span>`:''}${tab==='me-bat'&&meBadge()?`<span class="side-n" style="background:#b91c1c;">${meBadge()}</span>`:''}</button>`;
@@ -1970,7 +1977,7 @@ function renderAdminView(m){
     <div class="shell-main">
         <header class="topbar">
             <button data-back-home class="btn-sm" title="Ouvrir la page de demande des assistantes">${icon('home',15)} Page de demande</button>
-            <div class="crumb">${state.adminTab==='me'||state.adminTab==='me-memo'?'Personnel 🔒':String(state.adminTab).startsWith('me')?'Bâtiment 🔒':['suivi','calendrier','activite'].includes(state.adminTab)?'Commandes':['stats','analyse'].includes(state.adminTab)?'Analyses':'Administration'} / <b>${TITRES[state.adminTab]||''}</b></div>
+            <div class="crumb">${state.adminTab==='me'||state.adminTab==='me-memo'?'Personnel 🔒':String(state.adminTab).startsWith('me')?'Bâtiment 🔒':['suivi','calendrier','activite'].includes(state.adminTab)?'Commandes':['stats','analyse'].includes(state.adminTab)?'Analyses':'Administration'} / <b>${state.saisieDirecte?'Saisie directe':TITRES[state.adminTab]||''}</b></div>
             <div style="margin-left:auto;display:flex;gap:8px;align-items:center;">
                 <button data-live-open class="btn-sm" title="Écran live (plein écran, pour un PC ou une TV)">${icon('dashboard',15)} Écran live</button>
                 <button data-activate-notifs class="ic-btn" title="${notifsReady()?'Notifications activées':'Activer les notifications et la pastille'}">${icon('bell',16)}${notifsReady()?'':'<i></i>'}</button>
@@ -4497,6 +4504,17 @@ function renderSettings(){
     </div>
     </div>`;
 }
+function renderSaisieDirecte(m){
+    const f=state.form;
+    const T=NF_CHOIX().find(c=>c.k===f.type);
+    const head=`<div class="page-head" style="margin-bottom:14px;"><div><h1>Saisie directe${T&&!f.sent?` · ${T.titre}`:''}</h1><p>${icon('check',13)} Ajoutée au suivi, déjà validée · <b>aucun email envoyé</b></p></div>
+        <div class="page-actions">${T&&!f.sent?`<button class="btn-sm" data-nf="back">${icon('arrow',14)} Changer de type</button><button class="btn-sm" data-email-open>${icon('mail',14)} Remplir depuis un email</button>`:''}<button class="btn-sm" data-saisie-close>${icon('x',14)} Fermer</button></div></div>`;
+    if(!f.type&&!f.sent) return `<div>${head}<div class="sd-choix">${NF_CHOIX().map(c=>`<button class="sd-type" data-saisie-type="${c.k}" style="--c:${c.col};--b:${c.t1};"><span class="sd-ic">${icon(c.ic,22)}</span><b>${c.titre}</b><span>${c.desc}</span></button>`).join('')}
+        <button class="sd-type" data-saisie-type="commande" style="--c:#475569;--b:#f1f5f9;"><span class="sd-ic">${icon('box',22)}</span><b>Commande</b><span>Fournitures et achats (Lyreco, etc.).</span></button></div>${renderEmailModal()}</div>`;
+    return `<div class="sd-wrap">${head}
+        ${f.fromEmail&&f.fromEmail.length&&!f.sent?`<div class="nf-email" style="margin-bottom:14px;">${icon('mail',16)} <span><b>Rempli depuis l’email</b> : ${f.fromEmail.join(', ')}. Vérifiez puis complétez.</span><button data-nf="emailok">OK</button></div>`:''}
+        ${renderInlineForm(m)}${renderEmailModal()}</div>`;
+}
 function renderSaisieModal(){
     const t=state.saisieType;
     const title=(t==='repas'?icon('utensils',16):t==='taxi'?icon('car',16):t==='hotel'?icon('bed',16):icon('box',16))+' '+(t==='repas'?'Ajouter un repas':t==='taxi'?'Ajouter un taxi':t==='hotel'?'Ajouter une nuit d\'hôtel':'Ajouter une commande');
@@ -4758,7 +4776,7 @@ function attachEvents(){
         document.querySelectorAll('[data-back-detail]').forEach(el=>el.onclick=()=>setState({detail:null}));
     document.querySelectorAll('[data-admin-logout]').forEach(el=>el.onclick=()=>{sessionEnd();updateBadge();state.form.dem='';setState({vue:"select",authed:false,authMode:'login',loginScreen:false,adminTab:"dashboard",fabOpen:false,sel:[]});});
     document.querySelectorAll('[data-action="admin"]').forEach(el=>el.onclick=()=>setState({vue:"admin",authed:isAdmin(),authMode:'login',authError:'',authInfo:''}));
-    document.querySelectorAll('[data-admin-tab]').forEach(el=>el.onclick=(ev)=>{ ev.stopPropagation(); setState({vue:"admin",adminTab:el.getAttribute('data-admin-tab'),search:"",filtre:"all",detail:null,fabOpen:false,sel:[],moreOpen:false,meSouci:null,meNew:false,meEdit:null}); window.scrollTo(0,0); });
+    document.querySelectorAll('[data-admin-tab]').forEach(el=>el.onclick=(ev)=>{ ev.stopPropagation(); setState({vue:"admin",saisieDirecte:false,adminTab:el.getAttribute("data-admin-tab"),search:"",filtre:"all",detail:null,fabOpen:false,sel:[],moreOpen:false,meSouci:null,meNew:false,meEdit:null}); window.scrollTo(0,0); });
 
     // Sélection multiple (sans re-rendu complet, pour garder le défilement)
     document.querySelectorAll('.sel-box').forEach(el=>el.addEventListener('change',()=>{
@@ -5024,7 +5042,13 @@ function attachEvents(){
     if(si)si.oninput=e=>setState({search:e.target.value});
 
     // Saisie
-    document.querySelectorAll('[data-saisie-type]').forEach(el=>el.onclick=()=>setState({saisieType:el.getAttribute('data-saisie-type'),fabOpen:false}));
+    document.querySelectorAll('[data-saisie-type]').forEach(el=>el.onclick=()=>{ const ty=el.getAttribute('data-saisie-type');
+        if(ty==='commande'){ setState({saisieType:ty,saisieDirecte:false,fabOpen:false}); return; }
+        const keep=state.saisieDirecte&&state.form&&!state.form.sent?state.form:null;
+        state.form=keep?{...keep,type:ty,step:2}:{type:ty,step:2,sent:false,dem:"",pourQui:[],pourQuiAutre:"",participants:"",vol:"",tel:"",copyMail:false,date:today(),dateDepart:"",heure:"12h00",lieu:"",de:"",vers:"",presta:"",desc:"",nb:"1",com:""};
+        if(!keep){ const me=userName(); if(me) state.form.dem=me; }
+        setState({saisieDirecte:true,saisieType:null,fabOpen:false,detail:null}); window.scrollTo(0,0); });
+    document.querySelectorAll('[data-saisie-close]').forEach(el=>el.onclick=()=>setState({saisieDirecte:false,form:{type:null,step:1,sent:false,dem:"",pourQui:[],pourQuiAutre:"",participants:"",vol:"",copyMail:false,date:today(),dateDepart:"",heure:"12h00",lieu:"",de:"",vers:"",presta:"",desc:"",nb:"1",com:""}}));
     document.querySelectorAll('[data-close-modal]').forEach(el=>el.onclick=e=>{if(e.target===el)setState({saisieType:null});});
 
     // Detail
@@ -5327,7 +5351,7 @@ function attachEvents(){
     });
 
     document.querySelectorAll('[data-reset-form]').forEach(el=>el.onclick=()=>setState({form:{type:null,step:1,sent:false,dem:"",pourQui:[],pourQuiAutre:"",participants:"",vol:"",copyMail:false,date:today(),dateDepart:"",heure:"12h00",lieu:"",de:"",vers:"",presta:"",desc:"",nb:"1",com:""}}));
-    document.querySelectorAll('[data-back-admin-suivi]').forEach(el=>el.onclick=()=>setState({vue:'admin',authed:true,adminTab:'suivi',form:{type:null,step:1,sent:false,dem:"",pourQui:[],pourQuiAutre:"",participants:"",vol:"",copyMail:false,date:today(),dateDepart:"",heure:"12h00",lieu:"",de:"",vers:"",presta:"",desc:"",nb:"1",com:""}}));
+    document.querySelectorAll('[data-back-admin-suivi]').forEach(el=>el.onclick=()=>setState({vue:'admin',authed:true,adminTab:'suivi',saisieDirecte:false,form:{type:null,step:1,sent:false,dem:"",pourQui:[],pourQuiAutre:"",participants:"",vol:"",copyMail:false,date:today(),dateDepart:"",heure:"12h00",lieu:"",de:"",vers:"",presta:"",desc:"",nb:"1",com:""}}));
 
     // Saisie save
     // Admin form dropdown
