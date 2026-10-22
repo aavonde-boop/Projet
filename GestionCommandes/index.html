@@ -1743,11 +1743,11 @@ function renderInlineForm(m){
     if(f.sent) return `
     <div class="nf-card nf-ok">
         <div class="nf-ok-ic">${icon('check',28)}</div>
-        <h1>Demande envoyée</h1>
-        <p>Elle est en attente de validation. Vous recevrez une confirmation par email.</p>
+        <h1>${f.admin?'Commande ajoutée':'Demande envoyée'}</h1>
+        <p>${f.admin?'Elle est directement validée et apparaît dans le suivi, à l’étape « À commander ». Aucun email n’a été envoyé.':'Elle est en attente de validation. Vous recevrez une confirmation par email.'}</p>
         <div class="code-box"><div class="code-l">Code de suivi</div><div class="code-v">${f.code||'—'}</div><div class="code-s">Conservez ce code pour suivre ou modifier votre demande.</div></div>
         <div class="nf-ok-btns">
-            <button id="goTrack" class="nf-btn ghost">${icon('search',15)} Suivre ma demande</button>
+            ${f.admin&&isAdmin()?`<button class="nf-btn ghost" data-back-admin-suivi>${icon('clipboard',15)} Voir dans le suivi</button>`:`<button id="goTrack" class="nf-btn ghost">${icon('search',15)} Suivre ma demande</button>`}
             <button data-reset-form class="nf-btn">${icon('plus',15)} Nouvelle demande</button>
         </div>
     </div>`;
@@ -1761,7 +1761,7 @@ function renderInlineForm(m){
     /* Qui */
     const demandeur=assistanteName()
         ?`<div class="nf-row"><span class="nf-chip soft on">${icon('user',14)} ${esc(assistanteName())}</span><span class="nf-hint">connectée</span></div>`
-        :`<div class="nf-row">${settings.assistantes.map(a=>chip('set','dem',a,esc(a),f.dem===a)).join('')}</div>`;
+        :`<div class="nf-row">${[...settings.assistantes,...(isAdmin()&&userName()&&!settings.assistantes.includes(userName())?[userName()]:[]),...(f.dem&&!settings.assistantes.includes(f.dem)&&f.dem!==userName()?[f.dem]:[])].map(a=>chip('set','dem',a,esc(a),f.dem===a)).join('')}</div>`;
     let qui='';
     if(T==='repas'){
         const deja=String(f.participants||'').toUpperCase();
@@ -1824,19 +1824,19 @@ function renderInlineForm(m){
     }
     const secDet=sec(detIc,detTitre,det);
     const secPlus=sec('message','Compléments',lbl('Commentaire','optionnel')+`<textarea id="formCom" class="form-input nf-in" style="min-height:70px;resize:vertical;" placeholder="Allergies, consignes, informations utiles…">${esc(f.com||'')}</textarea>`
-        +`<label class="nf-check"><input type="checkbox" id="formCopyMail" class="nf-in" ${f.copyMail?'checked':''}><span><b>Recevoir une copie par email</b><span>Un récapitulatif de la demande vous sera envoyé.</span></span></label>`);
+        +(isAdmin()?`<div class="nf-hint" style="margin-top:10px;">${icon('check',13)} Vous êtes administrateur : la commande est ajoutée directement, déjà validée, sans email.</div>`:`<label class="nf-check"><input type="checkbox" id="formCopyMail" class="nf-in" ${f.copyMail?'checked':''}><span><b>Recevoir une copie par email</b><span>Un récapitulatif de la demande vous sera envoyé.</span></span></label>`));
 
     const recap=`<aside class="nf-card nf-recap">
-        <div class="nf-recap-h"><b>Récapitulatif</b><span>À envoyer</span></div>
+        <div class="nf-recap-h"><b>Récapitulatif</b><span>${isAdmin()?'À ajouter':'À envoyer'}</span></div>
         <div id="nfSum" class="nf-sum">${nfSummaryHtml()}</div>
-        <div style="padding:0 18px 18px;"><button class="nf-btn f-send" style="width:100%;">${icon('send',16)} Envoyer la demande</button>
-        <div class="nf-note">Vous recevrez un email de confirmation et un code de suivi.</div></div>
+        <div style="padding:0 18px 18px;"><button class="nf-btn f-send" style="width:100%;">${isAdmin()?`${icon('check',16)} Ajouter la commande`:`${icon('send',16)} Envoyer la demande`}</button>
+        <div class="nf-note">${isAdmin()?"Ajoutée directement au suivi, déjà validée. Aucun email envoyé.":"Vous recevrez un email de confirmation et un code de suivi."}</div></div>
     </aside>`;
     return `<div class="nf-layout">
         <div class="nf-col">${secQui}${secQuand}${secDet}${secPlus}</div>
         ${m?'':recap}
     </div>
-    ${m?`<div class="nf-bar"><div id="nfBar" class="nf-bar-sum">${nfBarHtml()}</div><button class="nf-btn f-send" style="width:100%;">${icon('send',16)} Envoyer la demande</button></div>`:''}`;
+    ${m?`<div class="nf-bar"><div id="nfBar" class="nf-bar-sum">${nfBarHtml()}</div><button class="nf-btn f-send" style="width:100%;">${isAdmin()?`${icon('check',16)} Ajouter la commande`:`${icon('send',16)} Envoyer la demande`}</button></div>`:''}`;
 }
 
 /* ══════════════════════════════════════
@@ -3036,8 +3036,48 @@ function renderApparence(){
    REMPLIR UNE DEMANDE DEPUIS UN EMAIL
 ══════════════════════════════════════ */
 function sansAccent(s){ return String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase(); }
+function emailNoms(T, type){
+    const sa=s=>sansAccent(String(s||'')).toLowerCase().trim();
+    const titre=s=>String(s).trim().split(/\s+/).map(w=>w.split('-').map(x=>x? x[0].toUpperCase()+x.slice(1).toLowerCase():x).join('-')).join(' ');
+    const STOP=new Set(['bonjour','bonsoir','hello','salut','merci','cordialement','madame','monsieur','mme','mr','m','mlle','me','dr','cher','chere','tous','toutes','equipe','lundi','mardi','mercredi','jeudi','vendredi','samedi','dimanche','janvier','fevrier','mars','avril','mai','juin','juillet','aout','septembre','octobre','novembre','decembre','salle','bureau','rie','orly','roissy','cdg','paris','gare','aeroport','hotel','taxi','dejeuner','diner','petit','gouter','cocktail','reunion','comex','codir','svp','stp','objet','date','heure','lieu','le','la','les','un','une','des','du','de','et','a','au','aux','pour','avec','chez','sur','en','je','tu','il','elle','nous','vous','merci','bien','belle','bonne','journee','soiree','semaine','envoye','sent','from','to','cc','re','tr','fw','fwd','ok','oui','non','urgent','important','demande','commande','repas','plateau','plateaux','traiteur','personnes','pers','vol','train','tgv']);
+    // Annuaire : assistantes, directeurs, noms déjà vus dans les commandes
+    const vus=new Set(); (state.data||[]).forEach(c=>{ String(c.pour_qui||c.pourQui||'').split(',').forEach(x=>{ x=x.trim(); if(x.length>3&&!/autre/i.test(x)) vus.add(x); }); });
+    const ANN=[...settings.assistantes.map(n=>[n,'a']),...settings.directeurs.map(n=>[n,'d']),...[...vus].filter(n=>!settings.directeurs.includes(n)&&!settings.assistantes.includes(n)).map(n=>[n,'v'])];
+    const toks=n=>sa(n).split(/[\s-]+/).filter(x=>x.length>=3&&!STOP.has(x));
+    // Fréquence des prénoms pour éviter les ambiguïtés
+    const freq={}; ANN.forEach(([n])=>toks(n).forEach(x=>freq[x]=(freq[x]||0)+1));
+    const known=raw=>{ const r=toks(raw); if(!r.length) return null; let best=null,score=0;
+        ANN.forEach(([n,k])=>{ const nt=toks(n); const hit=r.filter(x=>nt.includes(x)); if(!hit.length) return; const sc=hit.length*2+(hit.some(x=>freq[x]===1)?1:0)+(k==='d'?.5:k==='a'?.3:0); if(hit.length===r.length||hit.some(x=>freq[x]===1)) if(sc>score){ score=sc; best=n; } });
+        return best; };
+    const isName=s=>{ const w=String(s).trim().split(/\s+/); if(!w.length||w.length>4) return false; if(/\d|@/.test(s)) return false; return w.every(x=>/^[A-ZÀ-Ý][A-Za-zÀ-ÿ'’-]{1,}$/.test(x)&&!STOP.has(sa(x))); };
+    const NOM="((?:[A-ZÀ-Ý][a-zà-ÿ'’-]+|[A-ZÀ-Ý]{2,}[A-ZÀ-Ý'’-]*)(?:[ -](?:[A-ZÀ-Ý][a-zà-ÿ'’-]+|[A-ZÀ-Ý]{2,}[A-ZÀ-Ý'’-]*)){0,2})";
+    const CIV="(?:M\\.|Mr\\.?|Mme\\.?|Mlle\\.?|Monsieur|Madame|Mademoiselle|Maître|Me|Dr\\.?|Docteur|Pr\\.?)";
+    const lines=String(T).split(/\r?\n/).map(l=>l.trim());
+    // 1) Expéditeur : en-tête « De : » / « From: », sinon signature après la formule de politesse
+    let sender=null, m;
+    for(const l of lines){ if((m=l.match(/^(?:de|from|exp[ée]diteur)\s*:\s*"?([^<"\n]+?)"?\s*(?:<[^>]+>|\[mailto|$)/i))){ const s=m[1].replace(/\s*\(.*\)$/,'').trim(); if(s&&!/@/.test(s)){ sender=s; break; } } }
+    if(!sender){ const iC=lines.findIndex(l=>/^(cordialement|bien (?:a|à) (?:vous|toi)|bien cordialement|tr[eè]s cordialement|bonne (?:journ[ée]e|soir[ée]e|fin de journ[ée]e)|belle journ[ée]e|merci(?: beaucoup| d'avance| par avance)?|[àa] bient[ôo]t|bises|amicalement|regards|best regards|sinc[eè]rement)\b[\s,.!]*/i.test(l));
+        if(iC>=0){ const rest=lines[iC].replace(/^(cordialement|bien (?:a|à) (?:vous|toi)|bien cordialement|tr[eè]s cordialement|bonne (?:journ[ée]e|soir[ée]e|fin de journ[ée]e)|belle journ[ée]e|merci(?: beaucoup| d'avance| par avance)?|[àa] bient[ôo]t|bises|amicalement|regards|best regards|sinc[eè]rement)\b[\s,.!]*/i,'').trim();
+            const cand=[rest,...lines.slice(iC+1,iC+4)].filter(Boolean); for(const c of cand){ const c2=c.replace(/[,.;!]+$/,''); if(isName(c2)||known(c2)){ sender=c2; break; } } } }
+    if(!sender){ const fin=String(T).trim().match(/(?:merci|cordialement|bises|bonne journ[ée]e|belle journ[ée]e|[àa] bient[ôo]t)[\s!.,]+([A-ZÀ-Ý][A-Za-zÀ-ÿ'’-]+(?:\s+[A-ZÀ-Ý][A-Za-zÀ-ÿ'’-]+){0,2})\s*[.!]*\s*$/i); if(fin&&(isName(fin[1])||known(fin[1]))) sender=fin[1]; }
+    if(!sender){ const last=lines.filter(Boolean).slice(-2); for(const c of last.reverse()){ const c2=c.replace(/[,.;!]+$/,''); if(isName(c2)&&c2.split(/\s+/).length<=3){ sender=c2; break; } } }
+    let dem=null; if(sender){ const k=known(sender); dem=k&&settings.assistantes.includes(k)?k:(k||titre(sender)); }
+    // 2) Personnes concernées
+    const qui=[]; const add=raw=>{ raw=String(raw||'').replace(/^(?:le|la|les)\s+/i,'').trim(); if(!raw||raw.length<3) return; const k=known(raw); const v=k||(isName(raw)?titre(raw):null); if(!v) return; if(sender&&(v===dem||sa(v)===sa(sender))) return; if(!qui.includes(v)) qui.push(v); };
+    const body=String(T);
+    const pats=[new RegExp(`\\b(?:pour|de la part de|au nom de|pour le compte de|accompagn[ée]e?s? de|avec|r[ée]serv[ée]e? (?:pour|au nom de)|chauffeur pour|taxi pour|chambre pour)\\s+${CIV}?\\s*${NOM}`,'g'),
+        new RegExp(`\\b${CIV}\\s+${NOM}`,'g'),
+        new RegExp(`(?:^|\\n)\\s*(?:nom|passager|passag[eè]re|client|cliente|invit[ée]e?s?|participants?|voyageur|voyageuse|b[ée]n[ée]ficiaire|personne)\\s*:\\s*([^\\n]+)`,'gi')];
+    pats.slice(0,2).forEach(re=>{ for(const mm of body.matchAll(re)){ add(mm[1]); } });
+    for(const mm of body.matchAll(pats[2])){ mm[1].split(/\s*(?:,|;|\bet\b|\+|\/)\s*/).forEach(add); }
+    // Noms connus cités n'importe où (directeurs, invités habituels)
+    const tb=' '+sansAccent(body).toLowerCase().replace(/[^a-z0-9]+/g,' ')+' ';
+    ANN.filter(([n,k])=>k!=='a').forEach(([n])=>{ const nt=toks(n); if(!nt.length) return; const full=nt.every(x=>tb.includes(' '+x+' ')); const nomFam=nt.length>1&&nt.slice(1).some(x=>x.length>=4&&freq[x]===1&&tb.includes(' '+x+' ')); if(full||nomFam) add(n); });
+    return {dem, qui};
+}
 function analyserEmail(txt){
-    const T=String(txt||''), t=sansAccent(T), out={}, trouve=[];
+    // En-têtes d'email retirés pour la date et l'heure (« Envoyé : mercredi 17:02 » ne doit pas compter)
+    const T=String(txt||'').split(/\r?\n/).filter(l=>!/^\s*(?:envoy[ée]|sent|date|de|from|[àa]|to|cc|cci|bcc|exp[ée]diteur|destinataires?)\s*:/i.test(l)).map(l=>l.replace(/^\s*(?:objet|subject)\s*:\s*/i,'')).join('\n'), t=sansAccent(T), out={}, trouve=[];
     const today=new Date(); today.setHours(0,0,0,0);
     // Type
     const sc={taxi:(t.match(/\b(taxi|vtc|chauffeur|uber|g7|allocab|aeroport|orly|roissy|cdg|beauvais|gare|train|tgv|vol)\b/g)||[]).length,
@@ -3068,11 +3108,14 @@ function analyserEmail(txt){
     // Prestataire
     const P=out.type==='taxi'?P_TAXI:out.type==='hotel'?P_HOTEL:P_REPAS;
     const pr=P.find(p=>new RegExp(`\\b${sansAccent(p).replace(/[.*+?^${}()|[\]\\]/g,'\\$&')}\\b`).test(t)); if(pr){ out.presta=pr; trouve.push('prestataire'); }
-    // Personnes concernées (directeurs)
-    const dirs=settings.directeurs.filter(n=>sansAccent(n).split(/\s+/).filter(x=>x.length>=4).some(x=>new RegExp(`\\b${x}\\b`).test(t)));
-    if(dirs.length){ if(out.type==='repas') out.participants=dirs.join(', '); else out.pourQui=dirs; trouve.push(out.type==='repas'?'participants':'pour qui'); }
-    // Demandeur (signature)
-    const ass=settings.assistantes.find(n=>sansAccent(n).split(/\s+/).filter(x=>x.length>=4).every(x=>t.includes(x))); if(ass&&!assistanteName()){ out.dem=ass; trouve.push('demandeur'); }
+    // Noms : expéditeur (demandeur) et personnes concernées
+    const N=emailNoms(String(txt||''), out.type);
+    if(N.dem&&!assistanteName()){ out.dem=N.dem; trouve.push('demandeur'); }
+    if(N.qui.length){
+        if(out.type==='repas') out.participants=N.qui.join(', ');
+        else { const conn=N.qui.filter(x=>settings.directeurs.includes(x)), aut=N.qui.filter(x=>!settings.directeurs.includes(x)); out.pourQui=[...conn,...(aut.length?['__autre__']:[])]; if(aut.length) out.pourQuiAutre=aut.join(', '); }
+        trouve.push(out.type==='repas'?'participants':'pour qui');
+    }
     // Lieu (repas)
     if(out.type==='repas'){
         const rec=[...new Set(state.data.filter(c=>c.type==='repas'&&c.lieu).map(c=>String(c.lieu).trim()))].find(l=>l.length>3&&t.includes(sansAccent(l)));
@@ -5160,14 +5203,15 @@ function attachEvents(){
         const f=state.form;
         const pourQuiLabel=f.type==='repas'?(f.participants||''):(f.pourQui.includes('__autre__')?(f.pourQuiAutre||'Autre'):f.pourQui.join(', '));
         const descFinal=f.type==='taxi'?`Taxi ${(f.de||'?').split(',')[0]} → ${(f.vers||'?').split(',')[0]}`:f.type==='hotel'?(f.desc||`Hôtel ${f.lieu||'?'}`):(f.desc||'Commande repas');
-        const code=genCode(f.type);
-        const newItem={id:Date.now(),code,pris:"En attente",demandeur:f.dem,pourQui:pourQuiLabel,date:f.date,dateDepart:f.type==='hotel'?f.dateDepart:'',desc:descFinal,lieu:f.type==='taxi'?f.de:f.lieu,heure:f.heure,presta:f.presta,prix:0,paie:"",nb:parseInt(f.nb)||1,comment:f.com,type:f.type,depart:f.de,arrivee:f.vers,vol:f.vol||'',tel:f.tel||''};
+        const code=genCode(f.type), ADM=isAdmin();
+        const newItem={id:Date.now(),code,pris:ADM?"OUI":"En attente",demandeur:f.dem,pourQui:pourQuiLabel,date:f.date,dateDepart:f.type==='hotel'?f.dateDepart:'',desc:descFinal,lieu:f.type==='taxi'?f.de:f.lieu,heure:f.heure,presta:f.presta,prix:0,paie:"",nb:parseInt(f.nb)||1,comment:f.com,type:f.type,depart:f.de,arrivee:f.vers,vol:f.vol||'',tel:f.tel||''};
         state.data=[newItem,...state.data];
-        state.form.sent=true;state.form.code=code;render();
+        state.form.sent=true;state.form.code=code;state.form.admin=ADM;render();
         console.log('newItem code:', newItem.code, 'appToRow:', JSON.stringify(appToRow(newItem)));
         trackDemandeVia(newItem.code);
         const saved=await dbInsert(newItem);
         if(saved.id!==newItem.id){state.data=state.data.map(c=>c.id===newItem.id?saved:c);}
+        if(ADM){ try{ logAction('Ajoutée directement (admin)',newItem); }catch(e){} return; } // Julia / Arnaud : ajout direct, pas d'email
         // Fallback localStorage si Supabase pas encore chargé
         const adminEmailsSafe = (settings.adminEmails||[]).filter(Boolean).length
             ? settings.adminEmails
@@ -5276,6 +5320,7 @@ function attachEvents(){
     });
 
     document.querySelectorAll('[data-reset-form]').forEach(el=>el.onclick=()=>setState({form:{type:null,step:1,sent:false,dem:"",pourQui:[],pourQuiAutre:"",participants:"",vol:"",copyMail:false,date:today(),dateDepart:"",heure:"12h00",lieu:"",de:"",vers:"",presta:"",desc:"",nb:"1",com:""}}));
+    document.querySelectorAll('[data-back-admin-suivi]').forEach(el=>el.onclick=()=>setState({vue:'admin',authed:true,adminTab:'suivi',form:{type:null,step:1,sent:false,dem:"",pourQui:[],pourQuiAutre:"",participants:"",vol:"",copyMail:false,date:today(),dateDepart:"",heure:"12h00",lieu:"",de:"",vers:"",presta:"",desc:"",nb:"1",com:""}}));
 
     // Saisie save
     // Admin form dropdown
