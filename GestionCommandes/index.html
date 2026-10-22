@@ -1648,6 +1648,7 @@ function render(){
     state.authed = isAdmin();
     if(AUTH&&!state.loading) trackConnexion();
     if(AUTH&&!state.loading&&isAdmin()&&!window._prixEst&&lsGet('prix_estimes_v1')!=='1'&&(state.data||[]).length){ window._prixEst=true; setTimeout(async()=>{ const L=estimerPrixRepas(); lsSet('prix_estimes_v1','1'); if(L.length){ await appliquerEstimations(L,{silent:true}); showToast(`✓ ${L.length} prix de repas estimés (≈) · voir Dépenses & prix`); } },800); }
+    if(AUTH&&!state.loading&&isAdmin()&&!window._prixEstT&&lsGet('prix_estimes_taxi_v1')!=='1'&&(state.data||[]).length){ window._prixEstT=true; setTimeout(async()=>{ const L=estimerPrixTaxis(); lsSet('prix_estimes_taxi_v1','1'); if(L.length){ await appliquerEstimations(L,{silent:true}); showToast(`✓ ${L.length} prix de taxi estimés (≈) · voir Dépenses & prix`); } },2500); }
     if(AUTH&&!state.loading&&isAdmin()&&!window._eqMig&&!(settings.equipe&&settings.equipe.v>=3)){ window._eqMig=true; setTimeout(()=>migrerEquipe().then(()=>render()).catch(e=>console.error('Équipe',e)),0); }
     if(state.authMode==='reset') html=renderLogin();
     else if(state.express) html=isAdmin()?renderExpress():(AUTH?renderPasAdmin():renderLogin());
@@ -2994,13 +2995,32 @@ function estimerPrixRepas(){
         return {c,prix:Math.round(pp*nb(c)),base,pp};
     });
 }
+/* Même chose pour les taxis passés sans prix : moyenne du même trajet, sinon même destination, sinon même compagnie, sinon moyenne des taxis */
+function estimerPrixTaxis(){
+    const t0=parseDate(PRIX_EST_BUTOIR);
+    const D=(state.data||[]).filter(c=>c.type==='taxi'&&c.pris!=='Annulé');
+    const ref=D.filter(c=>+c.prix>0&&!suiviOf(c).prixEst);
+    const n=s=>sansAccent(String(s||'')).toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
+    const lieu=s=>{ const x=n(s); return /orly/.test(x)?'orly':/(cdg|roissy|charles de gaulle)/.test(x)?'cdg':/beauvais/.test(x)?'beauvais':/gare de lyon/.test(x)?'gare de lyon':/gare du nord/.test(x)?'gare du nord':/montparnasse/.test(x)?'montparnasse':/(saint|st) lazare/.test(x)?'saint lazare':/gare de l est/.test(x)?'gare de l est':x; };
+    const traj=c=>[lieu(c.depart),lieu(c.arrivee)].sort().join(' <> '), dest=c=>{ const a=lieu(c.arrivee), d=lieu(c.depart); return /orly|cdg|beauvais|gare|montparnasse|lazare/.test(a)?a:/orly|cdg|beauvais|gare|montparnasse|lazare/.test(d)?d:a; };
+    const moy=f=>{ const L=ref.filter(f); return L.length?L.reduce((a,c)=>a+(+c.prix),0)/L.length:null; };
+    const cache={}; const m=(k,f)=>k in cache?cache[k]:(cache[k]=moy(f));
+    return D.filter(c=>(c.pris==='OUI'||c.pris==='Reçu')&&!(+c.prix>0)&&!suiviOf(c).prixReel&&!suiviOf(c).prixEstRetire&&(parseDate(c.date)||t0)<t0&&!(c.createdAt&&new Date(c.createdAt)>=t0)).map(c=>{
+        let p=m('t|'+traj(c),x=>traj(x)===traj(c)), base='même trajet';
+        if(p==null){ p=m('d|'+dest(c),x=>dest(x)===dest(c)); base='même destination'; }
+        if(p==null){ p=m('p|'+n(c.presta),x=>n(x.presta)===n(c.presta)); base='même compagnie'; }
+        if(p==null){ p=m('all',()=>true); base='moyenne des taxis'; }
+        if(p==null){ p=50; base='forfait 50 €'; }
+        return {c,prix:Math.round(p),base};
+    });
+}
 async function appliquerEstimations(L,{silent=false}={}){
     if(!L.length) return 0;
     const ids=L.map(x=>x.c.id), P=Object.fromEntries(L.map(x=>[x.c.id,x.prix]));
     state.data=state.data.map(c=>c.id in P?{...c,prix:P[c.id]}:c);
     setSuivi(ids,()=>({prixEst:1}));
-    try{ logAction('Prix estimé',L.map(x=>({...x.c,prix:x.prix})),x=>`≈ ${$m(x.prix)} (prix moyen constaté)`); }catch(e){}
-    if(!silent) showToast(`✓ ${L.length} prix de repas estimés`);
+    try{ logAction('Prix estimé',L.map(x=>({...x.c,prix:x.prix,_base:x.base})),x=>`≈ ${$m(x.prix)} (${x._base||'moyenne constatée'})`); }catch(e){}
+    if(!silent) showToast(`✓ ${L.length} prix estimés`);
     for(const x of L){ try{ await dbUpdate(x.c.id,{prix:x.prix}); }catch(e){ console.error('Prix estimé',e); } }
     return L.length;
 }
