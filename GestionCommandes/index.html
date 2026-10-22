@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Gestion des commandes — 2026</title>
+    <title>Gestion des services</title>
     <!-- Appli installable (écran d'accueil) -->
     <link rel="manifest" href="manifest.webmanifest">
     <meta name="theme-color" content="#0f1b2d">
@@ -11,7 +11,7 @@
     <link rel="apple-touch-icon" href="apple-touch-icon.png">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-title" content="Commandes">
+    <meta name="apple-mobile-web-app-title" content="Services">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
@@ -2278,7 +2278,7 @@ function rappelEvents(c, which){
 }
 function buildIcs(events){
     const stamp=icsDate(new Date());
-    const L=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Gestion des commandes//FR','CALSCALE:GREGORIAN','METHOD:PUBLISH'];
+    const L=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Gestion des services//FR','CALSCALE:GREGORIAN','METHOD:PUBLISH'];
     events.forEach(e=>{
         const end=new Date(e.start.getTime()+e.min*60000);
         L.push('BEGIN:VEVENT',`UID:${e.uid}@gestioncommandes`,`DTSTAMP:${stamp}`,`DTSTART:${icsDate(e.start)}`,`DTEND:${icsDate(end)}`,
@@ -2469,7 +2469,7 @@ function printDay(day){
     const html=`<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>Feuille du ${day}</title><style>
         body{font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:#1a1f36;margin:28px;} h1{font-size:20px;margin:0 0 2px;} p{color:#6b7280;margin:0 0 16px;font-size:12px;}
         table{width:100%;border-collapse:collapse;font-size:12px;} th{text-align:left;border-bottom:2px solid #2c5f85;padding:6px;color:#2c5f85;font-size:11px;text-transform:uppercase;} td{border-bottom:1px solid #e6e8ec;padding:7px 6px;vertical-align:top;} small{color:#6b7280;}
-    </style></head><body><h1>${d?dateLongue(d)+' '+d.getFullYear():day}</h1><p>Gestion des commandes · ${list.length} prestation${list.length>1?'s':''} · imprimé le ${new Date().toLocaleString('fr-FR')}</p>
+    </style></head><body><h1>${d?dateLongue(d)+' '+d.getFullYear():day}</h1><p>Gestion des services · ${list.length} prestation${list.length>1?'s':''} · imprimé le ${new Date().toLocaleString('fr-FR')}</p>
     <table><thead><tr><th>Heure</th><th>Type</th><th>Prestation</th><th>Pers.</th><th>Demandeur / pour</th><th>Prestataire</th><th>Étape</th><th>Remarques</th></tr></thead><tbody>${rows}</tbody></table>
     <script>window.onload=()=>{window.print();}<\/script></body></html>`;
     const w=window.open('','_blank'); if(!w){ showToast('Autorisez les fenêtres pop-up pour imprimer'); return; }
@@ -3165,7 +3165,7 @@ function renderExpress(){
 /* ══════════════════════════════════════
    MARQUE (nom, logo, couleurs)
 ══════════════════════════════════════ */
-function marqueNom(){ return (settings.marque&&settings.marque.nom)||'Gestion des commandes'; }
+function marqueNom(){ const n=settings.marque&&settings.marque.nom; return n&&!/^gestion des commandes$/i.test(n.trim())?n:'Gestion des services'; }
 function logoHtml(sz=16){ const L=settings.marque&&settings.marque.logo; return L?`<img src="${L}" alt="" class="logo-img" style="width:${sz+14}px;height:${sz+14}px;">`:`<span class="logo-sq">${icon('clipboard',sz)}</span>`; }
 function hexMix(hex,pct,base='#ffffff'){ const p=h=>{ h=h.replace('#',''); if(h.length===3) h=h.split('').map(x=>x+x).join(''); return [0,2,4].map(i=>parseInt(h.substr(i,2),16)); };
     try{ const a=p(hex), b=p(base); return '#'+a.map((v,i)=>Math.round(v*pct+b[i]*(1-pct)).toString(16).padStart(2,'0')).join(''); }catch(e){ return hex; } }
@@ -3184,7 +3184,7 @@ function renderApparence(){
     return `<div class="settings-section">
         <div style="display:flex;gap:12px;align-items:flex-start;margin-bottom:16px;"><div style="width:34px;height:34px;border-radius:10px;background:var(--border-light,#f3f4f6);color:var(--accent);display:flex;align-items:center;justify-content:center;flex-shrink:0;">${icon('sliders',16)}</div><div><div style="font-weight:700;font-size:15px;">Apparence de l’application</div><div style="font-size:12px;color:#8b93a1;margin-top:2px;">Nom, logo et couleurs, appliqués à toute l’appli et pour tout le monde. Les emails ne changent pas.</div></div></div>
         <div class="form-row-2">
-            <div class="form-group"><label class="form-label">Nom de l’application</label><input id="mqNom" class="form-input" value="${esc(M.nom||'')}" placeholder="Gestion des commandes"></div>
+            <div class="form-group"><label class="form-label">Nom de l’application</label><input id="mqNom" class="form-input" value="${esc(M.nom||'')}" placeholder="Gestion des services"></div>
             <div class="form-group"><label class="form-label">Sous-titre</label><input id="mqSous" class="form-input" value="${esc(M.sous||'')}" placeholder="Espace demandes"></div>
         </div>
         <div class="form-group"><label class="form-label">Logo</label>
@@ -3198,7 +3198,7 @@ function renderApparence(){
         <div class="form-group"><label class="form-label">Couleur des bandeaux et du menu</label><div class="mq-row">${sw(MQ_SIDES,side,'side')}</div></div>
         <div class="form-label" style="margin-top:6px;">Aperçu</div>
         <div class="mq-prev" style="--a:${acc};--s:${side};">
-            <div class="mq-prev-side"><span class="mq-prev-logo">${M.logo?`<img src="${M.logo}" alt="">`:icon('clipboard',14)}</span><b>${esc(M.nom||'Gestion des commandes')}</b><i class="on"></i><i></i><i></i></div>
+            <div class="mq-prev-side"><span class="mq-prev-logo">${M.logo?`<img src="${M.logo}" alt="">`:icon('clipboard',14)}</span><b>${esc(M.nom||'Gestion des services')}</b><i class="on"></i><i></i><i></i></div>
             <div class="mq-prev-main"><div class="mq-prev-bar"></div><div class="mq-prev-cards"><span></span><span></span><span></span></div><button style="background:${acc};">Envoyer la demande</button></div>
         </div>
         <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px;flex-wrap:wrap;">
@@ -5863,7 +5863,7 @@ if ('serviceWorker' in navigator && location.protocol === 'https:') {
                 const n=nouvelles.length, c=nouvelles[0];
                 if(state.vue==='admin') showToast(`${icon('bell',13)} ${n} nouvelle${n>1?'s':''} demande${n>1?'s':''} !`);
                 systemNotify(n>1?`${n} nouvelles demandes`:`Nouvelle demande · ${TYPE_LABEL[c.type]||''}`,
-                    n>1?'À valider dans Gestion des commandes':`${$d(c.date)}${c.heure?' '+c.heure:''} · ${c.type==='commande'?(c.presta||'Commande'):(c.desc||'')} · ${c.demandeur||''}`);
+                    n>1?'À valider dans Gestion des services':`${$d(c.date)}${c.heure?' '+c.heure:''} · ${c.type==='commande'?(c.presta||'Commande'):(c.desc||'')} · ${c.demandeur||''}`);
             }
         } catch(e){}
     }
