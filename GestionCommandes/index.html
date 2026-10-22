@@ -804,7 +804,7 @@ let P_REPAS=[...settings.prestatairesRepas], P_TAXI=[...settings.prestatairesTax
 /* ══════════════════════════════════════
    ÉQUIPE : rôles et noms regroupés
 ══════════════════════════════════════ */
-const MAILS_DEF={alerte:true,confirmation:true,copie:true,annulation:false};
+const MAILS_DEF={alerte:true,confirmation:true,copie:true,annulation:false,outlook:true};
 const mailsOn=k=>{ const m=settings.mails||{}; return k in m?!!m[k]:MAILS_DEF[k]; };
 const ROLES={responsable:['Responsable de site','#0f1b2d','#e8edf3'],polyvalente:['Assistante polyvalente','#6d28d9','#f1ebfd'],assistante:['Assistante de direction','#0369a1','#e5f2fa'],directeur:['Direction','#b45309','#fdf3e4'],ancienne:['Ancienne assistante','#6b7280','#f1f2f4'],invite:['Invité','#0e7490','#e3f5f7']};
 const ROLE_ORDRE=['responsable','polyvalente','assistante','invite','ancienne','directeur'];
@@ -4525,11 +4525,12 @@ function renderReglagesEmails(secHead){
     const L=[['alerte','Nouvelle demande','À Julia et Arnaud (administrateurs), dès qu’une assistante ou un invité envoie une demande.'],
              ['confirmation','Confirmation','À l’assistante, quand vous cliquez « Commande passée » sur sa demande.'],
              ['copie','Copie de la demande','À l’assistante qui coche « Recevoir une copie » en envoyant sa demande.'],
-             ['annulation','Annulation','À l’assistante, quand vous refusez ou annulez sa demande.']];
+             ['annulation','Annulation','À l’assistante, quand vous refusez ou annulez sa demande.'],
+             ['outlook','Invitation Outlook','Le rendez-vous dans l’agenda de Julia et Arnaud, à chaque commande ajoutée, modifiée ou annulée.']];
     return `<div class="settings-section">${secHead('mail','Emails envoyés automatiquement','Cochez ceux qui doivent partir. Les saisies directes de l’administration n’envoient jamais d’email.')}
         <div class="ml-list">${L.map(([k,t,d])=>`<label class="ml-row"><input type="checkbox" data-mail-toggle="${k}" ${mailsOn(k)?'checked':''}><span class="ml-sw"></span><span class="ml-t"><b>${t}</b><span>${d}</span></span><span class="ml-st ${mailsOn(k)?'on':''}">${mailsOn(k)?'Activé':'Désactivé'}</span></label>`).join('')}
-        <div class="ml-row dis"><input type="checkbox" checked disabled><span class="ml-sw"></span><span class="ml-t"><b>Invitation Outlook</b><span>Le rendez-vous dans l’agenda de Julia et Arnaud. Envoyée par le serveur : pour la couper, demandez-le moi.</span></span><span class="ml-st on">Activé</span></div></div>
-        <div style="font-size:12px;color:var(--ink-soft);margin-top:12px;">Le contenu des emails ne change pas : seul l’envoi est activé ou non. Les modifications s’appliquent à tous les postes.</div></div>`;
+        </div>
+        <div style="font-size:12px;color:var(--ink-soft);margin-top:12px;">Le contenu des emails ne change pas : seul l’envoi est activé ou non. Les modifications s’appliquent à tous les postes. L’interrupteur Outlook fonctionne une fois le script « interrupteur-invitations-outlook.sql » passé une fois dans Supabase.</div></div>`;
 }
 document.addEventListener('change',e=>{ const c=e.target.closest('[data-mail-toggle]'); if(!c) return; settings.mails={...MAILS_DEF,...(settings.mails||{}),[c.getAttribute('data-mail-toggle')]:c.checked}; saveSettings(settings); showToast(c.checked?'✓ Email activé':'Email désactivé'); render(); });
 function renderSettings(){
