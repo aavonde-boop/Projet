@@ -906,10 +906,10 @@ function $dLong(d){ if(!d)return"—"; const p=d.split("-"); return parseInt(p[2
 const EMAIL_KINDS = {
     admin:      { pour:'ADMINISTRATEUR', titre:'Nouvelle demande à valider', couleur:'#b45309', fond:'#fff7ed', emoji:'🔔', sujet:'[Admin] À valider',
                   intro: c => `<b>${c.demandeur||'Une assistante'}</b> vient de faire une demande. Elle attend votre validation.`,
-                  bouton:'Valider dans l’appli', pourquoi:'Vous recevez cet email car vous êtes administrateur de Gestion des commandes.' },
+                  bouton:'Valider dans l’appli', pourquoi:'Vous recevez cet email car vous êtes administrateur de Gestion des services.' },
     adminAjout: { pour:'ADMINISTRATEUR', titre:'Commande ajoutée par un admin', couleur:'#6d28d9', fond:'#f5f3ff', emoji:'📝', sujet:'[Admin] Ajoutée',
                   intro: () => `Une commande a été saisie directement dans l’administration. Aucune action n’est nécessaire.`,
-                  bouton:'Voir dans l’appli', pourquoi:'Vous recevez cet email car vous êtes administrateur de Gestion des commandes.' },
+                  bouton:'Voir dans l’appli', pourquoi:'Vous recevez cet email car vous êtes administrateur de Gestion des services.' },
     copie:      { pour:'VOTRE DEMANDE', titre:'Demande bien reçue', couleur:'#1d4ed8', fond:'#eff6ff', emoji:'📨', sujet:'Demande reçue',
                   intro: c => `Bonjour ${c._prenom}, votre demande a bien été transmise. Vous recevrez un autre email dès qu’elle sera validée.`,
                   bouton:'Suivre ma demande', pourquoi:'Vous recevez cette copie car vous l’avez demandée en envoyant votre demande.' },
@@ -963,7 +963,7 @@ function buildEmailHtml(kind, c){
 </td></tr>
 ${c.code?`<tr><td style="padding:6px 24px 4px;"><div style="background:#f4f2ee;border-radius:10px;padding:10px 14px;font-size:13px;color:#5a5650;">Code de suivi : <b style="font-family:monospace;font-size:15px;color:#1a1f36;letter-spacing:1px;">${e(c.code)}</b></div></td></tr>`:''}
 ${url?`<tr><td style="padding:16px 24px 6px;"><table role="presentation" cellpadding="0" cellspacing="0"><tr><td bgcolor="${K.couleur}" style="background:${K.couleur};border-radius:10px;padding:12px 22px;"><a href="${url}" style="color:#ffffff;text-decoration:none;font-weight:700;font-size:14px;display:inline-block;">${K.bouton} →</a></td></tr></table></td></tr>`:''}
-<tr><td style="padding:18px 24px 22px;font-size:11px;color:#9e9a93;border-top:1px solid #f0eeea;">${K.pourquoi}<br>Gestion des commandes ${new Date().getFullYear()}</td></tr>
+<tr><td style="padding:18px 24px 22px;font-size:11px;color:#9e9a93;border-top:1px solid #f0eeea;">${K.pourquoi}<br>Gestion des services ${new Date().getFullYear()}</td></tr>
 </table></div>`;
 }
 function buildEmailSubject(kind, c){
