@@ -1,5 +1,5 @@
 // ════════════════════════════════════════════════════════════════════
-//  Gestion des commandes — invitations agenda automatiques
+//  Gestion des services — invitations agenda automatiques
 //
 //  Appelée par un « Database Webhook » Supabase sur la table `commandes`
 //  (INSERT + UPDATE). Pour chaque nouvelle demande, envoie aux emails admin
@@ -130,11 +130,11 @@ const VTIMEZONE = ["BEGIN:VTIMEZONE", "TZID:Europe/Paris",
   "END:VTIMEZONE"];
 export function ics(ev: Ev, method: "REQUEST" | "CANCEL", organizer: string, attendees: string[], sequence: number) {
   const stamp = new Date().toISOString().replace(/[-:]/g, "").slice(0, 15) + "Z";
-  const L = ["BEGIN:VCALENDAR", "PRODID:-//Gestion des commandes//FR", "VERSION:2.0", "CALSCALE:GREGORIAN", `METHOD:${method}`, ...VTIMEZONE,
+  const L = ["BEGIN:VCALENDAR", "PRODID:-//Gestion des services//FR", "VERSION:2.0", "CALSCALE:GREGORIAN", `METHOD:${method}`, ...VTIMEZONE,
     "BEGIN:VEVENT", `UID:${ev.uid}`, `SEQUENCE:${sequence}`, `DTSTAMP:${stamp}`,
     `DTSTART;TZID=${TZ}:${icsWall(ev.start)}`, `DTEND;TZID=${TZ}:${icsWall(addMin(ev.start, ev.minutes))}`,
     fold(`SUMMARY:${esc(ev.title)}`), ev.location ? fold(`LOCATION:${esc(ev.location)}`) : "", fold(`DESCRIPTION:${esc(ev.desc)}`),
-    fold(`ORGANIZER;CN=Gestion des commandes:mailto:${organizer}`),
+    fold(`ORGANIZER;CN=Gestion des services:mailto:${organizer}`),
     ...attendees.map((a) => fold(`ATTENDEE;ROLE=REQ-PARTICIPANT;PARTSTAT=NEEDS-ACTION;RSVP=FALSE:mailto:${a}`)),
     `STATUS:${method === "CANCEL" ? "CANCELLED" : "CONFIRMED"}`, "TRANSP:OPAQUE", "CLASS:PRIVATE",
     "X-MICROSOFT-CDO-BUSYSTATUS:FREE", "X-MICROSOFT-CDO-INTENDEDSTATUS:FREE",
@@ -187,7 +187,7 @@ Deno.serve(async (req) => {
     for (const ev of evs) {
       const content = ics(ev, method, user, to, seq);
       await transport.sendMail({
-        from: `"Gestion des commandes" <${user}>`, to,
+        from: `"Gestion des services" <${user}>`, to,
         subject: method === "CANCEL" ? `Annulé : ${ev.title}` : ev.title,
         text: method === "CANCEL" ? "Cette demande a été annulée : le rappel est retiré de votre agenda." : ev.desc,
         icalEvent: { method, filename: "invitation.ics", content },
