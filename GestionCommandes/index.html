@@ -593,7 +593,7 @@
         .ph{position:relative;width:110px;height:80px;border-radius:10px;background:#dfe7ef;display:inline-flex;align-items:center;justify-content:center;gap:5px;font-size:12px;color:#4b5563;flex-shrink:0;} .ph.add{background:#fff;border:1.5px dashed var(--border);color:var(--ink-soft);}
         .ph-x{position:absolute;top:4px;right:4px;width:22px;height:22px;border-radius:50%;border:none;background:rgba(17,24,39,.6);color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;}
         .tl2{display:flex;gap:12px;padding:9px 0;align-items:flex-start;} .tl2-d{width:10px;height:10px;border-radius:50%;background:#2c5f85;margin-top:4px;flex-shrink:0;} .tl2 b{display:block;font-size:13px;font-weight:600;white-space:pre-wrap;} .tl2 span{display:block;font-size:12px;color:var(--ink-soft);}
-        .side-grp.perso .side-it.on{ box-shadow:inset 3px 0 0 #f59e0b; }
+        .side-grp.perso .side-it.on, .side .perso .side-it.on{ box-shadow:inset 3px 0 0 #f59e0b; }
         @media(max-width:1100px){ .kb{grid-template-columns:repeat(2,minmax(0,1fr));} }
         @media(max-width:767px){ .g2{display:block;} .kb{grid-template-columns:1fr;} .memo-wall{grid-template-columns:1fr 1fr;gap:10px;} .mm-act{opacity:1;} .me-qa > div:last-child{margin-left:0;} }
     </style>
@@ -1892,7 +1892,7 @@ function renderAdminView(m){
 
     else main=renderDashboard(total,attente,m);
 
-    const TITRES={dashboard:'Tableau de bord',suivi:'Suivi des demandes',calendrier:'Agenda',activite:'Registre',stats:'Statistiques',analyse:'Analyses',me:'Mon espace','me-bat':'Suivi du bâtiment','me-stat':'Stats et actions','me-memo':'Mémo perso',settings:'Réglages'};
+    const TITRES={dashboard:'Tableau de bord',suivi:'Suivi des demandes',calendrier:'Agenda',activite:'Registre',stats:'Statistiques',analyse:'Assistantes et connexions',me:'Mon écran','me-bat':'Soucis du bâtiment','me-stat':'Actions et stats','me-memo':'Mémo perso',settings:'Réglages'};
     if(m) return `
     <div class="mobile-header">
         <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
@@ -1930,15 +1930,16 @@ function renderAdminView(m){
     <aside class="side">
         <div class="side-brand">${logoHtml(16)}<div class="side-lbl"><b>${esc(marqueNom())}</b><span>Administration</span></div></div>
         <div class="side-scroll">
-            ${meOk()?`<div class="side-grp perso"><h6 class="side-lbl">Personnel</h6>${item('me','lock','Mon espace')}${item('me-bat','tool','Suivi du bâtiment')}${item('me-stat','chart','Stats et actions')}${item('me-memo','edit','Mémo perso')}</div>`:''}
-            <div class="side-grp"><h6 class="side-lbl">Pilotage</h6>
-                ${item('dashboard','dashboard','Tableau de bord')}${item('suivi','clipboard','Suivi des demandes')}${item('calendrier','calendar','Agenda')}</div>
-            <div class="side-grp"><h6 class="side-lbl">Données</h6>
-                ${item('activite','grid','Registre')}${item('stats','chart','Statistiques')}${item('analyse','users','Analyses')}</div>
-            <div class="side-grp"><h6 class="side-lbl">Administration</h6>
-                ${item('settings','sliders','Réglages')}
-                <button data-back-home class="side-it" title="Formulaire de demande">${icon('home',17)}<span class="side-lbl">Formulaire de demande</span></button></div>
+            <div class="side-grp" style="padding-top:12px;">
+                ${meOk()?`<div class="perso">${item('me','lock','Mon écran')}${item('me-memo','edit','Mémo perso')}</div>`:''}${item('dashboard','dashboard','Tableau de bord')}</div>
+            <div class="side-grp"><h6 class="side-lbl">Commandes</h6>
+                ${item('suivi','clipboard','Suivi des demandes')}${item('calendrier','calendar','Agenda')}${item('activite','grid','Registre')}
+                <button data-back-home class="side-it" title="Page de demande (vue assistantes)">${icon('home',17)}<span class="side-lbl">Page de demande</span></button></div>
+            ${meOk()?`<div class="side-grp perso"><h6 class="side-lbl">Bâtiment ${icon('lock',10)}</h6>${item('me-bat','tool','Soucis')}${item('me-stat','check','Actions et stats')}</div>`:''}
+            <div class="side-grp"><h6 class="side-lbl">Analyses</h6>
+                ${item('stats','chart','Statistiques')}${item('analyse','users','Assistantes et connexions')}</div>
         </div>
+        <div style="padding:6px 10px;border-top:1px solid rgba(255,255,255,.06);">${item('settings','sliders','Réglages')}</div>
         <div class="side-user">
             <span class="side-av">${esc(init||'AD')}</span>
             <div class="side-lbl" style="min-width:0;flex:1;"><b>${esc(nom)}</b><span>Administrateur</span></div>
@@ -1947,7 +1948,7 @@ function renderAdminView(m){
     </aside>
     <div class="shell-main">
         <header class="topbar">
-            <div class="crumb">${String(state.adminTab).startsWith('me')?'Mon espace 🔒':'Administration'} / <b>${TITRES[state.adminTab]||''}</b></div>
+            <div class="crumb">${state.adminTab==='me'||state.adminTab==='me-memo'?'Personnel 🔒':String(state.adminTab).startsWith('me')?'Bâtiment 🔒':['suivi','calendrier','activite'].includes(state.adminTab)?'Commandes':['stats','analyse'].includes(state.adminTab)?'Analyses':'Administration'} / <b>${TITRES[state.adminTab]||''}</b></div>
             <div style="margin-left:auto;display:flex;gap:8px;align-items:center;">
                 <button data-live-open class="btn-sm" title="Écran live (plein écran, pour un PC ou une TV)">${icon('dashboard',15)} Écran live</button>
                 <button data-activate-notifs class="ic-btn" title="${notifsReady()?'Notifications activées':'Activer les notifications et la pastille'}">${icon('bell',16)}${notifsReady()?'':'<i></i>'}</button>
@@ -2364,7 +2365,7 @@ function mobileNavHtml(){
     </div></nav>
     ${state.moreOpen?`<div data-nav='{"moreOpen":false}' style="position:fixed;inset:0;background:rgba(15,23,42,.35);z-index:9500;display:flex;align-items:flex-end;">
         <div style="background:#fff;width:100%;border-radius:20px 20px 0 0;padding:14px 14px calc(14px + env(safe-area-inset-bottom,0px));">
-            ${[...(meOk()?[["me","lock","Mon espace"],["me-bat","tool","Suivi du bâtiment"],["me-stat","chart","Stats et actions"],["me-memo","edit","Mémo perso"]]:[]),["stats","chart","Statistiques"],["analyse","users","Analyses"]].map(([t,ic,l])=>`<button data-admin-tab="${t}" style="display:flex;align-items:center;gap:12px;width:100%;background:none;border:none;padding:14px 8px;font-size:15px;font-weight:600;color:var(--ink);cursor:pointer;border-bottom:1px solid #f0f1f4;">${icon(ic,18)} ${l}</button>`).join('')}
+            ${[...(meOk()?[["me","lock","Mon écran"],["me-memo","edit","Mémo perso"],["me-bat","tool","Soucis du bâtiment"],["me-stat","check","Actions et stats"]]:[]),["stats","chart","Statistiques"],["analyse","users","Assistantes et connexions"]].map(([t,ic,l])=>`<button data-admin-tab="${t}" style="display:flex;align-items:center;gap:12px;width:100%;background:none;border:none;padding:14px 8px;font-size:15px;font-weight:600;color:var(--ink);cursor:pointer;border-bottom:1px solid #f0f1f4;">${icon(ic,18)} ${l}</button>`).join('')}
             <button data-back-home style="display:flex;align-items:center;gap:12px;width:100%;background:none;border:none;padding:14px 8px;font-size:15px;font-weight:600;color:var(--ink);cursor:pointer;border-bottom:1px solid #f0f1f4;">${icon('home',18)} Formulaire de demande</button>
             <button data-admin-logout style="display:flex;align-items:center;gap:12px;width:100%;background:none;border:none;padding:14px 8px;font-size:15px;font-weight:600;color:#b91c1c;cursor:pointer;">${icon('logout',18)} Se déconnecter</button>
         </div></div>`:''}`;
@@ -3121,7 +3122,7 @@ function renderMe(m){
         <div>
             <div class="card"><div class="card-h"><h3>Commandes à traiter<span class="sub">${aTraiter.length}</span></h3><button class="card-link" data-nav='{"adminTab":"suivi"}'>Tout le suivi →</button></div>
                 ${aTraiter.length?cmdRows+(aTraiter.length>6?`<div style="padding:10px 16px;border-top:1px solid var(--border-light);"><button class="card-link" data-nav='{"adminTab":"suivi"}'>Voir les ${aTraiter.length-6} autres →</button></div>`:''):`<div class="empty-note">Aucune commande à traiter. ${icon('check',14)}</div>`}</div>
-            <div class="card"><div class="card-h"><h3>Interventions · à faire<span class="sub">${A.length}</span></h3><button class="card-link" data-nav='{"adminTab":"me-stat"}'>Stats et actions →</button></div>
+            <div class="card"><div class="card-h"><h3>Interventions · à faire<span class="sub">${A.length}</span></h3><button class="card-link" data-nav='{"adminTab":"me-stat"}'>Actions et stats →</button></div>
                 ${A.length?intRows+(A.length>6?`<div style="padding:10px 16px;border-top:1px solid var(--border-light);"><button class="card-link" data-nav='{"adminTab":"me-stat"}'>Voir les ${A.length-6} autres →</button></div>`:''):`<div class="empty-note">Rien à faire côté bâtiment. ${icon('check',14)}</div>`}</div>
         </div>
         <div>
@@ -3156,7 +3157,7 @@ function meListe(){
     const nc=s=>(s.constat||[]).length;
     return `<div>
     <div class="page-head"><div><h1>Suivi du bâtiment</h1><p>Privé · ${meEnCours().length} en cours · ${S.soucis.filter(s=>s.statut==='resolu').length} résolus</p></div>
-    <div class="page-actions"><button class="btn-sm" data-nav='{"adminTab":"me-stat"}'>${icon('chart',14)} Stats et actions</button><label class="btn-sm me-hx" style="cursor:pointer;" title="Importer un fichier préparé (.json)">${icon('download',14)} Importer<input type="file" accept=".json,application/json" data-me-import style="display:none;"></label><button class="btn-sm me-hx" data-me="export" title="Télécharger une sauvegarde de Mon espace">${icon('save',14)} Sauvegarder</button><button class="btn-sm" data-me="lieux">${icon('pin',14)} Mes lieux (${S.lieux.length})</button><button class="btn-sm pri me-hx" data-me="new">${icon('plus',14)} Signaler un souci</button></div></div>
+    <div class="page-actions"><button class="btn-sm" data-nav='{"adminTab":"me-stat"}'>${icon('check',14)} Actions et stats</button><label class="btn-sm me-hx" style="cursor:pointer;" title="Importer un fichier préparé (.json)">${icon('download',14)} Importer<input type="file" accept=".json,application/json" data-me-import style="display:none;"></label><button class="btn-sm me-hx" data-me="export" title="Télécharger une sauvegarde de Mon espace">${icon('save',14)} Sauvegarder</button><button class="btn-sm" data-me="lieux">${icon('pin',14)} Mes lieux (${S.lieux.length})</button><button class="btn-sm pri me-hx" data-me="new">${icon('plus',14)} Signaler un souci</button></div></div>
     ${state.meLieux?meLieuxHtml():''}
     <div class="me-bar">
         <label class="me-search">${icon('search',14)}<input id="meQ" type="search" value="${esc(state.meQ||'')}" placeholder="Rechercher : KA252, cour, Otis…" autocomplete="off"></label>
@@ -3200,7 +3201,7 @@ function meStats(m){
     const st=ME_ST.map(([k,l])=>[k,l,S.soucis.filter(s=>s.statut===k).length]);
     const cst=open.filter(s=>(s.constat||[]).length);
     return `<div>
-    <div class="page-head"><div><h1>Stats et actions</h1><p>Privé · le bâtiment en chiffres et ce qu’il reste à faire</p></div><div class="page-actions"><button class="btn-sm" data-nav='{"adminTab":"me-bat"}'>${icon('tool',14)} Liste des soucis</button></div></div>
+    <div class="page-head"><div><h1>Actions et stats</h1><p>Privé · le bâtiment en chiffres et ce qu’il reste à faire</p></div><div class="page-actions"><button class="btn-sm" data-nav='{"adminTab":"me-bat"}'>${icon('tool',14)} Liste des soucis</button></div></div>
     <div class="kpis">
         <div class="stat-card kpi"><span class="kpi-l">En cours</span><span class="kpi-v">${open.length}</span><span class="kpi-s">sur ${S.soucis.length} signalés</span></div>
         <div class="stat-card kpi"><span class="kpi-l">Urgents</span><span class="kpi-v" style="color:#b91c1c;">${open.filter(s=>s.urgence==='urgent').length}</span><span class="kpi-s">${cst.length} relevés en constat</span></div>
