@@ -621,6 +621,7 @@
         .st-sec{display:flex;align-items:baseline;gap:10px;margin:22px 0 10px;flex-wrap:wrap;} .st-sec b{font:650 16px var(--ft);} .st-sec span{font-size:12px;color:var(--ink-soft);}
         .nf-where{display:flex;flex-direction:column;align-items:center;gap:6px;margin:4px 0 10px;font-size:14px;} .nf-where b{display:flex;align-items:center;gap:6px;font-size:16px;} .nf-where span{display:flex;align-items:center;gap:6px;color:var(--ink-soft);font-size:13px;} .nf-where em{font-style:normal;color:#b45309;font-size:12.5px;display:flex;gap:5px;align-items:center;}
         .suivi-card.flash{animation:flashCard 2.4s ease-out 1;box-shadow:0 0 0 2px #60a5fa;} @keyframes flashCard{0%{background:#dbeafe;}100%{background:#fff;}}
+        .mails{display:flex;flex-direction:column;gap:4px;margin-top:12px;padding:10px 12px;background:#f8fafc;border-radius:8px;font-size:12px;} .mails b{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--ink);margin-bottom:2px;} .mails span{padding-left:19px;position:relative;color:var(--ink-mid);} .mails span::before{content:'';position:absolute;left:5px;top:6px;width:7px;height:7px;border-radius:50%;background:#cbd5e1;} .mails .m-ok::before{background:#16a34a;} .mails .m-wait::before{background:#f59e0b;} .mails .m-grey{color:var(--ink-soft);}
         .role-tag{display:inline-flex;align-items:center;font-size:11.5px;font-weight:600;padding:2px 8px;border-radius:6px;white-space:nowrap;vertical-align:1px;} .role-tag.sm{font-size:10.5px;padding:1px 6px;margin-left:4px;}
         .an-grp td{background:#fafbfc;padding:8px 16px!important;border-top:1px solid var(--border);}
         .kb{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;align-items:start;} .kb-col{background:#eef0f3;border-radius:12px;padding:10px;display:flex;flex-direction:column;gap:8px;}
@@ -1476,7 +1477,7 @@ async function emptyTrash() {
 }
 
 /* ── Changement de statut (unitaire ou groupé) ── */
-async function applyStatus(ids, status, { silent = false } = {}) {
+async function applyStatus(ids, status, { silent = false, noMail = false } = {}) {
     const before = {};
     state.data.forEach(c => { if (ids.includes(c.id)) before[c.id] = c.pris; });
     const changed = ids.filter(id => before[id] !== undefined && before[id] !== status);
@@ -1488,8 +1489,8 @@ async function applyStatus(ids, status, { silent = false } = {}) {
     render();
     for (const id of changed) await dbUpdate(id, { pris: status });
     for (const c of items) {
-        if (status === 'OUI') sendConfirmationEmail(c);
-        else if (status === 'Annulé') sendConfirmationEmail(c, { isAnnulation: true });
+        if (noMail) continue;
+        if (status === 'OUI') { sendConfirmationEmail(c); try{ setSuivi([c.id],()=>({mailConf:new Date().toISOString()})); }catch(e){} }
     }
     if (!silent && status !== 'OUI' && status !== 'Annulé') showToast(`Statut : ${ST[status]?.label || status}`);
 }
@@ -1511,8 +1512,8 @@ function bulkBarHtml() {
     const b = (act, bg, bd, col, ic, label) => `<button data-bulk="${act}" style="display:flex;align-items:center;gap:5px;background:${bg};border:1px solid ${bd};color:${col};border-radius:8px;padding:7px ${m?'10px':'14px'};font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;">${icon(ic,14)}${m?'':' '+label}</button>`;
     return `<div style="position:fixed;left:50%;transform:translateX(-50%);bottom:${m?'calc(84px + env(safe-area-inset-bottom,0px))':'24px'};z-index:9000;background:#1a1f36;color:#fff;border-radius:6px;padding:8px 10px 8px 18px;display:flex;align-items:center;gap:8px;box-shadow:0 10px 30px rgba(0,0,0,.25);max-width:calc(100vw - 24px);">
         <span style="font-size:13px;font-weight:600;white-space:nowrap;">${n} sélectionnée${n>1?'s':''}</span>
-        ${b('OUI','#f0fdf4','#bbf7d0','#15803d','check','Valider')}
-        ${b('Annulé','#fff7ed','#fed7aa','#c2410c','x','Annuler')}
+        ${b('OUI','#eff6ff','#bfdbfe','#1d4ed8','check','Commande passée')}
+        ${b('Annulé','#fff7ed','#fed7aa','#c2410c','x','Refuser')}
         ${b('delete','#fef2f2','#fecaca','#b91c1c','trash','Supprimer')}
         <button data-bulk="clear" title="Désélectionner" style="background:none;border:none;color:rgba(255,255,255,.6);cursor:pointer;padding:6px;display:flex;">${icon('x',16)}</button>
     </div>`;
@@ -1536,11 +1537,13 @@ function bindBulkBar() {
             if (await moveToTrash(ids)) showToast(`${ids.length} élément${ids.length>1?'s':''} dans la corbeille`);
             return;
         }
-        const label = act === 'OUI' ? 'Valider' : 'Annuler';
-        if (!confirm(`${label} ${ids.length} demande${ids.length>1?'s':''} ? Un email sera envoyé pour chacune.`)) return;
+        const enAtt = state.data.filter(c => ids.includes(c.id) && (c.pris==='En attente'||c.pris==='En cours')).length;
+        if (act === 'OUI') { if (!confirm(`Commande passée pour ${ids.length} demande${ids.length>1?'s':''} ?${enAtt?`\n\n${enAtt} confirmation${enAtt>1?'s':''} partira${enAtt>1?'ont':''} aux demandeuses.`:'\n\nAucun email.'}`)) return; }
+        else if (!confirm(`Refuser ${ids.length} demande${ids.length>1?'s':''} ?\n\nAucun email ne sera envoyé.`)) return;
         state.sel = [];
-        await applyStatus(ids, act, { silent: true });
-        showToast(`✓ ${ids.length} demande${ids.length>1?'s':''} ${act==='OUI'?'validée':'annulée'}${ids.length>1?'s':''}`);
+        await applyStatus(ids, act, { silent: true, noMail: act !== 'OUI' });
+        if (act === 'OUI') markCommande(ids);
+        showToast(`✓ ${ids.length} demande${ids.length>1?'s':''} ${act==='OUI'?'commandée':'refusée'}${ids.length>1?'s':''}`);
     });
 }
 
@@ -2112,13 +2115,15 @@ function renderAdminView(m){
    supplémentaire. Valider / refuser passent par applyStatus (emails inchangés).
 ══════════════════════════════════════ */
 const STAGES = {
-    avalider:   { label:'À valider',   court:'À valider',  color:'#b45309', bg:'#fffbeb', border:'#fde68a', icon:'hourglass' },
-    acommander: { label:'À commander', court:'À commander',color:'#1d4ed8', bg:'#eff6ff', border:'#bfdbfe', icon:'box' },
-    commandee:  { label:'Commande passée', court:'Commandé',   color:'#0e7490', bg:'#ecfeff', border:'#a5f3fc', icon:'check' },
-    fait:       { label:'Fait',        court:'Fait',       color:'#15803d', bg:'#f0fdf4', border:'#bbf7d0', icon:'check' },
+    recue:      { label:'Reçue',       court:'Reçue',      color:'#b45309', bg:'#fffbeb', border:'#fde68a', icon:'hourglass' },
+    avalider:   { label:'Reçue',       court:'Reçue',      color:'#b45309', bg:'#fffbeb', border:'#fde68a', icon:'hourglass' },
+    acommander: { label:'Reçue',       court:'Reçue',      color:'#b45309', bg:'#fffbeb', border:'#fde68a', icon:'hourglass' },
+    commandee:  { label:'Commandée',   court:'Commandée',  color:'#1d4ed8', bg:'#eff6ff', border:'#bfdbfe', icon:'box' },
+    fait:       { label:'Faite',       court:'Faite',      color:'#15803d', bg:'#f0fdf4', border:'#bbf7d0', icon:'check' },
     refusee:    { label:'Refusé',      court:'Refusé',     color:'#b91c1c', bg:'#fef2f2', border:'#fecaca', icon:'x' },
 };
-const STAGE_ORDER = ['avalider','acommander','commandee','fait'];
+const STAGE_ORDER = ['recue','commandee','fait'];
+const etape = c => { const s=stageOf(c); return s==='avalider'||s==='acommander'?'recue':s; };
 const JOURS = ['dimanche','lundi','mardi','mercredi','jeudi','vendredi','samedi'];
 const JOURS_C = ['dim.','lun.','mar.','mer.','jeu.','ven.','sam.'];
 const MOIS = ['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
@@ -2169,7 +2174,7 @@ function setSuivi(ids, patchFn){
 }
 function itemsById(ids){ return state.data.filter(c=>ids.map(String).includes(String(c.id))); }
 function markCommande(ids){ const now=new Date().toISOString(), who=adminName(); setSuivi(ids,()=>({cmd:now,cmdBy:who,fait:null,faitBy:null})); logAction('Commandée',itemsById(ids)); showToast('✓ Commande passée enregistrée'); }
-function unmarkCommande(ids){ setSuivi(ids,()=>({cmd:null,cmdBy:null,fait:null,faitBy:null})); logAction('Commande annulée',itemsById(ids)); showToast('Remis dans « À commander »'); }
+function unmarkCommande(ids){ setSuivi(ids,()=>({cmd:null,cmdBy:null,fait:null,faitBy:null})); logAction('Commande annulée',itemsById(ids)); showToast('Remis dans « Reçue »'); }
 function markFait(ids){ const now=new Date().toISOString(), who=adminName(); setSuivi(ids,c=>({fait:now,faitBy:who,cmd:c.cmd||now,cmdBy:c.cmdBy||who})); logAction('Terminée',itemsById(ids)); showToast('✓ Terminé'); }
 function unmarkFait(ids){ setSuivi(ids,()=>({fait:null,faitBy:null})); showToast('Remis en cours'); }
 function saveNote(id,text){ setSuivi([id],()=>({note:(text||'').trim()||null})); showToast(text&&text.trim()?'✓ Note enregistrée':'Note supprimée'); }
@@ -2285,12 +2290,11 @@ function suiviCard(c,{compact=false,showStage=false,select=false}={}){
         valider: btn('valider','Valider','check','background:#f0fdf4;border:1px solid #bbf7d0;color:#15803d;'),
         refuser: btn('refuser','Refuser','x','background:#fff;border:1px solid #fecaca;color:#b91c1c;'),
         annuler: btn('annuler','Annuler la demande','x','background:#fff;border:1px solid #fecaca;color:#b91c1c;'),
-        commande:`<button data-suivi-act="commande" data-id="${c.id}" title="À cocher une fois la commande passée auprès du prestataire" style="display:inline-flex;align-items:center;gap:6px;border-radius:10px;padding:5px 10px 5px 7px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;background:#fff;border:1.5px dashed #93c5fd;color:#1d4ed8;"><span style="width:14px;height:14px;border:1.5px solid #1d4ed8;border-radius:4px;display:inline-block;"></span> J’ai passé la commande</button>`,
+        commande:`<button data-suivi-act="commande" data-id="${c.id}" title="À cocher une fois la commande passée auprès du prestataire" style="display:inline-flex;align-items:center;gap:6px;border-radius:10px;padding:5px 10px 5px 7px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;background:#fff;border:1.5px dashed #93c5fd;color:#1d4ed8;"><span style="width:14px;height:14px;border:1.5px solid #1d4ed8;border-radius:4px;display:inline-block;"></span> Commande passée</button>`,
         fait:    `<button data-suivi-act="fait" data-id="${c.id}" title="À cocher une fois la prestation réalisée" style="display:inline-flex;align-items:center;gap:6px;border-radius:10px;padding:5px 10px 5px 7px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;background:#fff;border:1.5px dashed #a5f3fc;color:#0e7490;"><span style="width:14px;height:14px;border:1.5px solid #0e7490;border-radius:4px;display:inline-block;"></span> Prestation terminée</button>`,
     };
     let actions='', info='';
-    if(st==='avalider') actions=B.valider+B.refuser;
-    else if(st==='acommander') actions=B.commande+pContactHtml(c)+B.annuler;
+    if(st==='avalider'||st==='acommander') actions=B.commande+pContactHtml(c)+B.refuser;
     else if(st==='commandee'){ actions=(peutConfirmer(c)?`<button data-recu="${c.id}" style="display:inline-flex;align-items:center;gap:5px;border-radius:8px;padding:6px 10px;font-size:12px;font-weight:700;cursor:pointer;background:#15803d;border:1px solid #15803d;color:#fff;">${icon('check',12)} Bien reçu</button>`:'')+B.fait+B.annuler; info=`${icon('check',11)} Commande passée le ${new Date(s.cmd).toLocaleDateString('fr-FR')}${s.cmdBy&&s.cmdBy!=='Admin'?' par '+esc(s.cmdBy):''} · <a href="#" data-suivi-act="uncommande" data-id="${c.id}" style="color:#8b93a1;">décocher</a>`; }
     else if(st==='fait'){ info=s.recu?recuInfo(s):s.fait?`Terminé le ${new Date(s.fait).toLocaleDateString('fr-FR')}${s.cmd?'':''} · <a href="#" data-suivi-act="unfait" data-id="${c.id}" style="color:#8b93a1;">rouvrir</a>`:'Prestation passée'; }
     const sel=select?`<input type="checkbox" class="sel-box" data-sel-id="${c.id}" ${(state.sel||[]).includes(c.id)?'checked':''} style="width:16px;height:16px;accent-color:var(--accent);cursor:pointer;flex-shrink:0;margin-top:3px;">`:'';
@@ -2324,28 +2328,28 @@ function renderSuivi(m){
     const lim=new Date(); lim.setHours(0,0,0,0); lim.setDate(lim.getDate()-14);
     const all=filtreSuivi(state.data);
     const cols={};
-    STAGE_ORDER.forEach(k=>cols[k]=all.filter(c=>stageOf(c)===k));
+    STAGE_ORDER.forEach(k=>cols[k]=all.filter(c=>etape(c)===k));
     cols.fait=cols.fait.filter(c=>{ const s=suiviOf(c); return (s.fait&&new Date(s.fait)>=lim)||((parseDate(c.date)||0)>=lim); }).sort((a,b)=>byDateAsc(b,a));
-    ['avalider','acommander','commandee'].forEach(k=>cols[k].sort(byDateAsc));
+    ['recue','commandee'].forEach(k=>cols[k].sort(byDateAsc));
     const types=[['all','Tout'],['repas','Repas'],['taxi','Taxi'],['hotel','Hôtel'],['commande','Commande']];
     const head=`<div style="display:flex;justify-content:space-between;align-items:flex-end;gap:10px;flex-wrap:wrap;margin-bottom:14px;">
         <div>
             <div style="font-family:var(--ft);font-weight:650;letter-spacing:-.01em;font-size:${m?'18px':'22px'};display:flex;align-items:center;gap:9px;">${icon('clipboard',m?17:20)} Suivi des demandes</div>
-            <div style="font-size:12px;color:#8b93a1;margin-top:3px;">Demande reçue → Réponse → Commande → Fait</div>
+            <div style="font-size:12px;color:#8b93a1;margin-top:3px;">Reçue → Commandée → Faite</div>
         </div>
         <div style="display:flex;gap:6px;flex-wrap:wrap;">${types.map(([k,l])=>`<button data-nav='{"suiviType":"${k}"}' style="padding:6px 12px;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;background:${(state.suiviType||'all')===k?'var(--accent)':'#f1f2f4'};color:${(state.suiviType||'all')===k?'#fff':'#4b5563'};">${l}</button>`).join('')}</div>
     </div>
     <input id="adminSearch" type="text" placeholder="Rechercher (nom, salle, prestataire, code…)" value="${esc(state.search||'')}" class="search-input" style="margin-bottom:14px;">`;
     const colHead=(k)=>{ const S=STAGES[k]; return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
         <span style="width:26px;height:26px;border-radius:8px;background:${S.bg};color:${S.color};display:flex;align-items:center;justify-content:center;">${icon(S.icon,14)}</span>
-        <span style="font-weight:700;font-size:14px;color:var(--ink);">${k==='fait'?'Fait (14 derniers jours)':S.label}</span>
-        <span style="background:${S.color};color:#fff;border-radius:8px;padding:0 8px;font-size:11px;font-weight:700;line-height:18px;">${cols[k].length}</span></div>${k==='acommander'?'<div style="font-size:11px;color:#6b7280;margin:-4px 0 10px;">Commandez auprès du prestataire, puis cochez « J’ai passé la commande ».</div>':''}`; };
-    const empty=k=>`<div style="text-align:center;color:#9ca3af;font-size:12px;padding:18px 8px;border:1.5px dashed var(--border);border-radius:8px;">${k==='avalider'?'Aucune demande à valider':k==='acommander'?'Rien à commander':k==='commandee'?'Aucune commande en cours':'Rien de terminé récemment'}</div>`;
-    const list=k=>cols[k].length?`<div style="display:flex;flex-direction:column;gap:8px;">${cols[k].map(c=>suiviCard(c,{select:k==='avalider'})).join('')}</div>`:empty(k);
+        <span style="font-weight:700;font-size:14px;color:var(--ink);">${k==='fait'?'Faite (14 derniers jours)':S.label}</span>
+        <span style="background:${S.color};color:#fff;border-radius:8px;padding:0 8px;font-size:11px;font-weight:700;line-height:18px;">${cols[k].length}</span></div>${k==='recue'?'<div style="font-size:11px;color:#6b7280;margin:-4px 0 10px;">Passez la commande au prestataire, puis cliquez « Commande passée ». Pour une demande d’assistante, la confirmation part à ce moment-là.</div>':''}${false?'<div style="font-size:11px;color:#6b7280;margin:-4px 0 10px;">Commandez auprès du prestataire, puis cochez « Commande passée ».</div>':''}`; };
+    const empty=k=>`<div style="text-align:center;color:#9ca3af;font-size:12px;padding:18px 8px;border:1.5px dashed var(--border);border-radius:8px;">${k==='recue'?'Aucune demande à traiter':k==='acommander'?'Rien à commander':k==='commandee'?'Aucune commande en cours':'Rien de terminé récemment'}</div>`;
+    const list=k=>cols[k].length?`<div style="display:flex;flex-direction:column;gap:8px;">${cols[k].map(c=>suiviCard(c,{select:k==='recue'})).join('')}</div>`:empty(k);
     if(m){
-        const cur=state.suiviStage||STAGE_ORDER.find(k=>cols[k].length)||'avalider';
+        const cur=STAGE_ORDER.includes(state.suiviStage)?state.suiviStage:(['avalider','acommander'].includes(state.suiviStage)?'recue':STAGE_ORDER.find(k=>cols[k].length)||'recue');
         return `<div>${head}
-        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px;background:#f1f2f4;border-radius:8px;padding:4px;margin-bottom:12px;">
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:4px;background:#f1f2f4;border-radius:8px;padding:4px;margin-bottom:12px;">
             ${STAGE_ORDER.map(k=>`<button data-nav='{"suiviStage":"${k}"}' style="border:none;border-radius:10px;padding:7px 2px;cursor:pointer;background:${cur===k?'#fff':'transparent'};box-shadow:${cur===k?'0 1px 3px rgba(0,0,0,.08)':'none'};">
                 <div style="font-size:16px;font-weight:700;color:${STAGES[k].color};line-height:1.1;">${cols[k].length}</div><div style="font-size:10px;font-weight:600;color:#4b5563;">${STAGES[k].court}</div></button>`).join('')}
         </div>
@@ -2449,10 +2453,22 @@ function printDay(day){
     w.document.open(); w.document.write(html); w.document.close();
 }
 
+function mailsHtml(d){
+    const s=suiviOf(d), f=x=>new Date(x).toLocaleString('fr-FR',{dateStyle:'short',timeStyle:'short'}), st=stageOf(d), L=[];
+    if(s.direct) L.push(['grey',`Saisie directe par l’administration le ${f(s.direct)} : aucun email`]);
+    else {
+        L.push(s.mailAlerte?['ok',`Alerte « nouvelle demande » envoyée à l’administration le ${f(s.mailAlerte)}`]:['grey','Alerte à l’administration : non enregistrée (demande antérieure au suivi des emails)']);
+        if(s.mailConf) L.push(['ok',`Confirmation envoyée à ${esc(demNom(d))} le ${f(s.mailConf)}`]);
+        else if(st==='avalider') L.push(['wait',`Confirmation à ${esc(demNom(d))} : partira quand vous cliquerez « Commande passée »`]);
+        else if(st!=='refusee') L.push(['grey','Confirmation : envoyée à la validation (avant le suivi des emails)']);
+    }
+    if(st==='refusee') L.push(['grey','Refusée / annulée : aucun email envoyé']);
+    return `<div class="mails"><b>${icon('mail',13)} Emails</b>${L.map(([k,x])=>`<span class="m-${k}">${x}</span>`).join('')}</div>`;
+}
 /* Bloc de suivi dans la fiche détail */
 function suiviBlock(d){
     const st=stageOf(d), s=suiviOf(d);
-    const steps=[['Reçue',true],['Validée',['acommander','commandee','fait'].includes(st)],['Commandée',['commandee','fait'].includes(st)],['Faite',st==='fait']];
+    const steps=[['Reçue',true],['Commandée',['commandee','fait'].includes(st)],['Faite',st==='fait']];
     const stepper=st==='refusee'
         ? `<div style="background:#fef2f2;color:#b91c1c;border-radius:12px;padding:10px 12px;font-weight:700;font-size:13px;">${icon('x',13)} Demande refusée / annulée</div>`
         : `<div style="display:flex;align-items:center;gap:0;">${steps.map(([l,ok],i)=>`<div style="display:flex;align-items:center;${i<steps.length-1?'flex:1;':''}">
@@ -2462,8 +2478,7 @@ function suiviBlock(d){
             ${i<steps.length-1?`<div style="flex:1;height:2px;background:${steps[i+1][1]?STAGES.fait.color:'#e4e0d9'};margin:0 2px 18px;"></div>`:''}</div>`).join('')}</div>`;
     const btn=(act,label,ic,style)=>`<button data-suivi-act="${act}" data-id="${d.id}" style="display:inline-flex;align-items:center;gap:6px;border-radius:12px;padding:10px 14px;font-size:13px;font-weight:700;cursor:pointer;${style}">${icon(ic,14)} ${label}</button>`;
     let actions='';
-    if(st==='avalider') actions=btn('valider','Valider la demande','check','background:#15803d;border:1px solid #15803d;color:#fff;')+btn('refuser','Refuser','x','background:#fff;border:1px solid #fecaca;color:#b91c1c;');
-    else if(st==='acommander') actions=`<div style="width:100%;font-size:12px;color:#4b5563;background:#eff6ff;border-radius:10px;padding:8px 10px;margin-bottom:2px;">① Commandez auprès de <b>${esc(d.presta||'du prestataire')}</b> ② puis cochez « J’ai passé la commande ».</div>`+btn('commande','J’ai passé la commande','check','background:#fff;border:1.5px dashed #93c5fd;color:#1d4ed8;')+btn('annuler','Annuler la demande','x','background:#fff;border:1px solid #fecaca;color:#b91c1c;')
+    if(st==='avalider'||st==='acommander') actions=`<div style="width:100%;font-size:12px;color:#4b5563;background:#fffbeb;border-radius:10px;padding:8px 10px;margin-bottom:2px;">Passez la commande auprès de <b>${esc(d.presta||'du prestataire')}</b>, puis cliquez « Commande passée ».${st==='avalider'?' La confirmation partira alors à '+esc(demNom(d))+'.':''}</div>`+btn('commande','Commande passée','check','background:#1d4ed8;border:1px solid #1d4ed8;color:#fff;')+btn('refuser','Refuser','x','background:#fff;border:1px solid #fecaca;color:#b91c1c;');
     else if(st==='commandee') actions=btn('fait','Prestation terminée','check','background:#fff;border:1.5px dashed #a5f3fc;color:#0e7490;')+btn('uncommande','Je n’ai pas encore commandé','arrow','background:#fff;border:1px solid var(--border);color:#6b7280;')+btn('annuler','Annuler la demande','x','background:#fff;border:1px solid #fecaca;color:#b91c1c;')
     else if(st==='fait'&&s.fait) actions=btn('unfait','Rouvrir','arrow','background:#fff;border:1px solid var(--border);color:#6b7280;');
     const histo=[s.cmd?`Commandé le ${new Date(s.cmd).toLocaleString('fr-FR',{dateStyle:'short',timeStyle:'short'})}${s.cmdBy&&s.cmdBy!=='Admin'?' par '+esc(s.cmdBy):''}`:'', s.fait?`Terminé le ${new Date(s.fait).toLocaleString('fr-FR',{dateStyle:'short',timeStyle:'short'})}${s.faitBy&&s.faitBy!=='Admin'?' par '+esc(s.faitBy):''}`:'', s.recu?recuInfo(s):''].filter(Boolean).join(' · ');
@@ -2471,6 +2486,7 @@ function suiviBlock(d){
         <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:14px;"><div style="font-weight:700;font-size:13px;color:var(--ink-soft);">${icon('clipboard',13)} Suivi</div>${stagePill(st)}</div>
         ${stepper}
         ${histo?`<div style="font-size:11px;color:#8b93a1;margin-top:10px;">${histo}</div>`:''}
+        ${mailsHtml(d)}
         ${actions?`<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;">${actions}</div>`:''}
         ${['acommander','commandee'].includes(st)&&pContactHtml(d,{grand:true})?`<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;">${pContactHtml(d,{grand:true})}</div>`:''}
         ${notesHtml(d)}
@@ -2481,7 +2497,7 @@ function suiviBlock(d){
 function trackSteps(c){
     const st=stageOf(c);
     if(st==='refusee') return `<div style="background:#fef2f2;color:#b91c1c;border-radius:12px;padding:10px 12px;font-weight:700;font-size:13px;margin:4px 0 12px;">${icon('x',13)} Demande annulée</div>`;
-    const steps=[['Reçue',true],['Validée',st!=='avalider'],['Commandée',st==='commandee'||st==='fait'],['Faite',st==='fait']];
+    const steps=[['Reçue',true],['Commandée',st==='commandee'||st==='fait'],['Faite',st==='fait']];
     return `<div style="display:flex;align-items:center;margin:4px 0 14px;">${steps.map(([l,ok],i)=>`<div style="display:flex;align-items:center;${i<steps.length-1?'flex:1;':''}">
         <div style="display:flex;flex-direction:column;align-items:center;gap:3px;min-width:56px;">
             <span style="width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:${ok?'#15803d':'#fff'};border:2px solid ${ok?'#15803d':'#d9d4cc'};color:#fff;">${ok?icon('check',11):''}</span>
@@ -2525,10 +2541,11 @@ document.addEventListener('click', async e=>{
     const act=a.getAttribute('data-suivi-act'), id=a.getAttribute('data-id');
     const c=state.data.find(x=>String(x.id)===String(id)); if(!c) return;
     if(act==='valider'){ await applyStatus([c.id],'OUI'); }
-    else if(act==='annuler'){ if(confirm(`Annuler « ${titreDe(c)} » du ${dateCourte(c)} ?\n\n• ${c.demandeur||'La demandeuse'} recevra l’email d’annulation.\n• Les rappels seront retirés de vos agendas.${stageOf(c)==='commandee'?`\n• Pensez à prévenir ${c.presta||'le prestataire'} : la commande avait été passée.`:''}`)){ await applyStatus([c.id],'Annulé'); showToast('Demande annulée'); } }
-    else if(act==='refuser'){ if(confirm(`Refuser « ${titreDe(c)} » ? ${c.demandeur||'La demandeuse'} recevra l’email d’annulation.`)) await applyStatus([c.id],'Annulé'); }
+    else if(act==='annuler'){ if(confirm(`Annuler « ${titreDe(c)} » du ${dateCourte(c)} ?\n\n• Aucun email ne sera envoyé à ${demNom(c)}.\n• Les rappels seront retirés de vos agendas.${stageOf(c)==='commandee'?`\n• Pensez à prévenir ${c.presta||'le prestataire'} : la commande avait été passée.`:''}`)){ await applyStatus([c.id],'Annulé'); showToast('Demande annulée'); } }
+    else if(act==='refuser'){ if(confirm(`Refuser « ${titreDe(c)} » ?\n\nAucun email ne sera envoyé : pensez à prévenir ${demNom(c)} si besoin.${stageOf(c)==='commandee'?`\nPensez aussi à prévenir ${c.presta||'le prestataire'}.`:''}`)) await applyStatus([c.id],'Annulé',{noMail:true}); }
     else if(act==='copier'){ const ok=await copyText(orderMessage(c)); showToast(ok?'✓ Message copié : collez-le dans votre email au prestataire':`${icon('alert',13)} Copie impossible`); }
-    else if(act==='commande'){ if(confirm(`Confirmer : la commande « ${titreDe(c)} » a bien été passée auprès de ${c.presta||'du prestataire'} ?`)) markCommande([c.id]); }
+    else if(act==='commande'){ const enAtt=c.pris==='En attente'||c.pris==='En cours';
+        if(confirm(`Commande « ${titreDe(c)} » passée auprès de ${c.presta||'du prestataire'} ?${enAtt?`\n\nLa confirmation sera envoyée à ${demNom(c)}.`:'\n\nAucun email ne sera envoyé.'}`)){ if(enAtt) await applyStatus([c.id],'OUI',{silent:true}); markCommande([c.id]); } }
     else if(act==='uncommande') unmarkCommande([c.id]);
     else if(act==='fait') markFait([c.id]);
     else if(act==='unfait') unmarkFait([c.id]);
@@ -2680,14 +2697,14 @@ function renderDashboard(total,attente,m){
     const avalider=state.data.filter(c=>stageOf(c)==='avalider').sort(byDateAsc);
     const acommander=state.data.filter(c=>stageOf(c)==='acommander').sort(byDateAsc);
     const urgentCmd=acommander.filter(c=>{ const j=daysLeft(c.date); return j!==null&&j<=3; });
-    const aFaire=[...avalider,...urgentCmd].sort(byDateAsc).slice(0,8);
+    const aFaire=[...avalider,...acommander].sort(byDateAsc).slice(0,8);
     const resteAFaire=avalider.length+acommander.length-aFaire.length;
     const validesMois=state.data.filter(c=>{ if(c.pris!=='OUI') return false; const d=parseDate(c.date); return d&&d.getMonth()===now.getMonth()&&d.getFullYear()===now.getFullYear(); });
     const totalMois=validesMois.reduce((a,b)=>a+(b.prix||0),0);
 
     const phrase=[];
-    if(n.avalider) phrase.push(`<b>${n.avalider}</b> demande${n.avalider>1?'s':''} à valider`);
-    if(n.acommander) phrase.push(`<b>${n.acommander}</b> à commander`);
+    const nRec=n.avalider+n.acommander;
+    if(nRec) phrase.push(`<b>${nRec}</b> demande${nRec>1?'s':''} reçue${nRec>1?'s':''} à commander`);
     phrase.push(today.length?`<b>${today.length}</b> prestation${today.length>1?'s':''} aujourd’hui`:'aucune prestation aujourd’hui');
 
     const tile=(k,val,label,sub,navJson)=>{ const S=STAGES[k]||{color:'#15803d'};
@@ -2710,8 +2727,7 @@ function renderDashboard(total,attente,m){
 
     const urgTag=c=>{ const j=daysLeft(c.date); return j!==null&&j<=2?`<span class="urg" style="margin-left:0;">${badgeColor(j).label}</span>`:''; };
     const actionsDe=c=>{ const st=stageOf(c);
-        if(st==='avalider') return `<button class="btn-sm" data-suivi-act="refuser" data-id="${c.id}">Refuser</button><button class="btn-sm pri" data-suivi-act="valider" data-id="${c.id}">Valider</button>`;
-        if(st==='acommander') return `<button class="btn-sm" data-suivi-act="commande" data-id="${c.id}" title="À cliquer une fois la commande passée auprès du prestataire">${icon('check',13)} Commande passée</button>`;
+        if(st==='avalider'||st==='acommander') return `<button class="btn-sm" data-suivi-act="refuser" data-id="${c.id}">Refuser</button><button class="btn-sm pri" data-suivi-act="commande" data-id="${c.id}" title="${st==='avalider'?'Envoie la confirmation à la demandeuse':'Aucun email'}">${icon('check',13)} Commande passée</button>`;
         return ''; };
     const table=`<div class="tbl-wrap"><table class="pro-table"><thead><tr><th>Prestation</th><th>Date</th><th>Statut</th><th style="text-align:right;">Action</th></tr></thead><tbody>
         ${aFaire.map(c=>`<tr>
@@ -2743,9 +2759,8 @@ function renderDashboard(total,attente,m){
         </div>`}
     </div>
     <div class="kpis">
-        ${tile('avalider',n.avalider,'À valider',n.avalider?'Réponse à donner':'Rien en attente','{"adminTab":"suivi","suiviStage":"avalider"}')}
-        ${tile('acommander',n.acommander,'À commander',urgentCmd.length?`<b style="color:#b91c1c;">${urgentCmd.length}</b> dans les 3 jours`:'Auprès des prestataires','{"adminTab":"suivi","suiviStage":"acommander"}')}
-        ${tile('commandee',n.commandee,'Commande passée',n.commandee?'En attente de prestation':'Aucune en cours','{"adminTab":"suivi","suiviStage":"commandee"}')}
+        ${tile('avalider',n.avalider+n.acommander,'Reçues',n.avalider+n.acommander?(urgentCmd.length||avalider.filter(c=>{ const j=daysLeft(c.date); return j!==null&&j<=3; }).length?`<b style="color:#b91c1c;">${urgentCmd.length+avalider.filter(c=>{ const j=daysLeft(c.date); return j!==null&&j<=3; }).length}</b> dans les 3 jours`:'À commander'):'Rien en attente','{"adminTab":"suivi","suiviStage":"recue"}')}
+        ${tile('commandee',n.commandee,'Commandées',n.commandee?'En attente de prestation':'Aucune en cours','{"adminTab":"suivi","suiviStage":"commandee"}')}
         ${tile('x-cal',$ms(totalMois),'Dépenses du mois',`${validesMois.length} commande${validesMois.length>1?'s':''} validée${validesMois.length>1?'s':''}`,'{"adminTab":"stats","statsPeriod":"mois"}')}
     </div>
     ${anomaliesHtml(m)}
@@ -3000,7 +3015,7 @@ function renderLive(){
     const hrs=[...today.map(c=>heureMin(c.heure)).filter(x=>x!==9999),...ints.map(s=>mn(s.interv))].map(x=>x/60);
     const H0=Math.min(7,Math.floor(Math.min(24,...hrs))), H1=Math.max(21,Math.ceil(Math.max(0,...hrs))+1), pos=c=>{ const mn=heureMin(c.heure); return mn===9999?null:Math.max(0,Math.min(100,(mn/60-H0)/(H1-H0)*100)); };
     const nowPos=Math.max(0,Math.min(100,((now.getHours()+now.getMinutes()/60)-H0)/(H1-H0)*100)); window._lvRange=[H0,H1];
-    const COL={avalider:'#f59e0b',acommander:'#60a5fa',commandee:'#2dd4bf',fait:'#4ade80',refusee:'#f87171'};
+    const COL={avalider:'#f59e0b',acommander:'#f59e0b',commandee:'#60a5fa',fait:'#4ade80',refusee:'#f87171'};
     const timed=today.filter(c=>pos(c)!==null);
     const posI=s=>Math.max(0,Math.min(100,(mn(s.interv)/60-H0)/(H1-H0)*100));
     const TL=[...timed.map(c=>({c,p:pos(c),m:heureMin(c.heure)})),...ints.map(s=>({s,p:posI(s),m:mn(s.interv)}))].sort((a,b)=>a.m-b.m);
@@ -3019,7 +3034,7 @@ function renderLive(){
             <button data-live-exit class="lv-exit" title="Quitter (Échap)">${icon('x',18)}</button>
         </header>
         <div class="lv-kpis" ${P?'style="grid-template-columns:repeat(6,1fr);"':''}>
-            ${cpt(today.length,'prestations aujourd’hui','#fff',0)}${cpt(recus,'déjà livrées','#4ade80',1)}${cpt(n.acommander,'à commander','#60a5fa',2)}${cpt(n.avalider,'à valider','#fbbf24',3)}${P?cpt(ints.length,'interventions aujourd’hui','#c4b5fd',4)+cpt(ACT.length,'actions bâtiment','#f87171',5):''}
+            ${cpt(today.length,'prestations aujourd’hui','#fff',0)}${cpt(recus,'déjà livrées','#4ade80',1)}${cpt(n.avalider+n.acommander,'reçues à commander','#fbbf24',2)}${cpt(n.commandee,'commandées','#60a5fa',3)}${P?cpt(ints.length,'interventions aujourd’hui','#c4b5fd',4)+cpt(ACT.length,'actions bâtiment','#f87171',5):''}
         </div>
         <section class="lv-tl">
             <div class="lv-tl-h">${Array.from({length:H1-H0+1},(_,i)=>`<span style="left:${i/(H1-H0)*100}%;">${H0+i}h</span>`).join('')}</div>
@@ -3101,8 +3116,8 @@ function renderExpress(){
     return `<div class="ex">
         <div class="ex-top"><div><span>${dateLongue(now)}</span><b>${esc(marqueNom())}</b></div><span class="ex-maj">Mis à jour ${now.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})}</span></div>
         <div class="ex-grid">
-            ${tile(n.avalider,'à valider','#f59e0b','{"adminTab":"suivi","suiviStage":"avalider"}')}
-            ${tile(n.acommander,'à commander','#3b82f6','{"adminTab":"suivi","suiviStage":"acommander"}')}
+            ${tile(n.avalider+n.acommander,'reçues','#f59e0b','{"adminTab":"suivi","suiviStage":"recue"}')}
+            ${tile(n.commandee,'commandées','#3b82f6','{"adminTab":"suivi","suiviStage":"commandee"}')}
             ${tile(today.length,'aujourd’hui','#14b8a6','{"adminTab":"calendrier"}')}
             ${tile(ano,'points d’attention','#ef4444','{"adminTab":"dashboard"}')}
         </div>
@@ -3346,7 +3361,7 @@ function renderMe(m){
         ...interv.filter(s=>isoDay(new Date(s.interv))===k).map(s=>({h:new Date(s.interv).getHours()*60+new Date(s.interv).getMinutes(),html:`<div class="tl-row" data-me="open" data-id="${s.id}"><div class="tl-h">${hh(s.interv)}</div><span class="dot" style="background:#5b21b6;margin-top:5px;"></span><div style="min-width:0;"><div class="tl-t">${icon('tool',13)} ${esc(s.titre)}</div><div class="tl-m">${esc(meZone(s))}${s.interv_par?` · ${esc(s.interv_par)}`:''}</div></div>${mePill(s)}</div>`}))].sort((a,b)=>a.h-b.h);
         return L.length?`<div class="tl">${L.map(x=>x.html).join('')}</div>`:''; };
     const auj=jour(todayK), dem=jour(tomK);
-    const act=c=>{ const st=stageOf(c); return st==='avalider'?`<button class="btn-sm" data-suivi-act="refuser" data-id="${c.id}">Refuser</button><button class="btn-sm pri" data-suivi-act="valider" data-id="${c.id}">Valider</button>`:st==='acommander'?`<button class="btn-sm" data-suivi-act="commande" data-id="${c.id}">${icon('check',13)} Commande passée</button>`:''; };
+    const act=c=>{ const st=stageOf(c); return (st==='avalider'||st==='acommander')?`<button class="btn-sm" data-suivi-act="refuser" data-id="${c.id}">Refuser</button><button class="btn-sm pri" data-suivi-act="commande" data-id="${c.id}">${icon('check',13)} Commande passée</button>`:false?`<button class="btn-sm" data-suivi-act="refuser" data-id="${c.id}">Refuser</button><button class="btn-sm pri" data-suivi-act="valider" data-id="${c.id}">Valider</button>`:st==='acommander'?`<button class="btn-sm" data-suivi-act="commande" data-id="${c.id}">${icon('check',13)} Commande passée</button>`:''; };
     const cmdRows=aTraiter.slice(0,6).map(c=>`<div class="me-act"><span class="me-act-k" style="color:${STAGES[stageOf(c)].color};border-color:${STAGES[stageOf(c)].color}33;background:${STAGES[stageOf(c)].color}0f;">${STAGES[stageOf(c)].label||stageOf(c)}</span><div class="me-act-t" data-open-detail='${JSON.stringify(c).replace(/'/g,"&apos;")}'><div class="t">${typeIc(c.type,14)}<b>${esc(titreDe(c))}</b></div><div class="m">${dateCourte(c)}${c.heure?' · '+esc(c.heure):''}${where(c)?' · '+where(c):''}${c.demandeur?' · '+demHtml(c):''}</div></div><div class="me-act-b">${act(c)}</div></div>`).join('');
     const intRows=A.slice(0,6).map(({s,k,why,btns,group,list})=>`<div class="me-act"><span class="me-act-k" style="color:${KL[k][1]};border-color:${KL[k][1]}33;background:${KL[k][1]}0f;">${KL[k][0]}</span>${group?`<div class="me-act-t" data-nav='{"adminTab":"me-stat"}'><div class="t"><b>${esc(group)}</b></div><div class="m">${why}</div></div>`:`<div class="me-act-t" data-me="open" data-id="${s.id}"><div class="t">${meUrgDot(s)}<b>${esc(s.titre)}</b></div><div class="m">${esc(meZone(s))} · ${why}</div></div>`}<div class="me-act-b">${btns}</div></div>`).join('');
     const prenom=(adminName()||'').split(' ')[0], salut=now.getHours()<18?'Bonjour':'Bonsoir';
@@ -3354,14 +3369,14 @@ function renderMe(m){
     <div class="page-head"><div><h1>${salut}${prenom&&prenom!=='Admin'?' '+esc(prenom):''}</h1><p><span style="text-transform:capitalize;">${dateLongue(now)}</span> ${now.getFullYear()} · ${aTraiter.length} commande${aTraiter.length>1?'s':''} à traiter · ${A.length} action${A.length>1?'s':''} bâtiment${rapAuj?` · ${rapAuj} rappel${rapAuj>1?'s':''}`:''}</p></div>
     <div class="page-actions"><button class="btn-sm" data-me="newmemo">${icon('edit',14)} Mémo</button><button class="btn-sm" data-me="new">${icon('tool',14)} Nouveau signalement</button></div></div>
     <div class="kpis">
-        <button class="stat-card kpi" data-nav='{"adminTab":"suivi"}'><span class="kpi-l"><span>Commandes à traiter</span><span class="dot" style="background:${STAGES.avalider.color}"></span></span><span class="kpi-v">${aTraiter.length}</span><span class="kpi-s">${avalider.length} à valider · ${acommander.length} à commander</span></button>
+        <button class="stat-card kpi" data-nav='{"adminTab":"suivi"}'><span class="kpi-l"><span>Commandes à traiter</span><span class="dot" style="background:${STAGES.avalider.color}"></span></span><span class="kpi-v">${aTraiter.length}</span><span class="kpi-s">${aTraiter.length} reçue${aTraiter.length>1?'s':''} · à commander</span></button>
         <button class="stat-card kpi" data-nav='{"adminTab":"calendrier"}'><span class="kpi-l"><span>Aujourd’hui</span><span class="dot" style="background:#2c5f85"></span></span><span class="kpi-v">${(ev[todayK]||[]).length}</span><span class="kpi-s">prestation${(ev[todayK]||[]).length>1?'s':''} · ${(ev[tomK]||[]).length} demain</span></button>
         <button class="stat-card kpi" data-nav='{"adminTab":"me-stat"}'><span class="kpi-l"><span>Interventions</span><span class="dot" style="background:#5b21b6"></span></span><span class="kpi-v">${A.length}</span><span class="kpi-s">actions · ${interv.length} intervention${interv.length>1?'s':''} à venir</span></button>
         <button class="stat-card kpi" data-nav='{"adminTab":"me-bat"}'><span class="kpi-l"><span>Signalements du bâtiment</span><span class="dot" style="background:#b91c1c"></span></span><span class="kpi-v">${enc.length}</span><span class="kpi-s">${urg?`<b style="color:#b91c1c">${urg}</b> urgent${urg>1?'s':''} · `:''}en cours</span></button>
     </div>
     <div class="g2 dash2">
         <section>
-            <div class="dash-col-h"><span class="dash-col-ic" style="background:#e5f2fa;color:#0369a1;">${icon('clipboard',16)}</span><b>Commandes</b><span>${avalider.length} à valider · ${acommander.length} à commander</span></div>
+            <div class="dash-col-h"><span class="dash-col-ic" style="background:#e5f2fa;color:#0369a1;">${icon('clipboard',16)}</span><b>Commandes</b><span>${aTraiter.length} reçue${aTraiter.length>1?'s':''} à commander</span></div>
             <div class="card"><div class="card-h"><h3>À traiter<span class="sub">${aTraiter.length}</span></h3><button class="card-link" data-nav='{"adminTab":"suivi"}'>Tout le suivi →</button></div>
                 ${aTraiter.length?cmdRows+(aTraiter.length>6?`<div style="padding:10px 16px;border-top:1px solid var(--border-light);"><button class="card-link" data-nav='{"adminTab":"suivi"}'>Voir les ${aTraiter.length-6} autres →</button></div>`:''):`<div class="empty-note">Aucune commande à traiter. ${icon('check',14)}</div>`}</div>
             ${anomaliesHtml(m)}
@@ -5400,7 +5415,7 @@ function attachEvents(){
         trackDemandeVia(newItem.code);
         const saved=await dbInsert(newItem);
         if(saved.id!==newItem.id){state.data=state.data.map(c=>c.id===newItem.id?saved:c);}
-        if(ADM){ try{ logAction('Ajoutée directement (admin)',newItem); }catch(e){} if(personne(newItem.demandeur).role==='invite') setSuivi([saved.id||newItem.id],()=>({par:userName()})); return; } // Julia / Arnaud : ajout direct, pas d'email
+        if(ADM){ try{ logAction('Ajoutée directement (admin)',newItem); }catch(e){} setSuivi([saved.id||newItem.id],()=>({direct:new Date().toISOString(),par:personne(newItem.demandeur).role==='invite'?userName():null})); return; } // Julia / Arnaud : ajout direct, pas d'email
         // Fallback localStorage si Supabase pas encore chargé
         const adminEmailsSafe = (settings.adminEmails||[]).filter(Boolean).length
             ? settings.adminEmails
@@ -5409,6 +5424,7 @@ function attachEvents(){
         adminEmailsSafe.forEach(email=>{
             if(email) sendConfirmationEmail(newItem, {to: email});
         });
+        if(adminEmailsSafe.filter(Boolean).length){ try{ setSuivi([saved.id||newItem.id],()=>({mailAlerte:new Date().toISOString()})); }catch(e){} }
         if(!adminEmailsSafe.filter(Boolean).length){
             console.warn('Aucun email admin configuré dans les réglages !');
         }
@@ -5607,7 +5623,7 @@ function attachEvents(){
         const savedCmd=await dbInsert(newCmd);
         if(savedCmd.id!==newCmd.id){state.data=state.data.map(c=>c.id===newCmd.id?savedCmd:c);}
         logAction('Création', savedCmd, 'saisie admin');
-        if(personne(savedCmd.demandeur).role==='invite') setSuivi([savedCmd.id],()=>({par:userName()}));
+        setSuivi([savedCmd.id],()=>({direct:new Date().toISOString(),par:personne(savedCmd.demandeur).role==='invite'?userName():null}));
         // Saisie directe par un admin : pas d'email
     };
 
