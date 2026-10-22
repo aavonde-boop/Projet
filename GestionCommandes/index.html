@@ -2977,14 +2977,15 @@ function regimesTxt(f){ const r=f.regimes||{}; const p=REGIMES.filter(k=>r[k]>0)
    POINTS D'ATTENTION (anomalies)
 ══════════════════════════════════════ */
 /* Prix approximatifs des repas passés sans prix (prix moyen par personne constaté) */
+const PRIX_EST_BUTOIR='2026-10-22'; // estimation unique : uniquement les repas d’avant cette date
 function estimerPrixRepas(){
-    const t0=new Date(); t0.setHours(0,0,0,0);
+    const t0=parseDate(PRIX_EST_BUTOIR);
     const D=(state.data||[]).filter(c=>c.type==='repas'&&c.pris!=='Annulé');
     const ref=D.filter(c=>+c.prix>0&&!suiviOf(c).prixEst);
     const nb=c=>Math.max(1,parseInt(c.nb)||1), kd=c=>sansAccent(String(c.desc||'')).toLowerCase().replace(/[^a-z]+/g,' ').trim(), kp=c=>String(c.presta||'').trim().toLowerCase();
     const moy=f=>{ const L=ref.filter(f); const n=L.reduce((a,c)=>a+nb(c),0); return n?L.reduce((a,c)=>a+(+c.prix),0)/n:null; };
     const cache={}; const m=(k,f)=>k in cache?cache[k]:(cache[k]=moy(f));
-    return D.filter(c=>(c.pris==='OUI'||c.pris==='Reçu')&&!(+c.prix>0)&&(parseDate(c.date)||t0)<t0).map(c=>{
+    return D.filter(c=>(c.pris==='OUI'||c.pris==='Reçu')&&!(+c.prix>0)&&!suiviOf(c).prixReel&&!suiviOf(c).prixEstRetire&&(parseDate(c.date)||t0)<t0&&!(c.createdAt&&new Date(c.createdAt)>=t0)).map(c=>{
         let pp=m('pd|'+kp(c)+'|'+kd(c),x=>kp(x)===kp(c)&&kd(x)===kd(c)), base='même restaurant, même repas';
         if(pp==null){ pp=m('d|'+kd(c),x=>kd(x)===kd(c)); base='même type de repas'; }
         if(pp==null){ pp=m('p|'+kp(c),x=>kp(x)===kp(c)); base='même restaurant'; }
@@ -3006,7 +3007,7 @@ async function appliquerEstimations(L,{silent=false}={}){
 async function retirerEstimations(){
     const L=(state.data||[]).filter(c=>suiviOf(c).prixEst); if(!L.length) return;
     if(!confirm(`Remettre à zéro les ${L.length} prix estimés ? Ils repasseront dans « Prix à saisir ».`)) return;
-    const ids=L.map(c=>c.id); state.data=state.data.map(c=>ids.includes(c.id)?{...c,prix:0}:c); setSuivi(ids,()=>({prixEst:null}));
+    const ids=L.map(c=>c.id); state.data=state.data.map(c=>ids.includes(c.id)?{...c,prix:0}:c); setSuivi(ids,()=>({prixEst:null,prixEstRetire:1}));
     showToast(`${L.length} estimations retirées`); for(const c of L){ try{ await dbUpdate(c.id,{prix:0}); }catch(e){} }
 }
 /* Commandes faites (ou passées) sans prix : à compléter à réception de la facture */
@@ -4452,7 +4453,7 @@ function renderHistorique(m){
             <div style="font-family:var(--ft);font-weight:650;letter-spacing:-.01em;font-size:${m?'18px':'22px'};">${icon('wallet',m?16:19)} Dépenses & prix</div>
             <div style="font-size:12px;color:#7f8c9b;margin-top:3px;">${allSorted.length} entrée${allSorted.length>1?'s':''}${state.histPrix?' sans prix':' au total'} · saisissez le prix à réception de la facture</div>
         </div>
-        <div style="display:flex;gap:6px;flex-wrap:wrap;">${(()=>{ const ne=(state.data||[]).filter(c=>suiviOf(c).prixEst).length; const ae=estimerPrixRepas().length; return `${ae?`<button data-prix-estimer class="btn-sm" title="Prix moyen par personne constaté pour le même restaurant et le même repas">≈ Estimer ${ae} repas</button>`:''}${ne?`<button data-prix-retirer class="btn-sm" title="Remettre ces prix à zéro">${ne} prix estimés · retirer</button>`:''}`; })()}
+        <div style="display:flex;gap:6px;flex-wrap:wrap;">${(()=>{ const ne=(state.data||[]).filter(c=>suiviOf(c).prixEst).length; const ae=estimerPrixRepas().length; return `${ne?`<button data-prix-retirer class="btn-sm" title="Remettre ces prix à zéro">${ne} prix estimés · retirer</button>`:''}`; })()}
         <button data-nav='{"histPrix":${!state.histPrix},"histPage":0}' class="btn-sm ${state.histPrix?'pri':''}">${icon('wallet',14)} Prix à saisir · ${sansPrix.length}</button></div>
         
     </div>
