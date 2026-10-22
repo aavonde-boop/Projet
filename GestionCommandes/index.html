@@ -3085,30 +3085,50 @@ function renderMe(m){
     if(tab==='me-bat') return meBatiment(m);
     if(tab==='me-stat') return meStats(m);
     if(tab==='me-memo') return meMemo(m);
-    // Accueil
-    const enc=meEnCours(), urg=enc.filter(s=>s.urgence==='urgent').length, now=new Date(), j7=new Date(Date.now()+7*864e5);
-    const t0=new Date(); t0.setHours(0,0,0,0); const prevus=enc.filter(s=>s.statut==='prevu'&&s.interv&&new Date(s.interv)>=t0&&new Date(s.interv)<=j7).length;
-    const res=S.soucis.filter(s=>s.statut==='resolu'&&s.resolu&&new Date(s.resolu).getMonth()===now.getMonth()&&new Date(s.resolu).getFullYear()===now.getFullYear());
-    const delai=res.length?Math.round(res.reduce((a,s)=>a+(new Date(s.resolu)-new Date(s.t)),0)/res.length/864e5*10)/10:null;
+    // Accueil : mon écran (commandes + interventions), visible par moi seul
+    const enc=meEnCours(), urg=enc.filter(s=>s.urgence==='urgent').length, now=new Date();
+    const t0=new Date(); t0.setHours(0,0,0,0); const todayK=isoDay(now), tom=new Date(now); tom.setDate(now.getDate()+1); const tomK=isoDay(tom);
     const rapAuj=S.memos.filter(x=>x.rappel&&!x.fait&&isoDay(new Date(x.rappel))<=isoDay(now)).length;
     const memosVus=[...S.memos.filter(x=>x.rappel&&!x.fait).sort((a,b)=>new Date(a.rappel)-new Date(b.rappel)),...S.memos.filter(x=>x.pin&&!(x.rappel&&!x.fait))].slice(0,4);
-    const rep=meRepetes();
+    // Commandes
+    const D=state.data||[], avalider=D.filter(c=>stageOf(c)==='avalider').sort(byDateAsc), acommander=D.filter(c=>stageOf(c)==='acommander').sort(byDateAsc);
+    const aTraiter=[...avalider,...acommander].sort(byDateAsc);
+    const ev=eventsByDay();
+    // Interventions bâtiment
+    const A=meActions(), KL={verif:['À vérifier','#5b21b6'],relance:['À relancer','#b91c1c'],transmettre:['À transmettre','#b45309'],silence:['Sans nouvelles','#475569']};
+    const KO={verif:0,relance:1,transmettre:2,silence:3}; A.sort((a,b)=>KO[a.k]-KO[b.k]);
+    const interv=enc.filter(s=>s.statut==='prevu'&&s.interv&&new Date(s.interv)>=t0).sort((a,b)=>new Date(a.interv)-new Date(b.interv));
+    const hh=d=>{ const x=new Date(d); return x.getHours()||x.getMinutes()?`${String(x.getHours()).padStart(2,'0')}h${String(x.getMinutes()).padStart(2,'0')}`:'—'; };
+    const where=c=>[c.type==='taxi'?`${esc(c.depart||'—')} → ${esc(c.arrivee||'—')}`:esc(c.lieu||''),c.type==='repas'?`${c.nb||1} pers.`:'',c.presta&&c.type!=='commande'?esc(c.presta):''].filter(Boolean).join(' · ');
+    const jour=k=>{ const L=[...(ev[k]||[]).map(c=>({h:heureMin(c.heure),html:`<div class="tl-row" data-open-detail='${JSON.stringify(c).replace(/'/g,"&apos;")}'><div class="tl-h">${esc(c.heure||'—')}</div><span class="dot" style="background:${STAGES[stageOf(c)].color};margin-top:5px;"></span><div style="min-width:0;"><div class="tl-t">${typeIc(c.type,13)} ${esc(titreDe(c))}</div><div class="tl-m">${[where(c),esc(c.demandeur||'')].filter(Boolean).join(' · ')}</div></div>${stagePill(stageOf(c))}</div>`})),
+        ...interv.filter(s=>isoDay(new Date(s.interv))===k).map(s=>({h:new Date(s.interv).getHours()*60+new Date(s.interv).getMinutes(),html:`<div class="tl-row" data-me="open" data-id="${s.id}"><div class="tl-h">${hh(s.interv)}</div><span class="dot" style="background:#5b21b6;margin-top:5px;"></span><div style="min-width:0;"><div class="tl-t">${icon('tool',13)} ${esc(s.titre)}</div><div class="tl-m">${esc(meZone(s))}${s.interv_par?` · ${esc(s.interv_par)}`:''}</div></div>${mePill(s)}</div>`}))].sort((a,b)=>a.h-b.h);
+        return L.length?`<div class="tl">${L.map(x=>x.html).join('')}</div>`:''; };
+    const auj=jour(todayK), dem=jour(tomK);
+    const act=c=>{ const st=stageOf(c); return st==='avalider'?`<button class="btn-sm" data-suivi-act="refuser" data-id="${c.id}">Refuser</button><button class="btn-sm pri" data-suivi-act="valider" data-id="${c.id}">Valider</button>`:st==='acommander'?`<button class="btn-sm" data-suivi-act="commande" data-id="${c.id}">${icon('check',13)} Commande passée</button>`:''; };
+    const cmdRows=aTraiter.slice(0,6).map(c=>`<div class="me-act"><span class="me-act-k" style="color:${STAGES[stageOf(c)].color};border-color:${STAGES[stageOf(c)].color}33;background:${STAGES[stageOf(c)].color}0f;">${STAGES[stageOf(c)].label||stageOf(c)}</span><div class="me-act-t" data-open-detail='${JSON.stringify(c).replace(/'/g,"&apos;")}'><div class="t">${typeIc(c.type,14)}<b>${esc(titreDe(c))}</b></div><div class="m">${dateCourte(c)}${c.heure?' · '+esc(c.heure):''}${where(c)?' · '+where(c):''}${c.demandeur?' · '+esc(c.demandeur):''}</div></div><div class="me-act-b">${act(c)}</div></div>`).join('');
+    const intRows=A.slice(0,6).map(({s,k,why,btns,group,list})=>`<div class="me-act"><span class="me-act-k" style="color:${KL[k][1]};border-color:${KL[k][1]}33;background:${KL[k][1]}0f;">${KL[k][0]}</span>${group?`<div class="me-act-t" data-nav='{"adminTab":"me-stat"}'><div class="t"><b>${esc(group)}</b></div><div class="m">${why}</div></div>`:`<div class="me-act-t" data-me="open" data-id="${s.id}"><div class="t">${meUrgDot(s)}<b>${esc(s.titre)}</b></div><div class="m">${esc(meZone(s))} · ${why}</div></div>`}<div class="me-act-b">${btns}</div></div>`).join('');
+    const prenom=(adminName()||'').split(' ')[0], salut=now.getHours()<18?'Bonjour':'Bonsoir';
     return `<div>
-    <div class="page-head"><div><h1>Mon espace</h1><p>${dateLongue(now)} ${now.getFullYear()} · ${enc.length} souci${enc.length>1?'s':''} en cours${urg?`, dont ${urg} urgent${urg>1?'s':''}`:''} · ${rapAuj} rappel${rapAuj>1?'s':''} aujourd’hui</p></div>
-    <div class="page-actions"><button class="btn-sm" data-me="newmemo">${icon('edit',14)} Nouveau mémo</button><button class="btn-sm pri" data-me="new">${icon('plus',14)} Signaler un souci</button></div></div>
+    <div class="page-head"><div><h1>${salut}${prenom&&prenom!=='Admin'?' '+esc(prenom):''} <span style="font-size:14px;color:var(--ink-soft);font-weight:500;">${icon('lock',13)} visible par toi seul</span></h1><p><span style="text-transform:capitalize;">${dateLongue(now)}</span> ${now.getFullYear()} · ${aTraiter.length} commande${aTraiter.length>1?'s':''} à traiter · ${A.length} action${A.length>1?'s':''} bâtiment${rapAuj?` · ${rapAuj} rappel${rapAuj>1?'s':''}`:''}</p></div>
+    <div class="page-actions"><button class="btn-sm" data-me="newmemo">${icon('edit',14)} Mémo</button><button class="btn-sm" data-me="new">${icon('tool',14)} Signaler un souci</button></div></div>
     <div class="kpis">
-        <button class="stat-card kpi" data-nav='{"adminTab":"me-bat"}'><span class="kpi-l"><span>Soucis en cours</span><span class="dot" style="background:#2c5f85"></span></span><span class="kpi-v">${enc.length}</span><span class="kpi-s">${urg?`<b style="color:#b91c1c">${urg}</b> urgent${urg>1?'s':''} · `:''}${enc.filter(meRelanceDue).length} à relancer</span></button>
-        <button class="stat-card kpi" data-nav='{"adminTab":"me-bat"}'><span class="kpi-l"><span>Interventions prévues</span><span class="dot" style="background:#0f766e"></span></span><span class="kpi-v">${prevus}</span><span class="kpi-s">dans les 7 jours</span></button>
-        <button class="stat-card kpi" data-nav='{"adminTab":"me-bat"}'><span class="kpi-l"><span>Résolus ce mois</span><span class="dot" style="background:#15803d"></span></span><span class="kpi-v">${res.length}</span><span class="kpi-s">${delai!==null?`délai moyen ${String(delai).replace('.',',')} j`:'—'}</span></button>
-        <button class="stat-card kpi" data-nav='{"adminTab":"me-memo"}'><span class="kpi-l"><span>Mémos</span><span class="dot" style="background:#d97706"></span></span><span class="kpi-v">${S.memos.length}</span><span class="kpi-s">${rapAuj} rappel${rapAuj>1?'s':''} aujourd’hui</span></button>
+        <button class="stat-card kpi" data-nav='{"adminTab":"suivi"}'><span class="kpi-l"><span>Commandes à traiter</span><span class="dot" style="background:${STAGES.avalider.color}"></span></span><span class="kpi-v">${aTraiter.length}</span><span class="kpi-s">${avalider.length} à valider · ${acommander.length} à commander</span></button>
+        <button class="stat-card kpi" data-nav='{"adminTab":"calendrier"}'><span class="kpi-l"><span>Aujourd’hui</span><span class="dot" style="background:#2c5f85"></span></span><span class="kpi-v">${(ev[todayK]||[]).length}</span><span class="kpi-s">prestation${(ev[todayK]||[]).length>1?'s':''} · ${(ev[tomK]||[]).length} demain</span></button>
+        <button class="stat-card kpi" data-nav='{"adminTab":"me-stat"}'><span class="kpi-l"><span>Interventions</span><span class="dot" style="background:#5b21b6"></span></span><span class="kpi-v">${A.length}</span><span class="kpi-s">actions · ${interv.length} intervention${interv.length>1?'s':''} à venir</span></button>
+        <button class="stat-card kpi" data-nav='{"adminTab":"me-bat"}'><span class="kpi-l"><span>Soucis du bâtiment</span><span class="dot" style="background:#b91c1c"></span></span><span class="kpi-v">${enc.length}</span><span class="kpi-s">${urg?`<b style="color:#b91c1c">${urg}</b> urgent${urg>1?'s':''} · `:''}en cours</span></button>
     </div>
     <div class="g2">
-        <div class="card"><div class="card-h"><h3>Soucis du bâtiment<span class="sub">en cours</span></h3><button class="card-link" data-nav='{"adminTab":"me-bat"}'>Tout le suivi →</button></div>
-            <div style="padding:4px 16px 8px;">${enc.length?enc.slice(0,8).map(meSxRow).join(''):`<div class="empty-note">Aucun souci en cours. ${icon('check',14)}</div>`}</div></div>
         <div>
-            <div class="card"><div class="card-h"><h3>Mémo</h3><button class="card-link" data-nav='{"adminTab":"me-memo"}'>Tous les mémos →</button></div>
-                ${memosVus.length?`<div class="memo-grid" style="padding:14px 16px;">${memosVus.map(x=>meMemoCard(x,true)).join('')}</div>`:`<div class="empty-note">Les rappels et les mémos épinglés s’affichent ici.</div>`}</div>
-            ${rep.length?`<div class="card"><div class="card-h"><h3>À surveiller</h3></div><div style="padding:12px 16px;display:flex;flex-direction:column;gap:10px;">${rep.map(l=>`<div style="display:flex;gap:10px;align-items:flex-start;font-size:13px;"><span style="color:#b45309;">${icon('alert',15)}</span><span><b>${esc(l[0].lieu||'Lieu non précisé')} : ${l.length} soucis « ${meCat(l[0].cat)[1]} » en 4 mois.</b><br><span style="color:var(--ink-soft);">Penser à demander un diagnostic complet.</span></span></div>`).join('')}</div></div>`:''}
+            <div class="card"><div class="card-h"><h3>Commandes à traiter<span class="sub">${aTraiter.length}</span></h3><button class="card-link" data-nav='{"adminTab":"suivi"}'>Tout le suivi →</button></div>
+                ${aTraiter.length?cmdRows+(aTraiter.length>6?`<div style="padding:10px 16px;border-top:1px solid var(--border-light);"><button class="card-link" data-nav='{"adminTab":"suivi"}'>Voir les ${aTraiter.length-6} autres →</button></div>`:''):`<div class="empty-note">Aucune commande à traiter. ${icon('check',14)}</div>`}</div>
+            <div class="card"><div class="card-h"><h3>Interventions · à faire<span class="sub">${A.length}</span></h3><button class="card-link" data-nav='{"adminTab":"me-stat"}'>Stats et actions →</button></div>
+                ${A.length?intRows+(A.length>6?`<div style="padding:10px 16px;border-top:1px solid var(--border-light);"><button class="card-link" data-nav='{"adminTab":"me-stat"}'>Voir les ${A.length-6} autres →</button></div>`:''):`<div class="empty-note">Rien à faire côté bâtiment. ${icon('check',14)}</div>`}</div>
+        </div>
+        <div>
+            <div class="card"><div class="card-h"><h3>Aujourd’hui<span class="sub">commandes et interventions</span></h3><button class="card-link" data-nav='{"adminTab":"calendrier"}'>Agenda →</button></div>${auj||'<div class="empty-note">Rien de prévu aujourd’hui.</div>'}</div>
+            <div class="card"><div class="card-h"><h3>Demain</h3></div>${dem||'<div class="empty-note">Rien de prévu demain.</div>'}</div>
+            ${interv.filter(s=>![todayK,tomK].includes(isoDay(new Date(s.interv)))).length?`<div class="card"><div class="card-h"><h3>Interventions à venir</h3></div><div class="tl">${interv.filter(s=>![todayK,tomK].includes(isoDay(new Date(s.interv)))).slice(0,5).map(s=>`<div class="tl-row" data-me="open" data-id="${s.id}"><div class="tl-h" style="font-size:11.5px;">${meDate(s.interv)}</div><span class="dot" style="background:#5b21b6;margin-top:5px;"></span><div style="min-width:0;"><div class="tl-t">${esc(s.titre)}</div><div class="tl-m">${esc(meZone(s))}${s.interv_par?` · ${esc(s.interv_par)}`:''}</div></div><span></span></div>`).join('')}</div></div>`:''}
+            ${memosVus.length?`<div class="card"><div class="card-h"><h3>Mémo</h3><button class="card-link" data-nav='{"adminTab":"me-memo"}'>Tous les mémos →</button></div><div class="memo-grid" style="padding:14px 16px;">${memosVus.map(x=>meMemoCard(x,true)).join('')}</div></div>`:''}
         </div>
     </div></div>`;
 }
