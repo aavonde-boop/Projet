@@ -627,6 +627,7 @@
         .ml-row input{position:absolute;opacity:0;pointer-events:none;} .ml-sw{flex:0 0 40px;height:22px;border-radius:99px;background:#d5dae2;position:relative;transition:background .2s;} .ml-sw::after{content:'';position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.2);transition:left .2s;}
         .ml-row input:checked + .ml-sw{background:#15803d;} .ml-row input:checked + .ml-sw::after{left:21px;} .ml-row input:focus-visible + .ml-sw{outline:2px solid var(--accent);outline-offset:2px;}
         .ml-t{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;} .ml-t b{font-size:14px;} .ml-t span{font-size:12.5px;color:var(--ink-soft);line-height:1.4;} .ml-st{font-size:11.5px;font-weight:600;color:#6b7280;background:#f1f2f4;border-radius:6px;padding:3px 8px;white-space:nowrap;} .ml-st.on{color:#15803d;background:#dcfce7;}
+        .px-est{color:#b45309;font-weight:700;margin-right:2px;}
         .role-tag{display:inline-flex;align-items:center;font-size:11.5px;font-weight:600;padding:2px 8px;border-radius:6px;white-space:nowrap;vertical-align:1px;} .role-tag.sm{font-size:10.5px;padding:1px 6px;margin-left:4px;}
         .an-grp td{background:#fafbfc;padding:8px 16px!important;border-top:1px solid var(--border);}
         .kb{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;align-items:start;} .kb-col{background:#eef0f3;border-radius:12px;padding:10px;display:flex;flex-direction:column;gap:8px;}
@@ -1646,6 +1647,7 @@ function render(){
     if(state.vue==='admin'&&state.authed) lsSet('last_admin_tab', state.adminTab||'dashboard');
     state.authed = isAdmin();
     if(AUTH&&!state.loading) trackConnexion();
+    if(AUTH&&!state.loading&&isAdmin()&&!window._prixEst&&lsGet('prix_estimes_v1')!=='1'&&(state.data||[]).length){ window._prixEst=true; setTimeout(async()=>{ const L=estimerPrixRepas(); lsSet('prix_estimes_v1','1'); if(L.length){ await appliquerEstimations(L,{silent:true}); showToast(`✓ ${L.length} prix de repas estimés (≈) · voir Dépenses & prix`); } },800); }
     if(AUTH&&!state.loading&&isAdmin()&&!window._eqMig&&!(settings.equipe&&settings.equipe.v>=3)){ window._eqMig=true; setTimeout(()=>migrerEquipe().then(()=>render()).catch(e=>console.error('Équipe',e)),0); }
     if(state.authMode==='reset') html=renderLogin();
     else if(state.express) html=isAdmin()?renderExpress():(AUTH?renderPasAdmin():renderLogin());
@@ -2875,7 +2877,7 @@ function renderStats(m){
     ${period==='perso'?`<div style="display:flex;gap:8px;align-items:center;margin-bottom:16px;flex-wrap:wrap;font-size:13px;color:#6b7280;">Du <input type="date" id="statsFrom" class="form-input" value="${rg.fromIso||''}" style="width:auto;padding:7px 10px;"> au <input type="date" id="statsTo" class="form-input" value="${rg.toIso||''}" style="width:auto;padding:7px 10px;"></div>`:''}
 
     <div style="display:grid;grid-template-columns:${m?'repeat(2,minmax(0,1fr))':'repeat(auto-fit,minmax(180px,1fr))'};gap:12px;margin-bottom:16px;">
-        ${kpi('Dépenses validées',total?$m(total):'0 €',delta===null?'':`${delta>=0?'+':''}${delta} % vs période préc.`,'#15803d')}
+        ${kpi('Dépenses validées',total?$m(total):'0 €',[delta===null?'':`${delta>=0?'+':''}${delta} % vs période préc.`,(()=>{ const e=valid.filter(c=>suiviOf(c).prixEst).reduce((a,c)=>a+(+c.prix||0),0); return e?`dont ≈ ${$m(e)} estimés`:''; })()].filter(Boolean).join(' · '),'#15803d')}
         ${kpi('Commandes validées',valid.length,`${scope.length} demandes au total`)}
         ${kpi('Coût moyen',avecPrix.length?$m(total/avecPrix.length):'—',`sur ${avecPrix.length} avec prix`)}
         ${kpi('Annulées',annul,scope.length?`${Math.round(annul/scope.length*100)} % des demandes`:'','#b91c1c')}
@@ -2974,7 +2976,41 @@ function regimesTxt(f){ const r=f.regimes||{}; const p=REGIMES.filter(k=>r[k]>0)
 /* ══════════════════════════════════════
    POINTS D'ATTENTION (anomalies)
 ══════════════════════════════════════ */
+/* Prix approximatifs des repas passés sans prix (prix moyen par personne constaté) */
+function estimerPrixRepas(){
+    const t0=new Date(); t0.setHours(0,0,0,0);
+    const D=(state.data||[]).filter(c=>c.type==='repas'&&c.pris!=='Annulé');
+    const ref=D.filter(c=>+c.prix>0&&!suiviOf(c).prixEst);
+    const nb=c=>Math.max(1,parseInt(c.nb)||1), kd=c=>sansAccent(String(c.desc||'')).toLowerCase().replace(/[^a-z]+/g,' ').trim(), kp=c=>String(c.presta||'').trim().toLowerCase();
+    const moy=f=>{ const L=ref.filter(f); const n=L.reduce((a,c)=>a+nb(c),0); return n?L.reduce((a,c)=>a+(+c.prix),0)/n:null; };
+    const cache={}; const m=(k,f)=>k in cache?cache[k]:(cache[k]=moy(f));
+    return D.filter(c=>(c.pris==='OUI'||c.pris==='Reçu')&&!(+c.prix>0)&&(parseDate(c.date)||t0)<t0).map(c=>{
+        let pp=m('pd|'+kp(c)+'|'+kd(c),x=>kp(x)===kp(c)&&kd(x)===kd(c)), base='même restaurant, même repas';
+        if(pp==null){ pp=m('d|'+kd(c),x=>kd(x)===kd(c)); base='même type de repas'; }
+        if(pp==null){ pp=m('p|'+kp(c),x=>kp(x)===kp(c)); base='même restaurant'; }
+        if(pp==null){ pp=m('all',()=>true); base='moyenne de tous les repas'; }
+        if(pp==null){ pp=15; base='forfait 15 € par personne'; }
+        return {c,prix:Math.round(pp*nb(c)),base,pp};
+    });
+}
+async function appliquerEstimations(L,{silent=false}={}){
+    if(!L.length) return 0;
+    const ids=L.map(x=>x.c.id), P=Object.fromEntries(L.map(x=>[x.c.id,x.prix]));
+    state.data=state.data.map(c=>c.id in P?{...c,prix:P[c.id]}:c);
+    setSuivi(ids,()=>({prixEst:1}));
+    try{ logAction('Prix estimé',L.map(x=>({...x.c,prix:x.prix})),x=>`≈ ${$m(x.prix)} (prix moyen constaté)`); }catch(e){}
+    if(!silent) showToast(`✓ ${L.length} prix de repas estimés`);
+    for(const x of L){ try{ await dbUpdate(x.c.id,{prix:x.prix}); }catch(e){ console.error('Prix estimé',e); } }
+    return L.length;
+}
+async function retirerEstimations(){
+    const L=(state.data||[]).filter(c=>suiviOf(c).prixEst); if(!L.length) return;
+    if(!confirm(`Remettre à zéro les ${L.length} prix estimés ? Ils repasseront dans « Prix à saisir ».`)) return;
+    const ids=L.map(c=>c.id); state.data=state.data.map(c=>ids.includes(c.id)?{...c,prix:0}:c); setSuivi(ids,()=>({prixEst:null}));
+    showToast(`${L.length} estimations retirées`); for(const c of L){ try{ await dbUpdate(c.id,{prix:0}); }catch(e){} }
+}
 /* Commandes faites (ou passées) sans prix : à compléter à réception de la facture */
+document.addEventListener('click',e=>{ if(e.target.closest('[data-prix-estimer]')){ const L=estimerPrixRepas(); if(L.length&&confirm(`Mettre un prix approximatif sur ${L.length} repas passés sans prix ?\n\nCalcul : prix moyen par personne constaté (même restaurant et même repas si possible) × nombre de personnes. Total ≈ ${$m(L.reduce((a,x)=>a+x.prix,0))}.`)) appliquerEstimations(L); } else if(e.target.closest('[data-prix-retirer]')) retirerEstimations(); });
 function prixASaisir(){ const t0=new Date(); t0.setHours(0,0,0,0); return (state.data||[]).filter(c=>c.pris==='OUI'&&!(+c.prix>0)&&(etape(c)==='fait'||((parseDate(c.date)||t0)<t0))); }
 function anomalies(){
     const out=[], now=new Date(), t0=new Date(); t0.setHours(0,0,0,0);
@@ -3934,7 +3970,8 @@ function statusEditCell(c){
 }
 function prixEditCell(c){
     const val=c.prix?c.prix.toLocaleString('fr-FR',{minimumFractionDigits:2,maximumFractionDigits:2}):'';
-    return `<td style="padding:3px 8px;text-align:right;" onclick="event.stopPropagation()">
+    const est=suiviOf(c).prixEst;
+    return `<td style="padding:3px 8px;text-align:right;white-space:nowrap;" onclick="event.stopPropagation()" ${est?'title="Prix estimé (moyenne constatée) : saisissez le vrai prix pour le remplacer"':''}>${est?'<span class="px-est">≈</span>':''}
         <input type="text" inputmode="decimal" class="cell-input" data-inline-edit data-id="${c.id}" data-field="prix" value="${val}" placeholder="—" style="width:84px;text-align:right;font-weight:700;font-family:monospace;font-size:13px;background:transparent;border:1px solid transparent;border-radius:6px;padding:3px 6px;color:${c.prix?'#16a34a':'#94a3b8'};">
     </td>`;
 }
@@ -4415,7 +4452,8 @@ function renderHistorique(m){
             <div style="font-family:var(--ft);font-weight:650;letter-spacing:-.01em;font-size:${m?'18px':'22px'};">${icon('wallet',m?16:19)} Dépenses & prix</div>
             <div style="font-size:12px;color:#7f8c9b;margin-top:3px;">${allSorted.length} entrée${allSorted.length>1?'s':''}${state.histPrix?' sans prix':' au total'} · saisissez le prix à réception de la facture</div>
         </div>
-        <button data-nav='{"histPrix":${!state.histPrix},"histPage":0}' class="btn-sm ${state.histPrix?'pri':''}">${icon('wallet',14)} Prix à saisir · ${sansPrix.length}</button>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;">${(()=>{ const ne=(state.data||[]).filter(c=>suiviOf(c).prixEst).length; const ae=estimerPrixRepas().length; return `${ae?`<button data-prix-estimer class="btn-sm" title="Prix moyen par personne constaté pour le même restaurant et le même repas">≈ Estimer ${ae} repas</button>`:''}${ne?`<button data-prix-retirer class="btn-sm" title="Remettre ces prix à zéro">${ne} prix estimés · retirer</button>`:''}`; })()}
+        <button data-nav='{"histPrix":${!state.histPrix},"histPage":0}' class="btn-sm ${state.histPrix?'pri':''}">${icon('wallet',14)} Prix à saisir · ${sansPrix.length}</button></div>
         
     </div>
 
@@ -4910,6 +4948,7 @@ function attachEvents(){
             const fmt=v=>field==='prix'?$m(v):(ST[v]?.label||v||'—');
             logAction(field==='prix'?'Prix':'Statut', {...current,[field]:value}, `${fmt(current[field])} → ${fmt(value)}`);
             await dbUpdate(id,{[field]:value});
+            if(field==='prix'&&suiviOf(current).prixEst) setSuivi([current.id],()=>({prixEst:null}));
         });
         if(el.tagName==='INPUT'){
             el.addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); el.blur(); } });
