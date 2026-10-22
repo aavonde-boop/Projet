@@ -642,7 +642,7 @@
 /* ══════════════════════════════════════
    DEFAULTS
 ══════════════════════════════════════ */
-const DEFAULT_ASSISTANTES = ["Alexandra JULITTE","Hayet GUERMOUCHE","Julia POITIER","Zoe CHICHOU","Milene MODESTINE","Perle HERBIN","Laurianne MACE","Corinne LEGRAND","Melanie RABALLAND","Anne Berangere CREMER"];
+const DEFAULT_ASSISTANTES = ["Alexandra JULITTE","Hayet GUERMOUCHE","Julia POITIER","Zoe CHICHOU","Milene MODESTINE","Perle HERBIN","Laurianne MACE","Corinne LEGRAND","Melanie RABALLAND","Berangere GRELET"];
 const DEFAULT_DIRECTEURS  = ["Sylvain LEMERCIER","Sara RIBEIRO","Marc RIPOTOT","Cyrius","Julien"];
 const DEFAULT_PREPAS      = ["Delicity","Uber eat","Deliveroo","Mimma","Mycarter","Le Cercle","Ciboulette","Polpo","La Boite","La famille","Ensuite","11h59","My carter"];
 const DEFAULT_TYPES_REPAS = ["Petit-déjeuner","Déjeuner","Goûter","Dîner","Cocktail","Plateau repas","Autre"];
@@ -842,14 +842,23 @@ const REMPLACANTE='Bérangère GRELET';
 async function migrerEquipe(){
     if(!isAdmin()) return;
     const eq=settings.equipe;
-    if(eq&&eq.v>=2) return;
+    const estCremer=n=>/cremer/i.test(sansAccent(n||''));
+    if(eq&&eq.v===2){ // correctif : Anne Bérangère CREMER n'est pas assistante
+        settings.equipe={...eq,v:3}; settings.assistantes=(settings.assistantes||[]).filter(n=>!estCremer(n));
+        if(settings.emails) Object.keys(settings.emails).filter(estCremer).forEach(n=>delete settings.emails[n]);
+        personnesReset(); saveSettings(settings);
+        try{ logAction('Équipe mise à jour',[{id:0,code:'',type:'',desc:'Rôles'}],'Anne Bérangère CREMER retirée des assistantes'); }catch(e){}
+        return;
+    }
+    if(eq&&eq.v>=3) return;
     // Orthographe de Bérangère Grelet telle qu'elle existe déjà (liste ou commandes), sinon « Bérangère GRELET »
     const estBG=n=>/b[e]rang[e]re/i.test(sansAccent(n||''))&&/gre[lr]e[t]?/i.test(sansAccent(n||''));
     const remp=(settings.assistantes||[]).find(estBG)||_titre((state.data||[]).map(c=>c.demandeur).find(estBG)||REMPLACANTE);
     if(eq&&eq.v===1){ // correctif : la remplaçante de Milène est Bérangère GRELET (pas Anne Bérangère CREMER)
-        settings.equipe={...eq,v:2,anciennes:(eq.anciennes||[]).map(a=>/^mil[e]ne\b/i.test(sansAccent(a.nom))?{...a,remplacee:remp}:a)};
+        settings.equipe={...eq,v:3,anciennes:(eq.anciennes||[]).map(a=>/^mil[e]ne\b/i.test(sansAccent(a.nom))?{...a,remplacee:remp}:a)};
         if(!settings.assistantes.some(n=>_pn(n)===_pn(remp))) settings.assistantes.push(remp);
-        if(settings.emails) Object.keys(settings.emails).filter(n=>/^mil[e]ne\b/i.test(sansAccent(n))).forEach(n=>delete settings.emails[n]);
+        settings.assistantes=settings.assistantes.filter(n=>!estCremer(n));
+        if(settings.emails) Object.keys(settings.emails).filter(n=>/^mil[e]ne\b/i.test(sansAccent(n))||estCremer(n)).forEach(n=>delete settings.emails[n]);
         personnesReset(); saveSettings(settings);
         try{ logAction('Équipe mise à jour',[{id:0,code:'',type:'',desc:'Rôles'}],`Remplaçante de Milène : ${remp}`); }catch(e){}
         return;
@@ -857,10 +866,10 @@ async function migrerEquipe(){
     const A=[...(settings.assistantes||[])];
     const poly=A.filter(n=>/poitier/i.test(sansAccent(n))); const polyv=poly.length?poly:['Julia POITIER'];
     const part=A.filter(n=>/^mil[e]ne\b/i.test(sansAccent(n)));
-    const assist=A.filter(n=>!poly.includes(n)&&!part.includes(n));
+    const assist=A.filter(n=>!poly.includes(n)&&!part.includes(n)&&!estCremer(n));
     if(!assist.some(n=>_pn(n)===_pn(remp))) assist.push(remp);
-    const emails={...(settings.emails||{})}; part.forEach(n=>delete emails[n]);
-    settings.equipe={v:2,responsable:['Arnaud AVONDE'],polyvalente:polyv,anciennes:part.map(n=>({nom:n,remplacee:remp,depuis:isoDay(new Date())})),alias:{}};
+    const emails={...(settings.emails||{})}; part.forEach(n=>delete emails[n]); Object.keys(emails).filter(estCremer).forEach(n=>delete emails[n]);
+    settings.equipe={v:3,responsable:['Arnaud AVONDE'],polyvalente:polyv,anciennes:part.map(n=>({nom:n,remplacee:remp,depuis:isoDay(new Date())})),alias:{}};
     settings.assistantes=assist; settings.emails=emails;
     personnesReset(); saveSettings(settings);
     try{ logAction('Équipe mise à jour',[{id:0,code:'',type:'',desc:'Rôles'}],`Polyvalente : ${polyv.join(', ')} · Partie : ${part.join(', ')||'—'} · Remplaçante : ${remp}`); }catch(e){}
@@ -1618,7 +1627,7 @@ function render(){
     if(state.vue==='admin'&&state.authed) lsSet('last_admin_tab', state.adminTab||'dashboard');
     state.authed = isAdmin();
     if(AUTH&&!state.loading) trackConnexion();
-    if(AUTH&&!state.loading&&isAdmin()&&!window._eqMig&&!(settings.equipe&&settings.equipe.v>=2)){ window._eqMig=true; setTimeout(()=>migrerEquipe().then(()=>render()).catch(e=>console.error('Équipe',e)),0); }
+    if(AUTH&&!state.loading&&isAdmin()&&!window._eqMig&&!(settings.equipe&&settings.equipe.v>=3)){ window._eqMig=true; setTimeout(()=>migrerEquipe().then(()=>render()).catch(e=>console.error('Équipe',e)),0); }
     if(state.authMode==='reset') html=renderLogin();
     else if(state.express) html=isAdmin()?renderExpress():(AUTH?renderPasAdmin():renderLogin());
     else if(state.vue==="admin") html=state.authed?(state.live?renderLive():renderAdminView(m)):(AUTH?renderPasAdmin():renderLogin());
