@@ -610,6 +610,17 @@
         .me-stack{display:flex;height:30px;border-radius:7px;overflow:hidden;gap:2px;} .me-stack span{display:flex;align-items:center;justify-content:center;font-size:12.5px;font-weight:700;min-width:26px;}
         .me-leg{display:flex;flex-wrap:wrap;gap:6px 16px;margin-top:10px;font-size:12.5px;color:var(--ink-mid);} .me-leg i{display:inline-block;width:9px;height:9px;border-radius:3px;margin-right:6px;}
         @media(max-width:767px){ .me-hx{display:none!important;} .me-tbl{display:none;} .me-cards{display:block;} .me-stat-grid{grid-template-columns:1fr;} .me-act{flex-wrap:wrap;gap:8px 10px;} .me-act-k{flex:0 0 auto;} .me-act-t{flex:1 1 100%;order:-1;} .me-act-b{margin-left:auto;} .me-bar-row{grid-template-columns:110px minmax(0,1fr) 46px;} .me-search{max-width:none;} }
+        .dash-col-h{display:flex;align-items:center;gap:10px;margin:0 0 10px;flex-wrap:wrap;} .dash-col-h b{font:650 16px var(--ft);display:flex;align-items:center;gap:5px;} .dash-col-h > span:last-child{font-size:12.5px;color:var(--ink-soft);}
+        .dash-col-ic{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;}
+        .dash2 > section{min-width:0;}
+        .eq-roles{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 16px;} .eq-roles > *{display:flex;flex-direction:column;gap:6px;} .eq-roles small{font-size:12px;color:var(--ink-soft);}
+        .eq-chips{display:flex;flex-wrap:wrap;gap:5px;} .eq-chips span{font-size:12px;background:#f1f3f6;border-radius:6px;padding:3px 8px;}
+        .eq-vars{display:flex;flex-direction:column;gap:6px;} .eq-vars > div{display:flex;gap:10px;flex-wrap:wrap;font-size:13px;padding:7px 0;border-bottom:1px solid var(--border-light);} .eq-vars span{color:var(--ink-soft);}
+        .eq-inv{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 16px;} .eq-inv > div{display:flex;align-items:center;gap:10px;justify-content:space-between;font-size:13px;} .eq-inv select{width:auto;max-width:200px;padding:6px 8px;font-size:12.5px;} .eq-inv small{color:var(--ink-soft);}
+        @media(max-width:767px){ .eq-roles,.eq-inv{grid-template-columns:1fr;} }
+        .st-sec{display:flex;align-items:baseline;gap:10px;margin:22px 0 10px;flex-wrap:wrap;} .st-sec b{font:650 16px var(--ft);} .st-sec span{font-size:12px;color:var(--ink-soft);}
+        .role-tag{display:inline-flex;align-items:center;font-size:11.5px;font-weight:600;padding:2px 8px;border-radius:6px;white-space:nowrap;vertical-align:1px;} .role-tag.sm{font-size:10.5px;padding:1px 6px;margin-left:4px;}
+        .an-grp td{background:#fafbfc;padding:8px 16px!important;border-top:1px solid var(--border);}
         .kb{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;align-items:start;} .kb-col{background:#eef0f3;border-radius:12px;padding:10px;display:flex;flex-direction:column;gap:8px;}
         .kb-h{display:flex;justify-content:space-between;align-items:center;padding:4px 4px 2px;font-size:13px;} .kb-h span{background:#fff;border-radius:9px;padding:0 8px;font-size:11.5px;font-weight:700;color:var(--ink-mid);}
         .kb-empty{text-align:center;color:#b6bcc6;font-size:12px;padding:10px;}
@@ -695,6 +706,7 @@ function loadSettingsLocal() {
         loginObligatoire:     JSON.parse(localStorage.getItem('settings_login_obligatoire')     ||'false'),
         prestaInfo:           JSON.parse(localStorage.getItem('settings_presta_info')            ||'{}'),
         marque:               JSON.parse(localStorage.getItem('settings_marque')                 ||'{}'),
+        equipe:               JSON.parse(localStorage.getItem('settings_equipe')                 ||'null'),
     };
 }
 
@@ -712,11 +724,12 @@ function saveSettingsLocal(s) {
     localStorage.setItem('settings_login_obligatoire',     JSON.stringify(!!s.loginObligatoire));
     localStorage.setItem('settings_presta_info',           JSON.stringify(s.prestaInfo||{}));
     try{ localStorage.setItem('settings_marque',            JSON.stringify(s.marque||{})); }catch(e){}
+    try{ localStorage.setItem('settings_equipe',            JSON.stringify(s.equipe||null)); }catch(e){}
 }
 
 async function loadSettingsFromDB() {
     try {
-        const r = await fetch(`${SB_PARAMS}?select=cle,valeur&cle=in.(assistantes,directeurs,prestatairesRepas,typesRepas,prestatairesTaxi,prestatairesCommande,prestatairesHotel,emails,adminEmails,yoozMap,loginObligatoire,prestaInfo,marque)`, { headers: SB_HDR });
+        const r = await fetch(`${SB_PARAMS}?select=cle,valeur&cle=in.(assistantes,directeurs,prestatairesRepas,typesRepas,prestatairesTaxi,prestatairesCommande,prestatairesHotel,emails,adminEmails,yoozMap,loginObligatoire,prestaInfo,marque,equipe)`, { headers: SB_HDR });
         if (!r.ok) throw new Error(await r.text());
         const rows = await r.json();
         if (!rows || rows.length === 0) {
@@ -738,6 +751,8 @@ async function loadSettingsFromDB() {
         if (map.loginObligatoire !== undefined && map.loginObligatoire !== null) settings.loginObligatoire = !!map.loginObligatoire;
         if (map.prestaInfo)           settings.prestaInfo           = map.prestaInfo;
         if (map.marque)               settings.marque               = map.marque;
+        if (map.equipe)               settings.equipe               = map.equipe;
+        try{ personnesReset(); }catch(e){}
         if (map.yoozMap)              { settings.yoozMap = map.yoozMap; Object.assign(YOOZ_MAP, map.yoozMap); state.yoozMap = map.yoozMap; }
         saveSettingsLocal(settings);
         refreshGlobals();
@@ -748,7 +763,7 @@ async function loadSettingsFromDB() {
 
 async function saveSettingsToDB(s) {
     saveSettingsLocal(s);
-    const keys = ['assistantes','directeurs','prestatairesRepas','typesRepas','prestatairesTaxi','prestatairesCommande','prestatairesHotel','emails','adminEmails','yoozMap','loginObligatoire','prestaInfo','marque'];
+    const keys = ['assistantes','directeurs','prestatairesRepas','typesRepas','prestatairesTaxi','prestatairesCommande','prestatairesHotel','emails','adminEmails','yoozMap','loginObligatoire','prestaInfo','marque','equipe'];
     for (const cle of keys) {
         try {
             await fetch(`${SB_PARAMS}?cle=eq.${cle}`, {
@@ -767,12 +782,78 @@ async function saveSettingsToDB(s) {
 }
 
 function saveSettings(s) {
+    try{ personnesReset(); }catch(e){}
     saveSettingsLocal(s);
     saveSettingsToDB(s);
 }
 
 let settings = loadSettingsLocal();
 let P_REPAS=[...settings.prestatairesRepas], P_TAXI=[...settings.prestatairesTaxi], P_CMD=[...settings.prestatairesCommande], P_HOTEL=[...(settings.prestatairesHotel||DEFAULT_PHOTEL)], P_TYPES=[...(settings.typesRepas||DEFAULT_TYPES_REPAS)];
+
+/* ══════════════════════════════════════
+   ÉQUIPE : rôles et noms regroupés
+══════════════════════════════════════ */
+const ROLES={responsable:['Responsable de site','#0f1b2d','#e8edf3'],polyvalente:['Assistante polyvalente','#6d28d9','#f1ebfd'],assistante:['Assistante de direction','#0369a1','#e5f2fa'],directeur:['Direction','#b45309','#fdf3e4'],ancienne:['Ancienne assistante','#6b7280','#f1f2f4'],invite:['Invité','#0e7490','#e3f5f7']};
+const ROLE_ORDRE=['responsable','polyvalente','assistante','invite','ancienne','directeur'];
+function equipe(){ const e=settings.equipe||{};
+    return { responsable:e.responsable&&e.responsable.length?e.responsable:['Arnaud AVONDE'],
+             polyvalente:e.polyvalente&&e.polyvalente.length?e.polyvalente:['Julia POITIER'],
+             anciennes:e.anciennes||[], alias:e.alias||{} }; }
+const _pn=s=>sansAccent(String(s||'')).toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
+function _lev(a,b){ if(a===b) return 0; if(!a.length) return b.length; if(!b.length) return a.length; let p=Array.from({length:b.length+1},(_,i)=>i);
+    for(let i=1;i<=a.length;i++){ const c=[i]; for(let j=1;j<=b.length;j++) c[j]=Math.min(p[j]+1,c[j-1]+1,p[j-1]+(a[i-1]===b[j-1]?0:1)); p=c; } return p[b.length]; }
+const _tokOk=(x,y)=>x===y||(x.length>=4&&y.length>=4&&(x.startsWith(y)||y.startsWith(x)))||(Math.min(x.length,y.length)>=5&&_lev(x,y)<=(Math.min(x.length,y.length)>=8?2:1));
+let _persCache=new Map(), _invites=[], _seed=false;
+function personnesReset(){ _persCache=new Map(); _invites=[]; _seed=false; }
+// Les invités prennent l'orthographe la plus fréquente
+function _seedInvites(){ if(_seed||!(state.data||[]).length) return; _seed=true; const n={}; state.data.forEach(c=>{ const r=String(c.demandeur||'').trim(); if(r) n[r]=(n[r]||0)+1; }); Object.entries(n).sort((a,b)=>b[1]-a[1]).forEach(([r])=>personne(r)); }
+function _connus(){ const E=equipe(); const L=[];
+    E.responsable.forEach(n=>L.push([n,'responsable'])); E.polyvalente.forEach(n=>L.push([n,'polyvalente']));
+    (settings.assistantes||[]).forEach(n=>{ if(!L.some(x=>_pn(x[0])===_pn(n))) L.push([n,'assistante']); });
+    E.anciennes.forEach(a=>L.push([a.nom,'ancienne'])); (settings.directeurs||[]).forEach(n=>L.push([n,'directeur'])); return L; }
+const _titre=s=>String(s).trim().replace(/\s+/g,' ').split(' ').map((w,i,a)=>i===a.length-1&&a.length>1?w.toLocaleUpperCase('fr-FR'):w.split('-').map(x=>x?x[0].toLocaleUpperCase('fr-FR')+x.slice(1).toLocaleLowerCase('fr-FR'):x).join('-')).join(' ');
+function personne(raw){
+    const s=String(raw||'').trim(); if(!s) return {nom:'Non renseigné',role:'invite',vide:true};
+    _seedInvites();
+    const k=_pn(s); if(_persCache.has(k)) return _persCache.get(k);
+    const E=equipe(), K=_connus(); let hit=null;
+    const al=Object.entries(E.alias).find(([a])=>_pn(a)===k); if(al){ const t=K.find(x=>_pn(x[0])===_pn(al[1])); hit=t?{nom:t[0],role:t[1]}:{nom:al[1],role:'invite'}; }
+    if(!hit){ const t=K.find(x=>_pn(x[0])===k); if(t) hit={nom:t[0],role:t[1]}; }
+    if(!hit){ const tk=k.split(' ').filter(x=>x.length>=2);
+        const cands=K.map(([n,r])=>{ const nt=_pn(n).split(' '); const ok=tk.filter(x=>nt.some(y=>_tokOk(x,y))).length; return {n,r,ok,all:ok===tk.length,cover:nt.filter(y=>tk.some(x=>_tokOk(x,y))).length,len:nt.length}; }).filter(c=>c.all&&c.ok>0);
+        // plein accord (même nombre de mots) ou prénom/nom seul sans ambiguïté
+        const full=cands.filter(c=>c.cover===c.len); const pick=full.length===1?full[0]:cands.length===1&&(cands[0].ok>=1)?cands[0]:null;
+        if(pick) hit={nom:pick.n,role:pick.r};
+        if(!hit&&k.length>=8){ const fz=K.map(([n,r])=>({n,r,d:_lev(_pn(n),k)})).filter(c=>c.d<=2).sort((a,b)=>a.d-b.d); if(fz.length&&(fz.length===1||fz[0].d<fz[1].d)) hit={nom:fz[0].n,role:fz[0].r}; }
+    }
+    if(!hit){ // invité : regroupe les variantes d'orthographe entre elles
+        const iv=_invites.find(x=>{ const a=_pn(x); if(a===k) return true; const ta=a.split(' '), tb=k.split(' '); return ta.length===tb.length&&ta.every((t,i)=>_tokOk(t,tb[i]))||(k.length>=8&&_lev(a,k)<=2); });
+        const nom=iv||_titre(s); if(!iv) _invites.push(nom); hit={nom,role:'invite'}; }
+    hit.var=s; _persCache.set(k,hit); return hit;
+}
+function roleTag(role,petit){ const R=ROLES[role]||ROLES.invite; return `<span class="role-tag${petit?' sm':''}" style="color:${R[1]};background:${R[2]};">${R[0]}</span>`; }
+function viaDe(c){ return (suiviOf(c)||{}).par||equipe().polyvalente[0]; }
+function demNom(c){ return personne(c.demandeur).nom; }
+function demHtml(c,opt={}){ const p=personne(c.demandeur); if(p.vide) return '—';
+    return p.role==='invite'?`${esc(p.nom)} <span class="role-tag sm" style="color:${ROLES.invite[1]};background:${ROLES.invite[2]};">Invité · via ${esc(String(viaDe(c)).split(' ')[0])}</span>`:esc(p.nom)+(opt.role?' '+roleTag(p.role,true):''); }
+function monRole(){ const n=userName(); const p=personne(n); return p.role==='invite'?(isAdmin()?'Administrateur':'Utilisateur'):ROLES[p.role][0]; }
+/* Mise à jour de l'équipe (une seule fois) : rôles, départ de Milène, remplaçante */
+async function migrerEquipe(){
+    if(!isAdmin()||settings.equipe&&settings.equipe.v>=1) return;
+    const A=[...(settings.assistantes||[])];
+    const poly=A.filter(n=>/poitier/i.test(sansAccent(n))); const polyv=poly.length?poly:['Julia POITIER'];
+    const part=A.filter(n=>/^mil[e]ne\b/i.test(sansAccent(n)));
+    let remp=A.find(n=>/b[e]rang[e]re/i.test(sansAccent(n)));
+    let assist=A.filter(n=>!poly.includes(n)&&!part.includes(n));
+    if(!remp){ remp='Bérangère'; assist.push(remp); }
+    const emails={...(settings.emails||{})}; part.forEach(n=>delete emails[n]);
+    const resp=(state.data||[]).map(c=>c.demandeur).find(n=>/avonde/i.test(n||''))||'Arnaud AVONDE';
+    settings.equipe={v:1,responsable:[_titre(resp).replace(/AVONDE/i,'AVONDE')],polyvalente:polyv,anciennes:part.map(n=>({nom:n,remplacee:remp,depuis:isoDay(new Date())})),alias:{}};
+    settings.assistantes=assist; settings.emails=emails;
+    personnesReset(); saveSettings(settings);
+    try{ logAction('Équipe mise à jour',[{id:0,code:'',type:'',desc:'Rôles'}],`Polyvalente : ${polyv.join(', ')} · Partie : ${part.join(', ')||'—'} · Remplaçante : ${remp}`); }catch(e){}
+    console.log('Équipe migrée', settings.equipe);
+}
 function refreshGlobals(){ P_REPAS=[...settings.prestatairesRepas]; P_TAXI=[...settings.prestatairesTaxi]; P_CMD=[...settings.prestatairesCommande]; P_HOTEL=[...(settings.prestatairesHotel||DEFAULT_PHOTEL)]; P_TYPES=[...(settings.typesRepas||DEFAULT_TYPES_REPAS)]; }
 
 /* ══════════════════════════════════════
@@ -1526,6 +1607,7 @@ function render(){
     if(state.vue==='admin'&&state.authed) lsSet('last_admin_tab', state.adminTab||'dashboard');
     state.authed = isAdmin();
     if(AUTH&&!state.loading) trackConnexion();
+    if(AUTH&&!state.loading&&isAdmin()&&!window._eqMig&&!(settings.equipe&&settings.equipe.v>=1)){ window._eqMig=true; setTimeout(()=>migrerEquipe().then(()=>render()).catch(e=>console.error('Équipe',e)),0); }
     if(state.authMode==='reset') html=renderLogin();
     else if(state.express) html=isAdmin()?renderExpress():(AUTH?renderPasAdmin():renderLogin());
     else if(state.vue==="admin") html=state.authed?(state.live?renderLive():renderAdminView(m)):(AUTH?renderPasAdmin():renderLogin());
@@ -1619,7 +1701,7 @@ function clientPill(st){ const [l,ic,k]=CLIENT_LBL[st]; const S=STAGES[k]; retur
 function mesDemandesHtml(m){
     const moi=assistanteName()||userName();
     const today=new Date(); today.setHours(0,0,0,0);
-    const toutes=state.data.filter(c=>String(c.demandeur||'').toLowerCase()===String(moi).toLowerCase());
+    const toutes=state.data.filter(c=>String(c.demandeur||'').toLowerCase()===String(moi).toLowerCase()||demNom(c)===personne(moi).nom);
     const aVenir=toutes.filter(c=>{ const d=parseDate(c.date); return d&&d>=today; }).sort(byDateAsc);
     const passees=toutes.filter(c=>{ const d=parseDate(c.date); return !d||d<today; }).sort((a,b)=>byDateAsc(b,a)).slice(0,state.mesPasseesAll?50:5);
     const ligne=c=>{ const st=stageOf(c);
@@ -1919,9 +2001,9 @@ function renderAdminView(m){
     else if(state.adminTab==='suivi')        main=renderSuivi(m);
     else if(state.adminTab==='calendrier')   main=renderCalendrier(m);
 
-    else main=renderDashboard(total,attente,m);
+    else main=meOk()?renderMe(m):renderDashboard(total,attente,m);
 
-    const TITRES={dashboard:'Tableau de bord',suivi:'Suivi des demandes',calendrier:'Agenda',activite:'Registre',stats:'Statistiques',analyse:'Assistantes et connexions',me:'Mon écran','me-bat':'Soucis du bâtiment','me-stat':'Actions et stats','me-memo':'Mémo perso',settings:'Réglages'};
+    const TITRES={dashboard:'Tableau de bord',suivi:'Suivi des demandes',calendrier:'Agenda',activite:'Historique',stats:'Statistiques',analyse:'Assistantes et connexions',me:'Mon écran','me-bat':'Signalements du bâtiment','me-stat':'Actions et stats','me-memo':'Mémo perso',settings:'Réglages'};
     if(m) return `
     <div class="mobile-header">
         <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
@@ -1960,17 +2042,17 @@ function renderAdminView(m){
         <div class="side-brand">${logoHtml(16)}<div class="side-lbl"><b>${esc(marqueNom())}</b><span>Administration</span></div></div>
         <div class="side-scroll">
             <div class="side-grp" style="padding-top:12px;">
-                ${meOk()?`<div class="perso">${item('me','lock','Mon écran')}${item('me-memo','edit','Mémo perso')}</div>`:''}${item('dashboard','dashboard','Tableau de bord')}</div>
+                ${item('dashboard','dashboard','Tableau de bord')}${meOk()?`<div class="perso">${item('me-memo','edit','Mémo perso')}</div>`:''}</div>
             <div class="side-grp"><h6 class="side-lbl">Commandes</h6>
-                ${item('suivi','clipboard','Suivi des demandes')}${item('calendrier','calendar','Agenda')}${item('activite','grid','Registre')}</div>
-            ${meOk()?`<div class="side-grp perso"><h6 class="side-lbl">Bâtiment ${icon('lock',10)}</h6>${item('me-bat','tool','Soucis')}${item('me-stat','check','Actions et stats')}</div>`:''}
+                ${item('suivi','clipboard','Suivi des demandes')}${item('calendrier','calendar','Agenda')}${item('activite','grid','Historique')}</div>
+            ${meOk()?`<div class="side-grp perso"><h6 class="side-lbl">Bâtiment ${icon('lock',10)}</h6>${item('me-bat','tool','Signalements')}${item('me-stat','check','Actions et stats')}</div>`:''}
             <div class="side-grp"><h6 class="side-lbl">Analyses</h6>
                 ${item('stats','chart','Statistiques')}${item('analyse','users','Assistantes et connexions')}</div>
         </div>
         <div style="padding:6px 10px;border-top:1px solid rgba(255,255,255,.06);">${item('settings','sliders','Réglages')}</div>
         <div class="side-user">
             <span class="side-av">${esc(init||'AD')}</span>
-            <div class="side-lbl" style="min-width:0;flex:1;"><b>${esc(nom)}</b><span>Administrateur</span></div>
+            <div class="side-lbl" style="min-width:0;flex:1;"><b>${esc(nom)}</b><span>${esc(monRole())}</span></div>
             <button data-admin-logout class="side-out" title="Se déconnecter">${icon('logout',16)}</button>
         </div>
     </aside>
@@ -1984,7 +2066,7 @@ function renderAdminView(m){
                 <div style="position:relative;display:inline-block;">
                     <button id="fabAdminMain" class="btn-sm pri" style="padding:8px 14px;" title="Ajout direct, déjà validé, sans email">${icon('plus',15)} Saisie directe <span class="tb-nomail">${icon('x',10)} sans email</span></button>
                     <div id="fabAdminMenu" class="drop-menu" style="display:none;">
-                        <div class="drop-note"><b>Saisie directe</b>La commande est ajoutée au registre, déjà validée. Aucun email n’est envoyé.</div>
+                        <div class="drop-note"><b>Saisie directe</b>La commande est ajoutée à l’historique et au suivi, déjà validée. Aucun email n’est envoyé.</div>
                         ${[["repas","utensils","Repas"],["taxi","car","Taxi"],["commande","box","Commande"],["hotel","bed","Hôtel"]].map(([t,ic,l])=>`<button data-saisie-type="${t}">${icon(ic,15)} ${l}</button>`).join('')}
                     </div>
                 </div>
@@ -2122,7 +2204,7 @@ function rappelEvents(c, which){
         `${TYPE_LABEL[c.type]||''} : ${titre}`, `Quand : ${quand}`,
         c.type==='taxi'?`Trajet : ${c.depart||'—'} → ${c.arrivee||'—'}`:(lieu?`Lieu / salle : ${lieu}`:''),
         (c.type==='repas'||c.type==='hotel')?`Personnes : ${c.nb||1}`:'',
-        c.presta?`Prestataire : ${c.presta}`:'', `Demandé par : ${c.demandeur||'—'}`, c.pourQui?`Pour : ${c.pourQui}`:'',
+        c.presta?`Prestataire : ${c.presta}`:'', `Demandé par : ${demHtml(c)}`, c.pourQui?`Pour : ${c.pourQui}`:'',
         c.tel?`Téléphone : ${c.tel}`:'', c.vol?`Vol / train : ${c.vol}`:'', c.comment?`Commentaire : ${c.comment}`:'',
         suiviOf(c).note?`Note interne : ${suiviOf(c).note}`:'', c.code?`Code : ${c.code}`:''
     ].filter(Boolean).join('\n');
@@ -2198,7 +2280,7 @@ function suiviCard(c,{compact=false,showStage=false,select=false}={}){
                     ${showStage?stagePill(st):''}
                 </div>
                 <div style="font-size:12px;color:#4b5563;margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${meta.join(' · ')}</div>
-                <div style="font-size:11px;color:#8b93a1;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(c.demandeur||'—')}${c.pourQui?' · pour '+esc(c.pourQui):''}${c.presta&&c.type!=='commande'?' · '+esc(c.presta):''}</div>
+                <div style="font-size:11px;color:#8b93a1;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${demHtml(c)}${c.pourQui?' · pour '+esc(c.pourQui):''}${c.presta&&c.type!=='commande'?' · '+esc(c.presta):''}</div>
                 ${(()=>{ const L=notesOf(s); return L.length?`<div style="font-size:11px;color:#92400e;background:#fffbeb;border-radius:8px;padding:4px 8px;margin-top:6px;display:flex;gap:5px;align-items:flex-start;">${icon('message',11)} <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${L.length>1?`<b>${L.length}</b> · `:''}${esc(L[L.length-1].txt)}</span></div>`:''; })()}
             </div>
             ${info?`<div style="font-size:11px;color:#8b93a1;margin-top:6px;">${info}</div>`:''}
@@ -2209,7 +2291,7 @@ function suiviCard(c,{compact=false,showStage=false,select=false}={}){
 
 function filtreSuivi(list){
     const q=(state.search||'').toLowerCase(), t=state.suiviType||'all';
-    return list.filter(c=>(t==='all'||c.type===t)&&(!q||`${c.desc} ${c.presta} ${c.demandeur} ${c.pourQui} ${c.lieu} ${c.code}`.toLowerCase().includes(q)));
+    return list.filter(c=>(t==='all'||c.type===t)&&(!q||`${c.desc} ${c.presta} ${c.demandeur} ${demNom(c)} ${c.pourQui} ${c.lieu} ${c.code}`.toLowerCase().includes(q)));
 }
 function byDateAsc(a,b){ return ((parseDate(a.date)||0)-(parseDate(b.date)||0))||(heureMin(a.heure)-heureMin(b.heure)); }
 
@@ -2331,7 +2413,7 @@ function renderCalendrier(m){
 /* Feuille du jour imprimable */
 function printDay(day){
     const d=parseDate(day), list=(eventsByDay()[day]||[]);
-    const rows=list.map(c=>`<tr><td>${esc(c.heure||'')}</td><td>${TYPE_LABEL[c.type]||''}</td><td><b>${esc(titreDe(c))}</b><br><small>${c.type==='taxi'?esc((c.depart||'')+' → '+(c.arrivee||'')):esc(c.lieu||'')}</small></td><td>${c.type==='repas'||c.type==='hotel'?(c.nb||1):''}</td><td>${esc(c.demandeur||'')}<br><small>${esc(c.pourQui||'')}</small></td><td>${esc(c.presta||'')}</td><td>${STAGES[stageOf(c)].label}</td><td>${esc(c.comment||'')}${suiviOf(c).note?`<br><small>Note : ${esc(suiviOf(c).note)}</small>`:''}</td></tr>`).join('');
+    const rows=list.map(c=>`<tr><td>${esc(c.heure||'')}</td><td>${TYPE_LABEL[c.type]||''}</td><td><b>${esc(titreDe(c))}</b><br><small>${c.type==='taxi'?esc((c.depart||'')+' → '+(c.arrivee||'')):esc(c.lieu||'')}</small></td><td>${c.type==='repas'||c.type==='hotel'?(c.nb||1):''}</td><td>${esc(demNom(c))}<br><small>${esc(c.pourQui||'')}</small></td><td>${esc(c.presta||'')}</td><td>${STAGES[stageOf(c)].label}</td><td>${esc(c.comment||'')}${suiviOf(c).note?`<br><small>Note : ${esc(suiviOf(c).note)}</small>`:''}</td></tr>`).join('');
     const html=`<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>Feuille du ${day}</title><style>
         body{font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:#1a1f36;margin:28px;} h1{font-size:20px;margin:0 0 2px;} p{color:#6b7280;margin:0 0 16px;font-size:12px;}
         table{width:100%;border-collapse:collapse;font-size:12px;} th{text-align:left;border-bottom:2px solid #2c5f85;padding:6px;color:#2c5f85;font-size:11px;text-transform:uppercase;} td{border-bottom:1px solid #e6e8ec;padding:7px 6px;vertical-align:top;} small{color:#6b7280;}
@@ -2384,7 +2466,7 @@ function trackSteps(c){
 
 /* Navigation mobile commune */
 function mobileNavHtml(){
-    const items=[["dashboard","dashboard","Accueil"],["suivi","clipboard","Suivi"],["calendrier","calendar","Agenda"],["activite","grid","Registre"]];
+    const items=[["dashboard","dashboard","Accueil"],["suivi","clipboard","Suivi"],["calendrier","calendar","Agenda"],["activite","grid","Historique"]];
     const n=aFaireCount();
     return `<nav class="mobile-nav"><div class="mobile-nav-items">
         ${items.map(([tab,ic,label])=>`<button class="mobile-nav-btn ${state.adminTab===tab&&!state.detail?'active':''}" data-admin-tab="${tab}" style="position:relative;">
@@ -2395,7 +2477,7 @@ function mobileNavHtml(){
     </div></nav>
     ${state.moreOpen?`<div data-nav='{"moreOpen":false}' style="position:fixed;inset:0;background:rgba(15,23,42,.35);z-index:9500;display:flex;align-items:flex-end;">
         <div style="background:#fff;width:100%;border-radius:20px 20px 0 0;padding:14px 14px calc(14px + env(safe-area-inset-bottom,0px));">
-            ${[...(meOk()?[["me","lock","Mon écran"],["me-memo","edit","Mémo perso"],["me-bat","tool","Soucis du bâtiment"],["me-stat","check","Actions et stats"]]:[]),["stats","chart","Statistiques"],["analyse","users","Assistantes et connexions"]].map(([t,ic,l])=>`<button data-admin-tab="${t}" style="display:flex;align-items:center;gap:12px;width:100%;background:none;border:none;padding:14px 8px;font-size:15px;font-weight:600;color:var(--ink);cursor:pointer;border-bottom:1px solid #f0f1f4;">${icon(ic,18)} ${l}</button>`).join('')}
+            ${[...(meOk()?[["me-memo","edit","Mémo perso"],["me-bat","tool","Signalements du bâtiment"],["me-stat","check","Actions et stats"]]:[]),["stats","chart","Statistiques"],["analyse","users","Assistantes et connexions"]].map(([t,ic,l])=>`<button data-admin-tab="${t}" style="display:flex;align-items:center;gap:12px;width:100%;background:none;border:none;padding:14px 8px;font-size:15px;font-weight:600;color:var(--ink);cursor:pointer;border-bottom:1px solid #f0f1f4;">${icon(ic,18)} ${l}</button>`).join('')}
             <button data-back-home style="display:flex;align-items:center;gap:12px;width:100%;background:none;border:none;padding:14px 8px;font-size:15px;font-weight:600;color:var(--ink);cursor:pointer;border-bottom:1px solid #f0f1f4;">${icon('home',18)} Page de demande</button>
             <button data-admin-logout style="display:flex;align-items:center;gap:12px;width:100%;background:none;border:none;padding:14px 8px;font-size:15px;font-weight:600;color:#b91c1c;cursor:pointer;">${icon('logout',18)} Se déconnecter</button>
         </div></div>`:''}`;
@@ -2503,10 +2585,10 @@ function renderDetail(d,m){
     ${m?`<div style="background:var(--side);padding:calc(16px + env(safe-area-inset-top,0px)) 20px 20px;">
         <button data-back-detail class="back-btn">← Retour</button>
         <div style="font-family:var(--ft);font-weight:650;letter-spacing:-.01em;font-size:19px;color:#fff;margin-top:8px;">${typeIcon} ${d.desc}</div>
-        <div style="color:rgba(255,255,255,.5);font-size:13px;margin-top:3px;">${d.demandeur}${d.pourQui?' · Pour '+d.pourQui:''}</div>
+        <div style="color:rgba(255,255,255,.5);font-size:13px;margin-top:3px;">${demHtml(d,{role:true})}${d.pourQui?' · Pour '+esc(d.pourQui):''}</div>
     </div><div style="padding:16px;padding-bottom:calc(80px + env(safe-area-inset-bottom,0px));">`:`
     <button data-back-detail class="back-btn-dark" style="margin-bottom:18px;">← Retour à la liste</button>
-    <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px;">${avatar(d.demandeur,48)}<div><div style="font-family:var(--ft);font-weight:650;letter-spacing:-.01em;font-size:19px;">${typeIcon} ${d.desc}</div><div style="color:#8b93a1;font-size:12px;">${d.demandeur}${d.pourQui?' · Pour '+d.pourQui:''}</div></div></div>`}
+    <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px;">${avatar(d.demandeur,48)}<div><div style="font-family:var(--ft);font-weight:650;letter-spacing:-.01em;font-size:19px;">${typeIcon} ${d.desc}</div><div style="color:#8b93a1;font-size:12px;">${demHtml(d,{role:true})}${d.pourQui?' · Pour '+esc(d.pourQui):''}</div></div></div>`}
 
     <div style="display:flex;gap:8px;margin-bottom:16px;">${chip(d.pris)} ${typeTag(d.type)}</div>
 
@@ -2593,7 +2675,7 @@ function renderDashboard(total,attente,m){
     const timeline=(list,vide)=>list.length?`<div class="tl">${list.map(c=>{ const st=stageOf(c), S=STAGES[st];
         return `<div class="tl-row" data-open-detail='${JSON.stringify(c).replace(/'/g,"&apos;")}'>
             <div class="tl-h">${esc(c.heure||'—')}</div><span class="dot" style="background:${S.color};margin-top:5px;"></span>
-            <div style="min-width:0;"><div class="tl-t">${esc(titreDe(c))}</div><div class="tl-m">${[where(c),esc(c.demandeur||'')].filter(Boolean).join(' · ')}</div></div>
+            <div style="min-width:0;"><div class="tl-t">${esc(titreDe(c))}</div><div class="tl-m">${[where(c),esc(demNom(c))].filter(Boolean).join(' · ')}</div></div>
             ${stagePill(st)}</div>`; }).join('')}</div>`
         :`<div class="empty-note">${vide}</div>`;
 
@@ -2608,7 +2690,7 @@ function renderDashboard(total,attente,m){
         return ''; };
     const table=`<div class="tbl-wrap"><table class="pro-table"><thead><tr><th>Prestation</th><th>Date</th><th>Statut</th><th style="text-align:right;">Action</th></tr></thead><tbody>
         ${aFaire.map(c=>`<tr>
-            <td data-open-detail='${JSON.stringify(c).replace(/'/g,"&apos;")}' style="cursor:pointer;white-space:normal;min-width:180px;"><div class="t"><span class="ty">${typeIc(c.type,14)}</span>${esc(titreDe(c))}</div><div class="m">${[where(c),esc(c.demandeur||'')].filter(Boolean).join(' · ')||'&nbsp;'}</div></td>
+            <td data-open-detail='${JSON.stringify(c).replace(/'/g,"&apos;")}' style="cursor:pointer;white-space:normal;min-width:180px;"><div class="t"><span class="ty">${typeIc(c.type,14)}</span>${esc(titreDe(c))}</div><div class="m">${[where(c),esc(demNom(c))].filter(Boolean).join(' · ')||'&nbsp;'}</div></td>
             <td><div>${dateCourte(c)}${c.heure?' · '+esc(c.heure):''}</div>${urgTag(c)?`<div style="margin-top:2px;">${urgTag(c)}</div>`:''}</td>
             <td>${stagePill(stageOf(c))}</td>
             <td><div class="row-act">${actionsDe(c)}</div></td></tr>`).join('')}
@@ -2686,8 +2768,10 @@ function renderStats(m){
     const agg=(keyFn)=>{ const mp={}; valid.forEach(c=>{ const keys=keyFn(c); const part=(c.prix||0)/keys.length; keys.forEach(k=>{ if(!mp[k]) mp[k]={total:0,n:0}; mp[k].total+=part; mp[k].n++; }); }); return Object.entries(mp).sort((a,b)=>b[1].total-a[1].total||b[1].n-a[1].n); };
     const top=(arr,n=8)=>{ if(arr.length<=n) return arr; const rest=arr.slice(n).reduce((a,[,v])=>({total:a.total+v.total,n:a.n+v.n}),{total:0,n:0}); return [...arr.slice(0,n),[`Autres (${arr.length-n})`,rest]]; };
     const parPresta=top(agg(c=>[c.presta||'Non renseigné']));
-    const parDirecteur=top(agg(c=>{ const l=(c.pourQui||'').split(/\s*,\s*/).filter(Boolean).map(x=>x.toLocaleUpperCase('fr-FR')); return l.length?l:['Non renseigné']; }));
-    const parDemandeur=top(agg(c=>[c.demandeur||'Non renseigné']));
+    const parDirecteur=top(agg(c=>{ const l=(c.pourQui||'').split(/\s*,\s*/).filter(x=>x&&!/^autre/i.test(x)).map(x=>personne(x).nom); return l.length?[...new Set(l)]:['Non renseigné']; }));
+    const parRole=agg(c=>[(ROLES[personne(c.demandeur).role]||ROLES.invite)[0]]);
+    const parPers=agg(c=>[demNom(c)]).map(([k,v])=>[k,v,personne(k).role]).sort((a,b)=>ROLE_ORDRE.indexOf(a[2])-ROLE_ORDRE.indexOf(b[2])||b[1].total-a[1].total||b[1].n-a[1].n);
+    const nbVar=new Set(valid.map(c=>String(c.demandeur||'').trim()).filter(Boolean)).size-new Set(valid.map(c=>demNom(c))).size;
     const parType=agg(c=>[TYPE_LABEL[c.type]||c.type||'Autre']);
 
     // Évolution mensuelle
@@ -2742,12 +2826,18 @@ function renderStats(m){
         </div>
     </div>
 
-    <div style="display:grid;grid-template-columns:${m||window.innerWidth<1000?'minmax(0,1fr)':'repeat(2,minmax(0,1fr))'};gap:16px;">
-        ${hbars('Par prestataire','box',parPresta,'#1d4ed8')}
-        ${hbars('Par directeur','user',parDirecteur,'#7c3aed')}
-        ${hbars('Par demandeur','clipboard',parDemandeur,'#0e7490')}
-        ${hbars('Par type','grid',parType,'#c2410c')}
-    </div>
+    ${(()=>{ const g2=m||window.innerWidth<1000?'minmax(0,1fr)':'repeat(2,minmax(0,1fr))';
+        const sec=(t,s)=>`<div class="st-sec"><b>${t}</b>${s?`<span>${s}</span>`:''}</div>`;
+        const mxP=Math.max(1,...parPers.map(x=>x[1].total));
+        const pers=`<div class="stat-card" style="min-width:0;"><div style="font-weight:700;font-size:14px;margin-bottom:10px;display:flex;align-items:center;gap:8px;">${icon('users',15)} Par personne</div>
+            ${parPers.length?parPers.map(([k,v,r],i)=>`${i===0||parPers[i-1][2]!==r?`<div style="margin:${i?'14px':'0'} 0 8px;">${roleTag(r)}</div>`:''}<div style="margin-bottom:9px;">
+                <div style="display:flex;justify-content:space-between;gap:8px;font-size:12px;margin-bottom:3px;"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(k)}</span><span style="white-space:nowrap;color:#6b7280;"><b style="color:var(--ink);">${$m(v.total)}</b> · ${v.n}</span></div>
+                <div style="height:8px;background:#f1f2f4;border-radius:6px;overflow:hidden;"><div style="height:100%;width:${Math.max(2,v.total/mxP*100)}%;background:${(ROLES[r]||ROLES.invite)[1]};border-radius:6px;"></div></div></div>`).join(''):'<div style="color:#8b93a1;font-size:13px;padding:10px 0;">Aucune donnée sur la période</div>'}
+            ${parPers.some(x=>x[2]==='invite')?`<div style="font-size:11.5px;color:#8b93a1;margin-top:8px;">Les invités n’ont pas de compte : leurs commandes sont passées par ${esc(equipe().polyvalente[0])}.</div>`:''}</div>`;
+        return `${sec('Qui commande',nbVar>0?`${nbVar} orthographe${nbVar>1?'s':''} en double regroupée${nbVar>1?'s':''} automatiquement`:'')}
+        <div style="display:grid;grid-template-columns:${g2};gap:16px;margin-bottom:6px;align-items:start;"><div style="display:flex;flex-direction:column;gap:16px;min-width:0;">${hbars('Par rôle','shield',parRole,'#2c5f85')}${hbars('Par type de prestation','grid',parType,'#c2410c')}</div>${pers}</div>
+        ${sec('Pour qui et chez qui')}
+        <div style="display:grid;grid-template-columns:${g2};gap:16px;align-items:start;">${hbars('Par bénéficiaire','user',parDirecteur,'#7c3aed')}${hbars('Par prestataire','box',parPresta,'#1d4ed8')}</div>`; })()}
     <div style="font-size:11px;color:#9ca3af;margin-top:12px;">Montants des commandes validées, selon la date de la prestation. Une commande pour plusieurs directeurs est répartie à parts égales.</div>
     </div>`;
 }
@@ -2827,9 +2917,9 @@ function anomalies(){
     // Pas encore commandé à temps
     futur.filter(c=>stageOf(c)==='acommander').forEach(c=>{ const d=parseDate(c.date); const j=Math.round((d-t0)/864e5); const al=pDelaiAlerte(c.presta,c.date,c.heure);
         if(al) out.push({niv:3,ic:'clock',titre:'Délai du prestataire dépassé',detail:`${titreDe(c)} · ${dateCourte(c)} : ${c.presta} demande ${al.h} h, il reste ${Math.max(0,Math.round(al.reste))} h`,c});
-        else if(j===0||(j===1&&now.getHours()>=16)) out.push({niv:3,ic:'box',titre:j===0?'Pas commandé, c’est aujourd’hui':'Pas encore commandé pour demain',detail:`${titreDe(c)} · ${c.heure||''} · ${c.presta||'prestataire ?'} · ${c.demandeur||''}`,c}); });
+        else if(j===0||(j===1&&now.getHours()>=16)) out.push({niv:3,ic:'box',titre:j===0?'Pas commandé, c’est aujourd’hui':'Pas encore commandé pour demain',detail:`${titreDe(c)} · ${c.heure||''} · ${c.presta||'prestataire ?'} · ${demNom(c)}`,c}); });
     // En attente trop longtemps
-    actives.filter(c=>c.pris==='En attente'||c.pris==='En cours').forEach(c=>{ const p=pendingSince(c); if(p&&Date.now()-p>24*36e5) out.push({niv:2,ic:'hourglass',titre:'En attente depuis plus de 24 h',detail:`${titreDe(c)} · ${c.demandeur||''} · reçue le ${new Date(p).toLocaleDateString('fr-FR')}`,c}); });
+    actives.filter(c=>c.pris==='En attente'||c.pris==='En cours').forEach(c=>{ const p=pendingSince(c); if(p&&Date.now()-p>24*36e5) out.push({niv:2,ic:'hourglass',titre:'En attente depuis plus de 24 h',detail:`${titreDe(c)} · ${demNom(c)} · reçue le ${new Date(p).toLocaleDateString('fr-FR')}`,c}); });
     // Taxi gare / aéroport sans n° de vol
     futur.filter(c=>c.type==='taxi'&&!c.vol&&/(a[ée]roport|orly|cdg|roissy|beauvais|gare)/i.test(`${c.depart} ${c.arrivee}`)).forEach(c=>out.push({niv:1,ic:'plane',titre:'N° de vol ou de train manquant',detail:`${titreDe(c)} · ${dateCourte(c)} ${c.heure||''}`,c}));
     // Informations manquantes
@@ -3227,36 +3317,37 @@ function renderMe(m){
     const interv=enc.filter(s=>s.statut==='prevu'&&s.interv&&new Date(s.interv)>=t0).sort((a,b)=>new Date(a.interv)-new Date(b.interv));
     const hh=d=>{ const x=new Date(d); return x.getHours()||x.getMinutes()?`${String(x.getHours()).padStart(2,'0')}h${String(x.getMinutes()).padStart(2,'0')}`:'—'; };
     const where=c=>[c.type==='taxi'?`${esc(c.depart||'—')} → ${esc(c.arrivee||'—')}`:esc(c.lieu||''),c.type==='repas'?`${c.nb||1} pers.`:'',c.presta&&c.type!=='commande'?esc(c.presta):''].filter(Boolean).join(' · ');
-    const jour=k=>{ const L=[...(ev[k]||[]).map(c=>({h:heureMin(c.heure),html:`<div class="tl-row" data-open-detail='${JSON.stringify(c).replace(/'/g,"&apos;")}'><div class="tl-h">${esc(c.heure||'—')}</div><span class="dot" style="background:${STAGES[stageOf(c)].color};margin-top:5px;"></span><div style="min-width:0;"><div class="tl-t">${typeIc(c.type,13)} ${esc(titreDe(c))}</div><div class="tl-m">${[where(c),esc(c.demandeur||'')].filter(Boolean).join(' · ')}</div></div>${stagePill(stageOf(c))}</div>`})),
+    const jour=k=>{ const L=[...(ev[k]||[]).map(c=>({h:heureMin(c.heure),html:`<div class="tl-row" data-open-detail='${JSON.stringify(c).replace(/'/g,"&apos;")}'><div class="tl-h">${esc(c.heure||'—')}</div><span class="dot" style="background:${STAGES[stageOf(c)].color};margin-top:5px;"></span><div style="min-width:0;"><div class="tl-t">${typeIc(c.type,13)} ${esc(titreDe(c))}</div><div class="tl-m">${[where(c),esc(demNom(c))].filter(Boolean).join(' · ')}</div></div>${stagePill(stageOf(c))}</div>`})),
         ...interv.filter(s=>isoDay(new Date(s.interv))===k).map(s=>({h:new Date(s.interv).getHours()*60+new Date(s.interv).getMinutes(),html:`<div class="tl-row" data-me="open" data-id="${s.id}"><div class="tl-h">${hh(s.interv)}</div><span class="dot" style="background:#5b21b6;margin-top:5px;"></span><div style="min-width:0;"><div class="tl-t">${icon('tool',13)} ${esc(s.titre)}</div><div class="tl-m">${esc(meZone(s))}${s.interv_par?` · ${esc(s.interv_par)}`:''}</div></div>${mePill(s)}</div>`}))].sort((a,b)=>a.h-b.h);
         return L.length?`<div class="tl">${L.map(x=>x.html).join('')}</div>`:''; };
     const auj=jour(todayK), dem=jour(tomK);
     const act=c=>{ const st=stageOf(c); return st==='avalider'?`<button class="btn-sm" data-suivi-act="refuser" data-id="${c.id}">Refuser</button><button class="btn-sm pri" data-suivi-act="valider" data-id="${c.id}">Valider</button>`:st==='acommander'?`<button class="btn-sm" data-suivi-act="commande" data-id="${c.id}">${icon('check',13)} Commande passée</button>`:''; };
-    const cmdRows=aTraiter.slice(0,6).map(c=>`<div class="me-act"><span class="me-act-k" style="color:${STAGES[stageOf(c)].color};border-color:${STAGES[stageOf(c)].color}33;background:${STAGES[stageOf(c)].color}0f;">${STAGES[stageOf(c)].label||stageOf(c)}</span><div class="me-act-t" data-open-detail='${JSON.stringify(c).replace(/'/g,"&apos;")}'><div class="t">${typeIc(c.type,14)}<b>${esc(titreDe(c))}</b></div><div class="m">${dateCourte(c)}${c.heure?' · '+esc(c.heure):''}${where(c)?' · '+where(c):''}${c.demandeur?' · '+esc(c.demandeur):''}</div></div><div class="me-act-b">${act(c)}</div></div>`).join('');
+    const cmdRows=aTraiter.slice(0,6).map(c=>`<div class="me-act"><span class="me-act-k" style="color:${STAGES[stageOf(c)].color};border-color:${STAGES[stageOf(c)].color}33;background:${STAGES[stageOf(c)].color}0f;">${STAGES[stageOf(c)].label||stageOf(c)}</span><div class="me-act-t" data-open-detail='${JSON.stringify(c).replace(/'/g,"&apos;")}'><div class="t">${typeIc(c.type,14)}<b>${esc(titreDe(c))}</b></div><div class="m">${dateCourte(c)}${c.heure?' · '+esc(c.heure):''}${where(c)?' · '+where(c):''}${c.demandeur?' · '+demHtml(c):''}</div></div><div class="me-act-b">${act(c)}</div></div>`).join('');
     const intRows=A.slice(0,6).map(({s,k,why,btns,group,list})=>`<div class="me-act"><span class="me-act-k" style="color:${KL[k][1]};border-color:${KL[k][1]}33;background:${KL[k][1]}0f;">${KL[k][0]}</span>${group?`<div class="me-act-t" data-nav='{"adminTab":"me-stat"}'><div class="t"><b>${esc(group)}</b></div><div class="m">${why}</div></div>`:`<div class="me-act-t" data-me="open" data-id="${s.id}"><div class="t">${meUrgDot(s)}<b>${esc(s.titre)}</b></div><div class="m">${esc(meZone(s))} · ${why}</div></div>`}<div class="me-act-b">${btns}</div></div>`).join('');
     const prenom=(adminName()||'').split(' ')[0], salut=now.getHours()<18?'Bonjour':'Bonsoir';
     return `<div>
-    <div class="page-head"><div><h1>${salut}${prenom&&prenom!=='Admin'?' '+esc(prenom):''} <span style="font-size:14px;color:var(--ink-soft);font-weight:500;">${icon('lock',13)} visible par toi seul</span></h1><p><span style="text-transform:capitalize;">${dateLongue(now)}</span> ${now.getFullYear()} · ${aTraiter.length} commande${aTraiter.length>1?'s':''} à traiter · ${A.length} action${A.length>1?'s':''} bâtiment${rapAuj?` · ${rapAuj} rappel${rapAuj>1?'s':''}`:''}</p></div>
-    <div class="page-actions"><button class="btn-sm" data-me="newmemo">${icon('edit',14)} Mémo</button><button class="btn-sm" data-me="new">${icon('tool',14)} Signaler un souci</button></div></div>
+    <div class="page-head"><div><h1>${salut}${prenom&&prenom!=='Admin'?' '+esc(prenom):''}</h1><p><span style="text-transform:capitalize;">${dateLongue(now)}</span> ${now.getFullYear()} · ${aTraiter.length} commande${aTraiter.length>1?'s':''} à traiter · ${A.length} action${A.length>1?'s':''} bâtiment${rapAuj?` · ${rapAuj} rappel${rapAuj>1?'s':''}`:''}</p></div>
+    <div class="page-actions"><button class="btn-sm" data-me="newmemo">${icon('edit',14)} Mémo</button><button class="btn-sm" data-me="new">${icon('tool',14)} Nouveau signalement</button></div></div>
     <div class="kpis">
         <button class="stat-card kpi" data-nav='{"adminTab":"suivi"}'><span class="kpi-l"><span>Commandes à traiter</span><span class="dot" style="background:${STAGES.avalider.color}"></span></span><span class="kpi-v">${aTraiter.length}</span><span class="kpi-s">${avalider.length} à valider · ${acommander.length} à commander</span></button>
         <button class="stat-card kpi" data-nav='{"adminTab":"calendrier"}'><span class="kpi-l"><span>Aujourd’hui</span><span class="dot" style="background:#2c5f85"></span></span><span class="kpi-v">${(ev[todayK]||[]).length}</span><span class="kpi-s">prestation${(ev[todayK]||[]).length>1?'s':''} · ${(ev[tomK]||[]).length} demain</span></button>
         <button class="stat-card kpi" data-nav='{"adminTab":"me-stat"}'><span class="kpi-l"><span>Interventions</span><span class="dot" style="background:#5b21b6"></span></span><span class="kpi-v">${A.length}</span><span class="kpi-s">actions · ${interv.length} intervention${interv.length>1?'s':''} à venir</span></button>
-        <button class="stat-card kpi" data-nav='{"adminTab":"me-bat"}'><span class="kpi-l"><span>Soucis du bâtiment</span><span class="dot" style="background:#b91c1c"></span></span><span class="kpi-v">${enc.length}</span><span class="kpi-s">${urg?`<b style="color:#b91c1c">${urg}</b> urgent${urg>1?'s':''} · `:''}en cours</span></button>
+        <button class="stat-card kpi" data-nav='{"adminTab":"me-bat"}'><span class="kpi-l"><span>Signalements du bâtiment</span><span class="dot" style="background:#b91c1c"></span></span><span class="kpi-v">${enc.length}</span><span class="kpi-s">${urg?`<b style="color:#b91c1c">${urg}</b> urgent${urg>1?'s':''} · `:''}en cours</span></button>
     </div>
-    <div class="g2">
-        <div>
-            <div class="card"><div class="card-h"><h3>Commandes à traiter<span class="sub">${aTraiter.length}</span></h3><button class="card-link" data-nav='{"adminTab":"suivi"}'>Tout le suivi →</button></div>
+    <div class="g2 dash2">
+        <section>
+            <div class="dash-col-h"><span class="dash-col-ic" style="background:#e5f2fa;color:#0369a1;">${icon('clipboard',16)}</span><b>Commandes</b><span>${avalider.length} à valider · ${acommander.length} à commander</span></div>
+            <div class="card"><div class="card-h"><h3>À traiter<span class="sub">${aTraiter.length}</span></h3><button class="card-link" data-nav='{"adminTab":"suivi"}'>Tout le suivi →</button></div>
                 ${aTraiter.length?cmdRows+(aTraiter.length>6?`<div style="padding:10px 16px;border-top:1px solid var(--border-light);"><button class="card-link" data-nav='{"adminTab":"suivi"}'>Voir les ${aTraiter.length-6} autres →</button></div>`:''):`<div class="empty-note">Aucune commande à traiter. ${icon('check',14)}</div>`}</div>
-            <div class="card"><div class="card-h"><h3>Interventions · à faire<span class="sub">${A.length}</span></h3><button class="card-link" data-nav='{"adminTab":"me-stat"}'>Actions et stats →</button></div>
+            ${anomaliesHtml(m)}
+        </section>
+        <section>
+            <div class="dash-col-h"><span class="dash-col-ic" style="background:#f1ebfd;color:#6d28d9;">${icon('tool',16)}</span><b>Bâtiment ${icon('lock',11)}</b><span>${enc.length} signalement${enc.length>1?'s':''} en cours${urg?` · ${urg} urgent${urg>1?'s':''}`:''}</span></div>
+            <div class="card"><div class="card-h"><h3>Actions à faire<span class="sub">${A.length}</span></h3><button class="card-link" data-nav='{"adminTab":"me-stat"}'>Actions et stats →</button></div>
                 ${A.length?intRows+(A.length>6?`<div style="padding:10px 16px;border-top:1px solid var(--border-light);"><button class="card-link" data-nav='{"adminTab":"me-stat"}'>Voir les ${A.length-6} autres →</button></div>`:''):`<div class="empty-note">Rien à faire côté bâtiment. ${icon('check',14)}</div>`}</div>
-        </div>
-        <div>
-            <div class="card"><div class="card-h"><h3>Aujourd’hui<span class="sub">commandes et interventions</span></h3><button class="card-link" data-nav='{"adminTab":"calendrier"}'>Agenda →</button></div>${auj||'<div class="empty-note">Rien de prévu aujourd’hui.</div>'}</div>
-            <div class="card"><div class="card-h"><h3>Demain</h3></div>${dem||'<div class="empty-note">Rien de prévu demain.</div>'}</div>
-            ${interv.filter(s=>![todayK,tomK].includes(isoDay(new Date(s.interv)))).length?`<div class="card"><div class="card-h"><h3>Interventions à venir</h3></div><div class="tl">${interv.filter(s=>![todayK,tomK].includes(isoDay(new Date(s.interv)))).slice(0,5).map(s=>`<div class="tl-row" data-me="open" data-id="${s.id}"><div class="tl-h" style="font-size:11.5px;">${meDate(s.interv)}</div><span class="dot" style="background:#5b21b6;margin-top:5px;"></span><div style="min-width:0;"><div class="tl-t">${esc(s.titre)}</div><div class="tl-m">${esc(meZone(s))}${s.interv_par?` · ${esc(s.interv_par)}`:''}</div></div><span></span></div>`).join('')}</div></div>`:''}
+            ${interv.length?`<div class="card"><div class="card-h"><h3>Interventions prévues</h3></div><div class="tl">${interv.slice(0,5).map(s=>`<div class="tl-row" data-me="open" data-id="${s.id}"><div class="tl-h" style="font-size:11.5px;">${meDate(s.interv)}</div><span class="dot" style="background:#5b21b6;margin-top:5px;"></span><div style="min-width:0;"><div class="tl-t">${esc(s.titre)}</div><div class="tl-m">${esc(meZone(s))}${s.interv_par?` · ${esc(s.interv_par)}`:''}</div></div><span></span></div>`).join('')}</div></div>`:''}
             ${memosVus.length?`<div class="card"><div class="card-h"><h3>Mémo</h3><button class="card-link" data-nav='{"adminTab":"me-memo"}'>Tous les mémos →</button></div><div class="memo-grid" style="padding:14px 16px;">${memosVus.map(x=>meMemoCard(x,true)).join('')}</div></div>`:''}
-        </div>
+        </section>
     </div></div>`;
 }
 function meBatiment(m){ return meListe(); }
@@ -3283,19 +3374,19 @@ function meListe(){
     const nc=s=>(s.constat||[]).length;
     return `<div>
     <div class="page-head"><div><h1>Suivi du bâtiment</h1><p>Privé · ${meEnCours().length} en cours · ${S.soucis.filter(s=>s.statut==='resolu').length} résolus</p></div>
-    <div class="page-actions"><button class="btn-sm" data-nav='{"adminTab":"me-stat"}'>${icon('check',14)} Actions et stats</button><label class="btn-sm me-hx" style="cursor:pointer;" title="Importer un fichier préparé (.json)">${icon('download',14)} Importer<input type="file" accept=".json,application/json" data-me-import style="display:none;"></label><button class="btn-sm me-hx" data-me="export" title="Télécharger une sauvegarde de Mon espace">${icon('save',14)} Sauvegarder</button><button class="btn-sm" data-me="lieux">${icon('pin',14)} Mes lieux (${S.lieux.length})</button><button class="btn-sm pri me-hx" data-me="new">${icon('plus',14)} Signaler un souci</button></div></div>
+    <div class="page-actions"><button class="btn-sm" data-nav='{"adminTab":"me-stat"}'>${icon('check',14)} Actions et stats</button><label class="btn-sm me-hx" style="cursor:pointer;" title="Importer un fichier préparé (.json)">${icon('download',14)} Importer<input type="file" accept=".json,application/json" data-me-import style="display:none;"></label><button class="btn-sm me-hx" data-me="export" title="Télécharger une sauvegarde de Mon espace">${icon('save',14)} Sauvegarder</button><button class="btn-sm" data-me="lieux">${icon('pin',14)} Mes lieux (${S.lieux.length})</button><button class="btn-sm pri me-hx" data-me="new">${icon('plus',14)} Nouveau signalement</button></div></div>
     ${state.meLieux?meLieuxHtml():''}
     <div class="me-bar">
         <label class="me-search">${icon('search',14)}<input id="meQ" type="search" value="${esc(state.meQ||'')}" placeholder="Rechercher : KA252, cour, Otis…" autocomplete="off"></label>
         <select class="me-sel" data-me-zone><option value="">Toutes les zones</option>${zones.map(x=>`<option ${x===z?'selected':''}>${esc(x)}</option>`).join('')}</select>
     </div>
     <div class="nf-row" style="margin-bottom:14px;">${ME_FILTRES.map(([k,l,fn])=>{ const n=S.soucis.filter(fn).length; return `<button class="nf-chip ${f===k?'on':''}" style="height:32px;font-size:12.5px;" data-nav='{"meF":"${k}"}'>${l} · ${n}</button>`; }).join('')}</div>
-    ${L.length?`<div class="card me-tbl"><div class="tbl-wrap"><table class="pro-table"><thead><tr>${th('prio','Souci')}${th('zone','Zone')}${th('statut','Statut')}${th('qui','Intervenant')}${th('news','Dernière nouvelle')}${th('prio','Relance / date')}${th('constat','Constats')}</tr></thead><tbody>
+    ${L.length?`<div class="card me-tbl"><div class="tbl-wrap"><table class="pro-table"><thead><tr>${th('prio','Signalement')}${th('zone','Zone')}${th('statut','Statut')}${th('qui','Intervenant')}${th('news','Dernière nouvelle')}${th('prio','Relance / date')}${th('constat','Constats')}</tr></thead><tbody>
     ${L.map(s=>`<tr data-me="open" data-id="${s.id}" style="cursor:pointer;${s.statut==='resolu'?'opacity:.6;':''}"><td class="me-td-t"><div class="t">${meUrgDot(s)}<span>${esc(s.titre)}</span></div>${s.lieu&&s.lieu!==meZone(s)?`<div class="m">${esc(s.lieu)}</div>`:''}</td><td>${esc(meZone(s))}</td><td>${mePill(s)}</td><td style="color:var(--ink-mid)">${esc(s.interv_par||'—')}</td><td style="color:var(--ink-soft)">il y a ${meAge(meLast(s))}</td><td>${rel(s)}</td><td>${nc(s)?`<span class="me-cst">⚖️ ${nc(s)}</span>`:'<span style="color:#c4c9d2">—</span>'}</td></tr>`).join('')}
     </tbody></table></div></div>
     <div class="me-cards">${L.map(s=>`<button class="me-card" data-me="open" data-id="${s.id}" style="${s.statut==='resolu'?'opacity:.6;':''}"><div class="t">${meUrgDot(s)}<b>${esc(s.titre)}</b></div><div class="m">${esc(meZone(s))}${s.interv_par?` · ${esc(s.interv_par)}`:''}</div><div class="r">${mePill(s)}${nc(s)?`<span class="me-cst">⚖️ ${nc(s)}</span>`:''}<span class="me-rel">${rel(s)}</span></div></button>`).join('')}</div>
-    <div style="font-size:12.5px;color:var(--ink-soft);margin-top:8px;">${L.length} souci${L.length>1?'s':''} affiché${L.length>1?'s':''} · clic sur un en-tête pour trier</div>`
-    :`<div class="card empty-note" style="padding:40px;">${S.soucis.length?'Aucun souci pour ce filtre.':'Aucun souci pour l’instant. « Signaler un souci » ou « Importer » pour commencer.'}</div>`}
+    <div style="font-size:12.5px;color:var(--ink-soft);margin-top:8px;">${L.length} signalement${L.length>1?'s':''} affiché${L.length>1?'s':''} · clic sur un en-tête pour trier</div>`
+    :`<div class="card empty-note" style="padding:40px;">${S.soucis.length?'Aucun signalement pour ce filtre.':'Aucun signalement pour l’instant. « Nouveau signalement » ou « Importer » pour commencer.'}</div>`}
     </div>`;
 }
 function meActions(){
@@ -3327,7 +3418,7 @@ function meStats(m){
     const st=ME_ST.map(([k,l])=>[k,l,S.soucis.filter(s=>s.statut===k).length]);
     const cst=open.filter(s=>(s.constat||[]).length);
     return `<div>
-    <div class="page-head"><div><h1>Actions et stats</h1><p>Privé · le bâtiment en chiffres et ce qu’il reste à faire</p></div><div class="page-actions"><button class="btn-sm" data-nav='{"adminTab":"me-bat"}'>${icon('tool',14)} Liste des soucis</button></div></div>
+    <div class="page-head"><div><h1>Actions et stats</h1><p>Privé · le bâtiment en chiffres et ce qu’il reste à faire</p></div><div class="page-actions"><button class="btn-sm" data-nav='{"adminTab":"me-bat"}'>${icon('tool',14)} Liste des signalements</button></div></div>
     <div class="kpis">
         <div class="stat-card kpi"><span class="kpi-l">En cours</span><span class="kpi-v">${open.length}</span><span class="kpi-s">sur ${S.soucis.length} signalés</span></div>
         <div class="stat-card kpi"><span class="kpi-l">Urgents</span><span class="kpi-v" style="color:#b91c1c;">${open.filter(s=>s.urgence==='urgent').length}</span><span class="kpi-s">${cst.length} relevés en constat</span></div>
@@ -3340,7 +3431,7 @@ function meStats(m){
         <div class="card"><div class="card-h"><h3>Par zone<span class="sub">en cours · <i style="font-style:normal;color:#3f8f5c">+ résolus</i></span></h3></div><div style="padding:10px 16px 14px;">${bars(Z,zmax)}</div></div>
         <div>
         <div class="card"><div class="card-h"><h3>Par statut</h3></div><div style="padding:14px 16px;"><div class="me-stack">${st.filter(x=>x[2]).map(([k,l,n])=>`<span style="flex:${n};background:${ME_STC[k][2]};color:${ME_STC[k][1]};">${n}</span>`).join('')}</div><div class="me-leg">${st.map(([k,l,n])=>`<span><i style="background:${ME_STC[k][1]}"></i>${ME_STC[k][0]} · ${n}</span>`).join('')}</div></div></div>
-        <div class="card"><div class="card-h"><h3>Ancienneté des soucis en cours</h3></div><div style="padding:10px 16px 14px;">${ages.map(([l,n])=>`<div class="me-bar-row"><span class="l">${l}</span><span class="b"><span style="width:${n/amax*100}%;background:${l.startsWith('Plus')?'#b91c1c':'#2c5f85'};"></span></span><span class="n"><b>${n}</b></span></div>`).join('')}</div></div>
+        <div class="card"><div class="card-h"><h3>Ancienneté des signalements en cours</h3></div><div style="padding:10px 16px 14px;">${ages.map(([l,n])=>`<div class="me-bar-row"><span class="l">${l}</span><span class="b"><span style="width:${n/amax*100}%;background:${l.startsWith('Plus')?'#b91c1c':'#2c5f85'};"></span></span><span class="n"><b>${n}</b></span></div>`).join('')}</div></div>
         <div class="card"><div class="card-h"><h3>Par intervenant</h3></div><div class="tbl-wrap"><table class="pro-table"><thead><tr><th>Intervenant</th><th>En cours</th><th>Urgents</th><th>Résolus</th><th>Plus ancien</th></tr></thead><tbody>${Q.map(([k,v])=>`<tr><td><b>${esc(k)}</b></td><td>${v.o}</td><td style="${v.u?'color:#b91c1c;font-weight:600;':'color:var(--ink-soft)'}">${v.u||'—'}</td><td style="color:var(--ink-soft)">${v.r||'—'}</td><td style="color:var(--ink-soft)">${v.o?meAge(Date.now()-v.old*864e5):'—'}</td></tr>`).join('')}</tbody></table></div></div>
         </div>
     </div></div>`;
@@ -3348,7 +3439,7 @@ function meStats(m){
 function meLieuxHtml(){
     const L=state.me.lieux;
     return `<div class="card" style="padding:16px;margin-bottom:16px;"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;"><b style="font-size:14px;">Mes lieux</b><button class="card-link" data-nav='{"meLieux":false}'>Fermer</button></div>
-        <div style="font-size:12.5px;color:var(--ink-soft);margin-bottom:10px;">Salles, étages, zones… Ils sont proposés quand tu signales un souci. Enregistrés automatiquement.</div>
+        <div style="font-size:12.5px;color:var(--ink-soft);margin-bottom:10px;">Salles, étages, zones… Ils sont proposés quand tu fais un signalement. Enregistrés automatiquement.</div>
         <div class="nf-row" style="margin-bottom:12px;">${L.map((l,i)=>`<span class="nf-chip" style="cursor:default;padding-right:6px;">${esc(l)}<button data-me="dellieu" data-i="${i}" title="Retirer" style="border:none;background:none;cursor:pointer;color:#9ca3af;display:flex;padding:2px;">${icon('x',13)}</button></span>`).join('')||'<span class="nf-hint">Aucun lieu pour l’instant.</span>'}</div>
         <div style="display:flex;gap:8px;"><input id="meLieuNew" class="form-input" placeholder="Ex : Salle Opéra · 3e étage" style="flex:1;"><button class="btn-sm pri" data-me="addlieu" style="padding:0 16px;">${icon('plus',14)} Ajouter</button></div></div>`;
 }
@@ -3357,9 +3448,9 @@ function meSignaler(m){
     const chip=(k,v,l,on,ext='')=>`<button type="button" class="nf-chip ${on?'on':''}" data-me="draft" data-k="${k}" data-v="${esc(v)}" ${ext}>${l}</button>`;
     return `<div style="max-width:820px;">
     <button class="f-back" data-me="cancel" style="margin-bottom:12px;">${icon('arrow',14)} Retour</button>
-    <div class="page-head"><div><h1>Signaler un souci</h1><p>Privé · visible par toi seul</p></div></div>
+    <div class="page-head"><div><h1>Nouveau signalement</h1><p>Privé · visible par toi seul</p></div></div>
     <div class="card" style="padding:18px;">
-        <div class="nf-lbl">Quel est le souci ? *</div><input id="meTitre" class="form-input" value="${esc(d.titre||'')}" placeholder="Ex : Clim en panne, fuite sous l’évier…" style="margin-bottom:14px;">
+        <div class="nf-lbl">Que se passe-t-il ? *</div><input id="meTitre" class="form-input" value="${esc(d.titre||'')}" placeholder="Ex : Clim en panne, fuite sous l’évier…" style="margin-bottom:14px;">
         <div class="nf-lbl">Catégorie</div><div class="nf-row" style="margin-bottom:14px;">${ME_CATS.map(c=>chip('cat',c[0],`${c[2]} ${c[1]}`,d.cat===c[0])).join('')}</div>
         <div class="nf-lbl">Où ? <span>· <a href="#" data-me="golieux" style="color:var(--accent);">gérer mes lieux</a></span></div><div class="nf-row" style="margin-bottom:8px;">${state.me.lieux.map(l=>chip('lieu',l,esc(l),d.lieu===l)).join('')}</div>
         <input id="meLieuLibre" class="form-input" value="${esc(state.me.lieux.includes(d.lieu)?'':(d.lieu||''))}" placeholder="…ou un autre lieu (ex. bureau 214)" style="margin-bottom:14px;">
@@ -3395,7 +3486,7 @@ function meFiche(s,m){
             </div></div>
             <div class="card"><div class="card-h"><h3>Historique et notes</h3></div><div style="padding:6px 16px 14px;">
                 ${evts.map(e=>`<div class="tl2"><span class="tl2-d" style="background:${e.k==='note'?'#2c5f85':'#9ca3af'}"></span><div><b>${esc(e.txt)}</b><span>${meDate(e.t,true)}</span></div></div>`).join('')}
-                <div class="tl2"><span class="tl2-d" style="background:#9ca3af"></span><div><b>Souci signalé</b><span>${meDate(s.t,true)}</span></div></div>
+                <div class="tl2"><span class="tl2-d" style="background:#9ca3af"></span><div><b>Signalé</b><span>${meDate(s.t,true)}</span></div></div>
                 <div style="display:flex;gap:8px;margin-top:10px;"><input id="meNote" class="form-input" placeholder="Ajouter une note…" style="flex:1;text-transform:none;"><button class="btn-sm pri" data-me="note" data-id="${s.id}" style="padding:0 14px;">${icon('send',14)}</button></div>
             </div></div>
         </div>
@@ -3410,10 +3501,10 @@ function meFiche(s,m){
                 <button class="btn-sm pri" data-me="savesuivi" data-id="${s.id}" style="justify-content:center;padding:10px;">${icon('save',14)} Enregistrer le suivi</button>
             </div></div>
             <div class="card"><div class="card-h"><h3>Historique du lieu</h3><span style="font-size:12px;color:var(--ink-soft);">${esc(s.lieu||'—')}</span></div><div style="padding:6px 16px 12px;">
-                ${hist.length?hist.slice(0,6).map(x=>`<div class="sx" data-me="open" data-id="${x.id}" style="padding:8px 0;"><div style="flex:1;"><b>${esc(x.titre)}</b><span>${meDate(x.t)} · ${x.statut==='resolu'?`résolu en ${Math.max(1,Math.round((new Date(x.resolu)-new Date(x.t))/864e5))} j`:'en cours'}</span></div></div>`).join(''):'<div class="empty-note" style="padding:10px 0;">Premier souci signalé ici.</div>'}
-                ${nbCat>=2?`<div style="font-size:12.5px;color:#b45309;background:#fef6e7;border-radius:8px;padding:8px 10px;margin-top:6px;">${nbCat+1}ᵉ souci « ${meCat(s.cat)[1]} » ici en 4 mois</div>`:''}
+                ${hist.length?hist.slice(0,6).map(x=>`<div class="sx" data-me="open" data-id="${x.id}" style="padding:8px 0;"><div style="flex:1;"><b>${esc(x.titre)}</b><span>${meDate(x.t)} · ${x.statut==='resolu'?`résolu en ${Math.max(1,Math.round((new Date(x.resolu)-new Date(x.t))/864e5))} j`:'en cours'}</span></div></div>`).join(''):'<div class="empty-note" style="padding:10px 0;">Premier signalement ici.</div>'}
+                ${nbCat>=2?`<div style="font-size:12.5px;color:#b45309;background:#fef6e7;border-radius:8px;padding:8px 10px;margin-top:6px;">${nbCat+1}ᵉ signalement « ${meCat(s.cat)[1]} » ici en 4 mois</div>`:''}
             </div></div>
-            <button class="btn-sm" data-me="delsouci" data-id="${s.id}" style="color:#b91c1c;width:100%;justify-content:center;padding:10px;">${icon('trash',14)} Supprimer ce souci</button>
+            <button class="btn-sm" data-me="delsouci" data-id="${s.id}" style="color:#b91c1c;width:100%;justify-content:center;padding:10px;">${icon('trash',14)} Supprimer ce signalement</button>
         </div>
     </div></div>`;
 }
@@ -3457,10 +3548,10 @@ document.addEventListener('click',e=>{
         case 'draft': meDraftRead(); state.meDraft[el.getAttribute('data-k')]=el.getAttribute('data-k')==='relance'?+v:v; if(el.getAttribute('data-k')==='lieu'&&g('meLieuLibre')) g('meLieuLibre').value=''; render(); break;
         case 'draftdelph': meDraftRead(); state.meDraft.photos.splice(+el.getAttribute('data-i'),1); render(); break;
         case 'golieux': meDraftRead(); state.meNew=false; state.adminTab='me-bat'; state.meLieux=true; render(); break;
-        case 'create': { meDraftRead(); const d=state.meDraft; if(!String(d.titre||'').trim()){ showToast(`${icon('alert',13)} Indique le souci en quelques mots`); return; }
+        case 'create': { meDraftRead(); const d=state.meDraft; if(!String(d.titre||'').trim()){ showToast(`${icon('alert',13)} Décris le problème en quelques mots`); return; }
             const now=new Date(); const n={id:meId(),t:now.toISOString(),titre:d.titre.trim(),cat:d.cat,lieu:d.lieu||'',urgence:d.urgence,desc:(d.desc||'').trim(),photos:d.photos||[],statut:'signale',notes:[],journal:[]};
             if(d.relance){ const r=new Date(now); r.setDate(r.getDate()+d.relance); r.setHours(9,0,0,0); n.relance=r.toISOString(); }
-            S.soucis.unshift(n); state.meNew=false; state.meDraft=null; state.meSouci=n.id; meSave(); showToast('✓ Souci enregistré'); break; }
+            S.soucis.unshift(n); state.meNew=false; state.meDraft=null; state.meSouci=n.id; meSave(); showToast('✓ Signalement enregistré'); break; }
         case 'open': state.meSouci=id; state.meNew=false; if(!String(state.adminTab).startsWith('me')) state.adminTab='me-bat'; window.scrollTo(0,0); render(); break;
         case 'close': state.meSouci=null; render(); break;
         case 'relance': if(s){ const r=new Date(); r.setDate(r.getDate()+7); r.setHours(9,0,0,0); s.relance=r.toISOString(); if(s.statut==='signale'||(s.statut==='prevu'&&s.interv&&new Date(s.interv)<new Date())){ s.statut='contacte'; s.interv=null; } meJ(s,'Relancé'); meSave(); showToast(`✓ Relancé · prochain rappel le ${meDate(s.relance)}`); } break;
@@ -3479,7 +3570,7 @@ document.addEventListener('click',e=>{
         case 'savedesc': if(s){ s.desc=g('meFDesc')?.value||''; meSave(); showToast('✓ Description enregistrée'); } break;
         case 'note': if(s){ const t=(g('meNote')?.value||'').trim(); if(!t) return; s.notes=[...(s.notes||[]),{t:new Date().toISOString(),txt:t}]; meSave(); } break;
         case 'delph': if(s&&confirm('Retirer cette photo ?')){ s.photos.splice(+el.getAttribute('data-i'),1); meSave(); } break;
-        case 'delsouci': if(s&&confirm(`Supprimer définitivement « ${s.titre} » ?`)){ S.soucis=S.soucis.filter(x=>x.id!==s.id); state.meSouci=null; meSave(); showToast('Souci supprimé'); } break;
+        case 'delsouci': if(s&&confirm(`Supprimer définitivement « ${s.titre} » ?`)){ S.soucis=S.soucis.filter(x=>x.id!==s.id); state.meSouci=null; meSave(); showToast('Signalement supprimé'); } break;
         case 'lieux': state.meLieux=!state.meLieux; render(); break;
         case 'addlieu': { const t=(g('meLieuNew')?.value||'').trim(); if(!t) return; if(S.lieux.some(l=>l.toLowerCase()===t.toLowerCase())){ showToast('Ce lieu existe déjà'); return; } S.lieux.push(t); meSave(); showToast('✓ Lieu ajouté'); setTimeout(()=>g('meLieuNew')?.focus(),50); break; }
         case 'dellieu': S.lieux.splice(+el.getAttribute('data-i'),1); meSave(); break;
@@ -3501,7 +3592,7 @@ document.addEventListener('change',e=>{
     const who=inp.getAttribute('data-me-file');
     meCompress(inp.files[0],url=>{
         if(who==='draft'){ meDraftRead(); state.meDraft.photos=[...(state.meDraft.photos||[]),url].slice(0,4); render(); }
-        else { const s=state.me.soucis.find(x=>x.id===who); if(!s) return; if((s.photos||[]).length>=4){ showToast('4 photos maximum par souci'); return; } s.photos=[...(s.photos||[]),url]; meJ(s,'Photo ajoutée'); meSave(); }
+        else { const s=state.me.soucis.find(x=>x.id===who); if(!s) return; if((s.photos||[]).length>=4){ showToast('4 photos maximum par signalement'); return; } s.photos=[...(s.photos||[]),url]; meJ(s,'Photo ajoutée'); meSave(); }
     });
 });
 document.addEventListener('input',e=>{ if(e.target.id!=='meQ') return; state.meQ=e.target.value; const pos=e.target.selectionStart; render(); const n=document.getElementById('meQ'); if(n){ n.focus(); try{ n.setSelectionRange(pos,pos); }catch(_){} } });
@@ -3514,8 +3605,8 @@ document.addEventListener('change',e=>{
         const ns=(d.soucis||[]).filter(x=>x&&x.id&&x.titre&&!ids.has(x.id)), nm=(d.memos||[]).filter(x=>x&&x.id&&!mids.has(x.id));
         const nl=(d.lieux||[]).filter(l=>l&&!S.lieux.some(x=>x.toLowerCase()===String(l).toLowerCase()));
         if(!ns.length&&!nm.length&&!nl.length){ showToast('Rien de nouveau : tout est déjà importé'); inp.value=''; return; }
-        if(!confirm(`Importer ${d.titre?`« ${d.titre} » `:''}?\n\n• ${ns.length} souci${ns.length>1?'s':''} (dont ${ns.filter(x=>x.statut!=='resolu').length} en cours)\n• ${nm.length} mémo${nm.length>1?'s':''}\n• ${nl.length} lieu${nl.length>1?'x':''}\n\nCe qui existe déjà n’est pas modifié.`)){ inp.value=''; return; }
-        S.soucis=[...ns,...S.soucis]; S.memos=[...nm,...S.memos]; S.lieux=[...S.lieux,...nl]; state.meLieux=false; meSave(); showToast(`✓ ${ns.length} soucis importés`); inp.value=''; };
+        if(!confirm(`Importer ${d.titre?`« ${d.titre} » `:''}?\n\n• ${ns.length} signalement${ns.length>1?'s':''} (dont ${ns.filter(x=>x.statut!=='resolu').length} en cours)\n• ${nm.length} mémo${nm.length>1?'s':''}\n• ${nl.length} lieu${nl.length>1?'x':''}\n\nCe qui existe déjà n’est pas modifié.`)){ inp.value=''; return; }
+        S.soucis=[...ns,...S.soucis]; S.memos=[...nm,...S.memos]; S.lieux=[...S.lieux,...nl]; state.meLieux=false; meSave(); showToast(`✓ ${ns.length} signalements importés`); inp.value=''; };
     rd.readAsText(inp.files[0]);
 });
 document.addEventListener('click',e=>{ const b=e.target.closest('[data-me="export"]'); if(!b||!state.me||!meOk()) return;
@@ -3585,14 +3676,15 @@ function renderAnalyse(m){
     const viaCompte=viaCodes.filter(c=>cx.via[c.code]!=='-').length;
 
     // Par assistante
-    const noms=[...new Set([...assistantes,...scope.map(c=>c.demandeur).filter(Boolean)])];
-    const rows=noms.map(n=>{ const L=scope.filter(c=>String(c.demandeur||'').toLowerCase()===n.toLowerCase());
+    const EQ=equipe();
+    const noms=[...new Set([...EQ.responsable,...EQ.polyvalente,...assistantes,...scope.map(c=>demNom(c))])].filter(n=>n&&n!=='Non renseigné');
+    const rows=noms.map(n=>{ const L=scope.filter(c=>demNom(c)===n), role=personne(n).role;
         const v=L.filter(isValide), an=L.filter(c=>c.pris==='Annulé'), am=L.map(anticip).filter(x=>x!==null&&x>=0);
         const last=L.map(c=>created(c)||parseDate(c.date)).filter(Boolean).sort((a,b)=>b-a)[0];
         const e=emailDe[n], u=cxU(e), vc=L.filter(c=>cx.via&&cx.via[c.code]); const vcc=vc.filter(c=>cx.via[c.code]!=='-').length;
         return {n,tot:L.length,repas:L.filter(c=>c.type==='repas').length,taxi:L.filter(c=>c.type==='taxi').length,hotel:L.filter(c=>c.type==='hotel').length,
-            val:v.length,ann:an.length,mt:v.reduce((a,c)=>a+(c.prix||0),0),ant:am.length?am.reduce((a,b)=>a+b,0)/am.length:null,last,e,u,j30:joursRecents(u),via:vc.length?pct(vcc,vc.length):null,dansListe:assistantes.includes(n)};
-    }).sort((a,b)=>b.tot-a.tot||a.n.localeCompare(b.n));
+            val:v.length,ann:an.length,mt:v.reduce((a,c)=>a+(c.prix||0),0),ant:am.length?am.reduce((a,b)=>a+b,0)/am.length:null,last,e,u,j30:joursRecents(u),via:vc.length?pct(vcc,vc.length):null,dansListe:assistantes.includes(n),role,var:[...new Set(L.map(c=>String(c.demandeur||'').trim()).filter(x=>x&&x!==n))]};
+    }).filter(r=>r.tot||r.role!=='invite').sort((a,b)=>ROLE_ORDRE.indexOf(a.role)-ROLE_ORDRE.indexOf(b.role)||b.tot-a.tot||a.n.localeCompare(b.n));
     const maxTot=Math.max(1,...rows.map(r=>r.tot));
 
     // Répartitions
@@ -3614,7 +3706,7 @@ function renderAnalyse(m){
     const topPresta=count(scope,c=>c.presta).slice(0,8);
     const topDest=count(scope.filter(c=>c.type==='taxi'),c=>norm(c.arrivee)).slice(0,6);
     const topVilles=count(scope.filter(c=>c.type==='hotel'),c=>norm(c.lieu)).slice(0,6);
-    const topPour=count(scope.filter(c=>c.type!=='repas'),c=>String(c.pourQui||'').split(/\s*,\s*/).map(norm)).slice(0,8);
+    const topPour=count(scope.filter(c=>c.type!=='repas'),c=>[...new Set(String(c.pourQui||'').split(/\s*,\s*/).filter(x=>x&&!/^autre/i.test(x)).map(x=>personne(x).nom))]).slice(0,8);
     const jr=(state.journal||[]).filter(j=>{ if(!rg.from) return true; const t=new Date(j.t); return t>=rg.from&&t<=new Date(rg.to.getTime()+864e5); });
     const parAdmin=count(jr.filter(j=>j.qui&&j.qui!=='Demandeur'&&!/demandeu/i.test(j.detail||'')),j=>j.qui).slice(0,6);
     const parAction=count(jr,j=>j.action).slice(0,8);
@@ -3640,10 +3732,10 @@ function renderAnalyse(m){
         const d=new Date(r.u.last), j=Math.floor((Date.now()-d)/864e5);
         return `<span class="an-tag ${j<=7?'vert':j<=30?'ambre':'gris'}">${j===0?'Aujourd’hui':j===1?'Hier':`Il y a ${j} j`}</span>`; };
     const table=`<div class="tbl-wrap"><table class="pro-table an-table"><thead><tr>
-        <th>Assistante</th><th style="text-align:right;">Demandes</th><th>Répartition</th><th style="text-align:right;">Validées</th><th style="text-align:right;">Montant validé</th><th style="text-align:right;">Anticipation</th><th>Dernière demande</th><th>Connexion</th><th style="text-align:right;">Via compte</th>
+        <th>Personne</th><th style="text-align:right;">Demandes</th><th>Répartition</th><th style="text-align:right;">Validées</th><th style="text-align:right;">Montant validé</th><th style="text-align:right;">Anticipation</th><th>Dernière demande</th><th>Connexion</th><th style="text-align:right;">Via compte</th>
         </tr></thead><tbody>
-        ${rows.map(r=>`<tr${r.tot?'':' class="an-zero"'}>
-            <td><div style="display:flex;align-items:center;gap:9px;"><span class="side-av" style="width:26px;height:26px;font-size:10px;">${esc($ini(r.n))}</span><div><div style="font-weight:600;">${esc(r.n)}</div>${r.dansListe?'':'<div class="m">hors liste des assistantes</div>'}</div></div></td>
+        ${rows.map((r,i)=>`${i===0||rows[i-1].role!==r.role?`<tr class="an-grp"><td colspan="9">${roleTag(r.role)}<span class="m" style="margin-left:8px;">${rows.filter(x=>x.role===r.role).length} personne${rows.filter(x=>x.role===r.role).length>1?'s':''} · ${rows.filter(x=>x.role===r.role).reduce((a,x)=>a+x.tot,0)} demandes${r.role==='invite'?` · passées par ${esc(equipe().polyvalente[0])}`:''}</span></td></tr>`:''}<tr${r.tot?'':' class="an-zero"'}>
+            <td><div style="display:flex;align-items:center;gap:9px;"><span class="side-av" style="width:26px;height:26px;font-size:10px;">${esc($ini(r.n))}</span><div><div style="font-weight:600;">${esc(r.n)}</div>${r.var.length?`<div class="m" title="${esc(r.var.join(' · '))}">${r.var.length} orthographe${r.var.length>1?'s':''} regroupée${r.var.length>1?'s':''}</div>`:''}</div></div></td>
             <td style="text-align:right;"><b>${r.tot}</b></td>
             <td>${r.tot?`<div class="an-split" title="Repas ${r.repas} · Taxi ${r.taxi} · Hôtel ${r.hotel}">${[['repas','#c2410c'],['taxi','#1d4ed8'],['hotel','#0f766e']].map(([k,c])=>r[k]?`<span style="flex:${r[k]};background:${c};"></span>`:'').join('')}</div><div class="m">${[r.repas?`${r.repas} repas`:'',r.taxi?`${r.taxi} taxi`:'',r.hotel?`${r.hotel} hôtel`:''].filter(Boolean).join(' · ')}</div>`:'<span class="m">—</span>'}</td>
             <td style="text-align:right;">${r.tot?`${r.val} <span class="m">(${pct(r.val,r.tot)} %)</span>${r.ann?`<div class="m">${r.ann} annulée${r.ann>1?'s':''}</div>`:''}`:'—'}</td>
@@ -3661,7 +3753,7 @@ function renderAnalyse(m){
 
     return `<div>
     <div class="page-head">
-        <div><h1>Analyses</h1><p>${rg.label} · ${nf(scope.length)} demande${scope.length>1?'s':''}, selon la date de la prestation</p></div>
+        <div><h1>Assistantes et connexions</h1><p>${rg.label} · ${nf(scope.length)} demande${scope.length>1?'s':''}, selon la date de la prestation</p></div>
     </div>
     <div style="display:flex;gap:4px;flex-wrap:wrap;background:#fff;border:1px solid var(--border);border-radius:8px;padding:4px;margin-bottom:${period==='perso'?'10px':'16px'};width:fit-content;max-width:100%;">
         ${PERIODS.map(([k,l])=>`<button data-stats-period="${k}" style="padding:6px 12px;border:none;border-radius:6px;font-size:12.5px;font-weight:500;cursor:pointer;background:${period===k?'var(--accent)':'transparent'};color:${period===k?'#fff':'#4b5563'};">${l}</button>`).join('')}
@@ -3679,7 +3771,7 @@ function renderAnalyse(m){
         ${tile('Personnes par repas',pers.length?String(Math.round(pers.reduce((a,b)=>a+b,0)/pers.length*10)/10).replace('.',','):'—',coutPers?`${$m(coutPers)} par personne`:'coût par personne : —','#be185d')}
     </div>
 
-    <div class="card" style="margin-bottom:16px;"><div class="card-h"><h3>Par assistante<span class="sub">${rows.filter(r=>r.tot).length} avec des demandes</span></h3></div>${table}</div>
+    <div class="card" style="margin-bottom:16px;"><div class="card-h"><h3>Par personne<span class="sub">${rows.filter(r=>r.tot).length} avec des demandes · noms mal orthographiés regroupés</span></h3><button class="card-link" data-nav='{"adminTab":"settings","settingsTab":"equipe"}'>Gérer l’équipe →</button></div>${table}</div>
 
     <div class="card" style="margin-bottom:16px;"><div class="card-h"><h3>Évolution des demandes</h3><div class="an-legend">${TYC.map(([k,c])=>`<span><i style="background:${c}"></i>${TYPE_LABEL[k]||k}</span>`).join('')}</div></div>
         <div style="padding:14px 16px;overflow-x:auto;"><div class="an-cols" style="min-width:${months.length*34}px;">
@@ -3783,7 +3875,7 @@ function renderActiviteTout(m){
     const sortAsc=state.resaSortAsc!==false;
 
     const all=state.data.filter(c=>{
-        if(search&&!`${c.desc} ${c.presta} ${c.demandeur} ${c.pourQui}`.toLowerCase().includes(search)) return false;
+        if(search&&!`${c.desc} ${c.presta} ${c.demandeur} ${demNom(c)} ${c.pourQui}`.toLowerCase().includes(search)) return false;
         if(filter==='avenir'){const d=parseDate(c.date);return c.pris==='OUI'&&d&&d>=today2;}
         return true; // "all"
     }).sort((a,b)=>{
@@ -3859,7 +3951,7 @@ function renderActiviteTout(m){
                             ${c.comment?`<span style="color:#94a3b8;margin-left:4px;vertical-align:-2px;" title="${c.comment}">${icon('message',12)}</span>`:''}
                         </td>
                         <td style="padding:7px 10px;color:#1a1f36;font-weight:500;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${c.type==='commande'?(c.presta||c.pourQui||'—'):(c.pourQui||'—')}</td>
-                        <td style="padding:7px 10px;color:#64748b;white-space:nowrap;">${c.demandeur||'—'}${c.type==='repas'&&c.nb>1?` <span style="font-size:10px;color:#94a3b8;">(${c.nb}p)</span>`:''}</td>
+                        <td style="padding:7px 10px;color:#64748b;white-space:nowrap;">${demHtml(c)}${c.type==='repas'&&c.nb>1?` <span style="font-size:10px;color:#94a3b8;">(${c.nb}p)</span>`:''}</td>
                         ${statusEditCell(c)}
                         ${prixEditCell(c)}
                     </tr>`).join(''):`<tr><td colspan="8" style="text-align:center;padding:40px;color:#94a3b8;">Aucune entrée</td></tr>`}
@@ -3906,7 +3998,7 @@ function renderReservations(m){
 
     let all=state.data.filter(c=>{
         if(c.type==='commande'||c.type==='hotel') return false;
-        if(search && !`${c.desc} ${c.presta} ${c.demandeur} ${c.pourQui}`.toLowerCase().includes(search)) return false;
+        if(search && !`${c.desc} ${c.presta} ${c.demandeur} ${demNom(c)} ${c.pourQui}`.toLowerCase().includes(search)) return false;
         if(filter==='attente') return c.pris==='En attente'||c.pris==='En cours';
         if(filter==='avenir') return c.pris==='OUI'&&parseDate(c.date)>=today2;
         if(filter==='passees') return c.pris==='Annulé'||c.pris==='Reçu'||(c.pris==='OUI'&&parseDate(c.date)<today2);
@@ -3918,7 +4010,7 @@ function renderReservations(m){
         else if(sortCol==='statut'){va=a.pris||'';vb=b.pris||'';}
         else if(sortCol==='pourQui'){va=a.pourQui||'';vb=b.pourQui||'';}
         else if(sortCol==='desc'){va=a.desc||'';vb=b.desc||'';}
-        else{va=a.demandeur||'';vb=b.demandeur||'';}
+        else{va=demNom(a);vb=demNom(b);}
         if(va<vb) return sortAsc?-1:1;
         if(va>vb) return sortAsc?1:-1;
         return 0;
@@ -3982,7 +4074,7 @@ function renderReservations(m){
                             <span style="font-weight:600;color:#1a1f36;">${c.desc||'—'}</span>
                         </td>
                         <td style="padding:7px 10px;color:#1a1f36;font-weight:500;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${c.pourQui||'—'}</td>
-                        <td style="padding:7px 10px;color:#64748b;white-space:nowrap;">${c.demandeur||'—'}</td>
+                        <td style="padding:7px 10px;color:#64748b;white-space:nowrap;">${demHtml(c)}</td>
                         ${statusEditCell(c)}
                         ${prixEditCell(c)}
                     </tr>`).join(''):`<tr><td colspan="7" style="text-align:center;padding:40px;color:#94a3b8;">Aucune réservation</td></tr>`}
@@ -4003,7 +4095,7 @@ function renderCommandes(m){
 
     let all=state.data.filter(c=>{
         if(c.type!=='commande') return false;
-        if(search && !`${c.desc} ${c.presta} ${c.demandeur}`.toLowerCase().includes(search)) return false;
+        if(search && !`${c.desc} ${c.presta} ${c.demandeur} ${demNom(c)}`.toLowerCase().includes(search)) return false;
         if(filter==='attente') return c.pris==='En attente'||c.pris==='En cours';
         if(filter==='avenir') return c.pris==='OUI'&&parseDate(c.date)>=today2;
         if(filter==='passees') return c.pris==='Annulé'||c.pris==='Reçu'||(c.pris==='OUI'&&parseDate(c.date)<today2);
@@ -4015,7 +4107,7 @@ function renderCommandes(m){
         else if(sortCol==='statut'){va=a.pris||'';vb=b.pris||'';}
         else if(sortCol==='presta'){va=a.presta||'';vb=b.presta||'';}
         else if(sortCol==='desc'){va=a.desc||'';vb=b.desc||'';}
-        else{va=a.demandeur||'';vb=b.demandeur||'';}
+        else{va=demNom(a);vb=demNom(b);}
         if(va<vb) return sortAsc?-1:1;
         if(va>vb) return sortAsc?1:-1;
         return 0;
@@ -4076,7 +4168,7 @@ function renderCommandes(m){
                                 <span style="color:var(--ink-mid);margin-right:4px;">${icon('box',13)}</span>${c.desc||'—'}${c.comment?` <span style="color:#94a3b8;vertical-align:-2px;" title="${c.comment}">${icon('message',12)}</span>`:''}
                             </td>
                         <td style="padding:7px 10px;color:#5a6a85;white-space:nowrap;">${c.presta||'—'}</td>
-                        <td style="padding:7px 10px;color:#64748b;white-space:nowrap;">${c.demandeur||'—'}</td>
+                        <td style="padding:7px 10px;color:#64748b;white-space:nowrap;">${demHtml(c)}</td>
                         ${statusEditCell(c)}
                         ${prixEditCell(c)}
                     </tr>`).join(''):`<tr><td colspan="7" style="text-align:center;padding:40px;color:#94a3b8;">Aucune commande</td></tr>`}
@@ -4096,7 +4188,7 @@ function renderHotels(m){
 
     let all=state.data.filter(c=>{
         if(c.type!=='hotel') return false;
-        if(search && !`${c.desc} ${c.presta} ${c.demandeur} ${c.lieu}`.toLowerCase().includes(search)) return false;
+        if(search && !`${c.desc} ${c.presta} ${c.demandeur} ${demNom(c)} ${c.lieu}`.toLowerCase().includes(search)) return false;
         if(filter==='attente') return c.pris==='En attente'||c.pris==='En cours';
         if(filter==='avenir') return c.pris==='OUI'&&parseDate(c.date)>=today2;
         if(filter==='passees') return c.pris==='Annulé'||c.pris==='Reçu'||(c.pris==='OUI'&&parseDate(c.date)<today2);
@@ -4108,7 +4200,7 @@ function renderHotels(m){
         else if(sortCol==='statut'){va=a.pris||'';vb=b.pris||'';}
         else if(sortCol==='presta'){va=a.presta||'';vb=b.presta||'';}
         else if(sortCol==='lieu'){va=a.lieu||'';vb=b.lieu||'';}
-        else{va=a.demandeur||'';vb=b.demandeur||'';}
+        else{va=demNom(a);vb=demNom(b);}
         if(va<vb) return sortAsc?-1:1;
         if(va>vb) return sortAsc?1:-1;
         return 0;
@@ -4167,7 +4259,7 @@ function renderHotels(m){
                             </td>
                         <td style="padding:7px 10px;color:#5a6a85;white-space:nowrap;">${c.lieu||'—'}</td>
                         <td style="padding:7px 10px;color:#5a6a85;white-space:nowrap;">${c.presta||'—'}</td>
-                        <td style="padding:7px 10px;color:#64748b;white-space:nowrap;">${c.demandeur||'—'}</td>
+                        <td style="padding:7px 10px;color:#64748b;white-space:nowrap;">${demHtml(c)}</td>
                         ${statusEditCell(c)}
                         ${prixEditCell(c)}
                     </tr>`;}).join(''):`<tr><td colspan="8" style="text-align:center;padding:40px;color:#94a3b8;">Aucune réservation d'hôtel</td></tr>`}
@@ -4205,7 +4297,7 @@ function renderCorbeille(m){
             <div style="font-size:24px;">${typeIcon(c.type)}</div>
             <div style="flex:1;min-width:0;">
                 <div style="font-weight:600;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${c.desc||'—'}</div>
-                <div style="font-size:11px;color:#8b93a1;margin-top:2px;">${c.demandeur||'—'} · ${$d(c.date)}${c.prix?' · '+$m(c.prix):''}</div>
+                <div style="font-size:11px;color:#8b93a1;margin-top:2px;">${demHtml(c)} · ${$d(c.date)}${c.prix?' · '+$m(c.prix):''}</div>
                 ${c.deletedAt?`<div style="font-size:11px;color:#9ca3af;margin-top:1px;">Supprimée le ${new Date(c.deletedAt).toLocaleDateString('fr-FR')}${c.deletedBy?' par '+esc(c.deletedBy):''} · effacée définitivement dans ${Math.max(0,TRASH_DAYS-Math.floor((Date.now()-new Date(c.deletedAt).getTime())/864e5))} j</div>`:''}
             </div>
             <button data-restore="${i}" style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:6px 12px;font-size:12px;font-weight:600;color:#15803d;cursor:pointer;white-space:nowrap;">↩ Restaurer</button>
@@ -4286,7 +4378,7 @@ function renderHistorique(m){
                             code:`<td style="padding:9px 12px;font-family:monospace;font-size:11px;font-weight:700;color:#6366f1;white-space:nowrap;">${c.code||'—'}</td>`,
                             type:`<td style="padding:9px 12px;">${typeBadge(c.type)}</td>`,
                             desc:`<td style="padding:9px 12px;color:#1a1f36;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:500;">${c.desc||'—'}</td>`,
-                            demandeur:`<td style="padding:9px 12px;font-weight:600;white-space:nowrap;color:#1a1f36;">${c.demandeur||'—'}</td>`,
+                            demandeur:`<td style="padding:9px 12px;font-weight:600;white-space:nowrap;color:#1a1f36;">${demHtml(c)}</td>`,
                             pourQui:`<td style="padding:9px 12px;color:#5a6a85;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${c.pourQui||'—'}</td>`,
                             statut:statusEditCell(c),
                             prix:prixEditCell(c),
@@ -4318,6 +4410,45 @@ function renderHistorique(m){
     </div>
     </div>`;
 }
+function equipeReglagesHtml(secHead){
+    const E=equipe(), D=state.data||[];
+    const vars={}; D.forEach(c=>{ const raw=String(c.demandeur||'').trim(); if(!raw) return; const p=personne(raw); if(_pn(raw)!==_pn(p.nom)) (vars[p.nom]=vars[p.nom]||new Set()).add(raw); });
+    const inv={}; D.forEach(c=>{ const p=personne(c.demandeur); if(p.role==='invite'&&!p.vide) inv[p.nom]=(inv[p.nom]||0)+1; });
+    const connus=_connus().filter(([,r])=>r!=='directeur').map(([n])=>n);
+    const opts=`<option value="">Rattacher à…</option>${connus.map(n=>`<option>${esc(n)}</option>`).join('')}`;
+    return `<div class="settings-section">
+        ${secHead("shield","Rôles","Chaque personne a un rôle, affiché dans l’appli et utilisé dans les statistiques.")}
+        <div class="eq-roles">
+            <label><span>${roleTag('responsable')}</span><input id="eqResp" class="form-input" value="${esc(E.responsable.join(', '))}"></label>
+            <label><span>${roleTag('polyvalente')}</span><input id="eqPoly" class="form-input" value="${esc(E.polyvalente.join(', '))}"></label>
+            <div><span>${roleTag('assistante')}</span><div class="eq-chips">${(settings.assistantes||[]).map(n=>`<span>${esc(n)}</span>`).join('')||'—'}</div><small>Liste modifiable plus bas.</small></div>
+            <div><span>${roleTag('invite')}</span><small>Toute autre personne. Ses commandes sont passées par ${esc(E.polyvalente[0])}.</small></div>
+        </div>
+        <button id="eqSave" class="btn-primary" style="width:100%;padding:12px;margin-top:12px;display:flex;align-items:center;justify-content:center;gap:7px;">${icon('save',14)} Enregistrer les rôles</button>
+        ${E.anciennes.length?`<div style="margin-top:18px;"><div style="font-weight:600;font-size:13px;margin-bottom:8px;">${roleTag('ancienne')} Ont quitté l’entreprise</div>${E.anciennes.map(a=>`<div class="settings-item"><span style="flex:1;font-size:13px;"><b>${esc(a.nom)}</b>${a.remplacee?` · remplacée par <b>${esc(a.remplacee)}</b>`:''}${a.depuis?` · depuis le ${new Date(a.depuis).toLocaleDateString('fr-FR')}`:''}<br><span style="color:var(--ink-soft);font-size:12px;">Son historique reste dans les statistiques.</span></span><button class="btn-sm" data-eq-retour="${esc(a.nom)}">Réintégrer</button></div>`).join('')}</div>`:''}
+    </div>
+    <div class="settings-section">
+        ${secHead("users","Noms regroupés","Les noms mal orthographiés sont rattachés automatiquement à la bonne personne, pour éviter les doublons dans les statistiques.")}
+        ${Object.keys(vars).length?`<div class="eq-vars">${Object.entries(vars).map(([n,s])=>`<div><b>${esc(n)}</b><span>${[...s].map(x=>`« ${esc(x)} »`).join(', ')}</span></div>`).join('')}</div>`:'<div class="empty-note" style="padding:8px 0;">Aucune variante détectée.</div>'}
+        ${Object.keys(inv).length?`<div style="font-weight:600;font-size:13px;margin:16px 0 8px;">Invités <span style="color:var(--ink-soft);font-weight:400;">· si un invité est en fait une personne de l’équipe, rattachez-le</span></div>
+        <div class="eq-inv">${Object.entries(inv).sort((a,b)=>b[1]-a[1]).map(([n,k])=>`<div><span><b>${esc(n)}</b> <small>${k} demande${k>1?'s':''}</small></span><select class="form-input" data-eq-alias="${esc(n)}">${opts}</select></div>`).join('')}</div>`:''}
+        ${Object.keys(E.alias).length?`<div style="font-size:12px;color:var(--ink-soft);margin-top:10px;">Rattachements manuels : ${Object.entries(E.alias).map(([a,b])=>`${esc(a)} → ${esc(b)} <button data-eq-unalias="${esc(a)}" style="border:none;background:none;color:#b91c1c;cursor:pointer;">✕</button>`).join(' · ')}</div>`:''}
+    </div>`;
+}
+document.addEventListener('click',e=>{
+    const sv=e.target.closest('#eqSave'), pa=e.target.closest('[data-eq-partie]'), rt=e.target.closest('[data-eq-retour]'), ua=e.target.closest('[data-eq-unalias]');
+    if(!sv&&!pa&&!rt&&!ua) return; e.preventDefault();
+    const E={...equipe(),v:1}; const split=v=>String(v||'').split(',').map(x=>x.trim()).filter(Boolean);
+    if(sv){ E.responsable=split(document.getElementById('eqResp')?.value); E.polyvalente=split(document.getElementById('eqPoly')?.value); settings.assistantes=(settings.assistantes||[]).filter(n=>!E.polyvalente.some(x=>_pn(x)===_pn(n))); }
+    if(pa){ const n=pa.getAttribute('data-eq-partie'); const remp=prompt(`${n} a quitté l’entreprise.\n\nQui la remplace ? (laisser vide si personne)`,''); if(remp===null) return;
+        E.anciennes=[...E.anciennes.filter(a=>a.nom!==n),{nom:n,remplacee:remp.trim()||null,depuis:isoDay(new Date())}]; settings.assistantes=settings.assistantes.filter(x=>x!==n);
+        if(remp.trim()&&!settings.assistantes.some(x=>_pn(x)===_pn(remp))) settings.assistantes.push(remp.trim()); if(settings.emails) delete settings.emails[n]; }
+    if(rt){ const n=rt.getAttribute('data-eq-retour'); E.anciennes=E.anciennes.filter(a=>a.nom!==n); if(!settings.assistantes.includes(n)) settings.assistantes.push(n); }
+    if(ua){ const a=ua.getAttribute('data-eq-unalias'); const al={...E.alias}; delete al[a]; E.alias=al; }
+    settings.equipe=E; saveSettings(settings); refreshGlobals(); showToast('✓ Équipe enregistrée'); render();
+});
+document.addEventListener('change',e=>{ const s=e.target.closest('[data-eq-alias]'); if(!s||!s.value) return;
+    const E={...equipe(),v:1}; E.alias={...E.alias,[s.getAttribute('data-eq-alias')]:s.value}; settings.equipe=E; saveSettings(settings); showToast(`✓ Rattaché à ${s.value}`); render(); });
 function renderSettings(){
     const secs=[
         {title:"Directeurs",       key:"directeurs",            icon:"user",badge:"director", inputId:"newDirecteur", btnId:"addDirecteur", rm:"remove-directeur", ph:"Prénom NOM",desc:"Proposés dans « Pour qui » lors d’une demande."},
@@ -4402,6 +4533,7 @@ function renderSettings(){
     </div>`}
 `;
     else if(cur[0]==='equipe') body=`
+    ${equipeReglagesHtml(secHead)}
     <div class="settings-section">
         ${secHead("shield","Administrateurs","Ont accès à l’administration, reçoivent l’email de chaque nouvelle demande et les rappels dans leur agenda.")}
         
@@ -4416,13 +4548,13 @@ function renderSettings(){
         <button id="saveAdminEmails" class="btn-primary" style="width:100%;padding:12px;display:flex;align-items:center;justify-content:center;gap:7px;">${icon('save',14)} Sauvegarder</button>
     </div>
     <div class="settings-section">
-        ${secHead("user","Assistantes","Elles passent les demandes. Leur email sert à créer leur compte et reçoit les confirmations.")}
+        ${secHead("user","Assistantes de direction","Elles passent les demandes. Leur email sert à créer leur compte et reçoit les confirmations.")}
         
         <div style="display:grid;grid-template-columns:${m||window.innerWidth<1100?'minmax(0,1fr)':'repeat(2,minmax(0,1fr))'};gap:10px 16px;margin-bottom:14px;">
             ${settings.assistantes.map((nom,i)=>`
             <div class="settings-item" style="align-items:flex-start;">
                 <div style="display:flex;flex-direction:column;gap:6px;flex:1;">
-                    <span style="font-size:13px;font-weight:600;display:flex;align-items:center;gap:7px;"><span class="badge-assistant">Assistante</span>${nom}</span>
+                    <span style="font-size:13px;font-weight:600;display:flex;align-items:center;gap:7px;"><span class="badge-assistant">Assistante de direction</span>${nom}<button data-eq-partie="${esc(nom)}" title="A quitté l’entreprise" style="margin-left:auto;background:none;border:1px solid var(--border);border-radius:6px;font-size:11px;padding:2px 7px;cursor:pointer;color:var(--ink-soft);">A quitté</button></span>
                     <input class="email-input form-input" data-nom="${nom}" value="${settings.emails&&settings.emails[nom]||''}" placeholder="email@example.com" style="padding:7px 10px;font-size:13px;">
                 </div>
                 ${state.confirmRm&&state.confirmRm.attr==='remove-assistante'&&state.confirmRm.idx===i?`
@@ -4810,7 +4942,8 @@ function attachEvents(){
         const rows=state.data.map(c=>({
             'Date':c.date||'',
             'Date départ':c.dateDepart||'',
-            'Demandeur':c.demandeur||'',
+            'Demandeur':demNom(c),
+            'Rôle':personne(c.demandeur).vide?'':(ROLES[personne(c.demandeur).role]||ROLES.invite)[0]+(personne(c.demandeur).role==='invite'?' (via '+viaDe(c)+')':''),
             'Pour qui':c.pourQui||'',
             'Titre':c.desc||'',
             'Type':typeLabel(c.type),
@@ -5242,7 +5375,7 @@ function attachEvents(){
         trackDemandeVia(newItem.code);
         const saved=await dbInsert(newItem);
         if(saved.id!==newItem.id){state.data=state.data.map(c=>c.id===newItem.id?saved:c);}
-        if(ADM){ try{ logAction('Ajoutée directement (admin)',newItem); }catch(e){} return; } // Julia / Arnaud : ajout direct, pas d'email
+        if(ADM){ try{ logAction('Ajoutée directement (admin)',newItem); }catch(e){} if(personne(newItem.demandeur).role==='invite') setSuivi([saved.id||newItem.id],()=>({par:userName()})); return; } // Julia / Arnaud : ajout direct, pas d'email
         // Fallback localStorage si Supabase pas encore chargé
         const adminEmailsSafe = (settings.adminEmails||[]).filter(Boolean).length
             ? settings.adminEmails
@@ -5446,6 +5579,7 @@ function attachEvents(){
         const savedCmd=await dbInsert(newCmd);
         if(savedCmd.id!==newCmd.id){state.data=state.data.map(c=>c.id===newCmd.id?savedCmd:c);}
         logAction('Création', savedCmd, 'saisie admin');
+        if(personne(savedCmd.demandeur).role==='invite') setSuivi([savedCmd.id],()=>({par:userName()}));
         // Saisie directe par un admin : pas d'email
     };
 
