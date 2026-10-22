@@ -2844,18 +2844,27 @@ let _liveTimer=null;
 function renderLive(){
     const now=new Date(), todayK=isoDay(now), tom=new Date(now); tom.setDate(now.getDate()+1);
     const ev=eventsByDay(); const today=(ev[todayK]||[]), demain=(ev[isoDay(tom)]||[]);
+    const P=meOk()&&state.me?state.me:null, mn=d=>{ const x=new Date(d); return x.getHours()*60+x.getMinutes(); };
+    const ints=P?P.soucis.filter(s=>s.statut==='prevu'&&s.interv&&isoDay(new Date(s.interv))===todayK).sort((a,b)=>new Date(a.interv)-new Date(b.interv)):[];
+    const intsDem=P?P.soucis.filter(s=>s.statut==='prevu'&&s.interv&&isoDay(new Date(s.interv))===isoDay(tom)):[];
+    const ACT=P?meActions():[], urgB=P?P.soucis.filter(s=>s.statut!=='resolu'&&s.urgence==='urgent').length:0;
+    const rapp=P?P.memos.filter(x=>x.rappel&&!x.fait&&isoDay(new Date(x.rappel))<=todayK).sort((a,b)=>new Date(a.rappel)-new Date(b.rappel)):[];
+    const hhmm=d=>new Date(d).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}).replace(':','h');
     const n=countStages(); const recus=today.filter(c=>suiviOf(c).recu||stageOf(c)==='fait').length;
-    const hrs=today.map(c=>heureMin(c.heure)).filter(x=>x!==9999).map(x=>x/60);
+    const hrs=[...today.map(c=>heureMin(c.heure)).filter(x=>x!==9999),...ints.map(s=>mn(s.interv))].map(x=>x/60);
     const H0=Math.min(7,Math.floor(Math.min(24,...hrs))), H1=Math.max(21,Math.ceil(Math.max(0,...hrs))+1), pos=c=>{ const mn=heureMin(c.heure); return mn===9999?null:Math.max(0,Math.min(100,(mn/60-H0)/(H1-H0)*100)); };
     const nowPos=Math.max(0,Math.min(100,((now.getHours()+now.getMinutes()/60)-H0)/(H1-H0)*100)); window._lvRange=[H0,H1];
     const COL={avalider:'#f59e0b',acommander:'#60a5fa',commandee:'#2dd4bf',fait:'#4ade80',refusee:'#f87171'};
     const timed=today.filter(c=>pos(c)!==null);
-    const lanes=[]; timed.sort((a,b)=>heureMin(a.heure)-heureMin(b.heure)).forEach(c=>{ const p=pos(c); let l=lanes.findIndex(x=>p-x>14); if(l<0){ l=lanes.length; lanes.push(p);} else lanes[l]=p; c._lane=l; });
+    const posI=s=>Math.max(0,Math.min(100,(mn(s.interv)/60-H0)/(H1-H0)*100));
+    const TL=[...timed.map(c=>({c,p:pos(c),m:heureMin(c.heure)})),...ints.map(s=>({s,p:posI(s),m:mn(s.interv)}))].sort((a,b)=>a.m-b.m);
+    const lanes=[]; TL.forEach(x=>{ const p=x.p; let l=lanes.findIndex(y=>p-y>14); if(l<0){ l=lanes.length; lanes.push(p);} else lanes[l]=p; x.lane=l; });
     const prochaines=today.filter(c=>{ const hp=heurePrevue(c); return !hp||hp>=new Date(now.getTime()-30*60000); }).slice(0,6);
     const cpt=(v,l,col,i)=>`<div class="lv-kpi" style="animation-delay:${i*120}ms;"><span class="lv-kpi-v" data-count="${v}" style="color:${col};">0</span><span class="lv-kpi-l">${l}</span></div>`;
     const ligne=c=>{ const st=stageOf(c), s=suiviOf(c), hp=heurePrevue(c), bientot=hp&&hp-now<45*60000&&hp>now;
         return `<div class="lv-item ${bientot?'pulse':''}" style="--c:${COL[st]};"><span class="lv-h">${esc(c.heure||'—')}</span><div style="min-width:0;flex:1;"><b>${esc(titreDe(c))}${c.type==='repas'?` · ${c.nb||1} pers.`:''}</b><span>${esc([c.type==='taxi'?`${c.depart||''} → ${c.arrivee||''}`:c.lieu,c.presta,c.demandeur].filter(Boolean).join(' · '))}</span></div><span class="lv-st">${s.recu?'Livré ✓':bientot?'Imminent':STAGES[st].court}</span></div>`; };
-    const ticker=demain.length?demain.map(c=>`<span>${icon(c.type==='taxi'?'car':c.type==='hotel'?'bed':'utensils',16)} ${esc(c.heure||'')} ${esc(titreDe(c))}${c.type==='repas'?` · ${c.nb||1} pers.`:''}${c.lieu?' · '+esc(c.lieu):''}</span>`).join(''):'<span>Rien de prévu demain pour l’instant</span>';
+    const tkI=intsDem.map(s=>`<span>🔧 ${hhmm(s.interv)} ${esc(s.titre)} · ${esc(meZone(s))}</span>`).join('');
+    const ticker=(demain.length||tkI)?tkI+demain.map(c=>`<span>${icon(c.type==='taxi'?'car':c.type==='hotel'?'bed':'utensils',16)} ${esc(c.heure||'')} ${esc(titreDe(c))}${c.type==='repas'?` · ${c.nb||1} pers.`:''}${c.lieu?' · '+esc(c.lieu):''}</span>`).join(''):'<span>Rien de prévu demain pour l’instant</span>';
     return `<div class="lv">
         <div class="lv-bg"></div>
         <header class="lv-top">
@@ -2863,21 +2872,24 @@ function renderLive(){
             <div class="lv-clock" id="lvClock">${now.toLocaleTimeString('fr-FR')}</div>
             <button data-live-exit class="lv-exit" title="Quitter (Échap)">${icon('x',18)}</button>
         </header>
-        <div class="lv-kpis">
-            ${cpt(today.length,'prestations aujourd’hui','#fff',0)}${cpt(recus,'déjà livrées','#4ade80',1)}${cpt(n.acommander,'à commander','#60a5fa',2)}${cpt(n.avalider,'à valider','#fbbf24',3)}
+        <div class="lv-kpis" ${P?'style="grid-template-columns:repeat(6,1fr);"':''}>
+            ${cpt(today.length,'prestations aujourd’hui','#fff',0)}${cpt(recus,'déjà livrées','#4ade80',1)}${cpt(n.acommander,'à commander','#60a5fa',2)}${cpt(n.avalider,'à valider','#fbbf24',3)}${P?cpt(ints.length,'interventions aujourd’hui','#c4b5fd',4)+cpt(ACT.length,'actions bâtiment','#f87171',5):''}
         </div>
         <section class="lv-tl">
             <div class="lv-tl-h">${Array.from({length:H1-H0+1},(_,i)=>`<span style="left:${i/(H1-H0)*100}%;">${H0+i}h</span>`).join('')}</div>
             <div class="lv-tl-b" style="height:${Math.max(3,lanes.length)*76+20}px;">
                 ${Array.from({length:H1-H0+1},(_,i)=>`<i style="left:${i/(H1-H0)*100}%;"></i>`).join('')}
                 <div class="lv-now" id="lvNow" style="left:${nowPos}%;"><span>${now.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})}</span></div>
-                ${timed.map((c,i)=>{ const st=stageOf(c), s=suiviOf(c); return `<div class="lv-ev ${s.recu?'ok':''}" style="left:${pos(c)}%;top:${c._lane*76+10}px;width:13%;--c:${COL[st]};animation-delay:${300+i*90}ms;"><b>${esc(c.heure)} ${esc(titreDe(c))}</b><span>${esc(c.type==='repas'?`${c.nb||1} pers. · ${c.lieu||''}`:c.type==='taxi'?(c.arrivee||''):(c.lieu||''))}</span></div>`; }).join('')}
-                ${timed.length?'':'<div class="lv-empty">Aucune prestation aujourd’hui</div>'}
+                ${TL.map((x,i)=>{ if(x.s) return `<div class="lv-ev" style="left:${x.p}%;top:${x.lane*76+10}px;width:13%;--c:#a78bfa;animation-delay:${300+i*90}ms;"><b>${hhmm(x.s.interv)} 🔧 ${esc(x.s.titre)}</b><span>${esc([meZone(x.s),x.s.interv_par].filter(Boolean).join(' · '))}</span></div>`; const c=x.c; const st=stageOf(c), s=suiviOf(c); return `<div class="lv-ev ${s.recu?'ok':''}" style="left:${x.p}%;top:${x.lane*76+10}px;width:13%;--c:${COL[st]};animation-delay:${300+i*90}ms;"><b>${esc(c.heure)} ${esc(titreDe(c))}</b><span>${esc(c.type==='repas'?`${c.nb||1} pers. · ${c.lieu||''}`:c.type==='taxi'?(c.arrivee||''):(c.lieu||''))}</span></div>`; }).join('')}
+                ${TL.length?'':`<div class="lv-empty">Aucune prestation${P?' ni intervention':''} aujourd’hui</div>`}
             </div>
         </section>
-        ${(()=>{ const nx=today.map(c=>({c,hp:heurePrevue(c)})).filter(x=>x.hp&&x.hp>now).sort((a,b)=>a.hp-b.hp)[0];
-            return `<section class="lv-next">${nx?`<div class="lv-next-l">Prochaine prestation dans</div><div class="lv-next-cd" id="lvCd" data-t="${nx.hp.getTime()}">—</div><div class="lv-next-d"><b>${esc(nx.c.heure)} · ${esc(titreDe(nx.c))}${nx.c.type==='repas'?` · ${nx.c.nb||1} pers.`:''}</b><span>${esc([nx.c.type==='taxi'?`${nx.c.depart||''} → ${nx.c.arrivee||''}`:nx.c.lieu,nx.c.presta,nx.c.demandeur].filter(Boolean).join(' · '))}</span></div>`:`<div class="lv-next-l">Plus de prestation aujourd’hui</div><div class="lv-next-cd" style="color:#4ade80;">✓ Journée terminée</div>`}</section>`; })()}
-        <section class="lv-list"><h3>Prochaines prestations</h3>${prochaines.length?prochaines.map(ligne).join(''):'<div class="lv-empty" style="position:static;">Tout est passé pour aujourd’hui ✓</div>'}</section>
+        ${(()=>{ const nx=[...today.map(c=>({c,hp:heurePrevue(c)})),...ints.map(s=>({c:{heure:hhmm(s.interv),descr:'🔧 '+s.titre,_int:s},hp:new Date(s.interv)}))].filter(x=>x.hp&&x.hp>now).sort((a,b)=>a.hp-b.hp)[0];
+            return `<section class="lv-next">${nx?`<div class="lv-next-l">${nx.c._int?'Prochaine intervention dans':'Prochaine prestation dans'}</div><div class="lv-next-cd" id="lvCd" data-t="${nx.hp.getTime()}">—</div><div class="lv-next-d"><b>${esc(nx.c.heure)} · ${esc(nx.c._int?nx.c.descr:titreDe(nx.c))}${nx.c.type==='repas'?` · ${nx.c.nb||1} pers.`:''}</b><span>${esc(nx.c._int?[meZone(nx.c._int),nx.c._int.interv_par].filter(Boolean).join(' · '):[nx.c.type==='taxi'?`${nx.c.depart||''} → ${nx.c.arrivee||''}`:nx.c.lieu,nx.c.presta,nx.c.demandeur].filter(Boolean).join(' · '))}</span></div>`:`<div class="lv-next-l">Plus de prestation aujourd’hui</div><div class="lv-next-cd" style="color:#4ade80;">✓ Journée terminée</div>`}</section>`; })()}
+        <section class="lv-list"><h3>Prochaines prestations</h3>${prochaines.length?prochaines.slice(0,P?4:6).map(ligne).join(''):'<div class="lv-empty" style="position:static;">Tout est passé pour aujourd’hui ✓</div>'}
+        ${P?`<h3 style="margin-top:18px;">Bâtiment · à faire <span style="opacity:.6;font-weight:500;">${ACT.length}</span></h3>${[...ints.filter(s=>new Date(s.interv)>new Date(now.getTime()-60*60000)).map(s=>`<div class="lv-item" style="--c:#a78bfa;"><span class="lv-h">${hhmm(s.interv)}</span><div style="min-width:0;flex:1;"><b>🔧 ${esc(s.titre)}</b><span>${esc([meZone(s),s.interv_par].filter(Boolean).join(' · '))}</span></div><span class="lv-st">Intervention</span></div>`),
+            ...ACT.slice(0,4).map(({s,k,why,group})=>`<div class="lv-item" style="--c:${{verif:'#a78bfa',relance:'#f87171',transmettre:'#fbbf24',silence:'#94a3b8'}[k]};"><span class="lv-h" style="font-size:12px;">${{verif:'Vérifier',relance:'Relancer',transmettre:'Transmettre',silence:'Relancer'}[k]}</span><div style="min-width:0;flex:1;"><b>${esc(group||s.titre)}</b><span>${esc(group?why:meZone(s)+' · '+why)}</span></div></div>`),
+            ...rapp.slice(0,2).map(x=>`<div class="lv-item" style="--c:#fbbf24;"><span class="lv-h">${hhmm(x.rappel)}</span><div style="min-width:0;flex:1;"><b>📝 ${esc(String(x.texte).split('\n')[0])}</b><span>Rappel mémo</span></div></div>`)].slice(0,5).join('')||'<div class="lv-empty" style="position:static;">Rien à faire côté bâtiment ✓</div>'}`:''}</section>
         <footer class="lv-ticker"><b>Demain</b><div class="lv-tk"><div class="lv-tk-in">${ticker}${ticker}</div></div></footer>
     </div>`;
 }
