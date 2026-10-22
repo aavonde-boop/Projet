@@ -1523,10 +1523,13 @@ function render(){
     else if(state.loginScreen || (settings.loginObligatoire && !AUTH)) html=renderLogin();
     else if(state.trackMode) html=renderTrackCode(m);
     else html=renderHome(m);
+    // Garder le focus et le curseur dans le champ en cours de saisie (barres de recherche…)
+    const ae=document.activeElement, keep=ae&&ae.id&&/^(INPUT|TEXTAREA)$/.test(ae.tagName)&&!/^(checkbox|radio|file|button|submit)$/i.test(ae.type||'')?{id:ae.id,s:ae.selectionStart,e:ae.selectionEnd,sc:ae.scrollLeft}:null;
     app.innerHTML=`<div class="desktop-app">${html}</div>`;
     appliquerMarque();
     attachEvents();
     initAutocomplete();
+    if(keep){ const n=document.getElementById(keep.id); if(n&&document.activeElement!==n){ try{ n.focus({preventScroll:true}); if(keep.s!=null&&n.setSelectionRange) n.setSelectionRange(keep.s,keep.e); n.scrollLeft=keep.sc; }catch(e){} } }
     if(state.live&&document.getElementById('lvClock')){ if(!_liveTimer) _liveTimer=setInterval(liveTick,1000); liveAnimateCounters(); }
 }
 
@@ -3812,7 +3815,7 @@ function renderActiviteTout(m){
 
     return `<div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;align-items:center;">
-        <input id="adminSearch" type="text" placeholder="Rechercher..." value="${state.search||''}" class="search-input" style="flex:1;min-width:140px;margin-bottom:0;">
+        <input id="adminSearch" type="text" placeholder="Rechercher..." value="${esc(state.search||'')}" class="search-input" style="flex:1;min-width:140px;margin-bottom:0;">
         <div style="display:flex;gap:4px;background:#f1f2f4;border-radius:6px;padding:3px;" id="filterBtns">
             ${filterBtns}
         </div>
@@ -3937,7 +3940,7 @@ function renderReservations(m){
 
     <!-- Barre filtres + recherche -->
     <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
-        <input type="text" id="adminSearch" placeholder="Rechercher..." value="${search}" class="search-input" style="flex:1;min-width:160px;margin-bottom:0;">
+        <input type="text" id="adminSearch" placeholder="Rechercher..." value="${esc(state.search||'')}" class="search-input" style="flex:1;min-width:160px;margin-bottom:0;">
         <div style="display:flex;gap:4px;background:#f1f5f9;border-radius:6px;padding:3px;">
             ${FILTERS.filter(([k])=>k==='all'||k==='passees'||(k==='attente'&&nbAttente>0)||(k==='avenir'&&nbAvenir>0)).map(([k,l,count])=>`<button data-resa-filter="${k}" style="display:flex;align-items:center;gap:5px;padding:5px 12px;border:none;border-radius:8px;font-size:12px;font-weight:500;cursor:pointer;background:${filter===k?'#fff':'transparent'};color:${filter===k?'#1a1f36':'#64748b'};box-shadow:${filter===k?'0 1px 3px rgba(0,0,0,0.1)':'none'};white-space:nowrap;transition:all 0.15s;">${l}${count?`<span style="background:${k==='attente'?'#f59e0b':'#22c55e'};color:#fff;border-radius:50%;min-width:16px;height:16px;font-size:10px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;padding:0 3px;">${count}</span>`:''}</button>`).join('')}
         </div>
@@ -4033,7 +4036,7 @@ function renderCommandes(m){
     </div>
 
     <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
-        <input type="text" id="adminSearch" placeholder="Rechercher..." value="${search}" class="search-input" style="flex:1;min-width:160px;margin-bottom:0;">
+        <input type="text" id="adminSearch" placeholder="Rechercher..." value="${esc(state.search||'')}" class="search-input" style="flex:1;min-width:160px;margin-bottom:0;">
         <div style="display:flex;gap:4px;background:#f1f5f9;border-radius:6px;padding:3px;">
             ${FILTERS.filter(([k])=>k==='all'||k==='passees'||(k==='attente'&&nbAttente>0)||(k==='avenir'&&nbAvenir>0)).map(([k,l,count])=>`<button data-cmd-filter="${k}" style="display:flex;align-items:center;gap:5px;padding:5px 12px;border:none;border-radius:8px;font-size:12px;font-weight:500;cursor:pointer;background:${filter===k?'#fff':'transparent'};color:${filter===k?'#1a1f36':'#64748b'};box-shadow:${filter===k?'0 1px 3px rgba(0,0,0,0.1)':'none'};white-space:nowrap;transition:all 0.15s;">${l}${count?`<span style="background:${k==='attente'?'#f59e0b':'#22c55e'};color:#fff;border-radius:50%;min-width:16px;height:16px;font-size:10px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;padding:0 3px;">${count}</span>`:''}</button>`).join('')}
         </div>
@@ -4120,7 +4123,7 @@ function renderHotels(m){
     </div>
 
     <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
-        <input type="text" id="adminSearch" placeholder="Rechercher..." value="${search}" class="search-input" style="flex:1;min-width:160px;margin-bottom:0;">
+        <input type="text" id="adminSearch" placeholder="Rechercher..." value="${esc(state.search||'')}" class="search-input" style="flex:1;min-width:160px;margin-bottom:0;">
         <div style="display:flex;gap:4px;background:#f1f5f9;border-radius:6px;padding:3px;">
             ${FILTERS.filter(([k])=>k==='all'||k==='passees'||(k==='attente'&&nbAttente>0)||(k==='avenir'&&nbAvenir>0)).map(([k,l,count])=>`<button data-hotel-filter="${k}" style="display:flex;align-items:center;gap:5px;padding:5px 12px;border:none;border-radius:8px;font-size:12px;font-weight:500;cursor:pointer;background:${filter===k?'#fff':'transparent'};color:${filter===k?'#1a1f36':'#64748b'};box-shadow:${filter===k?'0 1px 3px rgba(0,0,0,0.1)':'none'};white-space:nowrap;transition:all 0.15s;">${l}${count?`<span style="background:${k==='attente'?'#f59e0b':'#22c55e'};color:#fff;border-radius:50%;min-width:16px;height:16px;font-size:10px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;padding:0 3px;">${count}</span>`:''}</button>`).join('')}
         </div>
