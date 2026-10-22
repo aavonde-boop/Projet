@@ -838,21 +838,32 @@ function demHtml(c,opt={}){ const p=personne(c.demandeur); if(p.vide) return '�
     return p.role==='invite'?`${esc(p.nom)} <span class="role-tag sm" style="color:${ROLES.invite[1]};background:${ROLES.invite[2]};">Invité · via ${esc(String(viaDe(c)).split(' ')[0])}</span>`:esc(p.nom)+(opt.role?' '+roleTag(p.role,true):''); }
 function monRole(){ const n=userName(); const p=personne(n); return p.role==='invite'?(isAdmin()?'Administrateur':'Utilisateur'):ROLES[p.role][0]; }
 /* Mise à jour de l'équipe (une seule fois) : rôles, départ de Milène, remplaçante */
+const REMPLACANTE='Bérangère GRELET';
 async function migrerEquipe(){
-    if(!isAdmin()||settings.equipe&&settings.equipe.v>=1) return;
+    if(!isAdmin()) return;
+    const eq=settings.equipe;
+    if(eq&&eq.v>=2) return;
+    // Orthographe de Bérangère Grelet telle qu'elle existe déjà (liste ou commandes), sinon « Bérangère GRELET »
+    const estBG=n=>/b[e]rang[e]re/i.test(sansAccent(n||''))&&/gre[lr]e[t]?/i.test(sansAccent(n||''));
+    const remp=(settings.assistantes||[]).find(estBG)||_titre((state.data||[]).map(c=>c.demandeur).find(estBG)||REMPLACANTE);
+    if(eq&&eq.v===1){ // correctif : la remplaçante de Milène est Bérangère GRELET (pas Anne Bérangère CREMER)
+        settings.equipe={...eq,v:2,anciennes:(eq.anciennes||[]).map(a=>/^mil[e]ne\b/i.test(sansAccent(a.nom))?{...a,remplacee:remp}:a)};
+        if(!settings.assistantes.some(n=>_pn(n)===_pn(remp))) settings.assistantes.push(remp);
+        if(settings.emails) Object.keys(settings.emails).filter(n=>/^mil[e]ne\b/i.test(sansAccent(n))).forEach(n=>delete settings.emails[n]);
+        personnesReset(); saveSettings(settings);
+        try{ logAction('Équipe mise à jour',[{id:0,code:'',type:'',desc:'Rôles'}],`Remplaçante de Milène : ${remp}`); }catch(e){}
+        return;
+    }
     const A=[...(settings.assistantes||[])];
     const poly=A.filter(n=>/poitier/i.test(sansAccent(n))); const polyv=poly.length?poly:['Julia POITIER'];
     const part=A.filter(n=>/^mil[e]ne\b/i.test(sansAccent(n)));
-    let remp=A.find(n=>/b[e]rang[e]re/i.test(sansAccent(n)));
-    let assist=A.filter(n=>!poly.includes(n)&&!part.includes(n));
-    if(!remp){ remp='Bérangère'; assist.push(remp); }
+    const assist=A.filter(n=>!poly.includes(n)&&!part.includes(n));
+    if(!assist.some(n=>_pn(n)===_pn(remp))) assist.push(remp);
     const emails={...(settings.emails||{})}; part.forEach(n=>delete emails[n]);
-    const resp=(state.data||[]).map(c=>c.demandeur).find(n=>/avonde/i.test(n||''))||'Arnaud AVONDE';
-    settings.equipe={v:1,responsable:[_titre(resp).replace(/AVONDE/i,'AVONDE')],polyvalente:polyv,anciennes:part.map(n=>({nom:n,remplacee:remp,depuis:isoDay(new Date())})),alias:{}};
+    settings.equipe={v:2,responsable:['Arnaud AVONDE'],polyvalente:polyv,anciennes:part.map(n=>({nom:n,remplacee:remp,depuis:isoDay(new Date())})),alias:{}};
     settings.assistantes=assist; settings.emails=emails;
     personnesReset(); saveSettings(settings);
     try{ logAction('Équipe mise à jour',[{id:0,code:'',type:'',desc:'Rôles'}],`Polyvalente : ${polyv.join(', ')} · Partie : ${part.join(', ')||'—'} · Remplaçante : ${remp}`); }catch(e){}
-    console.log('Équipe migrée', settings.equipe);
 }
 function refreshGlobals(){ P_REPAS=[...settings.prestatairesRepas]; P_TAXI=[...settings.prestatairesTaxi]; P_CMD=[...settings.prestatairesCommande]; P_HOTEL=[...(settings.prestatairesHotel||DEFAULT_PHOTEL)]; P_TYPES=[...(settings.typesRepas||DEFAULT_TYPES_REPAS)]; }
 
@@ -1607,7 +1618,7 @@ function render(){
     if(state.vue==='admin'&&state.authed) lsSet('last_admin_tab', state.adminTab||'dashboard');
     state.authed = isAdmin();
     if(AUTH&&!state.loading) trackConnexion();
-    if(AUTH&&!state.loading&&isAdmin()&&!window._eqMig&&!(settings.equipe&&settings.equipe.v>=1)){ window._eqMig=true; setTimeout(()=>migrerEquipe().then(()=>render()).catch(e=>console.error('Équipe',e)),0); }
+    if(AUTH&&!state.loading&&isAdmin()&&!window._eqMig&&!(settings.equipe&&settings.equipe.v>=2)){ window._eqMig=true; setTimeout(()=>migrerEquipe().then(()=>render()).catch(e=>console.error('Équipe',e)),0); }
     if(state.authMode==='reset') html=renderLogin();
     else if(state.express) html=isAdmin()?renderExpress():(AUTH?renderPasAdmin():renderLogin());
     else if(state.vue==="admin") html=state.authed?(state.live?renderLive():renderAdminView(m)):(AUTH?renderPasAdmin():renderLogin());
