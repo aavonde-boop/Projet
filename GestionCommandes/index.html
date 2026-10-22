@@ -622,6 +622,11 @@
         .nf-where{display:flex;flex-direction:column;align-items:center;gap:6px;margin:4px 0 10px;font-size:14px;} .nf-where b{display:flex;align-items:center;gap:6px;font-size:16px;} .nf-where span{display:flex;align-items:center;gap:6px;color:var(--ink-soft);font-size:13px;} .nf-where em{font-style:normal;color:#b45309;font-size:12.5px;display:flex;gap:5px;align-items:center;}
         .suivi-card.flash{animation:flashCard 2.4s ease-out 1;box-shadow:0 0 0 2px #60a5fa;} @keyframes flashCard{0%{background:#dbeafe;}100%{background:#fff;}}
         .mails{display:flex;flex-direction:column;gap:4px;margin-top:12px;padding:10px 12px;background:#f8fafc;border-radius:8px;font-size:12px;} .mails b{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--ink);margin-bottom:2px;} .mails span{padding-left:19px;position:relative;color:var(--ink-mid);} .mails span::before{content:'';position:absolute;left:5px;top:6px;width:7px;height:7px;border-radius:50%;background:#cbd5e1;} .mails .m-ok::before{background:#16a34a;} .mails .m-wait::before{background:#f59e0b;} .mails .m-grey{color:var(--ink-soft);}
+        .st-tabs{display:flex;gap:4px;margin-bottom:16px;border-bottom:1px solid var(--border);} .st-tabs button{display:flex;align-items:center;gap:7px;background:none;border:none;border-bottom:2px solid transparent;padding:10px 14px;font:600 13.5px var(--fb);color:var(--ink-soft);cursor:pointer;margin-bottom:-1px;} .st-tabs button.on{color:var(--ink);border-bottom-color:var(--accent);}
+        .ml-list{display:flex;flex-direction:column;} .ml-row{display:flex;align-items:center;gap:14px;padding:14px 4px;border-bottom:1px solid var(--border-light);cursor:pointer;} .ml-row:last-child{border-bottom:0;} .ml-row.dis{cursor:default;opacity:.75;}
+        .ml-row input{position:absolute;opacity:0;pointer-events:none;} .ml-sw{flex:0 0 40px;height:22px;border-radius:99px;background:#d5dae2;position:relative;transition:background .2s;} .ml-sw::after{content:'';position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.2);transition:left .2s;}
+        .ml-row input:checked + .ml-sw{background:#15803d;} .ml-row input:checked + .ml-sw::after{left:21px;} .ml-row input:focus-visible + .ml-sw{outline:2px solid var(--accent);outline-offset:2px;}
+        .ml-t{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;} .ml-t b{font-size:14px;} .ml-t span{font-size:12.5px;color:var(--ink-soft);line-height:1.4;} .ml-st{font-size:11.5px;font-weight:600;color:#6b7280;background:#f1f2f4;border-radius:6px;padding:3px 8px;white-space:nowrap;} .ml-st.on{color:#15803d;background:#dcfce7;}
         .role-tag{display:inline-flex;align-items:center;font-size:11.5px;font-weight:600;padding:2px 8px;border-radius:6px;white-space:nowrap;vertical-align:1px;} .role-tag.sm{font-size:10.5px;padding:1px 6px;margin-left:4px;}
         .an-grp td{background:#fafbfc;padding:8px 16px!important;border-top:1px solid var(--border);}
         .kb{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;align-items:start;} .kb-col{background:#eef0f3;border-radius:12px;padding:10px;display:flex;flex-direction:column;gap:8px;}
@@ -671,7 +676,7 @@ const EJS_SERVICE  = "service_assistantes";
 const EJS_TEMPLATE = "template_xz4on7w";
 // Génération code unique REP/TAX/CMD-XXXX
 function genCode(type){
-    const suffix=type==='repas'?'R':type==='taxi'?'T':'C';
+    const suffix=type==='repas'?'R':type==='taxi'?'T':type==='coursier'?'K':'C';
     const num=Math.floor(1000+Math.random()*9000);
     return `AAG-${suffix}${num}`;
 }
@@ -710,6 +715,7 @@ function loadSettingsLocal() {
         prestaInfo:           JSON.parse(localStorage.getItem('settings_presta_info')            ||'{}'),
         marque:               JSON.parse(localStorage.getItem('settings_marque')                 ||'{}'),
         equipe:               JSON.parse(localStorage.getItem('settings_equipe')                 ||'null'),
+        mails:                JSON.parse(localStorage.getItem('settings_mails')                  ||'null'),
     };
 }
 
@@ -728,11 +734,12 @@ function saveSettingsLocal(s) {
     localStorage.setItem('settings_presta_info',           JSON.stringify(s.prestaInfo||{}));
     try{ localStorage.setItem('settings_marque',            JSON.stringify(s.marque||{})); }catch(e){}
     try{ localStorage.setItem('settings_equipe',            JSON.stringify(s.equipe||null)); }catch(e){}
+    try{ localStorage.setItem('settings_mails',             JSON.stringify(s.mails||null)); }catch(e){}
 }
 
 async function loadSettingsFromDB() {
     try {
-        const r = await fetch(`${SB_PARAMS}?select=cle,valeur&cle=in.(assistantes,directeurs,prestatairesRepas,typesRepas,prestatairesTaxi,prestatairesCommande,prestatairesHotel,emails,adminEmails,yoozMap,loginObligatoire,prestaInfo,marque,equipe)`, { headers: SB_HDR });
+        const r = await fetch(`${SB_PARAMS}?select=cle,valeur&cle=in.(assistantes,directeurs,prestatairesRepas,typesRepas,prestatairesTaxi,prestatairesCommande,prestatairesHotel,emails,adminEmails,yoozMap,loginObligatoire,prestaInfo,marque,equipe,mails)`, { headers: SB_HDR });
         if (!r.ok) throw new Error(await r.text());
         const rows = await r.json();
         if (!rows || rows.length === 0) {
@@ -755,6 +762,7 @@ async function loadSettingsFromDB() {
         if (map.prestaInfo)           settings.prestaInfo           = map.prestaInfo;
         if (map.marque)               settings.marque               = map.marque;
         if (map.equipe)               settings.equipe               = map.equipe;
+        if (map.mails)                settings.mails                = map.mails;
         try{ personnesReset(); }catch(e){}
         if (map.yoozMap)              { settings.yoozMap = map.yoozMap; Object.assign(YOOZ_MAP, map.yoozMap); state.yoozMap = map.yoozMap; }
         saveSettingsLocal(settings);
@@ -766,7 +774,7 @@ async function loadSettingsFromDB() {
 
 async function saveSettingsToDB(s) {
     saveSettingsLocal(s);
-    const keys = ['assistantes','directeurs','prestatairesRepas','typesRepas','prestatairesTaxi','prestatairesCommande','prestatairesHotel','emails','adminEmails','yoozMap','loginObligatoire','prestaInfo','marque','equipe'];
+    const keys = ['assistantes','directeurs','prestatairesRepas','typesRepas','prestatairesTaxi','prestatairesCommande','prestatairesHotel','emails','adminEmails','yoozMap','loginObligatoire','prestaInfo','marque','equipe','mails'];
     for (const cle of keys) {
         try {
             await fetch(`${SB_PARAMS}?cle=eq.${cle}`, {
@@ -796,6 +804,8 @@ let P_REPAS=[...settings.prestatairesRepas], P_TAXI=[...settings.prestatairesTax
 /* ══════════════════════════════════════
    ÉQUIPE : rôles et noms regroupés
 ══════════════════════════════════════ */
+const MAILS_DEF={alerte:true,confirmation:true,copie:true,annulation:false};
+const mailsOn=k=>{ const m=settings.mails||{}; return k in m?!!m[k]:MAILS_DEF[k]; };
 const ROLES={responsable:['Responsable de site','#0f1b2d','#e8edf3'],polyvalente:['Assistante polyvalente','#6d28d9','#f1ebfd'],assistante:['Assistante de direction','#0369a1','#e5f2fa'],directeur:['Direction','#b45309','#fdf3e4'],ancienne:['Ancienne assistante','#6b7280','#f1f2f4'],invite:['Invité','#0e7490','#e3f5f7']};
 const ROLE_ORDRE=['responsable','polyvalente','assistante','invite','ancienne','directeur'];
 function equipe(){ const e=settings.equipe||{};
@@ -1072,7 +1082,7 @@ function icon(name, size){
 }
 
 const TYPE_ICON={repas:icon('utensils',13),taxi:icon('car',13),commande:icon('box',13),hotel:icon('bed',13),autre:icon('box',13)};
-const TYPE_LABEL={repas:"Repas",taxi:"Taxi",commande:"Commande",hotel:"Hôtel",autre:"Autre"};
+const TYPE_LABEL={repas:"Repas",taxi:"Taxi",coursier:"Coursier",commande:"Commande",hotel:"Hôtel",autre:"Autre"};
 const AVC=["#0f172a","#1e3a5f","#3d1a6e","#6e1a1a","#1a4d2e","#1a4a6e","#4a1a6e","#6e4a1a"];
 const MONTHS=["","Jan","Fév","Mar","Avr","Mai","Jun","Jul","Aoû","Sep","Oct","Nov","Déc"];
 
@@ -1490,7 +1500,8 @@ async function applyStatus(ids, status, { silent = false, noMail = false } = {})
     for (const id of changed) await dbUpdate(id, { pris: status });
     for (const c of items) {
         if (noMail) continue;
-        if (status === 'OUI') { sendConfirmationEmail(c); try{ setSuivi([c.id],()=>({mailConf:new Date().toISOString()})); }catch(e){} }
+        if (status === 'OUI' && mailsOn('confirmation')) { sendConfirmationEmail(c); try{ setSuivi([c.id],()=>({mailConf:new Date().toISOString()})); }catch(e){} }
+        else if (status === 'Annulé' && mailsOn('annulation') && !(suiviOf(c)||{}).direct) { sendConfirmationEmail(c, { isAnnulation: true }); try{ setSuivi([c.id],()=>({mailAnnul:new Date().toISOString()})); }catch(e){} }
     }
     if (!silent && status !== 'OUI' && status !== 'Annulé') showToast(`Statut : ${ST[status]?.label || status}`);
 }
@@ -1538,10 +1549,10 @@ function bindBulkBar() {
             return;
         }
         const enAtt = state.data.filter(c => ids.includes(c.id) && (c.pris==='En attente'||c.pris==='En cours')).length;
-        if (act === 'OUI') { if (!confirm(`Commande passée pour ${ids.length} demande${ids.length>1?'s':''} ?${enAtt?`\n\n${enAtt} confirmation${enAtt>1?'s':''} partira${enAtt>1?'ont':''} aux demandeuses.`:'\n\nAucun email.'}`)) return; }
-        else if (!confirm(`Refuser ${ids.length} demande${ids.length>1?'s':''} ?\n\nAucun email ne sera envoyé.`)) return;
+        if (act === 'OUI') { if (!confirm(`Commande passée pour ${ids.length} demande${ids.length>1?'s':''} ?${enAtt&&mailsOn('confirmation')?`\n\n${enAtt} confirmation${enAtt>1?'s':''} partira${enAtt>1?'ont':''} aux demandeuses.`:'\n\nAucun email.'}`)) return; }
+        else if (!confirm(`Refuser ${ids.length} demande${ids.length>1?'s':''} ?\n\n${mailsOn('annulation')?'Un email d’annulation partira pour chacune.':'Aucun email ne sera envoyé.'}`)) return;
         state.sel = [];
-        await applyStatus(ids, act, { silent: true, noMail: act !== 'OUI' });
+        await applyStatus(ids, act, { silent: true });
         if (act === 'OUI') markCommande(ids);
         showToast(`✓ ${ids.length} demande${ids.length>1?'s':''} ${act==='OUI'?'commandée':'refusée'}${ids.length>1?'s':''}`);
     });
@@ -1655,7 +1666,7 @@ function render(){
 function renderTrackCode(m){
     const result = state.trackResult;
     const ST_LABEL={'OUI':icon('check',13)+' Validée','En attente':icon('hourglass',13)+' En attente','En cours':icon('clock',13)+' En cours','Annulé':icon('x',13)+' Annulée','Reçu':icon('check',13)+' Reçue'};
-    const typeIcon=t=>icon(t==='taxi'?'car':t==='repas'?'utensils':t==='hotel'?'bed':'box',14);
+    const typeIcon=t=>icon(t==='taxi'?'car':t==='coursier'?'send':t==='repas'?'utensils':t==='hotel'?'bed':'box',14);
 
     let resultHtml='';
     if(result===false){
@@ -1752,7 +1763,7 @@ function mesDemandesHtml(m){
 function renderHome(m){
     const att=state.data.filter(c=>c.pris==="En attente").length;
     const f=state.form;
-    if(!f.dem&&!assistanteName()){ const last=lsGet('nf_dem'); if(last&&settings.assistantes.includes(last)) f.dem=last; }
+    if(!f.dem&&!f.invite&&!assistanteName()){ const last=lsGet('nf_dem'); if(last&&settings.assistantes.includes(last)) f.dem=last; }
     const prenom=AUTH?String(userName()||'').split(' ')[0]:'';
     const actions=`<div class="nf-acts">
         <button class="pub-btn go-track" title="Suivre une demande">${icon('search',15)}${m?'':' Suivre une demande'}</button>
@@ -1823,13 +1834,14 @@ function renderHome(m){
 function NF_CHOIX(){ return [
     {k:'repas',ic:'utensils',titre:'Repas',form:'Commande de repas',desc:'Petit-déjeuner, déjeuner, goûter, cocktail ou plateau repas.',col:'#c2410c',t1:'#fff4e5',t2:'#ffe2c2',items:['Livraison en salle ou au bureau','Choix du restaurant',`${P_REPAS.length} prestataires`]},
     {k:'taxi',ic:'car',titre:'Taxi',form:'Réservation de taxi',desc:'Un véhicule avec chauffeur pour un rendez-vous, une gare ou un aéroport.',col:'#1d4ed8',t1:'#eaf1fb',t2:'#d3e2fa',items:['Départ et arrivée à l’adresse','N° de vol ou de train',P_TAXI.slice(0,3).join(', ')]},
+    {k:'coursier',ic:'send',titre:'Coursier',form:'Demande de coursier',desc:'Un pli, un document ou un colis à faire livrer.',col:'#7c3aed',t1:'#f3ecfe',t2:'#e4d6fc',items:['Enlèvement et livraison à l’adresse','Objet à livrer','Le jour même ou planifié']},
     {k:'hotel',ic:'bed',titre:'Hôtel',form:'Réservation d’hôtel',desc:'Une ou plusieurs nuits d’hôtel pour un déplacement.',col:'#0f766e',t1:'#e9f7f5',t2:'#cdeee7',items:['Dates d’arrivée et de départ','Toutes villes',P_HOTEL.slice(0,3).join(', ')]},
 ]; }
 
 /* ══════════════════════════════════════
    FORMULAIRE « tout sur un écran »
 ══════════════════════════════════════ */
-const NF_HEURES={repas:['08h30','09h00','10h00','11h30','12h00','12h30','13h00','16h00','19h00'],taxi:['07h00','08h00','09h00','10h00','12h00','14h00','17h00','18h00','19h00','20h00']};
+const NF_HEURES={coursier:['08h00','09h00','10h00','11h00','12h00','14h00','15h00','16h00','17h00','18h00'],repas:['08h30','09h00','10h00','11h30','12h00','12h30','13h00','16h00','19h00'],taxi:['07h00','08h00','09h00','10h00','12h00','14h00','17h00','18h00','19h00','20h00']};
 function nfIcRepas(t){ const s=String(t).toLowerCase(); return s.includes('petit')?'coffee':s.includes('déj')||s.includes('dej')?'utensils':s.includes('goût')||s.includes('gout')?'cake':s.includes('dîn')||s.includes('din')?'moon':s.includes('cocktail')?'glass':s.includes('plateau')?'box':'utensils'; }
 function nfJours(){ const out=[]; const d=new Date(); d.setHours(0,0,0,0); while(out.length<6){ if(d.getDay()!==0&&d.getDay()!==6||out.length===0) out.push(new Date(d)); d.setDate(d.getDate()+1); } return out; }
 function nfRecents(type,champ,n=4){
@@ -1843,6 +1855,7 @@ function nfSummaryRows(f){
     const d=parseDate(f.date); const dl=d?dateLongue(d):'—';
     const R=[];
     if(f.type==='repas') R.push(['Repas',f.desc||'—'],['Date',dl],['Heure',f.heure||'—'],['Personnes',f.nb||'1'],['Participants',nfQui(f)||'—'],['Lieu',f.lieu||'—'],['Restaurant',f.presta||'—']);
+    else if(f.type==='coursier') R.push(['Date',dl],['Heure',f.heure||'—'],['Pour',nfQui(f)||'—'],['Objet',f.desc||'—'],['Enlèvement',f.de||'—'],['Livraison',f.vers||'—'],['Coursier',f.presta||'—']);
     else if(f.type==='taxi') R.push(['Date',dl],['Heure',f.heure||'—'],['Pour',nfQui(f)||'—'],['Départ',f.de||'—'],['Arrivée',f.vers||'—'],['Téléphone',f.tel||'—'],['Prestataire',f.presta||'—']);
     else { const dd=parseDate(nfDepart(f)); R.push(['Arrivée',dl],['Départ',dd?dateLongue(dd):'—'],['Nuits',String(nfNuits(f))],['Pour',nfQui(f)||'—'],['Voyageur(s)',f.desc||'—'],['Ville',f.lieu||'—'],['Hôtel',f.presta||'—']); }
     R.unshift(['Demandeur',f.dem||'—']);
@@ -1852,7 +1865,7 @@ function nfSummaryRows(f){
 function nfSummaryHtml(){ return nfSummaryRows(state.form).map(([k,v])=>`<div class="nf-tk"><span>${k}</span><b class="${v==='—'?'vide':''}">${esc(v)}</b></div>`).join(''); }
 function nfBarHtml(){
     const f=state.form, d=parseDate(f.date);
-    const a=f.type==='repas'?[f.desc||'Repas',`${f.nb||1} pers.`,f.presta].filter(Boolean).join(' · '):f.type==='taxi'?`Taxi${f.vers?' → '+String(f.vers).split(',')[0]:''}`:`Hôtel${f.lieu?' · '+f.lieu:''} · ${nfNuits(f)} nuit${nfNuits(f)>1?'s':''}`;
+    const a=f.type==='repas'?[f.desc||'Repas',`${f.nb||1} pers.`,f.presta].filter(Boolean).join(' · '):f.type==='taxi'?`Taxi${f.vers?' → '+String(f.vers).split(',')[0]:''}`:f.type==='coursier'?`Coursier${f.vers?' → '+String(f.vers).split(',')[0]:''}`:`Hôtel${f.lieu?' · '+f.lieu:''} · ${nfNuits(f)} nuit${nfNuits(f)>1?'s':''}`;
     const b=d?`${JOURS_C[d.getDay()]} ${d.getDate()}${f.type!=='hotel'&&f.heure?' · '+f.heure:''}`:'';
     return `<b>${esc(a)}</b><span>${esc(b)}</span>`;
 }
@@ -1883,7 +1896,8 @@ function renderInlineForm(m){
     /* Qui */
     const demandeur=assistanteName()
         ?`<div class="nf-row"><span class="nf-chip soft on">${icon('user',14)} ${esc(assistanteName())}</span><span class="nf-hint">connectée</span></div>`
-        :`<div class="nf-row">${[...settings.assistantes,...(isAdmin()&&userName()&&!settings.assistantes.includes(userName())?[userName()]:[]),...(f.dem&&!settings.assistantes.includes(f.dem)&&f.dem!==userName()?[f.dem]:[])].map(a=>chip('set','dem',a,esc(a),f.dem===a)).join('')}</div>`;
+        :`<div class="nf-row">${[...settings.assistantes,...(isAdmin()&&userName()&&!settings.assistantes.includes(userName())?[userName()]:[]),...(!f.invite&&f.dem&&!settings.assistantes.includes(f.dem)&&f.dem!==userName()?[f.dem]:[])].map(a=>chip('set','dem',a,esc(a),!f.invite&&f.dem===a)).join('')}<button type="button" data-nf="invite" class="nf-chip ${f.invite?'on':''}">${icon('user',13)} Je suis invité(e)</button></div>
+            ${f.invite?`<input id="formInvite" type="text" class="form-input nf-in" style="margin-top:8px;" value="${esc(f.dem||'')}" placeholder="Votre prénom et nom" autocomplete="name"><div class="nf-hint" style="margin-top:6px;">Vous n’avez pas de compte : votre demande sera traitée par ${esc(equipe().polyvalente[0])}.</div>`:''}`;
     let qui='';
     if(T==='repas'){
         const deja=String(f.participants||'').toUpperCase();
@@ -1936,6 +1950,13 @@ function renderInlineForm(m){
             +`<div class="nf-grid2" style="margin-top:14px;"><div>${lbl('Téléphone du passager *')}<input id="formTel" type="tel" class="form-input nf-in" value="${esc(f.tel||'')}" placeholder="06 12 34 56 78"></div>
                <div>${lbl('N° de vol / train','si gare ou aéroport')}<input id="formVol" type="text" class="form-input nf-in" value="${esc(f.vol||'')}" placeholder="Ex : AF1234, TGV 6201"></div></div>`
             +`<div style="height:14px"></div>`+lbl('Prestataire')+`<div class="nf-row">${P_TAXI.map(p=>chip('set','presta',p,esc(p),f.presta===p)).join('')}</div>${(()=>{ const al=pDelaiAlerte(f.presta,f.date,f.heure); return al?`<div class="nf-warn">${icon('clock',14)} <span><b>${esc(f.presta)}</b> demande au moins ${al.h} h de délai. Cette demande risque d’arriver trop tard : choisissez une autre date ou un autre prestataire, ou prévenez l’administration en commentaire.</span></div>`:''; })()}`;
+    } else if(T==='coursier'){
+        detTitre='La course'; detIc='send';
+        det=lbl('Objet à livrer *')+`<input id="formDesc" type="text" class="form-input nf-in" value="${esc(f.desc||'')}" placeholder="Ex : pli à signer, dossier, colis…">`
+            +`<div style="height:14px"></div>`+lbl('Adresse d’enlèvement *')+`<input id="formDe" type="text" class="form-input nf-in" value="${esc(f.de||'')}" placeholder="Où récupérer l’objet…" autocomplete="off">`+recents(nfRecents('coursier','depart',3),'de')
+            +`<div style="height:14px"></div>`+lbl('Adresse de livraison *')+`<input id="formVers" type="text" class="form-input nf-in" value="${esc(f.vers||'')}" placeholder="Où livrer…" autocomplete="off">`+recents(nfRecents('coursier','arrivee',3),'vers')
+            +`<div class="nf-grid2" style="margin-top:14px;"><div>${lbl('Téléphone du destinataire','optionnel')}<input id="formTel" type="tel" class="form-input nf-in" value="${esc(f.tel||'')}" placeholder="06 12 34 56 78"></div>
+               <div>${lbl('Société de coursier','optionnel')}<input id="formPresta" type="text" class="form-input nf-in" value="${esc(f.presta||'')}" placeholder="Ex : coursier habituel"></div></div>`;
     } else {
         detTitre='L’hébergement'; detIc='bed';
         det=`<div class="nf-grid2"><div>${lbl('Voyageur(s)')}<input id="formDesc" type="text" class="form-input nf-in" value="${esc(f.desc||'')}" placeholder="Ex : Jean Dupont"></div>
@@ -1946,7 +1967,7 @@ function renderInlineForm(m){
     }
     const secDet=sec(detIc,detTitre,det);
     const secPlus=sec('message','Compléments',lbl('Commentaire','optionnel')+`<textarea id="formCom" class="form-input nf-in" style="min-height:70px;resize:vertical;" placeholder="Allergies, consignes, informations utiles…">${esc(f.com||'')}</textarea>`
-        +(isAdmin()?`<div class="nf-hint" style="margin-top:10px;">${icon('check',13)} Vous êtes administrateur : la commande est ajoutée directement, déjà validée, sans email.</div>`:`<label class="nf-check"><input type="checkbox" id="formCopyMail" class="nf-in" ${f.copyMail?'checked':''}><span><b>Recevoir une copie par email</b><span>Un récapitulatif de la demande vous sera envoyé.</span></span></label>`));
+        +(isAdmin()?`<div class="nf-hint" style="margin-top:10px;">${icon('check',13)} Vous êtes administrateur : la commande est ajoutée directement, déjà validée, sans email.</div>`:f.invite||!mailsOn('copie')?'':`<label class="nf-check"><input type="checkbox" id="formCopyMail" class="nf-in" ${f.copyMail?'checked':''}><span><b>Recevoir une copie par email</b><span>Un récapitulatif de la demande vous sera envoyé.</span></span></label>`));
 
     const recap=`<aside class="nf-card nf-recap">
         <div class="nf-recap-h"><b>Récapitulatif</b><span>${isAdmin()?'À ajouter':'À envoyer'}</span></div>
@@ -2014,7 +2035,7 @@ function renderAdminView(m){
     const attente=state.data.filter(c=>c.pris==="En attente"||c.pris==="En cours");
     if(state.detail) return renderDetail(state.detail,m);
 
-    const activiteSubTabs=[['tout','grid','Toutes'],['reservations','utensils','Repas & taxis'],['commandes','box','Fournitures'],['hotels','bed','Hôtels'],['historique','wallet','Dépenses & export'],['journal','edit','Journal'],['corbeille','trash','Corbeille']].map(([k,ic,label])=>{
+    const activiteSubTabs=[['tout','grid','Toutes'],['reservations','utensils','Repas, taxis, coursiers'],['commandes','box','Fournitures'],['hotels','bed','Hôtels'],['historique','wallet','Dépenses & prix'],['journal','edit','Journal'],['corbeille','trash','Corbeille']].map(([k,ic,label])=>{
         const active=(state.activiteTab||'tout')===k;
         return `<button data-activite-tab="${k}" class="subtab ${active?'on':''}">${icon(ic,15)} ${label}</button>`;
     }).join('');
@@ -2023,15 +2044,14 @@ function renderAdminView(m){
     if(state.saisieDirecte)                  main=renderSaisieDirecte(m);
     else if(state.adminTab==='settings')        main=renderSettings();
     else if(state.adminTab==='activite')     main=renderActivite(m);
-    else if(state.adminTab==='stats')        main=renderStats(m);
-    else if(state.adminTab==='analyse')      main=renderAnalyse(m);
+    else if(state.adminTab==='stats'||state.adminTab==='analyse') main=renderStatsPage(m);
     else if(String(state.adminTab).startsWith('me')) main=meOk()||!state.meLoaded?renderMe(m):renderDashboard(total,attente,m);
     else if(state.adminTab==='suivi')        main=renderSuivi(m);
     else if(state.adminTab==='calendrier')   main=renderCalendrier(m);
 
     else main=meOk()?renderMe(m):renderDashboard(total,attente,m);
 
-    const TITRES={dashboard:'Tableau de bord',suivi:'Suivi des demandes',calendrier:'Agenda',activite:'Historique',stats:'Statistiques',analyse:'Assistantes et connexions',me:'Mon écran','me-bat':'Signalements du bâtiment','me-stat':'Actions et stats','me-memo':'Mémo perso',settings:'Réglages'};
+    const TITRES={dashboard:'Tableau de bord',suivi:'Suivi des demandes',calendrier:'Agenda',activite:'Historique',stats:'Statistiques',analyse:'Statistiques',me:'Mon écran','me-bat':'Signalements du bâtiment','me-stat':'Actions et stats','me-memo':'Mémo perso',settings:'Réglages'};
     if(m) return `
     <div class="mobile-header">
         <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
@@ -2075,7 +2095,7 @@ function renderAdminView(m){
                 ${item('suivi','clipboard','Suivi des demandes')}${item('calendrier','calendar','Agenda')}${item('activite','grid','Historique')}</div>
             ${meOk()?`<div class="side-grp perso"><h6 class="side-lbl">Bâtiment ${icon('lock',10)}</h6>${item('me-bat','tool','Signalements')}${item('me-stat','check','Actions et stats')}</div>`:''}
             <div class="side-grp"><h6 class="side-lbl">Analyses</h6>
-                ${item('stats','chart','Statistiques')}${item('analyse','users','Assistantes et connexions')}</div>
+                ${item('stats','chart','Statistiques')}</div>
         </div>
         <div style="padding:6px 10px;border-top:1px solid rgba(255,255,255,.06);">${item('settings','sliders','Réglages')}</div>
         <div class="side-user">
@@ -2146,7 +2166,7 @@ function stageOf(c){
     return 'acommander';
 }
 function titreDe(c){ return c.type==='commande' ? (c.presta||c.desc||'Commande') : (c.desc||TYPE_LABEL[c.type]||'—'); }
-function typeIc(t,s=14){ return icon(t==='taxi'?'car':t==='repas'?'utensils':t==='hotel'?'bed':'box',s); }
+function typeIc(t,s=14){ return icon(t==='taxi'?'car':t==='coursier'?'send':t==='repas'?'utensils':t==='hotel'?'bed':'box',s); }
 function stagePill(st){ const S=STAGES[st]; return `<span style="display:inline-flex;align-items:center;gap:5px;background:${S.bg};color:${S.color};border-radius:5px;padding:3px 8px;font-size:11.5px;font-weight:600;white-space:nowrap;">${S.court}</span>`; }
 function countStages(list){ const n={avalider:0,acommander:0,commandee:0,fait:0,refusee:0}; (list||state.data).forEach(c=>n[stageOf(c)]++); return n; }
 function aFaireCount(){ const n=countStages(); return n.avalider+n.acommander; }
@@ -2228,11 +2248,11 @@ function prestationStart(c){
 function rappelEvents(c, which){
     const start=prestationStart(c); if(!start) return [];
     const ev=[], now=new Date(), titre=titreDe(c);
-    const lieu=c.type==='taxi'?(c.depart||c.lieu||''):(c.lieu||'');
+    const lieu=(c.type==='taxi'||c.type==='coursier')?(c.depart||c.lieu||''):(c.lieu||'');
     const quand=`${dateLongue(start)}${c.heure?' à '+c.heure:''}`;
     const infos=[
         `${TYPE_LABEL[c.type]||''} : ${titre}`, `Quand : ${quand}`,
-        c.type==='taxi'?`Trajet : ${c.depart||'—'} → ${c.arrivee||'—'}`:(lieu?`Lieu / salle : ${lieu}`:''),
+        (c.type==='taxi'||c.type==='coursier')?`Trajet : ${c.depart||'—'} → ${c.arrivee||'—'}`:(lieu?`Lieu / salle : ${lieu}`:''),
         (c.type==='repas'||c.type==='hotel')?`Personnes : ${c.nb||1}`:'',
         c.presta?`Prestataire : ${c.presta}`:'', `Demandé par : ${demHtml(c)}`, c.pourQui?`Pour : ${c.pourQui}`:'',
         c.tel?`Téléphone : ${c.tel}`:'', c.vol?`Vol / train : ${c.vol}`:'', c.comment?`Commentaire : ${c.comment}`:'',
@@ -2282,7 +2302,7 @@ function suiviCard(c,{compact=false,showStage=false,select=false}={}){
     const urg=(st==='avalider'||st==='acommander')&&j!==null&&j<=2?badgeColor(j):null;
     const meta=[`${dateCourte(c)}${c.heure?' · '+c.heure:''}`];
     if(c.type==='repas'){ if(c.lieu) meta.push(esc(c.lieu)); meta.push(`${c.nb||1} pers.`); }
-    if(c.type==='taxi') meta.push(`${esc(c.depart||'—')} → ${esc(c.arrivee||'—')}`);
+    if((c.type==='taxi'||c.type==='coursier')) meta.push(`${esc(c.depart||'—')} → ${esc(c.arrivee||'—')}`);
     if(c.type==='hotel'){ if(c.lieu) meta.push(esc(c.lieu)); if(c.dateDepart) meta.push(`→ ${dateCourte({date:c.dateDepart})}`); }
     if(c.type==='commande' && c.lieu) meta.push(esc(c.lieu));
     const btn=(act,label,ic,style)=>`<button data-suivi-act="${act}" data-id="${c.id}" style="display:inline-flex;align-items:center;gap:5px;border-radius:10px;padding:6px 10px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;${style}">${icon(ic,12)} ${label}</button>`;
@@ -2331,7 +2351,7 @@ function renderSuivi(m){
     STAGE_ORDER.forEach(k=>cols[k]=all.filter(c=>etape(c)===k));
     cols.fait=cols.fait.filter(c=>{ const s=suiviOf(c); return (s.fait&&new Date(s.fait)>=lim)||((parseDate(c.date)||0)>=lim); }).sort((a,b)=>byDateAsc(b,a));
     ['recue','commandee'].forEach(k=>cols[k].sort(byDateAsc));
-    const types=[['all','Tout'],['repas','Repas'],['taxi','Taxi'],['hotel','Hôtel'],['commande','Commande']];
+    const types=[['all','Tout'],['repas','Repas'],['taxi','Taxi'],['coursier','Coursier'],['hotel','Hôtel'],['commande','Commande']];
     const head=`<div style="display:flex;justify-content:space-between;align-items:flex-end;gap:10px;flex-wrap:wrap;margin-bottom:14px;">
         <div>
             <div style="font-family:var(--ft);font-weight:650;letter-spacing:-.01em;font-size:${m?'18px':'22px'};display:flex;align-items:center;gap:9px;">${icon('clipboard',m?17:20)} Suivi des demandes</div>
@@ -2459,10 +2479,10 @@ function mailsHtml(d){
     else {
         L.push(s.mailAlerte?['ok',`Alerte « nouvelle demande » envoyée à l’administration le ${f(s.mailAlerte)}`]:['grey','Alerte à l’administration : non enregistrée (demande antérieure au suivi des emails)']);
         if(s.mailConf) L.push(['ok',`Confirmation envoyée à ${esc(demNom(d))} le ${f(s.mailConf)}`]);
-        else if(st==='avalider') L.push(['wait',`Confirmation à ${esc(demNom(d))} : partira quand vous cliquerez « Commande passée »`]);
+        else if(st==='avalider') L.push(mailsOn('confirmation')?['wait',`Confirmation à ${esc(demNom(d))} : partira quand vous cliquerez « Commande passée »`]:['grey','Confirmation désactivée dans les réglages']);
         else if(st!=='refusee') L.push(['grey','Confirmation : envoyée à la validation (avant le suivi des emails)']);
     }
-    if(st==='refusee') L.push(['grey','Refusée / annulée : aucun email envoyé']);
+    if(st==='refusee') L.push(s.mailAnnul?['ok',`Annulation envoyée à ${esc(demNom(d))} le ${f(s.mailAnnul)}`]:['grey','Refusée / annulée : aucun email envoyé']);
     return `<div class="mails"><b>${icon('mail',13)} Emails</b>${L.map(([k,x])=>`<span class="m-${k}">${x}</span>`).join('')}</div>`;
 }
 /* Bloc de suivi dans la fiche détail */
@@ -2518,7 +2538,7 @@ function mobileNavHtml(){
     </div></nav>
     ${state.moreOpen?`<div data-nav='{"moreOpen":false}' style="position:fixed;inset:0;background:rgba(15,23,42,.35);z-index:9500;display:flex;align-items:flex-end;">
         <div style="background:#fff;width:100%;border-radius:20px 20px 0 0;padding:14px 14px calc(14px + env(safe-area-inset-bottom,0px));">
-            ${[...(meOk()?[["me-memo","edit","Mémo perso"],["me-bat","tool","Signalements du bâtiment"],["me-stat","check","Actions et stats"]]:[]),["stats","chart","Statistiques"],["analyse","users","Assistantes et connexions"]].map(([t,ic,l])=>`<button data-admin-tab="${t}" style="display:flex;align-items:center;gap:12px;width:100%;background:none;border:none;padding:14px 8px;font-size:15px;font-weight:600;color:var(--ink);cursor:pointer;border-bottom:1px solid #f0f1f4;">${icon(ic,18)} ${l}</button>`).join('')}
+            ${[...(meOk()?[["me-memo","edit","Mémo perso"],["me-bat","tool","Signalements du bâtiment"],["me-stat","check","Actions et stats"]]:[]),["stats","chart","Statistiques"]].map(([t,ic,l])=>`<button data-admin-tab="${t}" style="display:flex;align-items:center;gap:12px;width:100%;background:none;border:none;padding:14px 8px;font-size:15px;font-weight:600;color:var(--ink);cursor:pointer;border-bottom:1px solid #f0f1f4;">${icon(ic,18)} ${l}</button>`).join('')}
             <button data-back-home style="display:flex;align-items:center;gap:12px;width:100%;background:none;border:none;padding:14px 8px;font-size:15px;font-weight:600;color:var(--ink);cursor:pointer;border-bottom:1px solid #f0f1f4;">${icon('home',18)} Page de demande</button>
             <button data-admin-logout style="display:flex;align-items:center;gap:12px;width:100%;background:none;border:none;padding:14px 8px;font-size:15px;font-weight:600;color:#b91c1c;cursor:pointer;">${icon('logout',18)} Se déconnecter</button>
         </div></div>`:''}`;
@@ -2541,11 +2561,11 @@ document.addEventListener('click', async e=>{
     const act=a.getAttribute('data-suivi-act'), id=a.getAttribute('data-id');
     const c=state.data.find(x=>String(x.id)===String(id)); if(!c) return;
     if(act==='valider'){ await applyStatus([c.id],'OUI'); }
-    else if(act==='annuler'){ if(confirm(`Annuler « ${titreDe(c)} » du ${dateCourte(c)} ?\n\n• Aucun email ne sera envoyé à ${demNom(c)}.\n• Les rappels seront retirés de vos agendas.${stageOf(c)==='commandee'?`\n• Pensez à prévenir ${c.presta||'le prestataire'} : la commande avait été passée.`:''}`)){ await applyStatus([c.id],'Annulé'); showToast('Demande annulée'); } }
-    else if(act==='refuser'){ if(confirm(`Refuser « ${titreDe(c)} » ?\n\nAucun email ne sera envoyé : pensez à prévenir ${demNom(c)} si besoin.${stageOf(c)==='commandee'?`\nPensez aussi à prévenir ${c.presta||'le prestataire'}.`:''}`)) await applyStatus([c.id],'Annulé',{noMail:true}); }
+    else if(act==='annuler'){ if(confirm(`Annuler « ${titreDe(c)} » du ${dateCourte(c)} ?\n\n• ${mailsOn('annulation')&&!suiviOf(c).direct?`${demNom(c)} recevra l’email d’annulation.`:`Aucun email ne sera envoyé à ${demNom(c)}.`}\n• Les rappels seront retirés de vos agendas.${stageOf(c)==='commandee'?`\n• Pensez à prévenir ${c.presta||'le prestataire'} : la commande avait été passée.`:''}`)){ await applyStatus([c.id],'Annulé'); showToast('Demande annulée'); } }
+    else if(act==='refuser'){ const am=mailsOn('annulation')&&!suiviOf(c).direct; if(confirm(`Refuser « ${titreDe(c)} » ?\n\n${am?`${demNom(c)} recevra l’email d’annulation.`:`Aucun email ne sera envoyé : pensez à prévenir ${demNom(c)} si besoin.`}${stageOf(c)==='commandee'?`\nPensez aussi à prévenir ${c.presta||'le prestataire'}.`:''}`)) await applyStatus([c.id],'Annulé'); }
     else if(act==='copier'){ const ok=await copyText(orderMessage(c)); showToast(ok?'✓ Message copié : collez-le dans votre email au prestataire':`${icon('alert',13)} Copie impossible`); }
     else if(act==='commande'){ const enAtt=c.pris==='En attente'||c.pris==='En cours';
-        if(confirm(`Commande « ${titreDe(c)} » passée auprès de ${c.presta||'du prestataire'} ?${enAtt?`\n\nLa confirmation sera envoyée à ${demNom(c)}.`:'\n\nAucun email ne sera envoyé.'}`)){ if(enAtt) await applyStatus([c.id],'OUI',{silent:true}); markCommande([c.id]); } }
+        if(confirm(`Commande « ${titreDe(c)} » passée auprès de ${c.presta||'du prestataire'} ?${enAtt&&mailsOn('confirmation')?`\n\nLa confirmation sera envoyée à ${demNom(c)}.`:'\n\nAucun email ne sera envoyé.'}`)){ if(enAtt) await applyStatus([c.id],'OUI',{silent:true}); markCommande([c.id]); } }
     else if(act==='uncommande') unmarkCommande([c.id]);
     else if(act==='fait') markFait([c.id]);
     else if(act==='unfait') unmarkFait([c.id]);
@@ -2561,7 +2581,7 @@ document.addEventListener('click', async e=>{
    DETAIL
 ══════════════════════════════════════ */
 function renderDetail(d,m){
-    const typeIcon=icon(d.type==='taxi'?'car':d.type==='repas'?'utensils':d.type==='hotel'?'bed':'box',16);
+    const typeIcon=icon(d.type==='taxi'?'car':d.type==='coursier'?'send':d.type==='repas'?'utensils':d.type==='hotel'?'bed':'box',16);
     const isRepas=d.type==='repas';
     const isTaxi=d.type==='taxi';
     const isCmd=d.type==='commande';
@@ -2713,7 +2733,7 @@ function renderDashboard(total,attente,m){
             <span class="kpi-v">${val}</span>
             <span class="kpi-s">${sub}</span></button>`; };
 
-    const where=c=>[c.type==='taxi'?`${esc(c.depart||'—')} → ${esc(c.arrivee||'—')}`:esc(c.lieu||''), c.type==='repas'?`${c.nb||1} pers.`:'', c.presta&&c.type!=='commande'?esc(c.presta):''].filter(Boolean).join(' · ');
+    const where=c=>[(c.type==='taxi'||c.type==='coursier')?`${esc(c.depart||'—')} → ${esc(c.arrivee||'—')}`:esc(c.lieu||''), c.type==='repas'?`${c.nb||1} pers.`:'', c.presta&&c.type!=='commande'?esc(c.presta):''].filter(Boolean).join(' · ');
     const timeline=(list,vide)=>list.length?`<div class="tl">${list.map(c=>{ const st=stageOf(c), S=STAGES[st];
         return `<div class="tl-row" data-open-detail='${JSON.stringify(c).replace(/'/g,"&apos;")}'>
             <div class="tl-h">${esc(c.heure||'—')}</div><span class="dot" style="background:${S.color};margin-top:5px;"></span>
@@ -2755,7 +2775,7 @@ function renderDashboard(total,attente,m){
         </div>
         ${m?'':`<div class="page-actions">
             <button class="btn-sm" data-print-day="${todayK}">${icon('download',14)} Feuille du jour</button>
-            <button class="btn-sm" data-nav='{"adminTab":"activite","activiteTab":"historique"}'>${icon('wallet',14)} Dépenses & export</button>
+            <button class="btn-sm" data-nav='{"adminTab":"activite","activiteTab":"historique"}'>${icon('wallet',14)} Dépenses & prix</button>
         </div>`}
     </div>
     <div class="kpis">
@@ -2790,6 +2810,11 @@ function statsRange(period){
         }
         default: return {from:null,to:null,label:'Toutes les dates'};
     }
+}
+function renderStatsPage(m){
+    const tab=state.adminTab==='analyse'?'activite':(state.statsTab||'depenses');
+    const tabs=`<div class="st-tabs">${[['depenses','wallet','Dépenses'],['activite','users','Activité & connexions']].map(([k,ic,l])=>`<button data-nav='{"adminTab":"stats","statsTab":"${k}"}' class="${tab===k?'on':''}">${icon(ic,14)} ${l}</button>`).join('')}</div>`;
+    return tabs+(tab==='activite'?renderAnalyse(m):renderStats(m));
 }
 function renderStats(m){
     const period=state.statsPeriod||'annee';
@@ -2945,9 +2970,12 @@ function regimesTxt(f){ const r=f.regimes||{}; const p=REGIMES.filter(k=>r[k]>0)
 /* ══════════════════════════════════════
    POINTS D'ATTENTION (anomalies)
 ══════════════════════════════════════ */
+/* Commandes faites (ou passées) sans prix : à compléter à réception de la facture */
+function prixASaisir(){ const t0=new Date(); t0.setHours(0,0,0,0); return (state.data||[]).filter(c=>c.pris==='OUI'&&!(+c.prix>0)&&(etape(c)==='fait'||((parseDate(c.date)||t0)<t0))); }
 function anomalies(){
     const out=[], now=new Date(), t0=new Date(); t0.setHours(0,0,0,0);
     const actives=state.data.filter(c=>c.pris!=='Annulé');
+    const _sp=prixASaisir(); if(_sp.length) out.push({niv:1,ic:'wallet',titre:`${_sp.length} prix à saisir`,detail:'Commandes faites sans montant : à compléter à réception de la facture',c:_sp[0],nav:{adminTab:'activite',activiteTab:'historique',histPrix:true,histPage:0}});
     const futur=actives.filter(c=>{ const d=parseDate(c.date); return d&&d>=t0; });
     const norm=s=>String(s||'').trim().toUpperCase();
     // Doublons
@@ -2976,7 +3004,7 @@ function anomaliesHtml(m){
     const col={3:['#b91c1c','#fef2f2'],2:['#b45309','#fef6e7'],1:['#2c5f85','#e8f0f7']};
     const vis=state.anoAll?L:L.slice(0,5);
     return `<div class="card ano"><div class="card-h"><h3>${icon('alert',15)} Points d’attention<span class="sub">${L.length}</span></h3></div>
-        ${vis.map(a=>`<div class="ano-row" data-open-detail='${JSON.stringify(a.c).replace(/'/g,"&apos;")}'><span class="ano-ic" style="color:${col[a.niv][0]};background:${col[a.niv][1]};">${icon(a.ic,15)}</span><div style="min-width:0;flex:1;"><b>${a.titre}</b><span>${esc(a.detail)}</span></div>${icon('arrow',14)}</div>`).join('')}
+        ${vis.map(a=>`<div class="ano-row" ${a.nav?`data-nav='${JSON.stringify(a.nav)}'`:`data-open-detail='${JSON.stringify(a.c).replace(/'/g,"&apos;")}'`}><span class="ano-ic" style="color:${col[a.niv][0]};background:${col[a.niv][1]};">${icon(a.ic,15)}</span><div style="min-width:0;flex:1;"><b>${a.titre}</b><span>${esc(a.detail)}</span></div>${icon('arrow',14)}</div>`).join('')}
         ${L.length>5?`<button class="card-link" data-nav='{"anoAll":${!state.anoAll}}' style="padding:10px 16px;">${state.anoAll?'Réduire':L.length-5>1?`Voir les ${L.length-5} autres`:'Voir l’autre point'}</button>`:''}
     </div>`;
 }
@@ -3025,7 +3053,7 @@ function renderLive(){
     const ligne=c=>{ const st=stageOf(c), s=suiviOf(c), hp=heurePrevue(c), bientot=hp&&hp-now<45*60000&&hp>now;
         return `<div class="lv-item ${bientot?'pulse':''}" style="--c:${COL[st]};"><span class="lv-h">${esc(c.heure||'—')}</span><div style="min-width:0;flex:1;"><b>${esc(titreDe(c))}${c.type==='repas'?` · ${c.nb||1} pers.`:''}</b><span>${esc([c.type==='taxi'?`${c.depart||''} → ${c.arrivee||''}`:c.lieu,c.presta,c.demandeur].filter(Boolean).join(' · '))}</span></div><span class="lv-st">${s.recu?'Livré ✓':bientot?'Imminent':STAGES[st].court}</span></div>`; };
     const tkI=intsDem.map(s=>`<span>🔧 ${hhmm(s.interv)} ${esc(s.titre)} · ${esc(meZone(s))}</span>`).join('');
-    const ticker=(demain.length||tkI)?tkI+demain.map(c=>`<span>${icon(c.type==='taxi'?'car':c.type==='hotel'?'bed':'utensils',16)} ${esc(c.heure||'')} ${esc(titreDe(c))}${c.type==='repas'?` · ${c.nb||1} pers.`:''}${c.lieu?' · '+esc(c.lieu):''}</span>`).join(''):'<span>Rien de prévu demain pour l’instant</span>';
+    const ticker=(demain.length||tkI)?tkI+demain.map(c=>`<span>${icon(c.type==='taxi'?'car':c.type==='coursier'?'send':c.type==='hotel'?'bed':'utensils',16)} ${esc(c.heure||'')} ${esc(titreDe(c))}${c.type==='repas'?` · ${c.nb||1} pers.`:''}${c.lieu?' · '+esc(c.lieu):''}</span>`).join(''):'<span>Rien de prévu demain pour l’instant</span>';
     return `<div class="lv ${P?'lv-p':''}">
         <div class="lv-bg"></div>
         <header class="lv-top">
@@ -3356,7 +3384,7 @@ function renderMe(m){
     const KO={verif:0,relance:1,transmettre:2,silence:3}; A.sort((a,b)=>KO[a.k]-KO[b.k]);
     const interv=enc.filter(s=>s.statut==='prevu'&&s.interv&&new Date(s.interv)>=t0).sort((a,b)=>new Date(a.interv)-new Date(b.interv));
     const hh=d=>{ const x=new Date(d); return x.getHours()||x.getMinutes()?`${String(x.getHours()).padStart(2,'0')}h${String(x.getMinutes()).padStart(2,'0')}`:'—'; };
-    const where=c=>[c.type==='taxi'?`${esc(c.depart||'—')} → ${esc(c.arrivee||'—')}`:esc(c.lieu||''),c.type==='repas'?`${c.nb||1} pers.`:'',c.presta&&c.type!=='commande'?esc(c.presta):''].filter(Boolean).join(' · ');
+    const where=c=>[(c.type==='taxi'||c.type==='coursier')?`${esc(c.depart||'—')} → ${esc(c.arrivee||'—')}`:esc(c.lieu||''),c.type==='repas'?`${c.nb||1} pers.`:'',c.presta&&c.type!=='commande'?esc(c.presta):''].filter(Boolean).join(' · ');
     const jour=k=>{ const L=[...(ev[k]||[]).map(c=>({h:heureMin(c.heure),html:`<div class="tl-row" data-open-detail='${JSON.stringify(c).replace(/'/g,"&apos;")}'><div class="tl-h">${esc(c.heure||'—')}</div><span class="dot" style="background:${STAGES[stageOf(c)].color};margin-top:5px;"></span><div style="min-width:0;"><div class="tl-t">${typeIc(c.type,13)} ${esc(titreDe(c))}</div><div class="tl-m">${[where(c),esc(demNom(c))].filter(Boolean).join(' · ')}</div></div>${stagePill(stageOf(c))}</div>`})),
         ...interv.filter(s=>isoDay(new Date(s.interv))===k).map(s=>({h:new Date(s.interv).getHours()*60+new Date(s.interv).getMinutes(),html:`<div class="tl-row" data-me="open" data-id="${s.id}"><div class="tl-h">${hh(s.interv)}</div><span class="dot" style="background:#5b21b6;margin-top:5px;"></span><div style="min-width:0;"><div class="tl-t">${icon('tool',13)} ${esc(s.titre)}</div><div class="tl-m">${esc(meZone(s))}${s.interv_par?` · ${esc(s.interv_par)}`:''}</div></div>${mePill(s)}</div>`}))].sort((a,b)=>a.h-b.h);
         return L.length?`<div class="tl">${L.map(x=>x.html).join('')}</div>`:''; };
@@ -3756,7 +3784,7 @@ function renderAnalyse(m){
     if(!start){ const ds=scope.map(c=>parseDate(c.date)).filter(Boolean).sort((a,b)=>a-b); start=ds[0]||new Date(); end=ds[ds.length-1]||new Date(); }
     const months=[]; let cur=new Date(start.getFullYear(),start.getMonth(),1);
     while(cur<=end&&months.length<24){ months.push(new Date(cur)); cur=new Date(cur.getFullYear(),cur.getMonth()+1,1); }
-    const TYC=[['repas','#c2410c'],['taxi','#1d4ed8'],['hotel','#0f766e'],['commande','#7c3aed']];
+    const TYC=[['repas','#c2410c'],['taxi','#1d4ed8'],['coursier','#be185d'],['hotel','#0f766e'],['commande','#7c3aed']];
     const mens=months.map(d=>{ const L=scope.filter(c=>{ const x=parseDate(c.date); return x&&x.getMonth()===d.getMonth()&&x.getFullYear()===d.getFullYear(); }); return {d,L}; });
     const maxMens=Math.max(1,...mens.map(x=>x.L.length));
 
@@ -3793,7 +3821,7 @@ function renderAnalyse(m){
 
     return `<div>
     <div class="page-head">
-        <div><h1>Assistantes et connexions</h1><p>${rg.label} · ${nf(scope.length)} demande${scope.length>1?'s':''}, selon la date de la prestation</p></div>
+        <div><h1>Activité & connexions</h1><p>${rg.label} · ${nf(scope.length)} demande${scope.length>1?'s':''}, selon la date de la prestation</p></div>
     </div>
     <div style="display:flex;gap:4px;flex-wrap:wrap;background:#fff;border:1px solid var(--border);border-radius:8px;padding:4px;margin-bottom:${period==='perso'?'10px':'16px'};width:fit-content;max-width:100%;">
         ${PERIODS.map(([k,l])=>`<button data-stats-period="${k}" style="padding:6px 12px;border:none;border-radius:6px;font-size:12.5px;font-weight:500;cursor:pointer;background:${period===k?'var(--accent)':'transparent'};color:${period===k?'#fff':'#4b5563'};">${l}</button>`).join('')}
@@ -3864,7 +3892,7 @@ function renderJournal(m){
         lastDay=day;
         const [bg,fg]=COL[e.action]||['#f1f5f9','#5a6a85'];
         const item=e.id!=null?state.data.find(c=>c.id===e.id):null;
-        const typeIc=e.type?icon(e.type==='taxi'?'car':e.type==='repas'?'utensils':e.type==='hotel'?'bed':'box',12):'';
+        const typeIc=e.type?icon(e.type==='taxi'?'car':e.type==='coursier'?'send':e.type==='repas'?'utensils':e.type==='hotel'?'bed':'box',12):'';
         return head+`<div ${item?`data-open-detail='${JSON.stringify(item).replace(/'/g,"&apos;")}'`:''} style="display:flex;gap:10px;align-items:flex-start;padding:10px 16px;border-bottom:1px solid #f1f5f9;${item?'cursor:pointer;':''}">
             <div style="font-size:12px;color:#8b93a1;min-width:38px;padding-top:2px;">${d.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})}</div>
             ${avatar(e.qui,26)}
@@ -3938,7 +3966,7 @@ function renderActiviteTout(m){
         return `<span style="padding:3px 10px;border-radius:8px;font-size:11px;font-weight:600;background:${st.bg};color:${st.color};">${st.label}</span>`;
     };
 
-    const typeIcon=t=>icon(t==='taxi'?'car':t==='repas'?'utensils':t==='hotel'?'bed':'box',14);
+    const typeIcon=t=>icon(t==='taxi'?'car':t==='coursier'?'send':t==='repas'?'utensils':t==='hotel'?'bed':'box',14);
 
     const nbAvenir=state.data.filter(c=>{const d=parseDate(c.date);return c.pris==='OUI'&&d&&d>=today2;}).length;
 
@@ -4007,7 +4035,7 @@ function renderActiviteTout(m){
    qui n'étaient reliés à aucune navigation avant cette mise à jour. */
 function renderActivite(m){
     const tab=state.activiteTab||'tout';
-    const TABS=[['tout','grid','Toutes'],['reservations','utensils','Repas & taxis'],['commandes','box','Fournitures'],['hotels','bed','Hôtels'],['historique','wallet','Dépenses & export'],['journal','edit','Journal'],['corbeille','trash','Corbeille']];
+    const TABS=[['tout','grid','Toutes'],['reservations','utensils','Repas, taxis, coursiers'],['commandes','box','Fournitures'],['hotels','bed','Hôtels'],['historique','wallet','Dépenses & prix'],['journal','edit','Journal'],['corbeille','trash','Corbeille']];
     const subNav=`<div style="display:flex;gap:4px;flex-wrap:wrap;background:var(--border-light);padding:4px;border-radius:6px;width:fit-content;margin-bottom:10px;">
         ${TABS.map(([k,ic,l])=>`<button data-activite-tab="${k}" style="display:flex;align-items:center;gap:6px;padding:6px 13px;border:none;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;white-space:nowrap;background:${tab===k?'var(--white)':'transparent'};color:${tab===k?'var(--ink)':'var(--ink-soft)'};box-shadow:${tab===k?'0 1px 3px rgba(0,0,0,0.08)':'none'};transition:all 0.15s;">${icon(ic,14)} ${l}</button>`).join('')}
     </div>`;
@@ -4023,7 +4051,7 @@ function renderActivite(m){
     // pas besoin de les répéter ici. Sur mobile, il n'y a pas de barre du haut équivalente.
     const addBar=`<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:14px;padding:10px 12px;background:var(--accent-soft,#e3edf3);border-radius:8px;">
         <span style="font-size:13px;font-weight:700;color:var(--accent);margin-right:4px;display:flex;align-items:center;gap:5px;">${icon('plus',15)} Ajouter</span>
-        ${[["commande","box","Commande"],["repas","utensils","Repas"],["taxi","car","Taxi"],["hotel","bed","Hôtel"]].map(([t,ic,l])=>`<button data-saisie-type="${t}" style="display:flex;align-items:center;gap:5px;background:#fff;border:1px solid var(--border);border-radius:8px;padding:6px 12px;font-size:13px;font-weight:600;color:var(--ink);cursor:pointer;">${icon(ic,13)} ${l}</button>`).join('')}
+        ${[["commande","box","Commande"],["repas","utensils","Repas"],["taxi","car","Taxi"],["coursier","send","Coursier"],["hotel","bed","Hôtel"]].map(([t,ic,l])=>`<button data-saisie-type="${t}" style="display:flex;align-items:center;gap:5px;background:#fff;border:1px solid var(--border);border-radius:8px;padding:6px 12px;font-size:13px;font-weight:600;color:var(--ink);cursor:pointer;">${icon(ic,13)} ${l}</button>`).join('')}
     </div>`;
     return `<div>${m?subNav:''}${tab==='corbeille'||tab==='journal'?'':addBar}${body}</div>`;
 }
@@ -4110,7 +4138,7 @@ function renderReservations(m){
                         ${selCell(c)}
                         <td style="padding:7px 10px;color:#64748b;white-space:nowrap;font-size:12px;">${$d(c.date)}</td>
                         <td style="padding:7px 10px;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
-                            <span style="margin-right:6px;color:var(--ink-mid);">${icon(c.type==='taxi'?'car':'utensils',14)}</span>
+                            <span style="margin-right:6px;color:var(--ink-mid);">${icon(c.type==='taxi'?'car':c.type==='coursier'?'send':'utensils',14)}</span>
                             <span style="font-weight:600;color:#1a1f36;">${c.desc||'—'}</span>
                         </td>
                         <td style="padding:7px 10px;color:#1a1f36;font-weight:500;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${c.pourQui||'—'}</td>
@@ -4315,7 +4343,7 @@ function renderHotels(m){
 
 function renderCorbeille(m){
     const deleted = state.deletedData||[];
-    const typeIcon=t=>icon(t==='taxi'?'car':t==='repas'?'utensils':t==='hotel'?'bed':'box',14);
+    const typeIcon=t=>icon(t==='taxi'?'car':t==='coursier'?'send':t==='repas'?'utensils':t==='hotel'?'bed':'box',14);
 
     return `<div>
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:10px;">
@@ -4347,10 +4375,10 @@ function renderCorbeille(m){
 }
 
 function renderHistorique(m){
-    const typeIcon=t=>icon(t==='taxi'?'car':t==='repas'?'utensils':t==='hotel'?'bed':'box',14);
-    const typeLabel=t=>t==='taxi'?'Taxi':t==='repas'?'Repas':t==='hotel'?'Hôtel':'Commande';
+    const typeIcon=t=>icon(t==='taxi'?'car':t==='coursier'?'send':t==='repas'?'utensils':t==='hotel'?'bed':'box',14);
+    const typeLabel=t=>TYPE_LABEL[t]||'Commande';
     const typeBadge=t=>{
-        const map={repas:{bg:'linear-gradient(135deg,#fff7ed,#fed7aa)',color:'#c2410c',border:'#fdba74'},taxi:{bg:'linear-gradient(135deg,#dbeafe,#bfdbfe)',color:'#1e40af',border:'#93c5fd'},commande:{bg:'linear-gradient(135deg,#f3e8ff,#e9d5ff)',color:'#6b21a5',border:'#d8b4fe'},hotel:{bg:'linear-gradient(135deg,#ecfeff,#a5f3fc)',color:'#0e7490',border:'#67e8f9'}};
+        const map={repas:{bg:'linear-gradient(135deg,#fff7ed,#fed7aa)',color:'#c2410c',border:'#fdba74'},taxi:{bg:'linear-gradient(135deg,#dbeafe,#bfdbfe)',color:'#1e40af',border:'#93c5fd'},coursier:{bg:'linear-gradient(135deg,#fce7f3,#fbcfe8)',color:'#be185d',border:'#f9a8d4'},commande:{bg:'linear-gradient(135deg,#f3e8ff,#e9d5ff)',color:'#6b21a5',border:'#d8b4fe'},hotel:{bg:'linear-gradient(135deg,#ecfeff,#a5f3fc)',color:'#0e7490',border:'#67e8f9'}};
         const s=map[t]||{bg:'#f1f5f9',color:'#5a6a85',border:'#e4e7ec'};
         return `<span style="display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:6px;font-size:11px;font-weight:600;background:${s.bg};color:${s.color};border:1px solid ${s.border};">${typeIcon(t)} ${typeLabel(t)}</span>`;
     };
@@ -4362,7 +4390,8 @@ function renderHistorique(m){
 
     const PAGE=30;
     const page=state.histPage||0;
-    const allSorted=[...state.data].sort((a,b)=>{
+    const sansPrix=prixASaisir();
+    const allSorted=[...(state.histPrix?sansPrix:state.data)].sort((a,b)=>{
         const k=state.histSort||'date';
         if(k==='date'){
             const da=parseDate(a.date)||new Date(0);
@@ -4379,12 +4408,11 @@ function renderHistorique(m){
     <!-- Header -->
     <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:10px;">
         <div>
-            <div style="font-family:var(--ft);font-weight:650;letter-spacing:-.01em;font-size:${m?'18px':'22px'};">${icon('wallet',m?16:19)} Dépenses & export</div>
-            <div style="font-size:12px;color:#7f8c9b;margin-top:3px;">${allSorted.length} entrée${allSorted.length>1?'s':''} au total</div>
+            <div style="font-family:var(--ft);font-weight:650;letter-spacing:-.01em;font-size:${m?'18px':'22px'};">${icon('wallet',m?16:19)} Dépenses & prix</div>
+            <div style="font-size:12px;color:#7f8c9b;margin-top:3px;">${allSorted.length} entrée${allSorted.length>1?'s':''}${state.histPrix?' sans prix':' au total'} · saisissez le prix à réception de la facture</div>
         </div>
-        <button id="exportExcel" style="background:#1d6f42;color:#fff;border:none;border-radius:6px;padding:9px 20px;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:7px;box-shadow:0 2px 8px rgba(29,111,66,0.2);">
-            ${icon('download',14)} Exporter Excel
-        </button>
+        <button data-nav='{"histPrix":${!state.histPrix},"histPage":0}' class="btn-sm ${state.histPrix?'pri':''}">${icon('wallet',14)} Prix à saisir · ${sansPrix.length}</button>
+        
     </div>
 
     <!-- Filtres tri -->
@@ -4489,6 +4517,17 @@ document.addEventListener('click',e=>{
 });
 document.addEventListener('change',e=>{ const s=e.target.closest('[data-eq-alias]'); if(!s||!s.value) return;
     const E={...equipe(),v:1}; E.alias={...E.alias,[s.getAttribute('data-eq-alias')]:s.value}; settings.equipe=E; saveSettings(settings); showToast(`✓ Rattaché à ${s.value}`); render(); });
+function renderReglagesEmails(secHead){
+    const L=[['alerte','Nouvelle demande','À Julia et Arnaud (administrateurs), dès qu’une assistante ou un invité envoie une demande.'],
+             ['confirmation','Confirmation','À l’assistante, quand vous cliquez « Commande passée » sur sa demande.'],
+             ['copie','Copie de la demande','À l’assistante qui coche « Recevoir une copie » en envoyant sa demande.'],
+             ['annulation','Annulation','À l’assistante, quand vous refusez ou annulez sa demande.']];
+    return `<div class="settings-section">${secHead('mail','Emails envoyés automatiquement','Cochez ceux qui doivent partir. Les saisies directes de l’administration n’envoient jamais d’email.')}
+        <div class="ml-list">${L.map(([k,t,d])=>`<label class="ml-row"><input type="checkbox" data-mail-toggle="${k}" ${mailsOn(k)?'checked':''}><span class="ml-sw"></span><span class="ml-t"><b>${t}</b><span>${d}</span></span><span class="ml-st ${mailsOn(k)?'on':''}">${mailsOn(k)?'Activé':'Désactivé'}</span></label>`).join('')}
+        <div class="ml-row dis"><input type="checkbox" checked disabled><span class="ml-sw"></span><span class="ml-t"><b>Invitation Outlook</b><span>Le rendez-vous dans l’agenda de Julia et Arnaud. Envoyée par le serveur : pour la couper, demandez-le moi.</span></span><span class="ml-st on">Activé</span></div></div>
+        <div style="font-size:12px;color:var(--ink-soft);margin-top:12px;">Le contenu des emails ne change pas : seul l’envoi est activé ou non. Les modifications s’appliquent à tous les postes.</div></div>`;
+}
+document.addEventListener('change',e=>{ const c=e.target.closest('[data-mail-toggle]'); if(!c) return; settings.mails={...MAILS_DEF,...(settings.mails||{}),[c.getAttribute('data-mail-toggle')]:c.checked}; saveSettings(settings); showToast(c.checked?'✓ Email activé':'Email désactivé'); render(); });
 function renderSettings(){
     const secs=[
         {title:"Directeurs",       key:"directeurs",            icon:"user",badge:"director", inputId:"newDirecteur", btnId:"addDirecteur", rm:"remove-directeur", ph:"Prénom NOM",desc:"Proposés dans « Pour qui » lors d’une demande."},
@@ -4526,9 +4565,10 @@ function renderSettings(){
     const TABS=[
         ['compte','user','Mon compte',`${esc(userName()||'')} · notifications`],
         ['equipe','shield','Équipe & accès',`${adminList().length} admin${adminList().length>1?'s':''} · ${settings.assistantes.length} assistantes · ${(settings.directeurs||[]).length} directeurs`],
-        ['prestataires','box','Prestataires',`${['prestatairesRepas','prestatairesTaxi','prestatairesCommande','prestatairesHotel'].reduce((n,k)=>n+(settings[k]||[]).length,0)} entrées · N° Yooz`],
+        ['prestataires','box','Prestataires',`${['prestatairesRepas','prestatairesTaxi','prestatairesCommande','prestatairesHotel'].reduce((n,k)=>n+(settings[k]||[]).length,0)} entrées`],
+        ['emails','mail','Emails',`${['alerte','confirmation','copie','annulation'].filter(mailsOn).length} type${['alerte','confirmation','copie','annulation'].filter(mailsOn).length>1?'s':''} activé${['alerte','confirmation','copie','annulation'].filter(mailsOn).length>1?'s':''}`],
         ['apparence','sliders','Apparence','Nom, logo, couleurs'],
-        ['donnees','grid','Données','Corbeille · export Excel'],
+        ['donnees','grid','Données','Corbeille'],
     ];
     const cur=TABS.find(t=>t[0]===tab)||TABS[0];
     let body='';
@@ -4624,24 +4664,12 @@ function renderSettings(){
         <div style="font-size:11px;color:#8b93a1;margin-top:8px;">À activer une fois que chaque assistante a créé son compte (« Première connexion ? » sur l’écran de connexion, avec l’email renseigné dans la liste des assistantes ci-dessus).</div>
     </div>
 `;
+    else if(cur[0]==='emails') body=renderReglagesEmails(secHead);
     else if(cur[0]==='apparence') body=renderApparence();
     else if(cur[0]==='prestataires') body=`
     ${renderPrestaModal()}
     ${section(secs.slice(1))}
-    <div class="settings-section">
-        ${secHead("wallet","N° Yooz par fournisseur","Rempli automatiquement dans les commandes du fournisseur.")}
-        
-        
-        <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:12px;">
-            ${Object.entries(state.yoozMap||YOOZ_MAP).map(([presta,num])=>`
-            <div style="display:flex;align-items:center;gap:8px;">
-                <span style="font-size:13px;font-weight:500;min-width:140px;color:var(--ink-soft);">${presta}</span>
-                <input class="yooz-input form-input" data-presta="${presta}" value="${num}" placeholder="AAF-PO-26-XXXXXX" style="flex:1;padding:8px 12px;font-size:13px;font-family:monospace;">
-            </div>`).join('')}
-        </div>
-        <button id="addYoozPresta" style="background:none;border:1.5px dashed var(--border);border-radius:12px;width:100%;padding:9px;font-size:13px;color:var(--ink-soft);cursor:pointer;margin-bottom:8px;">+ Ajouter un fournisseur</button>
-        <button id="saveYooz" class="btn-primary" style="width:100%;padding:11px;display:flex;align-items:center;justify-content:center;gap:7px;">${icon('save',14)} Sauvegarder les N° Yooz</button>
-    </div>
+    
 `;
     else body=`
     <div class="settings-section">
@@ -4768,7 +4796,7 @@ function renderSaisieModal(){
         <div class="form-group"><label class="form-label">${icon('bed',13)} Hôtel</label><select id="afPresta" class="form-select"><option value="">—</option>${(af.presta&&!P_HOTEL.includes(af.presta)?[af.presta]:[]).concat(P_HOTEL).map(p=>`<option ${af.presta===p?'selected':''}>${p}</option>`).join('')}</select></div>
         `:`
         <div class="form-group"><label class="form-label">Fournisseur</label><select id="afPresta" class="form-select"><option value="">—</option>${P_CMD.map(p=>`<option ${af.presta===p?'selected':''}>${p}</option>`).join('')}</select></div>
-        <div class="form-group"><label class="form-label">N° Yooz <span style="font-size:11px;color:var(--ink-soft);">(auto)</span></label><input id="afYooz" type="text" value="${af.yooz||YOOZ_MAP[af.presta]||''}" placeholder="AAF-PO-26-XXXXXX" class="form-input"></div>
+        <div class="form-group" style="display:none;"><label class="form-label">N° Yooz <span style="font-size:11px;color:var(--ink-soft);">(auto)</span></label><input id="afYooz" type="text" value="${af.yooz||YOOZ_MAP[af.presta]||''}" placeholder="AAF-PO-26-XXXXXX" class="form-input"></div>
         <div class="form-group"><label class="form-label">Lieu livraison</label><input id="afLieu" type="text" value="${af.lieu}" class="form-input"></div>
 
         `}
@@ -4977,7 +5005,7 @@ function attachEvents(){
     // Export Excel
     document.getElementById('exportExcel')?.addEventListener('click',()=>{
         if(typeof XLSX==='undefined'){showToast(`${icon('alert',13)} Export non disponible`);return;}
-        const typeLabel=t=>t==='taxi'?'Taxi':t==='repas'?'Repas':t==='hotel'?'Hôtel':'Commande';
+        const typeLabel=t=>TYPE_LABEL[t]||'Commande';
         const statusLabel=s=>s==='OUI'?'Validé':s==='En attente'?'En attente':s==='Annulé'?'Annulé':s||'';
         const rows=state.data.map(c=>({
             'Date':c.date||'',
@@ -5406,9 +5434,9 @@ function attachEvents(){
     const _submitForm=async()=>{
         const f=state.form;
         const pourQuiLabel=f.type==='repas'?(f.participants||''):(f.pourQui.includes('__autre__')?(f.pourQuiAutre||'Autre'):f.pourQui.join(', '));
-        const descFinal=f.type==='taxi'?`Taxi ${(f.de||'?').split(',')[0]} → ${(f.vers||'?').split(',')[0]}`:f.type==='hotel'?(f.desc||`Hôtel ${f.lieu||'?'}`):(f.desc||'Commande repas');
+        const descFinal=f.type==='coursier'?`Coursier : ${f.desc||'?'}`:f.type==='taxi'?`Taxi ${(f.de||'?').split(',')[0]} → ${(f.vers||'?').split(',')[0]}`:f.type==='hotel'?(f.desc||`Hôtel ${f.lieu||'?'}`):(f.desc||'Commande repas');
         const code=genCode(f.type), ADM=isAdmin();
-        const newItem={id:Date.now(),code,pris:ADM?"OUI":"En attente",demandeur:f.dem,pourQui:pourQuiLabel,date:f.date,dateDepart:f.type==='hotel'?f.dateDepart:'',desc:descFinal,lieu:f.type==='taxi'?f.de:f.lieu,heure:f.heure,presta:f.presta,prix:0,paie:"",nb:parseInt(f.nb)||1,comment:f.com,type:f.type,depart:f.de,arrivee:f.vers,vol:f.vol||'',tel:f.tel||''};
+        const newItem={id:Date.now(),code,pris:ADM?"OUI":"En attente",demandeur:f.dem,pourQui:pourQuiLabel,date:f.date,dateDepart:f.type==='hotel'?f.dateDepart:'',desc:descFinal,lieu:f.type==='taxi'||f.type==='coursier'?f.de:f.lieu,heure:f.heure,presta:f.presta,prix:0,paie:"",nb:parseInt(f.nb)||1,comment:f.com,type:f.type,depart:f.de,arrivee:f.vers,vol:f.vol||'',tel:f.tel||''};
         state.data=[newItem,...state.data];
         state.form.sent=true;state.form.code=code;state.form.admin=ADM;render();
         console.log('newItem code:', newItem.code, 'appToRow:', JSON.stringify(appToRow(newItem)));
@@ -5421,14 +5449,14 @@ function attachEvents(){
             ? settings.adminEmails
             : JSON.parse(localStorage.getItem('settings_admin_emails')||'[]');
         console.log('adminEmails utilisés:', adminEmailsSafe);
-        adminEmailsSafe.forEach(email=>{
+        if(mailsOn('alerte')) adminEmailsSafe.forEach(email=>{
             if(email) sendConfirmationEmail(newItem, {to: email});
         });
-        if(adminEmailsSafe.filter(Boolean).length){ try{ setSuivi([saved.id||newItem.id],()=>({mailAlerte:new Date().toISOString()})); }catch(e){} }
+        if(mailsOn('alerte')&&adminEmailsSafe.filter(Boolean).length){ try{ setSuivi([saved.id||newItem.id],()=>({mailAlerte:new Date().toISOString()})); }catch(e){} }
         if(!adminEmailsSafe.filter(Boolean).length){
             console.warn('Aucun email admin configuré dans les réglages !');
         }
-        if(f.copyMail && f.dem){
+        if(f.copyMail && f.dem && mailsOn('copie')){
             sendConfirmationEmail(newItem, {isCopie: true});
         }
     };
@@ -5474,6 +5502,8 @@ function attachEvents(){
         if(g('formDe')) f.de=g('formDe').value;
         if(g('formVers')) f.vers=g('formVers').value;
         if(g('formTel')) f.tel=g('formTel').value;
+        if(g('formPresta')) f.presta=g('formPresta').value;
+        if(g('formInvite')) f.dem=g('formInvite').value.trim();
         if(g('formVol')) f.vol=g('formVol').value;
         if(g('formCom')) f.com=g('formCom').value;
         if(g('formAllergies')) f.allergies=g('formAllergies').value;
@@ -5488,13 +5518,14 @@ function attachEvents(){
         const f=state.form, act=el.getAttribute('data-nf'), k=el.getAttribute('data-k'), v=el.getAttribute('data-v');
         if(act==='type'){ if(f.type!==v){ f.type=v; f.presta=''; f.desc=''; f.lieu=''; f.heureAutre=false; } window.scrollTo(0,0); }
         else if(act==='back'){ f.type=null; window.scrollTo(0,0); }
-        else if(act==='set'){ f[k]=(f[k]===v&&k!=='date'&&k!=='lieu'&&k!=='de'&&k!=='vers')?'':v; if(k==='date') f.dateAutre=false; if(k==='heure') f.heureAutre=false; if(k==='dem') lsSet('nf_dem',v); }
+        else if(act==='set'){ f[k]=(f[k]===v&&k!=='date'&&k!=='lieu'&&k!=='de'&&k!=='vers')?'':v; if(k==='date') f.dateAutre=false; if(k==='heure') f.heureAutre=false; if(k==='dem') f.invite=false; if(k==='dem') lsSet('nf_dem',v); }
         else if(act==='toggle'){ const a=f[k]||[]; f[k]=a.includes(v)?a.filter(x=>x!==v):[...a,v]; }
         else if(act==='addpart'){ const cur=String(f.participants||'').trim(); f.participants=cur?cur.replace(/,\s*$/,'')+', '+v:v; }
         else if(act==='nb'){ f.nb=String(Math.max(1,Math.min(500,(parseInt(f.nb)||1)+(+v)))); }
         else if(act==='nights'){ f.nights=Math.max(1,Math.min(60,nfNuits(f)+(+v))); }
         else if(act==='rg'){ const r={...(f.regimes||{})}; const n=r[v]||0; r[v]=k==='toggle'?(n?0:1):Math.max(0,Math.min(500,n+(+k))); f.regimes=r; }
         else if(act==='emailok'){ f.fromEmail=null; }
+        else if(act==='invite'){ f.invite=!f.invite; f.dem=''; if(f.invite) setTimeout(()=>document.getElementById('formInvite')?.focus(),60); }
         else if(act==='dateautre'){ f.dateAutre=true; }
         else if(act==='heureautre'){ f.heureAutre=true; if(NF_HEURES[f.type]?.includes(f.heure)) f.heure=''; }
         if(f.type==='hotel') f.dateDepart=nfDepart(f);
@@ -5504,7 +5535,7 @@ function attachEvents(){
         nfSave(); const f=state.form;
         if(!f.heure&&f.type==='hotel') f.heure='';
         const err=m=>showToast(`${icon('alert',13)} ${m}`);
-        if(!f.dem) return err('Choisissez votre nom (demandeur)');
+        if(!f.dem) return err(f.invite?'Indiquez votre prénom et nom':'Choisissez votre nom (demandeur)');
         if(f.type==='repas'){ if(!String(f.participants||'').trim()) return err('Les participants du repas sont obligatoires'); }
         else if(!f.pourQui.length) return err('Indiquez pour qui');
         if(!f.date) return err('Choisissez la date');
@@ -5519,6 +5550,7 @@ function attachEvents(){
             const needsVol=['aéroport','aeroport','cdg','orly','roissy','beauvais','gare','saint-lazare','montparnasse'].some(w=>t.includes(w));
             if(needsVol&&!f.vol) return err('N° de vol / train obligatoire pour une gare ou un aéroport');
         }
+        if(f.type==='coursier'){ if(!String(f.desc||'').trim()) return err('Indiquez l’objet à livrer'); if(!f.de) return err('L’adresse d’enlèvement est obligatoire'); if(!f.vers) return err('L’adresse de livraison est obligatoire'); }
         if(f.type==='hotel') f.heure=f.heure||'';
         if(f.type==='repas'){ const rt=regimesTxt(f); if(rt&&!String(f.com||'').startsWith(rt)) f.com=rt+(f.com?' — '+f.com:''); }
         _submitForm();
