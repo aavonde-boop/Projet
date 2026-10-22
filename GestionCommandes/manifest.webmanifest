@@ -1,6 +1,6 @@
 {
-  "name": "Gestion des commandes",
-  "short_name": "Commandes",
+  "name": "Gestion des services",
+  "short_name": "Services",
   "description": "Demandes de repas, taxis, hôtels et commandes",
   "lang": "fr",
   "start_url": "./index.html",
