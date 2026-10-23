@@ -1,7 +1,7 @@
 // ════════════════════════════════════════════════════════════════════
 //  Gestion des services — invitations agenda automatiques
 //
-//  Appelée par un « Database Webhook » Supabase sur la table `commandes`
+//  Appelée par un « Database Webhook » Supabase sur la table 'commandes'
 //  (INSERT + UPDATE). Pour chaque nouvelle demande, envoie aux emails admin
 //  (Réglages › Notifications › Emails admin) deux invitations Outlook :
 //    1. « Commander »      : la veille à 10h (ou dans l'heure si c'est trop tard)
@@ -50,36 +50,36 @@ function parisNow(): Wall {
   return { y: +p.year, mo: +p.month, d: +p.day, h: +p.hour % 24, mi: +p.minute };
 }
 const pad = (n: number) => String(n).padStart(2, "0");
-const icsWall = (w: Wall) => `${w.y}${pad(w.mo)}${pad(w.d)}T${pad(w.h)}${pad(w.mi)}00`;
-const jourLong = (w: Wall) => { const j = JOURS[new Date(Date.UTC(w.y, w.mo - 1, w.d)).getUTCDay()]; return `${j[0].toUpperCase() + j.slice(1)} ${w.d} ${MOIS[w.mo - 1]}`; };
-const jourCourt = (w: Wall) => `${w.d}/${pad(w.mo)}`;
+const icsWall = (w: Wall) => (String(w.y) + String(pad(w.mo)) + String(pad(w.d)) + "T" + String(pad(w.h)) + String(pad(w.mi)) + "00");
+const jourLong = (w: Wall) => { const j = JOURS[new Date(Date.UTC(w.y, w.mo - 1, w.d)).getUTCDay()]; return (String(j[0].toUpperCase() + j.slice(1)) + " " + String(w.d) + " " + String(MOIS[w.mo - 1])); };
+const jourCourt = (w: Wall) => (String(w.d) + "/" + String(pad(w.mo)));
 
 // ── Contenu des rappels (mêmes règles que le bouton Agenda de l'appli) ─
 function titre(c: Row) { return c.type === "commande" ? (c.presta || c.descr || "Commande") : (c.descr || TYPE[c.type] || "Demande"); }
 function messageCommande(c: Row, start: Wall) {
-  const quand = `${jourLong(start)} ${start.y}${c.heure ? ` à ${c.heure}` : ""}`;
+  const quand = (String(jourLong(start)) + " " + String(start.y) + String(c.heure ? (" à " + String(c.heure)) : ""));
   const L = ["Bonjour,", ""];
   if (c.type === "taxi") {
-    L.push("Je souhaiterais réserver un taxi :", `- Date : ${quand}`, `- Départ : ${c.depart || c.lieu || "—"}`, `- Arrivée : ${c.arrivee || "—"}`);
-    if (c.pour_qui) L.push(`- Passager : ${c.pour_qui}`);
-    if (c.tel) L.push(`- Téléphone du passager : ${c.tel}`);
-    if (c.vol) L.push(`- Vol / train : ${c.vol}`);
+    L.push("Je souhaiterais réserver un taxi :", ("- Date : " + String(quand)), ("- Départ : " + String(c.depart || c.lieu || "—")), ("- Arrivée : " + String(c.arrivee || "—")));
+    if (c.pour_qui) L.push(("- Passager : " + String(c.pour_qui)));
+    if (c.tel) L.push(("- Téléphone du passager : " + String(c.tel)));
+    if (c.vol) L.push(("- Vol / train : " + String(c.vol)));
   } else if (c.type === "hotel") {
     const dd = parseDay(c.date_depart);
-    L.push("Je souhaiterais réserver :", `- Arrivée : ${jourLong(start)} ${start.y}`, `- Départ : ${dd ? jourLong(dd) + " " + dd.y : "—"}`);
-    if (c.lieu) L.push(`- Ville : ${c.lieu}`);
-    L.push(`- Personnes : ${c.nb || 1}`);
-    if (c.pour_qui) L.push(`- Au nom de : ${c.pour_qui}`);
+    L.push("Je souhaiterais réserver :", ("- Arrivée : " + String(jourLong(start)) + " " + String(start.y)), ("- Départ : " + String(dd ? jourLong(dd) + " " + dd.y : "—")));
+    if (c.lieu) L.push(("- Ville : " + String(c.lieu)));
+    L.push(("- Personnes : " + String(c.nb || 1)));
+    if (c.pour_qui) L.push(("- Au nom de : " + String(c.pour_qui)));
   } else if (c.type === "repas") {
-    L.push("Je souhaiterais passer la commande suivante :", `- Date : ${quand}`, `- Salle / lieu de livraison : ${c.lieu || "à préciser"}`, `- Nombre de personnes : ${c.nb || 1}`);
-    if (c.descr) L.push(`- Repas : ${c.descr}`);
+    L.push("Je souhaiterais passer la commande suivante :", ("- Date : " + String(quand)), ("- Salle / lieu de livraison : " + String(c.lieu || "à préciser")), ("- Nombre de personnes : " + String(c.nb || 1)));
+    if (c.descr) L.push(("- Repas : " + String(c.descr)));
   } else {
     L.push("Je souhaiterais passer la commande suivante :");
-    if (c.descr && c.descr !== "Commande") L.push(`- Articles : ${c.descr}`);
-    L.push(`- Livraison : ${quand}`);
-    if (c.lieu) L.push(`- Lieu de livraison : ${c.lieu}`);
+    if (c.descr && c.descr !== "Commande") L.push(("- Articles : " + String(c.descr)));
+    L.push(("- Livraison : " + String(quand)));
+    if (c.lieu) L.push(("- Lieu de livraison : " + String(c.lieu)));
   }
-  if (c.comment) L.push(`- Précisions : ${c.comment}`);
+  if (c.comment) L.push(("- Précisions : " + String(c.comment)));
   L.push("", "Merci de me confirmer la prise en compte.", "", "Cordialement,");
   return L.join("\n");
 }
@@ -90,12 +90,12 @@ export function rappels(c: Row, now: Wall = parisNow()): Ev[] {
   const t = titre(c);
   const lieu = c.type === "taxi" ? (c.depart || c.lieu || "") : (c.lieu || "");
   const infos = [
-    `${TYPE[c.type] || ""} : ${t}`, `Quand : ${jourLong(start)}${c.heure ? " à " + c.heure : ""}`,
-    c.type === "taxi" ? `Trajet : ${c.depart || "—"} → ${c.arrivee || "—"}` : (lieu ? `Lieu / salle : ${lieu}` : ""),
-    (c.type === "repas" || c.type === "hotel") ? `Personnes : ${c.nb || 1}` : "",
-    c.presta ? `Prestataire : ${c.presta}` : "", `Demandé par : ${c.demandeur || "—"}`, c.pour_qui ? `Pour : ${c.pour_qui}` : "",
-    c.tel ? `Téléphone : ${c.tel}` : "", c.vol ? `Vol / train : ${c.vol}` : "", c.comment ? `Commentaire : ${c.comment}` : "",
-    c.code ? `Code : ${c.code}` : "",
+    (String(TYPE[c.type] || "") + " : " + String(t)), ("Quand : " + String(jourLong(start)) + String(c.heure ? " à " + c.heure : "")),
+    c.type === "taxi" ? ("Trajet : " + String(c.depart || "—") + " → " + String(c.arrivee || "—")) : (lieu ? ("Lieu / salle : " + String(lieu)) : ""),
+    (c.type === "repas" || c.type === "hotel") ? ("Personnes : " + String(c.nb || 1)) : "",
+    c.presta ? ("Prestataire : " + String(c.presta)) : "", ("Demandé par : " + String(c.demandeur || "—")), c.pour_qui ? ("Pour : " + String(c.pour_qui)) : "",
+    c.tel ? ("Téléphone : " + String(c.tel)) : "", c.vol ? ("Vol / train : " + String(c.vol)) : "", c.comment ? ("Commentaire : " + String(c.comment)) : "",
+    c.code ? ("Code : " + String(c.code)) : "",
   ].filter(Boolean).join("\n");
 
   // 1) Commander : la veille à 10h ; si c'est déjà passé, dans l'heure ; jamais après la prestation
@@ -103,16 +103,16 @@ export function rappels(c: Row, now: Wall = parisNow()): Ev[] {
   if (toDate(cmd) < toDate(now)) { cmd = addMin({ ...now, mi: 0 }, 60); }
   if (toDate(cmd) > toDate(start)) cmd = addMin(start, -60);
   const out: Ev[] = [{
-    uid: `${c.id}-commande@gestion-commandes`, start: cmd, minutes: 15,
-    title: `Commander · ${t} (${jourCourt(start)})`, location: "",
-    desc: `À commander auprès de ${c.presta || "du prestataire"}.\n\n${infos}\n\n——— Message prêt à envoyer ———\n${messageCommande(c, start)}`, alarm: 0,
+    uid: (String(c.id) + "-commande@gestion-commandes"), start: cmd, minutes: 15,
+    title: ("Commander · " + String(t) + " (" + String(jourCourt(start)) + ")"), location: "",
+    desc: ("À commander auprès de " + String(c.presta || "du prestataire") + ".\n\n" + String(infos) + "\n\n——— Message prêt à envoyer ———\n" + String(messageCommande(c, start))), alarm: 0,
   }];
   // 2) Mise en place
   const avant = c.type === "taxi" ? 15 : 30;
   const lbl = c.type === "taxi" ? "Taxi" : c.type === "hotel" ? "Arrivée hôtel" : c.type === "commande" ? "Livraison" : "Mise en place";
   out.push({
-    uid: `${c.id}-miseenplace@gestion-commandes`, start: addMin(start, -avant), minutes: avant + (c.type === "repas" ? 30 : 0),
-    title: `${lbl} · ${t}${lieu ? " — " + lieu : ""}`, location: lieu, desc: infos, alarm: 15,
+    uid: (String(c.id) + "-miseenplace@gestion-commandes"), start: addMin(start, -avant), minutes: avant + (c.type === "repas" ? 30 : 0),
+    title: (String(lbl) + " · " + String(t) + String(lieu ? " — " + lieu : "")), location: lieu, desc: infos, alarm: 15,
   });
   return out;
 }
@@ -130,15 +130,15 @@ const VTIMEZONE = ["BEGIN:VTIMEZONE", "TZID:Europe/Paris",
   "END:VTIMEZONE"];
 export function ics(ev: Ev, method: "REQUEST" | "CANCEL", organizer: string, attendees: string[], sequence: number) {
   const stamp = new Date().toISOString().replace(/[-:]/g, "").slice(0, 15) + "Z";
-  const L = ["BEGIN:VCALENDAR", "PRODID:-//Gestion des services//FR", "VERSION:2.0", "CALSCALE:GREGORIAN", `METHOD:${method}`, ...VTIMEZONE,
-    "BEGIN:VEVENT", `UID:${ev.uid}`, `SEQUENCE:${sequence}`, `DTSTAMP:${stamp}`,
-    `DTSTART;TZID=${TZ}:${icsWall(ev.start)}`, `DTEND;TZID=${TZ}:${icsWall(addMin(ev.start, ev.minutes))}`,
-    fold(`SUMMARY:${esc(ev.title)}`), ev.location ? fold(`LOCATION:${esc(ev.location)}`) : "", fold(`DESCRIPTION:${esc(ev.desc)}`),
-    fold(`ORGANIZER;CN=Gestion des services:mailto:${organizer}`),
-    ...attendees.map((a) => fold(`ATTENDEE;ROLE=REQ-PARTICIPANT;PARTSTAT=NEEDS-ACTION;RSVP=FALSE:mailto:${a}`)),
-    `STATUS:${method === "CANCEL" ? "CANCELLED" : "CONFIRMED"}`, "TRANSP:OPAQUE", "CLASS:PRIVATE",
+  const L = ["BEGIN:VCALENDAR", "PRODID:-//Gestion des services//FR", "VERSION:2.0", "CALSCALE:GREGORIAN", ("METHOD:" + String(method)), ...VTIMEZONE,
+    "BEGIN:VEVENT", ("UID:" + String(ev.uid)), ("SEQUENCE:" + String(sequence)), ("DTSTAMP:" + String(stamp)),
+    ("DTSTART;TZID=" + String(TZ) + ":" + String(icsWall(ev.start))), ("DTEND;TZID=" + String(TZ) + ":" + String(icsWall(addMin(ev.start, ev.minutes)))),
+    fold(("SUMMARY:" + String(esc(ev.title)))), ev.location ? fold(("LOCATION:" + String(esc(ev.location)))) : "", fold(("DESCRIPTION:" + String(esc(ev.desc)))),
+    fold(("ORGANIZER;CN=Gestion des services:mailto:" + String(organizer))),
+    ...attendees.map((a) => fold(("ATTENDEE;ROLE=REQ-PARTICIPANT;PARTSTAT=NEEDS-ACTION;RSVP=FALSE:mailto:" + String(a)))),
+    ("STATUS:" + String(method === "CANCEL" ? "CANCELLED" : "CONFIRMED")), "TRANSP:OPAQUE", "CLASS:PRIVATE",
     "X-MICROSOFT-CDO-BUSYSTATUS:FREE", "X-MICROSOFT-CDO-INTENDEDSTATUS:FREE",
-    ...(method === "REQUEST" ? ["BEGIN:VALARM", "ACTION:DISPLAY", `TRIGGER:-PT${ev.alarm}M`, fold(`DESCRIPTION:${esc(ev.title)}`), "END:VALARM"] : []),
+    ...(method === "REQUEST" ? ["BEGIN:VALARM", "ACTION:DISPLAY", ("TRIGGER:-PT" + String(ev.alarm) + "M"), fold(("DESCRIPTION:" + String(esc(ev.title)))), "END:VALARM"] : []),
     "END:VEVENT", "END:VCALENDAR"];
   return L.filter(Boolean).join("\r\n") + "\r\n";
 }
@@ -146,7 +146,7 @@ export function ics(ev: Ev, method: "REQUEST" | "CANCEL", organizer: string, att
 // ── Supabase ─────────────────────────────────────────────────────────
 async function adminEmails(): Promise<string[]> {
   const url = Deno.env.get("SUPABASE_URL"), key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-  const r = await fetch(`${url}/rest/v1/parametres?cle=eq.adminEmails&select=valeur`, { headers: { apikey: key!, Authorization: `Bearer ${key}` } });
+  const r = await fetch((String(url) + "/rest/v1/parametres?cle=eq.adminEmails&select=valeur"), { headers: { apikey: key!, Authorization: ("Bearer " + String(key)) } });
   const rows = await r.json();
   const v = rows?.[0]?.valeur;
   const list = Array.isArray(v) ? v : (typeof v === "string" ? JSON.parse(v || "[]") : []);
@@ -187,8 +187,8 @@ Deno.serve(async (req) => {
     for (const ev of evs) {
       const content = ics(ev, method, user, to, seq);
       await transport.sendMail({
-        from: `"Gestion des services" <${user}>`, to,
-        subject: method === "CANCEL" ? `Annulé : ${ev.title}` : ev.title,
+        from: ("\"Gestion des services\" <" + String(user) + ">"), to,
+        subject: method === "CANCEL" ? ("Annulé : " + String(ev.title)) : ev.title,
         text: method === "CANCEL" ? "Cette demande a été annulée : le rappel est retiré de votre agenda." : ev.desc,
         icalEvent: { method, filename: "invitation.ics", content },
       });
