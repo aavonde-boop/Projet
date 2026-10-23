@@ -1325,7 +1325,7 @@ let AUTH = null;
 function lsGet(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } }
 function lsSet(k,v){ try{ localStorage.setItem(k,v); }catch(e){} }
 function authLoad(){ try{ AUTH = JSON.parse(lsGet(AUTH_KEY) || 'null'); }catch(e){ AUTH = null; } }
-function authSave(sess){ AUTH = sess; lsSet(AUTH_KEY, JSON.stringify(sess)); }
+function authSave(sess){ AUTH = sess; lsSet(AUTH_KEY, JSON.stringify(sess)); rtAuth(); }
 function authClear(){ AUTH = null; try{ localStorage.removeItem(AUTH_KEY); localStorage.removeItem('last_vue'); localStorage.removeItem('admin_session'); }catch(e){} }
 function authErr(j){
     const raw = (j && (j.error_description || j.msg || j.message || j.error_code || j.error)) || '';
@@ -1368,7 +1368,7 @@ function assistanteName(){ const e = userEmail(); if (!e) return null; const hit
 function emailAutorise(e){ e = String(e||'').trim().toLowerCase(); return adminList().includes(e) || Object.values(settings.emails||{}).some(m => String(m||'').trim().toLowerCase() === e) || !adminList().length; }
 function userName(){ return AUTH ? (AUTH.user?.user_metadata?.nom || assistanteName() || userEmail().split('@')[0]) : ''; }
 function sessionValid(){ return isAdmin(); }
-function sessionEnd(){ authClear(); }
+function sessionEnd(){ const tok=AUTH&&AUTH.access_token; pushUnsubscribe(tok); rtStop(); authClear(); }
 const adminName = () => (AUTH ? userName() : '') || 'Admin';
 
 /* ── Journal des modifications ── */
@@ -1421,6 +1421,48 @@ async function systemNotify(title, body){
     } catch(e) {}
     try { new Notification(title, opts); return true; } catch(e) { return false; }
 }
+/* ══ NOTIFICATIONS PUSH (même appli fermée) — fonction Supabase « notifier-push » ══ */
+const FN_PUSH=`${SB_URL}/functions/v1/notifier-push`;
+function _b64uBytes(s){ s=String(s).replace(/-/g,'+').replace(/_/g,'/'); while(s.length%4) s+='='; const b=atob(s), o=new Uint8Array(b.length); for(let i=0;i<b.length;i++) o[i]=b.charCodeAt(i); return o; }
+async function pushCall(body, tok){ const r=await fetch(FN_PUSH,{method:'POST',headers:{'Content-Type':'application/json',apikey:SB_KEY,Authorization:`Bearer ${tok||SB_KEY}`},body:JSON.stringify(body)}); const j=await r.json().catch(()=>({})); if(!r.ok||j.ok===false) throw new Error(j.error||('HTTP '+r.status)); return j; }
+async function pushSubscribe(test){
+    try{
+        if(!sessionValid()||!AUTH||!('serviceWorker' in navigator)||!('PushManager' in window)||!notifsReady()) return false;
+        if(isIOS()&&!isStandalone()) return false;
+        const reg=await Promise.race([navigator.serviceWorker.ready,new Promise(r=>setTimeout(()=>r(null),8000))]); if(!reg) return false;
+        let sub=await reg.pushManager.getSubscription();
+        if(!sub){ const {cle}=await pushCall({action:'cle'}); sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:_b64uBytes(cle)}); }
+        await pushCall({action:'abonner',subscription:sub.toJSON(),appareil:`${isIOS()?'iPhone':(navigator.userAgentData?.platform||navigator.platform||'')} · ${userName()}`},AUTH.access_token);
+        lsSet('push_ok',sub.endpoint);
+        if(test) await pushCall({action:'test',endpoint:sub.endpoint},AUTH.access_token);
+        return true;
+    }catch(e){ console.warn('Push :',e); return false; }
+}
+async function pushUnsubscribe(tok){
+    const ep=lsGet('push_ok'); try{ localStorage.removeItem('push_ok'); }catch(e){}
+    try{ if(ep&&tok) await pushCall({action:'desabonner',endpoint:ep},tok); }catch(e){}
+    try{ const reg=await navigator.serviceWorker?.getRegistration?.(); const s=await reg?.pushManager?.getSubscription(); if(s) await s.unsubscribe(); }catch(e){}
+}
+
+/* ══ TEMPS RÉEL : l'écran se met à jour dès qu'une demande change ══ */
+let _rtTimer=null;
+function rtStart(onChange){
+    if(window._rtClient||!sessionValid()||!AUTH||typeof onChange!=='function') return;
+    window._rtClient='…';
+    const s=document.createElement('script'); s.src='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js';
+    s.onerror=()=>{ window._rtClient=null; };
+    s.onload=()=>{ try{
+        const cl=window.supabase.createClient(SB_URL,SB_KEY,{auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false}});
+        cl.realtime.setAuth(AUTH.access_token);
+        const fire=()=>{ clearTimeout(_rtTimer); _rtTimer=setTimeout(onChange,700); };
+        cl.channel('maj').on('postgres_changes',{event:'*',schema:'public',table:'commandes'},fire).on('postgres_changes',{event:'*',schema:'public',table:'parametres'},fire)
+          .subscribe(st=>{ state.rtOk=st==='SUBSCRIBED'; });
+        window._rtClient=cl;
+    }catch(e){ console.warn('Temps réel :',e); window._rtClient=null; } };
+    document.head.appendChild(s);
+}
+function rtAuth(){ try{ const c=window._rtClient; if(c&&c.realtime&&AUTH) c.realtime.setAuth(AUTH.access_token); }catch(e){} }
+function rtStop(){ try{ const c=window._rtClient; if(c&&c.removeAllChannels) c.removeAllChannels(); }catch(e){} window._rtClient=null; }
 function notifsReady(){ return ('Notification' in window) && Notification.permission==='granted'; }
 async function activateAll(){
     // 1) installer l'appli si le navigateur le propose (nécessaire pour la pastille)
@@ -1438,7 +1480,7 @@ async function enableDeviceNotifs(){
     if (!('Notification' in window)) { showToast(`${icon('alert',13)} Notifications non disponibles ici`); return; }
     if (isIOS() && !isStandalone()) { showToast('Sur iPhone : installez d’abord l’appli sur l’écran d’accueil'); return; }
     const r = await Notification.requestPermission();
-    if (r === 'granted') { await systemNotify('Notifications activées', 'Vous serez prévenu ici des nouvelles demandes.'); updateBadge(); showToast('✓ Notifications activées sur cet appareil'); }
+    if (r === 'granted') { const push=await pushSubscribe(true); if(!push) await systemNotify('Notifications activées', 'Vous serez prévenu ici des nouvelles demandes.'); updateBadge(); showToast(push?'✓ Notifications activées : vous serez prévenu même appli fermée':'✓ Notifications activées sur cet appareil'); }
     else showToast(`${icon('alert',13)} Refusé : à réactiver dans les réglages du navigateur`);
     render();
 }
@@ -5482,7 +5524,7 @@ function attachEvents(){
                 const admin=isAdmin();
                 setState({authMode:'login',authError:'',authInfo:'',loginScreen:false,authed:admin,vue:state.vue==='admin'&&admin?'admin':state.vue==='admin'?'admin':'select',adminTab:'dashboard'});
                 showToast(`✓ Bonjour ${userName().split(' ')[0]}`);
-                if(admin){ loadTrash().then(render); loadJournal(); loadSuivi(); setTimeout(()=>document.dispatchEvent(new Event('visibilitychange')),0); }
+                if(admin){ loadTrash().then(render); loadJournal(); loadSuivi(); rtStart(window._poll); if(notifsReady()) pushSubscribe(false); setTimeout(()=>document.dispatchEvent(new Event('visibilitychange')),0); }
             }catch(e){ fail(e.message); }
             finally{ const b=document.getElementById('authSubmit'); if(b){ b.disabled=false; } }
         };
@@ -5947,8 +5989,9 @@ let _rt;
 window.addEventListener('resize',()=>{clearTimeout(_rt);_rt=setTimeout(render,120);});
 
 // ── Service worker (appli installable). Ignoré en local (file://). ──
-if ('serviceWorker' in navigator && location.protocol === 'https:') {
-    window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(e => console.warn('SW:', e)));
+if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
+    const _swReg = () => navigator.serviceWorker.register('sw.js').catch(e => console.warn('SW:', e));
+    if (document.readyState === 'complete') _swReg(); else window.addEventListener('load', _swReg);
 }
 
 // ── INIT : chargement depuis Supabase ──
@@ -6008,7 +6051,7 @@ if ('serviceWorker' in navigator && location.protocol === 'https:') {
             if(sessionValid() && nouvelles.length){
                 const n=nouvelles.length, c=nouvelles[0];
                 if(state.vue==='admin') showToast(`${icon('bell',13)} ${n} nouvelle${n>1?'s':''} demande${n>1?'s':''} !`);
-                systemNotify(n>1?`${n} nouvelles demandes`:`Nouvelle demande · ${TYPE_LABEL[c.type]||''}`,
+                if(!lsGet('push_ok')) systemNotify(n>1?`${n} nouvelles demandes`:`Nouvelle demande · ${TYPE_LABEL[c.type]||''}`,
                     n>1?'À valider dans Gestion des services':`${$d(c.date)}${c.heure?' '+c.heure:''} · ${c.type==='commande'?(c.presta||'Commande'):(c.desc||'')} · ${c.demandeur||''}`);
             }
         } catch(e){}
@@ -6017,6 +6060,7 @@ if ('serviceWorker' in navigator && location.protocol === 'https:') {
     let _pollTimer=null;
     function schedulePoll(){ clearInterval(_pollTimer); _pollTimer=setInterval(poll, sessionValid()?60000:300000); }
     schedulePoll();
+    window._poll=poll; rtStart(poll); if(notifsReady()) pushSubscribe(false);
     document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible'){ poll(); schedulePoll(); } });
 })();
 </script>
