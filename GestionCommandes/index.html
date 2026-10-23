@@ -599,6 +599,8 @@
         .me-th{background:none;border:0;font:inherit;color:inherit;text-transform:inherit;letter-spacing:inherit;cursor:pointer;padding:0;} .me-th.on{color:var(--ink);}
         .me-tbl .pro-table td{padding:10px 16px;} .me-td-t{white-space:normal!important;min-width:280px;} .me-td-t .t span{line-height:1.3;}
         .me-cards{display:none;}
+        .me-vue{display:inline-flex;border:1px solid var(--border);border-radius:7px;overflow:hidden;background:#fff;} .me-vue button{border:0;background:transparent;padding:0 12px;height:32px;font:600 12.5px var(--fb);color:var(--ink-mid);cursor:pointer;} .me-vue button.on{background:var(--side);color:#fff;}
+        .me-kcard{margin-bottom:8px;}
         .me-card{display:flex;flex-direction:column;gap:6px;width:100%;text-align:left;background:#fff;border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:8px;font:inherit;cursor:pointer;color:var(--ink);}
         .me-card .t{display:flex;gap:8px;align-items:flex-start;} .me-card .t b{font-size:14px;font-weight:600;line-height:1.3;} .me-card .t .sx-u{margin-top:5px;flex:0 0 auto;}
         .me-card .m{font-size:12.5px;color:var(--ink-soft);} .me-card .r{display:flex;gap:6px;align-items:center;flex-wrap:wrap;font-size:12.5px;} .me-rel{margin-left:auto;}
@@ -3486,13 +3488,50 @@ function renderMe(m){
         </section>
     </div></div>`;
 }
-function meBatiment(m){ return meListe(); }
+function meBatiment(m){ return (state.meVue||'col')==='liste'? meListe() : meColonnes(m); }
+const ME_COLS=[['signale','Signalé','flag'],['contacte','Intervenant contacté','phone'],['prevu','Intervention prévue','calendar'],['resolu','Résolu (30 derniers jours)','check']];
+const ME_BF=[['all','Tout',()=>true],['urg','Urgents',s=>s.urgence==='urgent'],['relance','À relancer',s=>meRelanceDue(s)],['constat','Relevés en constat',s=>(s.constat||[]).length]];
+function meVueSwitch(v){ return `<div class="me-vue">${[['col','Colonnes'],['liste','Liste']].map(([k,l])=>`<button class="${v===k?'on':''}" data-nav='{"meVue":"${k}"}'>${l}</button>`).join('')}</div>`; }
+function meColonnes(m){
+    const S=state.me, z=state.meZ||'', q=(state.meQ||'').trim().toLowerCase(), bf=ME_BF.find(x=>x[0]===state.meBF)||ME_BF[0];
+    let L=S.soucis.filter(bf[2]);
+    if(z) L=L.filter(s=>meZone(s)===z);
+    if(q) L=L.filter(s=>[s.titre,s.lieu,s.interv_par,s.entreprise,s.desc,meCat(s.cat)[1],(s.refs||'')].join(' ').toLowerCase().includes(q));
+    const U={urgent:0,semaine:1,normal:2}, lim=Date.now()-30*864e5;
+    const prio=(a,b)=>U[a.urgence||'normal']-U[b.urgence||'normal']||meRelanceDue(b)-meRelanceDue(a)||new Date(a.t)-new Date(b.t);
+    const cols={}; ME_COLS.forEach(([k])=>cols[k]=L.filter(s=>(s.statut||'signale')===k));
+    cols.prevu.sort((a,b)=>(a.interv?new Date(a.interv):9e15)-(b.interv?new Date(b.interv):9e15)||prio(a,b));
+    cols.signale.sort(prio); cols.contacte.sort(prio);
+    cols.resolu=cols.resolu.filter(s=>new Date(s.resolu||meLast(s))>=lim).sort((a,b)=>new Date(b.resolu||meLast(b))-new Date(a.resolu||meLast(a)));
+    const zones=[...new Set(S.soucis.map(meZone))].sort((a,b)=>a.localeCompare(b,'fr'));
+    const nc=s=>(s.constat||[]).length;
+    const rel=s=>s.statut==='resolu'?`<span style="color:var(--ink-soft)">résolu ${meDate(s.resolu)}</span>`:s.statut==='prevu'&&s.interv?`<span style="color:#5b21b6;font-weight:600;">📅 ${meDate(s.interv)}</span>`:s.relance?`<span style="${meRelanceDue(s)?'color:#b91c1c;font-weight:600;':'color:var(--ink-mid)'}">${meRelanceDue(s)?'⏰ ':''}${meDate(s.relance)}</span>`:`<span style="color:var(--ink-soft)">depuis ${meAge(s.t)}</span>`;
+    const card=s=>`<button class="me-card me-kcard" data-me="open" data-id="${s.id}"><div class="t">${meUrgDot(s)}<b>${esc(s.titre)}</b></div><div class="m">${esc(meZone(s))}${s.interv_par?` · ${esc(s.interv_par)}`:''}${s.entreprise?` · ${esc(s.entreprise)}`:''}</div><div class="r">${nc(s)?`<span class="me-cst">⚖️ ${nc(s)}</span>`:''}<span class="me-rel">${rel(s)}</span></div></button>`;
+    const head=k=>{ const [,l,ic]=ME_COLS.find(x=>x[0]===k), c=ME_STC[k]; return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;"><span style="width:26px;height:26px;border-radius:8px;background:${c[2]};color:${c[1]};display:flex;align-items:center;justify-content:center;">${icon(ic,14)}</span><span style="font-weight:700;font-size:14px;color:var(--ink);">${l}</span><span style="background:${c[1]};color:#fff;border-radius:8px;padding:0 8px;font-size:11px;font-weight:700;line-height:18px;">${cols[k].length}</span></div>`; };
+    const empty=k=>`<div style="text-align:center;color:#9ca3af;font-size:12px;padding:18px 8px;border:1.5px dashed var(--border);border-radius:8px;">${k==='resolu'?'Rien de résolu ces 30 derniers jours':'Aucun signalement'}${k==='resolu'&&S.soucis.some(s=>s.statut==='resolu')?`<div style="margin-top:8px;"><button class="card-link" data-nav='{"meVue":"liste","meF":"resolu"}'>Voir les ${S.soucis.filter(s=>s.statut==='resolu').length} résolus</button></div>`:''}</div>`;
+    const list=k=>cols[k].length?`<div style="display:flex;flex-direction:column;">${cols[k].map(card).join('')}</div>`:empty(k);
+    const bar=`<div class="me-bar">
+        <label class="me-search">${icon('search',14)}<input id="meQ" type="search" value="${esc(state.meQ||'')}" placeholder="Rechercher : KA252, cour, Otis…" autocomplete="off"></label>
+        <select class="me-sel" data-me-zone><option value="">Toutes les zones</option>${zones.map(x=>`<option ${x===z?'selected':''}>${esc(x)}</option>`).join('')}</select>
+    </div>
+    <div class="nf-row" style="margin-bottom:14px;">${ME_BF.map(([k,l,fn])=>`<button class="nf-chip ${bf[0]===k?'on':''}" style="height:32px;font-size:12.5px;" data-nav='{"meBF":"${k}"}'>${l} · ${S.soucis.filter(s=>s.statut!=='resolu'&&fn(s)).length}</button>`).join('')}</div>`;
+    let body;
+    if(m){
+        const cur=ME_COLS.some(x=>x[0]===state.meCol)?state.meCol:(ME_COLS.find(x=>cols[x[0]].length)||ME_COLS[0])[0];
+        body=`<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px;background:#f1f2f4;border-radius:8px;padding:4px;margin-bottom:12px;">
+            ${ME_COLS.map(([k])=>`<button data-nav='{"meCol":"${k}"}' style="border:none;border-radius:10px;padding:7px 2px;cursor:pointer;background:${cur===k?'#fff':'transparent'};box-shadow:${cur===k?'0 1px 3px rgba(0,0,0,.08)':'none'};"><div style="font-size:16px;font-weight:700;color:${ME_STC[k][1]};line-height:1.1;">${cols[k].length}</div><div style="font-size:10px;font-weight:600;color:#4b5563;">${{signale:'Signalé',contacte:'Contacté',prevu:'Prévue',resolu:'Résolu'}[k]}</div></button>`).join('')}
+        </div>${list(cur)}`;
+    } else body=`<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:14px;align-items:start;">${ME_COLS.map(([k])=>`<div style="background:#fafbfc;border:1px solid var(--border);border-radius:8px;padding:12px;min-height:200px;">${head(k)}${list(k)}</div>`).join('')}</div>`;
+    return `<div>${meHead(S,'col')}${state.meLieux?meLieuxHtml():''}${bar}${body}</div>`;
+}
 const ME_STC={signale:['Signalé','#92400e','#fef3c7'],contacte:['Contacté','#1e40af','#e0e7ff'],prevu:['Intervention prévue','#5b21b6','#ede9fe'],resolu:['Résolu','#166534','#dcfce7']};
 function mePill(s){ const c=ME_STC[s.statut]||ME_STC.signale; return `<span class="me-pill" style="color:${c[1]};background:${c[2]};">${c[0]}</span>`; }
 const meZone=s=>(String(s.lieu||'').split(' · ')[0]||'').trim()||meCat(s.cat)[1];
 function meLast(s){ let d=new Date(s.t); [...(s.journal||[]),...(s.notes||[])].forEach(x=>{ const v=new Date(x.t); if(v>d) d=v; }); if(s.resolu&&new Date(s.resolu)>d) d=new Date(s.resolu); return d; }
 function meAge(d){ const j=Math.max(0,Math.round((Date.now()-new Date(d))/864e5)); return j<1?'aujourd’hui':j<45?`${j} j`:j<365?`${Math.round(j/30)} mois`:`${(j/365).toFixed(1).replace('.',',')} an`; }
 const ME_FILTRES=[['open','En cours',s=>s.statut!=='resolu'],['urg','Urgents',s=>s.statut!=='resolu'&&s.urgence==='urgent'],['relance','À relancer',s=>meRelanceDue(s)],['prevu','Intervention prévue',s=>s.statut==='prevu'],['constat','Relevés en constat',s=>s.statut!=='resolu'&&(s.constat||[]).length],['resolu','Résolus',s=>s.statut==='resolu'],['all','Tout',()=>true]];
+function meHead(S,v){ return `<div class="page-head"><div><h1>Suivi du bâtiment</h1><p>Privé · ${meEnCours().length} en cours · ${S.soucis.filter(s=>s.statut==='resolu').length} résolus</p></div>
+    <div class="page-actions">${meVueSwitch(v)}<button class="btn-sm" data-nav='{"adminTab":"me-stat"}'>${icon('check',14)} Actions et stats</button><label class="btn-sm me-hx" style="cursor:pointer;" title="Importer un fichier préparé (.json)">${icon('download',14)} Importer<input type="file" accept=".json,application/json" data-me-import style="display:none;"></label><button class="btn-sm me-hx" data-me="export" title="Télécharger une sauvegarde de Mon espace">${icon('save',14)} Sauvegarder</button><button class="btn-sm" data-me="lieux">${icon('pin',14)} Mes lieux (${S.lieux.length})</button><button class="btn-sm pri me-hx" data-me="new">${icon('plus',14)} Nouveau signalement</button></div></div>`; }
 function meListe(){
     const S=state.me, f=state.meF||'open', z=state.meZ||'', q=(state.meQ||'').trim().toLowerCase(), so=state.meSort||'prio';
     const F=ME_FILTRES.find(x=>x[0]===f)||ME_FILTRES[0];
@@ -3509,8 +3548,7 @@ function meListe(){
     const rel=s=>s.statut==='resolu'?`<span style="color:var(--ink-soft)">résolu ${meDate(s.resolu)}</span>`:s.statut==='prevu'&&s.interv?`<span style="color:#5b21b6;font-weight:600;">📅 ${meDate(s.interv)}</span>`:s.relance?`<span style="${meRelanceDue(s)?'color:#b91c1c;font-weight:600;':'color:var(--ink-mid)'}">${meRelanceDue(s)?'⏰ ':''}${meDate(s.relance)}</span>`:'<span style="color:#c4c9d2">—</span>';
     const nc=s=>(s.constat||[]).length;
     return `<div>
-    <div class="page-head"><div><h1>Suivi du bâtiment</h1><p>Privé · ${meEnCours().length} en cours · ${S.soucis.filter(s=>s.statut==='resolu').length} résolus</p></div>
-    <div class="page-actions"><button class="btn-sm" data-nav='{"adminTab":"me-stat"}'>${icon('check',14)} Actions et stats</button><label class="btn-sm me-hx" style="cursor:pointer;" title="Importer un fichier préparé (.json)">${icon('download',14)} Importer<input type="file" accept=".json,application/json" data-me-import style="display:none;"></label><button class="btn-sm me-hx" data-me="export" title="Télécharger une sauvegarde de Mon espace">${icon('save',14)} Sauvegarder</button><button class="btn-sm" data-me="lieux">${icon('pin',14)} Mes lieux (${S.lieux.length})</button><button class="btn-sm pri me-hx" data-me="new">${icon('plus',14)} Nouveau signalement</button></div></div>
+    ${meHead(S,'liste')}
     ${state.meLieux?meLieuxHtml():''}
     <div class="me-bar">
         <label class="me-search">${icon('search',14)}<input id="meQ" type="search" value="${esc(state.meQ||'')}" placeholder="Rechercher : KA252, cour, Otis…" autocomplete="off"></label>
