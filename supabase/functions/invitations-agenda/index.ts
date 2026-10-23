@@ -136,7 +136,7 @@ export function ics(ev: Ev, method: "REQUEST" | "CANCEL", organizer: string, att
     fold(("SUMMARY:" + String(esc(ev.title)))), ev.location ? fold(("LOCATION:" + String(esc(ev.location)))) : "", fold(("DESCRIPTION:" + String(esc(ev.desc)))),
     fold(("ORGANIZER;CN=Gestion des services:mailto:" + String(organizer))),
     ...attendees.map((a) => fold(("ATTENDEE;ROLE=REQ-PARTICIPANT;PARTSTAT=NEEDS-ACTION;RSVP=FALSE:mailto:" + String(a)))),
-    ("STATUS:" + String(method === "CANCEL" ? "CANCELLED" : "CONFIRMED")), "TRANSP:OPAQUE", "CLASS:PRIVATE",
+    ("STATUS:" + String(method === "CANCEL" ? "CANCELLED" : "CONFIRMED")), "TRANSP:OPAQUE", "CLASS:PUBLIC",
     "X-MICROSOFT-CDO-BUSYSTATUS:FREE", "X-MICROSOFT-CDO-INTENDEDSTATUS:FREE",
     ...(method === "REQUEST" ? ["BEGIN:VALARM", "ACTION:DISPLAY", ("TRIGGER:-PT" + String(ev.alarm) + "M"), fold(("DESCRIPTION:" + String(esc(ev.title)))), "END:VALARM"] : []),
     "END:VEVENT", "END:VCALENDAR"];
