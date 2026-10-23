@@ -2,7 +2,7 @@
    Stratégie « réseau d'abord » pour la page : chaque mise à jour publiée sur
    GitHub est visible immédiatement ; le cache ne sert que hors connexion.
    Les appels externes (Supabase, emails, notifications) ne sont jamais mis en cache. */
-const CACHE = 'commandes-v43';
+const CACHE = 'commandes-v44';
 const SHELL = ['./', './index.html', './manifest.webmanifest', './express.html', './express.webmanifest', './ic3-180.png', './ic3-192.png', './ic3-512.png', './favicon.svg', './favicon.ico'];
 
 self.addEventListener('install', e => {
@@ -32,4 +32,19 @@ self.addEventListener('fetch', e => {
       })
       .catch(() => caches.match(req).then(r => r || caches.match('./index.html')))
   );
+});
+
+// Notifications envoyées par le serveur (même appli fermée)
+self.addEventListener('push', e => {
+  let d = {}; try { d = e.data ? e.data.json() : {}; } catch (err) { d = { title: 'Gestion des services', body: e.data ? e.data.text() : '' }; }
+  const title = d.title || 'Gestion des services';
+  e.waitUntil(self.registration.showNotification(title, { body: d.body || '', icon: 'ic3-192.png', badge: 'ic3-192.png', tag: d.tag || 'gestion', renotify: true, data: { url: d.url || './index.html' } }));
+});
+self.addEventListener('notificationclick', e => {
+  e.notification.close();
+  const url = new URL((e.notification.data && e.notification.data.url) || './index.html', self.registration.scope).href;
+  e.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(list => {
+    for (const c of list) { if (c.url.startsWith(self.registration.scope) && 'focus' in c) return c.focus(); }
+    return self.clients.openWindow(url);
+  }));
 });
