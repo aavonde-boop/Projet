@@ -3401,7 +3401,8 @@ const ME_TAGS=[['bat','Bâtiment','b'],['achats','Achats','p'],['idees','Idées'
 const ME_LIEUX_DEF=['Accueil','Salle France','Salle Conseil','Cuisine','Open space','Sanitaires','Parking'];
 let _meChain=Promise.resolve();
 function meOk(){ if(!AUTH||!isAdmin()) return false; const e=userEmail(); const o=state.me&&state.me.owner; return o? o===e : /avonde/i.test(`${e} ${userName()}`); }
-async function loadMe(){ try{ state.me=(await paramGet('monEspace'))||null; }catch(e){ state.me=state.me||null; } if(!state.me) state.me={soucis:[],memos:[],lieux:[...ME_LIEUX_DEF]}; state.me.soucis=state.me.soucis||[]; state.me.memos=state.me.memos||[]; state.me.lieux=state.me.lieux||[...ME_LIEUX_DEF]; state.meLoaded=true; }
+async function loadMe(){ try{ state.me=(await paramGet('monEspace'))||null; }catch(e){ state.me=state.me||null; } if(!state.me) state.me={soucis:[],memos:[],lieux:[...ME_LIEUX_DEF]}; state.me.soucis=state.me.soucis||[]; state.me.memos=state.me.memos||[]; state.me.lieux=state.me.lieux||[...ME_LIEUX_DEF]; if(meSepEntreprise()) meSave(); state.meLoaded=true; }
+function meSepEntreprise(){ let n=0; (state.me?.soucis||[]).forEach(s=>{ const v=String(s.interv_par||''); if(!v.includes('/')) return; const [a,...r]=v.split('/').map(x=>x.trim()).filter(Boolean); s.interv_par=a||''; if(r.length&&!s.entreprise) s.entreprise=r.join(' / '); n++; }); return n; }
 function meSave(){ if(!meOk()) return; const e=userEmail(); state.me.owner=state.me.owner||e; const snap=JSON.parse(JSON.stringify(state.me));
     _meChain=_meChain.then(()=>paramSet('monEspace',snap)).catch(err=>{ console.error('Mon espace:',err); showToast(`${icon('alert',13)} Enregistrement impossible, réessayez`); }); render(); }
 const meLocal=iso=>{ if(!iso) return ''; const d=new Date(iso); const z=n=>String(n).padStart(2,'0'); return `${d.getFullYear()}-${z(d.getMonth()+1)}-${z(d.getDate())}T${z(d.getHours())}:${z(d.getMinutes())}`; };
@@ -3494,7 +3495,7 @@ function meListe(){
     const F=ME_FILTRES.find(x=>x[0]===f)||ME_FILTRES[0];
     let L=S.soucis.filter(F[2]);
     if(z) L=L.filter(s=>meZone(s)===z);
-    if(q) L=L.filter(s=>[s.titre,s.lieu,s.interv_par,s.desc,meCat(s.cat)[1],(s.refs||'')].join(' ').toLowerCase().includes(q));
+    if(q) L=L.filter(s=>[s.titre,s.lieu,s.interv_par,s.entreprise,s.desc,meCat(s.cat)[1],(s.refs||'')].join(' ').toLowerCase().includes(q));
     const U={urgent:0,semaine:1,normal:2};
     const cmp={prio:(a,b)=>(a.statut==='resolu')-(b.statut==='resolu')||U[a.urgence||'normal']-U[b.urgence||'normal']||meRelanceDue(b)-meRelanceDue(a)||new Date(a.t)-new Date(b.t),
         zone:(a,b)=>meZone(a).localeCompare(meZone(b),'fr'),statut:(a,b)=>meStI(a.statut)-meStI(b.statut),qui:(a,b)=>String(a.interv_par||'~').localeCompare(String(b.interv_par||'~'),'fr'),
@@ -3514,9 +3515,9 @@ function meListe(){
     </div>
     <div class="nf-row" style="margin-bottom:14px;">${ME_FILTRES.map(([k,l,fn])=>{ const n=S.soucis.filter(fn).length; return `<button class="nf-chip ${f===k?'on':''}" style="height:32px;font-size:12.5px;" data-nav='{"meF":"${k}"}'>${l} · ${n}</button>`; }).join('')}</div>
     ${L.length?`<div class="card me-tbl"><div class="tbl-wrap"><table class="pro-table"><thead><tr>${th('prio','Signalement')}${th('zone','Zone')}${th('statut','Statut')}${th('qui','Intervenant')}${th('news','Dernière nouvelle')}${th('prio','Relance / date')}${th('constat','Constats')}</tr></thead><tbody>
-    ${L.map(s=>`<tr data-me="open" data-id="${s.id}" style="cursor:pointer;${s.statut==='resolu'?'opacity:.6;':''}"><td class="me-td-t"><div class="t">${meUrgDot(s)}<span>${esc(s.titre)}</span></div>${s.lieu&&s.lieu!==meZone(s)?`<div class="m">${esc(s.lieu)}</div>`:''}</td><td>${esc(meZone(s))}</td><td>${mePill(s)}</td><td style="color:var(--ink-mid)">${esc(s.interv_par||'—')}</td><td style="color:var(--ink-soft)">il y a ${meAge(meLast(s))}</td><td>${rel(s)}</td><td>${nc(s)?`<span class="me-cst">⚖️ ${nc(s)}</span>`:'<span style="color:#c4c9d2">—</span>'}</td></tr>`).join('')}
+    ${L.map(s=>`<tr data-me="open" data-id="${s.id}" style="cursor:pointer;${s.statut==='resolu'?'opacity:.6;':''}"><td class="me-td-t"><div class="t">${meUrgDot(s)}<span>${esc(s.titre)}</span></div>${s.lieu&&s.lieu!==meZone(s)?`<div class="m">${esc(s.lieu)}</div>`:''}</td><td>${esc(meZone(s))}</td><td>${mePill(s)}</td><td style="color:var(--ink-mid)">${esc(s.interv_par||'—')}${s.entreprise?`<div style="font-size:11.5px;color:var(--ink-soft);">${icon('tool',11)} ${esc(s.entreprise)}</div>`:''}</td><td style="color:var(--ink-soft)">il y a ${meAge(meLast(s))}</td><td>${rel(s)}</td><td>${nc(s)?`<span class="me-cst">⚖️ ${nc(s)}</span>`:'<span style="color:#c4c9d2">—</span>'}</td></tr>`).join('')}
     </tbody></table></div></div>
-    <div class="me-cards">${L.map(s=>`<button class="me-card" data-me="open" data-id="${s.id}" style="${s.statut==='resolu'?'opacity:.6;':''}"><div class="t">${meUrgDot(s)}<b>${esc(s.titre)}</b></div><div class="m">${esc(meZone(s))}${s.interv_par?` · ${esc(s.interv_par)}`:''}</div><div class="r">${mePill(s)}${nc(s)?`<span class="me-cst">⚖️ ${nc(s)}</span>`:''}<span class="me-rel">${rel(s)}</span></div></button>`).join('')}</div>
+    <div class="me-cards">${L.map(s=>`<button class="me-card" data-me="open" data-id="${s.id}" style="${s.statut==='resolu'?'opacity:.6;':''}"><div class="t">${meUrgDot(s)}<b>${esc(s.titre)}</b></div><div class="m">${esc(meZone(s))}${s.interv_par?` · ${esc(s.interv_par)}`:''}${s.entreprise?` · ${esc(s.entreprise)}`:''}</div><div class="r">${mePill(s)}${nc(s)?`<span class="me-cst">⚖️ ${nc(s)}</span>`:''}<span class="me-rel">${rel(s)}</span></div></button>`).join('')}</div>
     <div style="font-size:12.5px;color:var(--ink-soft);margin-top:8px;">${L.length} signalement${L.length>1?'s':''} affiché${L.length>1?'s':''} · clic sur un en-tête pour trier</div>`
     :`<div class="card empty-note" style="padding:40px;">${S.soucis.length?'Aucun signalement pour ce filtre.':'Aucun signalement pour l’instant. « Nouveau signalement » ou « Importer » pour commencer.'}</div>`}
     </div>`;
@@ -3628,6 +3629,7 @@ function meFiche(s,m){
                 <div><div class="nf-lbl">Urgence</div><div class="nf-row">${Object.entries(ME_URG).map(([k,[l]])=>`<button class="nf-chip ${s.urgence===k?'on':''}" style="height:32px;font-size:12.5px;" data-me="urg" data-id="${s.id}" data-v="${k}">${l}</button>`).join('')}</div></div>
                 <div><div class="nf-lbl">Intervenant</div><input id="meInterv" class="form-input" list="meIntervList" value="${esc(s.interv_par||'')}" placeholder="Prestataire, technicien, gardien…" style="text-transform:none;"><datalist id="meIntervList">${prestas.map(p=>`<option value="${esc(p)}">`).join('')}</datalist>
                     <div style="font-size:11.5px;color:var(--ink-soft);margin-top:4px;">Avec une fiche prestataire (Réglages → Prestataires), les boutons Appeler / Email apparaissent.</div></div>
+                <div><div class="nf-lbl">Entreprise de travaux</div><input id="meEntreprise" class="form-input" list="meIntervList" value="${esc(s.entreprise||'')}" placeholder="Entreprise qui réalise les travaux" style="text-transform:none;"></div>
                 <div class="form-row-2"><div><div class="nf-lbl">Date d’intervention</div><input id="meIntervDate" type="datetime-local" class="form-input" value="${meLocal(s.interv)}"></div>
                     <div><div class="nf-lbl">Relance le</div><input id="meRelance" type="date" class="form-input" value="${s.relance?isoDay(new Date(s.relance)):''}"></div></div>
                 <button class="btn-sm pri" data-me="savesuivi" data-id="${s.id}" style="justify-content:center;padding:10px;">${icon('save',14)} Enregistrer le suivi</button>
@@ -3697,6 +3699,7 @@ document.addEventListener('click',e=>{
         case 'urg': if(s){ s.urgence=v; meSave(); } break;
         case 'savesuivi': if(s){ const iv=g('meInterv')?.value.trim()||'', dt=g('meIntervDate')?.value||'', rl=g('meRelance')?.value||'';
             if(iv!==(s.interv_par||'')){ s.interv_par=iv; if(iv) meJ(s,`Intervenant : ${iv}`); }
+            const en=g('meEntreprise')?.value.trim()||''; if(en!==(s.entreprise||'')){ s.entreprise=en; if(en) meJ(s,`Entreprise de travaux : ${en}`); }
             const ni=dt?new Date(dt).toISOString():null; if(ni!==(s.interv||null)){ s.interv=ni; if(ni){ meJ(s,`Intervention prévue le ${meDate(ni,true)}`); if(meStI(s.statut)<2) s.statut='prevu'; } }
             s.relance=rl?new Date(rl+'T09:00').toISOString():null; meSave(); showToast('✓ Suivi enregistré'); } break;
         case 'savedesc': if(s){ s.desc=g('meFDesc')?.value||''; meSave(); showToast('✓ Description enregistrée'); } break;
