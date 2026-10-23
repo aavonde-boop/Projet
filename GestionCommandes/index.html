@@ -816,6 +816,7 @@ function equipe(){ const e=settings.equipe||{};
     return { responsable:e.responsable&&e.responsable.length?e.responsable:['Arnaud AVONDE'],
              polyvalente:e.polyvalente&&e.polyvalente.length?e.polyvalente:['Julia POITIER'],
              anciennes:e.anciennes||[], alias:e.alias||{} }; }
+function demandeursEquipe(avecResp){ const E=equipe(), L=[]; [...E.polyvalente,...(settings.assistantes||[]),...(avecResp?E.responsable:[])].forEach(n=>{ if(n&&!L.some(x=>_pn(x)===_pn(n))) L.push(n); }); return L; }
 const _pn=s=>sansAccent(String(s||'')).toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
 function _lev(a,b){ if(a===b) return 0; if(!a.length) return b.length; if(!b.length) return a.length; let p=Array.from({length:b.length+1},(_,i)=>i);
     for(let i=1;i<=a.length;i++){ const c=[i]; for(let j=1;j<=b.length;j++) c[j]=Math.min(p[j]+1,c[j-1]+1,p[j-1]+(a[i-1]===b[j-1]?0:1)); p=c; } return p[b.length]; }
@@ -1609,7 +1610,7 @@ let state = {
     detail:null, adminTab:"dashboard",
     search:"", filtre:"all", toast:"",
     saisieType:null, fabOpen:false, fabAdminOpen:false, trackMode:false, trackResult:null, trackCode:"" ,
-    resaFilter:"all", cmdFilter:"all", hotelFilter:"all", resaSort:"date", resaSortAsc:true, cmdSort:"date", cmdSortAsc:true, hotelSort:"date", hotelSortAsc:true, histSortAsc:true,
+    resaFilter:"all", cmdFilter:"all", hotelFilter:"all", resaSort:"date", resaSortAsc:false, cmdSort:"date", cmdSortAsc:false, hotelSort:"date", hotelSortAsc:false, histSortAsc:true,
     activiteTab:"tout", histSort:"date", histPage:0, calMonth:null, colOrder:["date","code","type","desc","demandeur","pourQui","statut","prix"],
     deletedData:[], journal:[], sel:[], suivi:{}, suiviStage:null, suiviType:'all', moreOpen:false, calDay:null, statsPeriod:'annee', statsFrom:'', statsTo:'', journalSearch:'', confirmRm:null, confirmDelete:null, yoozMap:null, settingsTab:null, adminForm:null,
     form:{ type:null, step:1, sent:false, code:null,
@@ -1772,7 +1773,7 @@ function mesDemandesHtml(m){
 function renderHome(m){
     const att=state.data.filter(c=>c.pris==="En attente").length;
     const f=state.form;
-    if(!f.dem&&!f.invite&&!assistanteName()){ const last=lsGet('nf_dem'); if(last&&settings.assistantes.includes(last)) f.dem=last; }
+    if(!f.dem&&!f.invite&&!assistanteName()){ const last=lsGet('nf_dem'); if(last&&demandeursEquipe(isAdmin()).includes(last)) f.dem=last; }
     const prenom=AUTH?String(userName()||'').split(' ')[0]:'';
     const actions=`<div class="nf-acts">
         <button class="pub-btn go-track" title="Suivre une demande">${icon('search',15)}${m?'':' Suivre une demande'}</button>
@@ -1905,7 +1906,7 @@ function renderInlineForm(m){
     /* Qui */
     const demandeur=assistanteName()
         ?`<div class="nf-row"><span class="nf-chip soft on">${icon('user',14)} ${esc(assistanteName())}</span><span class="nf-hint">connectée</span></div>`
-        :`<div class="nf-row">${[...settings.assistantes,...(isAdmin()&&userName()&&!settings.assistantes.includes(userName())?[userName()]:[]),...(!f.invite&&f.dem&&!settings.assistantes.includes(f.dem)&&f.dem!==userName()?[f.dem]:[])].map(a=>chip('set','dem',a,esc(a),!f.invite&&f.dem===a)).join('')}<button type="button" data-nf="invite" class="nf-chip ${f.invite?'on':''}">${icon('user',13)} Je suis invité(e)</button></div>
+        :`<div class="nf-row">${(()=>{ const B=demandeursEquipe(isAdmin()); if(isAdmin()&&userName()&&!B.some(x=>_pn(x)===_pn(userName()))) B.push(userName()); if(!f.invite&&f.dem&&!B.includes(f.dem)) B.push(f.dem); return B; })().map(a=>chip('set','dem',a,esc(a),!f.invite&&f.dem===a)).join('')}<button type="button" data-nf="invite" class="nf-chip ${f.invite?'on':''}">${icon('user',13)} Je suis invité(e)</button></div>
             ${f.invite?`<div class="nf-grid2" style="margin-top:8px;"><input id="formInvite" type="text" class="form-input nf-in" value="${esc(f.dem||'')}" placeholder="Votre prénom et nom *" autocomplete="name"><input id="formInviteMail" type="email" class="form-input nf-in" style="text-transform:none;" value="${esc(f.inviteMail||'')}" placeholder="Votre email (pour la confirmation)" autocomplete="email"></div><div class="nf-hint" style="margin-top:6px;">Vous n’avez pas de compte : votre demande sera traitée par ${esc(equipe().polyvalente[0])}.</div>`:''}`;
     let qui='';
     if(T==='repas'){
@@ -2554,6 +2555,8 @@ function mobileNavHtml(){
         </div></div>`:''}`;
 }
 
+const AF_KEYS={afDem:'dem',afDate:'date',afDateDepart:'dateDepart',afHeure:'heure',afDesc:'desc',afLieu:'lieu',afNb:'nb',afPresta:'presta',afDe:'de',afVers:'vers',afTel:'tel',afVol:'vol',afCom:'com',afPrix:'prix',afPaie:'paie',afPqAutre:'pourQuiAutre'};
+['input','change'].forEach(ev=>document.addEventListener(ev,e=>{ const k=AF_KEYS[e.target&&e.target.id]; if(k&&state.adminForm) state.adminForm[k]=e.target.value; }));
 document.addEventListener('keydown',e=>{ if(e.key==='Escape'&&state.live){ document.querySelector('[data-live-exit]')?.click(); } });
 /* Clics délégués (installés une seule fois) */
 document.addEventListener('click', async e=>{
@@ -4008,7 +4011,7 @@ function renderActiviteTout(m){
     const today2=new Date(); today2.setHours(0,0,0,0);
     const filter=state.resaFilter||'all';
     const sortCol=state.resaSort||'date';
-    const sortAsc=state.resaSortAsc!==false;
+    const sortAsc=state.resaSortAsc===true;
 
     const all=state.data.filter(c=>{
         if(search&&!`${c.desc} ${c.presta} ${c.demandeur} ${demNom(c)} ${c.pourQui}`.toLowerCase().includes(search)) return false;
@@ -4082,7 +4085,7 @@ function renderActiviteTout(m){
                         <td style="padding:7px 10px;color:#64748b;white-space:nowrap;font-size:12px;">${$d(c.date)}</td>
                         <td style="padding:7px 10px;text-align:center;font-size:16px;">${typeIcon(c.type)}</td>
                         <td style="padding:7px 10px;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
-                            <span style="font-weight:600;color:#1a1f36;">${c.type==='commande'?'Commande':c.desc||'—'}</span>
+                            <span style="font-weight:600;color:#1a1f36;">${c.type==='commande'?(c.desc||'Commande'):c.desc||'—'}</span>
                             ${c.vol?`<span style="font-size:10px;color:#6366f1;margin-left:5px;">${icon('plane',11)} ${c.vol}</span>`:''}
                             ${c.comment?`<span style="color:#94a3b8;margin-left:4px;vertical-align:-2px;" title="${c.comment}">${icon('message',12)}</span>`:''}
                         </td>
@@ -4130,7 +4133,7 @@ function renderReservations(m){
     const today2=new Date(); today2.setHours(0,0,0,0);
     const filter=state.resaFilter||'all';
     const sortCol=state.resaSort||'date';
-    const sortAsc=state.resaSortAsc!==false;
+    const sortAsc=state.resaSortAsc===true;
 
     let all=state.data.filter(c=>{
         if(c.type==='commande'||c.type==='hotel') return false;
@@ -4805,14 +4808,14 @@ function renderSaisieModal(){
     const HEURES_LOCAL=['07h00', '07h30', '08h00', '08h30', '09h00', '09h30', '10h00', '10h30', '11h00', '11h30', '12h00', '12h30', '13h00', '13h30', '14h00', '14h30', '15h00', '15h30', '16h00', '16h30', '17h00', '17h30', '18h00', '18h30', '19h00', '19h30', '20h00'];
 
     const step1 = `
-        <div class="form-group"><label class="form-label">Assistante</label>
+        <div class="form-group"><label class="form-label">Demandeur</label>
             <select id="afDem" class="form-select">
                 <option value="">— Choisir —</option>
-                ${settings.assistantes.map(a=>`<option ${af.dem===a?'selected':''}>${a}</option>`).join('')}
+                ${demandeursEquipe(true).map(a=>`<option ${af.dem===a?'selected':''}>${a}</option>`).join('')}
             </select>
         </div>
-        <div class="form-group">
-            <label class="form-label">${t==='commande'?'Fournisseur':'Pour qui ?'}</label>
+        ${t==='commande'?'':`<div class="form-group">
+            <label class="form-label">Pour qui ?</label>
             <div style="position:relative;" id="afPqWrapper">
                 <button type="button" id="afPqToggle" style="width:100%;border:1.5px solid var(--border);border-radius:8px;padding:13px 14px;font-size:15px;background:var(--white);text-align:left;cursor:pointer;display:flex;justify-content:space-between;align-items:center;font-family:var(--fb);color:var(--ink);">
                     <span id="afPqLabel">${af.pourQui.length?af.pourQui.filter(v=>v!=='__autre__').join(', ')+(af.pourQui.includes('__autre__')?(af.pourQui.length>1?', Autre':'Autre'):''):'— Choisir —'}</span>
@@ -4833,7 +4836,7 @@ function renderSaisieModal(){
                 </div>
             </div>
             ${af.pourQui.includes('__autre__')?`<input id="afPqAutre" type="text" class="form-input" style="margin-top:10px;" placeholder="Préciser le nom..." value="${af.pourQuiAutre}">`:''}
-        </div>
+        </div>`}
         ${t==='hotel'?`
         <div class="form-row-2">
             <div class="form-group"><label class="form-label">${icon('calendar',13)} Arrivée</label><input type="date" id="afDate" value="${af.date}" class="form-input"></div>
@@ -4865,6 +4868,7 @@ function renderSaisieModal(){
         <div class="form-group"><label class="form-label">${icon('pin',13)} Ville</label><input id="afLieu" type="text" value="${af.lieu}" class="form-input" placeholder="Ex: Lyon"></div>
         <div class="form-group"><label class="form-label">${icon('bed',13)} Hôtel</label><select id="afPresta" class="form-select"><option value="">—</option>${(af.presta&&!P_HOTEL.includes(af.presta)?[af.presta]:[]).concat(P_HOTEL).map(p=>`<option ${af.presta===p?'selected':''}>${p}</option>`).join('')}</select></div>
         `:`
+        <div class="form-group"><label class="form-label">Ce qui est commandé</label><input id="afDesc" type="text" placeholder="Ex : ramettes A4, capsules café…" value="${esc(af.desc||'')}" class="form-input"></div>
         <div class="form-group"><label class="form-label">Fournisseur</label><select id="afPresta" class="form-select"><option value="">—</option>${P_CMD.map(p=>`<option ${af.presta===p?'selected':''}>${p}</option>`).join('')}</select></div>
         <div class="form-group" style="display:none;"><label class="form-label">N° Yooz <span style="font-size:11px;color:var(--ink-soft);">(auto)</span></label><input id="afYooz" type="text" value="${af.yooz||YOOZ_MAP[af.presta]||''}" placeholder="AAF-PO-26-XXXXXX" class="form-input"></div>
         <div class="form-group"><label class="form-label">Lieu livraison</label><input id="afLieu" type="text" value="${af.lieu}" class="form-input"></div>
@@ -4873,7 +4877,7 @@ function renderSaisieModal(){
         <div class="form-group"><label class="form-label">Commentaire (optionnel)</label><textarea id="afCom" class="form-input" style="min-height:72px;resize:vertical;" placeholder="Informations complémentaires...">${af.com}</textarea></div>
         <div class="form-row-2">
             <div class="form-group"><label class="form-label">Prix (€)</label><input id="afPrix" type="number" step="0.01" class="form-input" inputmode="decimal" value="${af.prix||''}"></div>
-            <div class="form-group"><label class="form-label">Paiement</label><select id="afPaie" class="form-select"><option>CB</option><option>Facturation</option></select></div>
+            <div class="form-group"><label class="form-label">Paiement</label><select id="afPaie" class="form-select">${['CB','Facturation'].map(x=>`<option ${af.paie===x?'selected':''}>${x}</option>`).join('')}</select></div>
         </div>
         <button id="saveAdminForm" class="btn-primary" style="width:100%;padding:14px;font-size:16px;">✓ Enregistrer</button>
         <div style="height:12px;"></div>`;
@@ -5221,7 +5225,7 @@ function attachEvents(){
         const th=document.getElementById('th-'+col);
         if(th) th.onclick=()=>{
             if(state.resaSort===col) setState({resaSortAsc:!state.resaSortAsc});
-            else setState({resaSort:col,resaSortAsc:true});
+            else setState({resaSort:col,resaSortAsc:col!=='date'});
         };
     });
 
@@ -5248,7 +5252,7 @@ function attachEvents(){
             if(rs){
                 const col=rs.getAttribute('data-resa-sort');
                 if(state.resaSort===col) setState({resaSortAsc:!state.resaSortAsc});
-                else setState({resaSort:col,resaSortAsc:true});
+                else setState({resaSort:col,resaSortAsc:col!=='date'});
                 return;
             }
             const cs=e.target.closest('[data-cmd-sort]');
@@ -5717,13 +5721,13 @@ function attachEvents(){
             desc=document.getElementById('afDesc')?.value||'';
         }
         yooz=document.getElementById('afYooz')?.value||YOOZ_MAP[presta]||'';
-        if(!dem){showToast(`${icon('alert',13)} Choisir une assistante`);return;}
+        if(!dem){showToast(`${icon('alert',13)} Choisir le demandeur`);return;}
         const newCmd={id:Date.now(),pris:"OUI",demandeur:dem,pourQui:pourQuiLabel,date,dateDepart,desc,lieu,heure,presta,prix,paie,nb,comment:com,type:t,depart,arrivee,vol,yooz,tel};
         state.data=[newCmd,...state.data];
         state.saisieType=null;
         state.adminForm=null;
         showToast('✓ Commande ajoutée · aucun email envoyé');
-        state.adminTab='activite';state.resaFilter='all';
+        state.adminTab='activite';state.activiteTab='tout';state.resaFilter='all';state.resaSort='date';state.resaSortAsc=false;state.search='';
         render();
         const savedCmd=await dbInsert(newCmd);
         if(savedCmd.id!==newCmd.id){state.data=state.data.map(c=>c.id===newCmd.id?savedCmd:c);}
