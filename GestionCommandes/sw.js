@@ -2,7 +2,7 @@
    Stratégie « réseau d'abord » pour la page : chaque mise à jour publiée sur
    GitHub est visible immédiatement ; le cache ne sert que hors connexion.
    Les appels externes (Supabase, emails, notifications) ne sont jamais mis en cache. */
-const CACHE = 'commandes-v35';
+const CACHE = 'commandes-v36';
 const SHELL = ['./', './index.html', './manifest.webmanifest', './express.html', './express.webmanifest', './icone-180.png', './icone-192.png', './icone-512.png', './favicon.svg', './favicon.ico'];
 
 self.addEventListener('install', e => {
@@ -22,6 +22,7 @@ self.addEventListener('fetch', e => {
   if (req.method !== 'GET') return;
   const url = new URL(req.url);
   if (url.origin !== self.location.origin) return; // Supabase, CDN, ntfy… : réseau direct
+  if (/\.(png|ico|svg|webmanifest)$/.test(url.pathname)) return; // icônes et manifeste : toujours en direct (iPhone)
 
   e.respondWith(
     fetch(req)
