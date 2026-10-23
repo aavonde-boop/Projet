@@ -599,6 +599,11 @@
         .me-th{background:none;border:0;font:inherit;color:inherit;text-transform:inherit;letter-spacing:inherit;cursor:pointer;padding:0;} .me-th.on{color:var(--ink);}
         .me-tbl .pro-table td{padding:10px 16px;} .me-td-t{white-space:normal!important;min-width:280px;} .me-td-t .t span{line-height:1.3;}
         .me-cards{display:none;}
+        .stk-row{display:flex;align-items:center;gap:12px;padding:10px 16px;border-top:1px solid var(--border-light);} .stk-n{flex:1;min-width:0;display:flex;flex-direction:column;} .stk-n b{font-size:14px;font-weight:600;} .stk-n span{font-size:12px;color:var(--ink-soft);}
+        .stk-seg{display:flex;gap:4px;} .stk-seg button{border:1px solid var(--border);background:#fff;border-radius:7px;height:32px;padding:0 10px;font:600 12px var(--fb);color:var(--ink-mid);cursor:pointer;white-space:nowrap;}
+        .stk-x{border:0;background:none;color:#b4bac4;cursor:pointer;padding:6px;} .stk-x:hover{color:#b91c1c;}
+        .stk-add{display:flex;gap:8px;padding:12px 16px;border-top:1px solid var(--border-light);flex-wrap:wrap;} .stk-add .form-input{flex:2;min-width:180px;} .stk-add .form-select{flex:1;min-width:140px;}
+        @media(max-width:767px){ .stk-row{flex-wrap:wrap;position:relative;padding-right:36px;} .stk-seg{width:100%;} .stk-seg button{flex:1;padding:0 4px;} .stk-x{position:absolute;right:8px;top:8px;} }
         .me-vue{display:inline-flex;border:1px solid var(--border);border-radius:7px;overflow:hidden;background:#fff;} .me-vue button{border:0;background:transparent;padding:0 12px;height:32px;font:600 12.5px var(--fb);color:var(--ink-mid);cursor:pointer;} .me-vue button.on{background:var(--side);color:#fff;}
         .me-kcard{margin-bottom:8px;}
         .me-card{display:flex;flex-direction:column;gap:6px;width:100%;text-align:left;background:#fff;border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:8px;font:inherit;cursor:pointer;color:var(--ink);}
@@ -2060,10 +2065,11 @@ function renderAdminView(m){
     else if(String(state.adminTab).startsWith('me')) main=meOk()||!state.meLoaded?renderMe(m):renderDashboard(total,attente,m);
     else if(state.adminTab==='suivi')        main=renderSuivi(m);
     else if(state.adminTab==='calendrier')   main=renderCalendrier(m);
+    else if(state.adminTab==='stock')        main=renderStock(m);
 
     else main=meOk()?renderMe(m):renderDashboard(total,attente,m);
 
-    const TITRES={dashboard:'Tableau de bord',suivi:'Suivi des demandes',calendrier:'Agenda',activite:'Historique',stats:'Statistiques',analyse:'Statistiques',me:'Mon écran','me-bat':'Signalements du bâtiment','me-stat':'Actions et stats','me-memo':'Mémo perso',settings:'Réglages'};
+    const TITRES={stock:'Stock',dashboard:'Tableau de bord',suivi:'Suivi des demandes',calendrier:'Agenda',activite:'Historique',stats:'Statistiques',analyse:'Statistiques',me:'Mon écran','me-bat':'Signalements du bâtiment','me-stat':'Actions et stats','me-memo':'Mémo perso',settings:'Réglages'};
     if(m) return `
     <div class="mobile-header">
         <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
@@ -2104,7 +2110,7 @@ function renderAdminView(m){
             <div class="side-grp" style="padding-top:12px;">
                 ${item('dashboard','dashboard','Tableau de bord')}${meOk()?`<div class="perso">${item('me-memo','edit','Mémo perso')}</div>`:''}</div>
             <div class="side-grp"><h6 class="side-lbl">Commandes</h6>
-                ${item('suivi','clipboard','Suivi des demandes')}${item('calendrier','calendar','Agenda')}${item('activite','grid','Historique')}</div>
+                ${item('suivi','clipboard','Suivi des demandes')}${item('calendrier','calendar','Agenda')}${item('activite','grid','Historique')}${item('stock','box','Stock')}</div>
             ${meOk()?`<div class="side-grp perso"><h6 class="side-lbl">Bâtiment ${icon('lock',10)}</h6>${item('me-bat','tool','Signalements')}${item('me-stat','check','Actions et stats')}</div>`:''}
             <div class="side-grp"><h6 class="side-lbl">Analyses</h6>
                 ${item('stats','chart','Statistiques')}</div>
@@ -2119,7 +2125,7 @@ function renderAdminView(m){
     <div class="shell-main">
         <header class="topbar">
             <button data-back-home class="btn-sm" title="Ouvrir la page de demande des assistantes">${icon('home',15)} Page de demande</button>
-            <div class="crumb">${state.adminTab==='me'||state.adminTab==='me-memo'?'Personnel 🔒':String(state.adminTab).startsWith('me')?'Bâtiment 🔒':['suivi','calendrier','activite'].includes(state.adminTab)?'Commandes':['stats','analyse'].includes(state.adminTab)?'Analyses':'Administration'} / <b>${state.saisieDirecte?'Saisie directe':TITRES[state.adminTab]||''}</b></div>
+            <div class="crumb">${state.adminTab==='me'||state.adminTab==='me-memo'?'Personnel 🔒':String(state.adminTab).startsWith('me')?'Bâtiment 🔒':['suivi','calendrier','activite','stock'].includes(state.adminTab)?'Commandes':['stats','analyse'].includes(state.adminTab)?'Analyses':'Administration'} / <b>${state.saisieDirecte?'Saisie directe':TITRES[state.adminTab]||''}</b></div>
             <div style="margin-left:auto;display:flex;gap:8px;align-items:center;">
                 <button data-live-open class="btn-sm" title="Écran live (plein écran, pour un PC ou une TV)">${icon('dashboard',15)} Écran live</button>
                 <button data-activate-notifs class="ic-btn" title="${notifsReady()?'Notifications activées':'Activer les notifications et la pastille'}">${icon('bell',16)}${notifsReady()?'':'<i></i>'}</button>
@@ -2551,7 +2557,7 @@ function mobileNavHtml(){
     </div></nav>
     ${state.moreOpen?`<div data-nav='{"moreOpen":false}' style="position:fixed;inset:0;background:rgba(15,23,42,.35);z-index:9500;display:flex;align-items:flex-end;">
         <div style="background:#fff;width:100%;border-radius:20px 20px 0 0;padding:14px 14px calc(14px + env(safe-area-inset-bottom,0px));">
-            ${[...(meOk()?[["me-memo","edit","Mémo perso"],["me-bat","tool","Signalements du bâtiment"],["me-stat","check","Actions et stats"]]:[]),["stats","chart","Statistiques"]].map(([t,ic,l])=>`<button data-admin-tab="${t}" style="display:flex;align-items:center;gap:12px;width:100%;background:none;border:none;padding:14px 8px;font-size:15px;font-weight:600;color:var(--ink);cursor:pointer;border-bottom:1px solid #f0f1f4;">${icon(ic,18)} ${l}</button>`).join('')}
+            ${[...(meOk()?[["me-memo","edit","Mémo perso"],["me-bat","tool","Signalements du bâtiment"],["me-stat","check","Actions et stats"]]:[]),["stock","box","Stock"],["stats","chart","Statistiques"]].map(([t,ic,l])=>`<button data-admin-tab="${t}" style="display:flex;align-items:center;gap:12px;width:100%;background:none;border:none;padding:14px 8px;font-size:15px;font-weight:600;color:var(--ink);cursor:pointer;border-bottom:1px solid #f0f1f4;">${icon(ic,18)} ${l}</button>`).join('')}
             <button data-back-home style="display:flex;align-items:center;gap:12px;width:100%;background:none;border:none;padding:14px 8px;font-size:15px;font-weight:600;color:var(--ink);cursor:pointer;border-bottom:1px solid #f0f1f4;">${icon('home',18)} Page de demande</button>
             <button data-admin-logout style="display:flex;align-items:center;gap:12px;width:100%;background:none;border:none;padding:14px 8px;font-size:15px;font-weight:600;color:#b91c1c;cursor:pointer;">${icon('logout',18)} Se déconnecter</button>
         </div></div>`:''}`;
@@ -3040,10 +3046,43 @@ async function retirerEstimations(){
 }
 /* Commandes faites (ou passées) sans prix : à compléter à réception de la facture */
 document.addEventListener('click',e=>{ if(e.target.closest('[data-prix-estimer]')){ const L=estimerPrixRepas(); if(L.length&&confirm(`Mettre un prix approximatif sur ${L.length} repas passés sans prix ?\n\nCalcul : prix moyen par personne constaté (même restaurant et même repas si possible) × nombre de personnes. Total ≈ ${$m(L.reduce((a,x)=>a+x.prix,0))}.`)) appliquerEstimations(L); } else if(e.target.closest('[data-prix-retirer]')) retirerEstimations(); });
+/* ══ STOCK (simple : OK / Bientôt vide / Vide) ══ */
+const STOCK_DEF=[['Capsules café','Nespresso'],['Thé','Kusme Tea'],['Papier A4','Lyreco'],['Sucre',''],['Gobelets',''],['Essuie-tout','']];
+const STOCK_ST=[['ok','OK','#166534','#dcfce7'],['bas','Bientôt vide','#92400e','#fef3c7'],['vide','Vide','#b91c1c','#fee2e2']];
+async function loadStock(){ try{ state.stock=await paramGet('stock'); }catch(e){} if(!state.stock||!Array.isArray(state.stock.items)) state.stock={items:STOCK_DEF.map(([nom,presta],i)=>({id:Date.now()+i,nom,presta,st:'ok'}))}; state.stockLoaded=true; }
+let _stockT=null;
+function stockSave(){ clearTimeout(_stockT); const snap=JSON.parse(JSON.stringify(state.stock)); _stockT=setTimeout(()=>paramSet('stock',snap).catch(()=>showToast(`${icon('alert',13)} Stock non enregistré (réseau)`)),400); }
+function stockAlerte(){ return ((state.stock&&state.stock.items)||[]).filter(x=>x.st==='bas'||x.st==='vide'); }
+function renderStock(m){
+    if(!state.stockLoaded){ loadStock().then(render); return `<div class="empty-note" style="padding:60px;">Chargement du stock…</div>`; }
+    const I=state.stock.items, A=stockAlerte(), C=I.filter(x=>x.st==='cmd');
+    const presta=[...new Set([...(settings.prestatairesCommande||[])])];
+    const grp={}; A.forEach(x=>{ const k=x.presta||''; (grp[k]=grp[k]||[]).push(x); });
+    const seg=x=>`<div class="stk-seg">${STOCK_ST.map(([k,l,c,b])=>`<button class="${x.st===k?'on':''}" style="${x.st===k?`color:${c};background:${b};border-color:${c}55;`:''}" data-stk="st" data-id="${x.id}" data-v="${k}">${l}</button>`).join('')}</div>`;
+    const ord={vide:0,bas:1,cmd:2,ok:3};
+    return `<div>
+    <div class="page-head"><div><h1>Stock</h1><p>Touchez l’état de chaque article · ${A.length} à commander${C.length?` · ${C.length} commandé${C.length>1?'s':''}`:''}</p></div></div>
+    ${A.length?`<div class="card" style="border-color:#f5c26b;"><div class="card-h"><h3>${icon('box',15)} À commander<span class="sub">${A.length}</span></h3></div>
+        <div style="padding:6px 16px 14px;display:flex;flex-direction:column;gap:10px;">${Object.entries(grp).map(([p,l])=>`<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;"><div style="flex:1;min-width:180px;"><b>${esc(p||'Sans fournisseur')}</b><div style="font-size:12.5px;color:var(--ink-soft);">${l.map(x=>esc(x.nom)+(x.st==='vide'?' <span style="color:#b91c1c;font-weight:600;">(vide)</span>':'')).join(', ')}</div></div><button class="btn-sm pri" data-stk="cmd" data-v="${esc(p)}">${icon('plus',13)} Préparer la commande</button></div>`).join('')}</div></div>`:''}
+    <div class="card"><div class="card-h"><h3>Articles<span class="sub">${I.length}</span></h3></div>
+        ${[...I].sort((a,b)=>ord[a.st]-ord[b.st]||a.nom.localeCompare(b.nom,'fr')).map(x=>`<div class="stk-row"><div class="stk-n"><b>${esc(x.nom)}</b><span>${x.presta?esc(x.presta):'—'}${x.st==='cmd'?` · <span style="color:#1e40af;font-weight:600;">commandé${x.cmdLe?' le '+new Date(x.cmdLe).toLocaleDateString('fr-FR',{day:'numeric',month:'short'}):''}</span>`:''}</span></div>${seg(x)}<button class="stk-x" title="Retirer l’article" data-stk="del" data-id="${x.id}">${icon('x',13)}</button></div>`).join('')||'<div class="empty-note" style="padding:24px;">Aucun article</div>'}
+        <div class="stk-add"><input id="stkNom" class="form-input" placeholder="Nouvel article (ex : capsules déca)" style="text-transform:none;"><select id="stkPresta" class="form-select"><option value="">Fournisseur…</option>${presta.map(p=>`<option>${esc(p)}</option>`).join('')}</select><button class="btn-sm pri" data-stk="add">${icon('plus',13)} Ajouter</button></div>
+    </div></div>`;
+}
+document.addEventListener('click',e=>{ const b=e.target.closest('[data-stk]'); if(!b||!state.stock) return; const a=b.getAttribute('data-stk'), id=+b.getAttribute('data-id'), x=state.stock.items.find(i=>i.id===id);
+    if(a==='st'&&x){ x.st=b.getAttribute('data-v'); x.t=new Date().toISOString(); delete x.cmdLe; stockSave(); render(); }
+    else if(a==='del'&&x){ if(!confirm(`Retirer « ${x.nom} » du stock ?`)) return; state.stock.items=state.stock.items.filter(i=>i!==x); stockSave(); render(); }
+    else if(a==='add'){ const n=(document.getElementById('stkNom')?.value||'').trim(); if(!n) return; state.stock.items.push({id:Date.now(),nom:n,presta:document.getElementById('stkPresta')?.value||'',st:'ok'}); stockSave(); render(); }
+    else if(a==='cmd'){ const p=b.getAttribute('data-v'), L=stockAlerte().filter(i=>(i.presta||'')===p); const me=userName(), dem=demandeursEquipe(true).find(n=>_pn(n)===_pn(me))||'';
+        L.forEach(i=>{ i.st='cmd'; i.cmdLe=new Date().toISOString(); }); stockSave();
+        state.adminForm={dem,pourQui:[],pourQuiAutre:'',vol:'',date:today(),dateDepart:'',heure:'12h00',lieu:'',de:'',vers:'',presta:p,desc:L.map(i=>i.nom).join(', '),nb:'1',com:'',step:1};
+        setState({saisieType:'commande',saisieDirecte:false,fabOpen:false}); }
+});
 function prixASaisir(){ const t0=new Date(); t0.setHours(0,0,0,0); return (state.data||[]).filter(c=>c.pris==='OUI'&&!(+c.prix>0)&&(etape(c)==='fait'||((parseDate(c.date)||t0)<t0))); }
 function anomalies(){
     const out=[], now=new Date(), t0=new Date(); t0.setHours(0,0,0,0);
     const actives=state.data.filter(c=>c.pris!=='Annulé');
+    const _st=stockAlerte(); if(_st.length) out.push({niv:_st.some(x=>x.st==='vide')?2:1,ic:'box',titre:`${_st.length} article${_st.length>1?'s':''} à commander`,detail:_st.map(x=>x.nom+(x.st==='vide'?' (vide)':'')).join(', '),nav:{adminTab:'stock'}});
     const _sp=prixASaisir(); if(_sp.length) out.push({niv:1,ic:'wallet',titre:`${_sp.length} prix à saisir`,detail:'Commandes faites sans montant : à compléter à réception de la facture',c:_sp[0],nav:{adminTab:'activite',activiteTab:'historique',histPrix:true,histPage:0}});
     const futur=actives.filter(c=>{ const d=parseDate(c.date); return d&&d>=t0; });
     const norm=s=>String(s||'').trim().toUpperCase();
@@ -5944,7 +5983,7 @@ if ('serviceWorker' in navigator && location.protocol === 'https:') {
     trackFirstSeen(data);
     // Session admin encore valide → on revient directement dans l'admin
     if (sessionValid()) {
-        await Promise.all([loadTrash(), loadJournal(), /avonde/i.test(`${userEmail()} ${userName()}`)?loadMe():null]);
+        await Promise.all([loadTrash(), loadJournal(), loadStock(), /avonde/i.test(`${userEmail()} ${userName()}`)?loadMe():null]);
         if (lsGet('last_vue') === 'admin' || state.live) { state.vue = 'admin'; state.authed = true; state.adminTab = 'dashboard'; }
     }
     state.loading = false;
@@ -5963,7 +6002,7 @@ if ('serviceWorker' in navigator && location.protocol === 'https:') {
             if(isTyping || isInForm){ updateBadgeFrom(fresh); return; }
             state.data=fresh;
             trackFirstSeen(fresh);
-            if(state.vue==='admin' && state.authed){ await Promise.all([loadTrash(), loadJournal(), loadSuivi()]); }
+            if(state.vue==='admin' && state.authed){ await Promise.all([loadTrash(), loadJournal(), loadStock(), loadSuivi()]); }
             else if(AUTH){ await loadSuivi(); }
             render();
             if(sessionValid() && nouvelles.length){
