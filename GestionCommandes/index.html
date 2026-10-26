@@ -942,6 +942,9 @@ const EMAIL_KINDS = {
     copie:      { pour:'VOTRE DEMANDE', titre:'Demande bien reçue', couleur:'#1d4ed8', fond:'#eff6ff', emoji:'📨', sujet:'Demande reçue',
                   intro: c => `Bonjour ${c._prenom}, votre demande a bien été transmise. Vous recevrez un autre email dès qu’elle sera validée.`,
                   bouton:'Suivre ma demande', pourquoi:'Vous recevez cette copie car vous l’avez demandée en envoyant votre demande.' },
+    accuse:     { pour:'VOTRE DEMANDE', titre:'Demande bien reçue', couleur:'#1d4ed8', fond:'#eff6ff', emoji:'📨', sujet:'Bien reçue',
+                  intro: c => `Bonjour ${c._prenom}, votre demande a bien été reçue. Nous nous en occupons.`,
+                  bouton:'Suivre ma demande', pourquoi:'Vous recevez cet email car vous avez fait cette demande.' },
     valide:     { pour:'VOTRE DEMANDE', titre:'Demande validée', couleur:'#15803d', fond:'#f0fdf4', emoji:'✅', sujet:'Validée',
                   intro: c => `Bonjour ${c._prenom}, bonne nouvelle : votre demande est validée.`,
                   bouton:'Voir ma demande', pourquoi:'Vous recevez cet email car vous avez fait cette demande.' },
@@ -1571,6 +1574,16 @@ async function emptyTrash() {
 }
 
 /* ── Changement de statut (unitaire ou groupé) ── */
+/* Accusé de réception : email « bien reçue » à la demandeuse, envoyé d'un clic */
+function accuserReception(c){
+    const inv=personne(c.demandeur).role==='invite', em=(suiviOf(c)||{}).email;
+    if(inv&&!em){ showToast(`${icon('alert',13)} Invité sans email : impossible d’accuser réception`); return; }
+    if(!inv&&!(settings.emails||{})[c.demandeur]){ showToast(`${icon('alert',13)} Pas d’email pour ${demNom(c)} (Réglages › Équipe)`); return; }
+    sendConfirmationEmail(c, inv?{to:em,kind:'accuse'}:{kind:'accuse'});
+    setSuivi([c.id],()=>({accuse:new Date().toISOString(),accuseBy:adminName()}));
+    logAction('Accusé de réception',c,`envoyé à ${demNom(c)}`);
+    if(inv) showToast(`${icon('mail',13)} Accusé de réception envoyé à ${demNom(c)}`);
+}
 async function applyStatus(ids, status, { silent = false, noMail = false } = {}) {
     const before = {};
     state.data.forEach(c => { if (ids.includes(c.id)) before[c.id] = c.pris; });
@@ -1587,8 +1600,7 @@ async function applyStatus(ids, status, { silent = false, noMail = false } = {})
         const inv = personne(c.demandeur).role==='invite', em = (suiviOf(c)||{}).email;
         if (inv && !em) continue; // invité sans email : rien à envoyer
         const to = inv ? { to: em } : {};
-        if (status === 'OUI' && mailsOn('confirmation')) { sendConfirmationEmail(c, inv?{...to,kind:'valide'}:undefined); try{ setSuivi([c.id],()=>({mailConf:new Date().toISOString()})); }catch(e){} }
-        else if (status === 'Annulé' && mailsOn('annulation') && !(suiviOf(c)||{}).direct) { sendConfirmationEmail(c, inv?{...to,kind:'annule'}:{ isAnnulation: true }); try{ setSuivi([c.id],()=>({mailAnnul:new Date().toISOString()})); }catch(e){} }
+        if (status === 'Annulé' && mailsOn('annulation') && !(suiviOf(c)||{}).direct) { sendConfirmationEmail(c, inv?{...to,kind:'annule'}:{ isAnnulation: true }); try{ setSuivi([c.id],()=>({mailAnnul:new Date().toISOString()})); }catch(e){} }
     }
     if (!silent && status !== 'OUI' && status !== 'Annulé') showToast(`Statut : ${ST[status]?.label || status}`);
 }
@@ -1636,7 +1648,7 @@ function bindBulkBar() {
             return;
         }
         const enAtt = state.data.filter(c => ids.includes(c.id) && (c.pris==='En attente'||c.pris==='En cours')).length;
-        if (act === 'OUI') { if (!confirm(`Commande passée pour ${ids.length} demande${ids.length>1?'s':''} ?${enAtt&&mailsOn('confirmation')?`\n\n${enAtt} confirmation${enAtt>1?'s':''} partira${enAtt>1?'ont':''} aux demandeuses.`:'\n\nAucun email.'}`)) return; }
+        if (act === 'OUI') { if (!confirm(`Commande passée pour ${ids.length} demande${ids.length>1?'s':''} ?\n\nAucun email ne sera envoyé.`)) return; }
         else if (!confirm(`Refuser ${ids.length} demande${ids.length>1?'s':''} ?\n\n${mailsOn('annulation')?'Un email d’annulation partira pour chacune.':'Aucun email ne sera envoyé.'}`)) return;
         state.sel = [];
         await applyStatus(ids, act, { silent: true });
@@ -1968,7 +1980,7 @@ function renderInlineForm(m){
         <h1>${f.admin?'Commande ajoutée':'Demande envoyée'}</h1>
         ${(()=>{ const c=(state.data||[]).find(x=>x.code===f.code); if(!c) return ''; const d=parseDate(c.date);
             return `<div class="nf-where"><b>${icon('calendar',15)} ${d?dateLongue(d)+' '+d.getFullYear():'Date non renseignée'}${c.heure&&c.type!=='hotel'?' · '+esc(c.heure):''}</b>${f.admin?`<span>Dans le suivi : ${stagePill(stageOf(c))}</span>`:''}${d&&d<parseDate(today())?`<em>${icon('alert',13)} Attention : cette date est passée.</em>`:''}</div>`; })()}
-        <p>${f.admin?'Directement validée, aucun email envoyé.':'Elle est en attente de validation. Vous recevrez une confirmation par email.'}</p>
+        <p>${f.admin?'Directement validée, aucun email envoyé.':'Elle est en attente de traitement. Vous recevrez un accusé de réception par email.'}</p>
         <div class="code-box"><div class="code-l">Code de suivi</div><div class="code-v">${f.code||'—'}</div><div class="code-s">Conservez ce code pour suivre ou modifier votre demande.</div></div>
         <div class="nf-ok-btns">
             ${f.admin&&isAdmin()?`<button class="nf-btn ghost" data-back-admin-suivi>${icon('clipboard',15)} Voir dans le suivi</button><button class="nf-btn ghost" data-back-admin-agenda>${icon('calendar',15)} Voir dans l’agenda</button>`:`<button id="goTrack" class="nf-btn ghost">${icon('search',15)} Suivre ma demande</button>`}
@@ -2403,13 +2415,14 @@ function suiviCard(c,{compact=false,showStage=false,select=false}={}){
     const btn=(act,label,ic,style)=>`<button data-suivi-act="${act}" data-id="${c.id}" style="display:inline-flex;align-items:center;gap:5px;border-radius:10px;padding:6px 10px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;${style}">${icon(ic,12)} ${label}</button>`;
     const B={
         valider: btn('valider','Valider','check','background:#f0fdf4;border:1px solid #bbf7d0;color:#15803d;'),
+        accuse:  btn('accuse','Accuser réception','mail','background:#15803d;border:1px solid #15803d;color:#fff;'),
         refuser: btn('refuser','Refuser','x','background:#fff;border:1px solid #fecaca;color:#b91c1c;'),
         annuler: btn('annuler','Annuler la demande','x','background:#fff;border:1px solid #fecaca;color:#b91c1c;'),
         commande:`<button data-suivi-act="commande" data-id="${c.id}" title="À cocher une fois la commande passée auprès du prestataire" style="display:inline-flex;align-items:center;gap:6px;border-radius:10px;padding:5px 10px 5px 7px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;background:#fff;border:1.5px dashed #93c5fd;color:#1d4ed8;"><span style="width:14px;height:14px;border:1.5px solid #1d4ed8;border-radius:4px;display:inline-block;"></span> Commande passée</button>`,
         fait:    `<button data-suivi-act="fait" data-id="${c.id}" title="À cocher une fois la prestation réalisée" style="display:inline-flex;align-items:center;gap:6px;border-radius:10px;padding:5px 10px 5px 7px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;background:#fff;border:1.5px dashed #a5f3fc;color:#0e7490;"><span style="width:14px;height:14px;border:1.5px solid #0e7490;border-radius:4px;display:inline-block;"></span> Prestation terminée</button>`,
     };
     let actions='', info='';
-    if(st==='avalider'||st==='acommander') actions=B.commande+pContactHtml(c)+B.refuser;
+    if(st==='avalider'||st==='acommander'){ actions=(!s.accuse&&!s.direct&&mailsOn('confirmation')?B.accuse:'')+B.commande+pContactHtml(c)+B.refuser; if(s.accuse) info=`${icon('check',12)} Réception accusée${s.accuseBy?' par '+esc(String(s.accuseBy).split(' ')[0]):''} le ${new Date(s.accuse).toLocaleString('fr-FR',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}`; }
     else if(st==='commandee'){ actions=(peutConfirmer(c)?`<button data-recu="${c.id}" style="display:inline-flex;align-items:center;gap:5px;border-radius:8px;padding:6px 10px;font-size:12px;font-weight:700;cursor:pointer;background:#15803d;border:1px solid #15803d;color:#fff;">${icon('check',12)} Bien reçu</button>`:'')+B.fait+B.annuler; info=`${icon('check',11)} Commande passée le ${new Date(s.cmd).toLocaleDateString('fr-FR')}${s.cmdBy&&s.cmdBy!=='Admin'?' par '+esc(s.cmdBy):''} · <a href="#" data-suivi-act="uncommande" data-id="${c.id}" style="color:#8b93a1;">décocher</a>`; }
     else if(st==='fait'){ info=s.recu?recuInfo(s):s.fait?`Terminé le ${new Date(s.fait).toLocaleDateString('fr-FR')}${s.cmd?'':''} · <a href="#" data-suivi-act="unfait" data-id="${c.id}" style="color:#8b93a1;">rouvrir</a>`:'Prestation passée'; }
     const sel=select?`<input type="checkbox" class="sel-box" data-sel-id="${c.id}" ${(state.sel||[]).includes(c.id)?'checked':''} style="width:16px;height:16px;accent-color:var(--accent);cursor:pointer;flex-shrink:0;margin-top:3px;">`:'';
@@ -2458,7 +2471,7 @@ function renderSuivi(m){
     const colHead=(k)=>{ const S=STAGES[k]; return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
         <span style="width:26px;height:26px;border-radius:8px;background:${S.bg};color:${S.color};display:flex;align-items:center;justify-content:center;">${icon(S.icon,14)}</span>
         <span style="font-weight:700;font-size:14px;color:var(--ink);">${k==='fait'?'Faite (14 derniers jours)':S.label}</span>
-        <span style="background:${S.color};color:#fff;border-radius:8px;padding:0 8px;font-size:11px;font-weight:700;line-height:18px;">${cols[k].length}</span></div>${k==='recue'?'<div style="font-size:11px;color:#6b7280;margin:-4px 0 10px;">Passez la commande au prestataire, puis cliquez « Commande passée ». Pour une demande d’assistante, la confirmation part à ce moment-là.</div>':''}${false?'<div style="font-size:11px;color:#6b7280;margin:-4px 0 10px;">Commandez auprès du prestataire, puis cochez « Commande passée ».</div>':''}`; };
+        <span style="background:${S.color};color:#fff;border-radius:8px;padding:0 8px;font-size:11px;font-weight:700;line-height:18px;">${cols[k].length}</span></div>${k==='recue'?'<div style="font-size:11px;color:#6b7280;margin:-4px 0 10px;">« Accuser réception » prévient la demandeuse par email. Passez ensuite la commande au prestataire, puis cliquez « Commande passée » (aucun email).</div>':''}${false?'<div style="font-size:11px;color:#6b7280;margin:-4px 0 10px;">Commandez auprès du prestataire, puis cochez « Commande passée ».</div>':''}`; };
     const empty=k=>`<div style="text-align:center;color:#9ca3af;font-size:12px;padding:18px 8px;border:1.5px dashed var(--border);border-radius:8px;">${k==='recue'?'Aucune demande à traiter':k==='acommander'?'Rien à commander':k==='commandee'?'Aucune commande en cours':'Rien de terminé récemment'}</div>`;
     const list=k=>cols[k].length?`<div style="display:flex;flex-direction:column;gap:8px;">${cols[k].map(c=>suiviCard(c,{select:k==='recue'})).join('')}</div>`:empty(k);
     if(m){
@@ -2574,9 +2587,9 @@ function mailsHtml(d){
     else {
         L.push(s.mailAlerte?['ok',`Alerte « nouvelle demande » envoyée à l’administration le ${f(s.mailAlerte)}`]:['grey','Alerte à l’administration : non enregistrée (demande antérieure au suivi des emails)']);
         if(personne(d.demandeur).role==='invite') L.push(s.email?['ok',`Email de l’invité : ${esc(s.email)}`]:['grey','Invité sans email : aucune confirmation possible']);
-        if(s.mailConf) L.push(['ok',`Confirmation envoyée à ${esc(demNom(d))} le ${f(s.mailConf)}`]);
-        else if(st==='avalider') L.push(mailsOn('confirmation')?['wait',`Confirmation à ${esc(demNom(d))} : partira quand vous cliquerez « Commande passée »`]:['grey','Confirmation désactivée dans les réglages']);
-        else if(st!=='refusee') L.push(['grey','Confirmation : envoyée à la validation (avant le suivi des emails)']);
+        if(s.accuse) L.push(['ok',`Accusé de réception envoyé à ${esc(demNom(d))} le ${f(s.accuse)}${s.accuseBy?' par '+esc(s.accuseBy):''}`]);
+        else if(s.mailConf) L.push(['ok',`Confirmation envoyée à ${esc(demNom(d))} le ${f(s.mailConf)}`]);
+        else if(st==='avalider') L.push(mailsOn('confirmation')?['wait',`Accusé de réception : cliquez « Accuser réception » pour prévenir ${esc(demNom(d))}`]:['grey','Accusé de réception désactivé dans les réglages']);
     }
     if(st==='refusee') L.push(s.mailAnnul?['ok',`Annulation envoyée à ${esc(demNom(d))} le ${f(s.mailAnnul)}`]:['grey','Refusée / annulée : aucun email envoyé']);
     return `<div class="mails"><b>${icon('mail',13)} Emails</b>${L.map(([k,x])=>`<span class="m-${k}">${x}</span>`).join('')}</div>`;
@@ -2594,7 +2607,7 @@ function suiviBlock(d){
             ${i<steps.length-1?`<div style="flex:1;height:2px;background:${steps[i+1][1]?STAGES.fait.color:'#e4e0d9'};margin:0 2px 18px;"></div>`:''}</div>`).join('')}</div>`;
     const btn=(act,label,ic,style)=>`<button data-suivi-act="${act}" data-id="${d.id}" style="display:inline-flex;align-items:center;gap:6px;border-radius:12px;padding:10px 14px;font-size:13px;font-weight:700;cursor:pointer;${style}">${icon(ic,14)} ${label}</button>`;
     let actions='';
-    if(st==='avalider'||st==='acommander') actions=`<div style="width:100%;font-size:12px;color:#4b5563;background:#fffbeb;border-radius:10px;padding:8px 10px;margin-bottom:2px;">Passez la commande auprès de <b>${esc(d.presta||'du prestataire')}</b>, puis cliquez « Commande passée ».${st==='avalider'?' La confirmation partira alors à '+esc(demNom(d))+'.':''}</div>`+btn('commande','Commande passée','check','background:#1d4ed8;border:1px solid #1d4ed8;color:#fff;')+btn('refuser','Refuser','x','background:#fff;border:1px solid #fecaca;color:#b91c1c;');
+    if(st==='avalider'||st==='acommander') actions=`<div style="width:100%;font-size:12px;color:#4b5563;background:#fffbeb;border-radius:10px;padding:8px 10px;margin-bottom:2px;">Passez la commande auprès de <b>${esc(d.presta||'du prestataire')}</b>, puis cliquez « Commande passée » (aucun email).</div>`+(!suiviOf(d).accuse&&!suiviOf(d).direct&&mailsOn('confirmation')?btn('accuse','Accuser réception','mail','background:#15803d;border:1px solid #15803d;color:#fff;'):'')+btn('commande','Commande passée','check','background:#1d4ed8;border:1px solid #1d4ed8;color:#fff;')+btn('refuser','Refuser','x','background:#fff;border:1px solid #fecaca;color:#b91c1c;');
     else if(st==='commandee') actions=btn('fait','Prestation terminée','check','background:#fff;border:1.5px dashed #a5f3fc;color:#0e7490;')+btn('uncommande','Je n’ai pas encore commandé','arrow','background:#fff;border:1px solid var(--border);color:#6b7280;')+btn('annuler','Annuler la demande','x','background:#fff;border:1px solid #fecaca;color:#b91c1c;')
     else if(st==='fait'&&s.fait) actions=btn('unfait','Rouvrir','arrow','background:#fff;border:1px solid var(--border);color:#6b7280;');
     const histo=[s.cmd?`Commandé le ${new Date(s.cmd).toLocaleString('fr-FR',{dateStyle:'short',timeStyle:'short'})}${s.cmdBy&&s.cmdBy!=='Admin'?' par '+esc(s.cmdBy):''}`:'', s.fait?`Terminé le ${new Date(s.fait).toLocaleString('fr-FR',{dateStyle:'short',timeStyle:'short'})}${s.faitBy&&s.faitBy!=='Admin'?' par '+esc(s.faitBy):''}`:'', s.recu?recuInfo(s):''].filter(Boolean).join(' · ');
@@ -2659,11 +2672,12 @@ document.addEventListener('click', async e=>{
     const act=a.getAttribute('data-suivi-act'), id=a.getAttribute('data-id');
     const c=state.data.find(x=>String(x.id)===String(id)); if(!c) return;
     if(act==='valider'){ await applyStatus([c.id],'OUI'); }
+    else if(act==='accuse'){ accuserReception(c); }
     else if(act==='annuler'){ if(confirm(`Annuler « ${titreDe(c)} » du ${dateCourte(c)} ?\n\n• ${mailsOn('annulation')&&!suiviOf(c).direct?`${demNom(c)} recevra l’email d’annulation.`:`Aucun email ne sera envoyé à ${demNom(c)}.`}\n• Les rappels seront retirés de vos agendas.${stageOf(c)==='commandee'?`\n• Pensez à prévenir ${c.presta||'le prestataire'} : la commande avait été passée.`:''}`)){ await applyStatus([c.id],'Annulé'); showToast('Demande annulée'); } }
     else if(act==='refuser'){ const am=mailsOn('annulation')&&!suiviOf(c).direct; if(confirm(`Refuser « ${titreDe(c)} » ?\n\n${am?`${demNom(c)} recevra l’email d’annulation.`:`Aucun email ne sera envoyé : pensez à prévenir ${demNom(c)} si besoin.`}${stageOf(c)==='commandee'?`\nPensez aussi à prévenir ${c.presta||'le prestataire'}.`:''}`)) await applyStatus([c.id],'Annulé'); }
     else if(act==='copier'){ const ok=await copyText(orderMessage(c)); showToast(ok?'✓ Message copié : collez-le dans votre email au prestataire':`${icon('alert',13)} Copie impossible`); }
     else if(act==='commande'){ const enAtt=c.pris==='En attente'||c.pris==='En cours';
-        if(confirm(`Commande « ${titreDe(c)} » passée auprès de ${c.presta||'du prestataire'} ?${enAtt&&mailsOn('confirmation')?`\n\nLa confirmation sera envoyée à ${demNom(c)}.`:'\n\nAucun email ne sera envoyé.'}`)){ if(enAtt) await applyStatus([c.id],'OUI',{silent:true}); markCommande([c.id]); } }
+        if(confirm(`Commande « ${titreDe(c)} » passée auprès de ${c.presta||'du prestataire'} ?\n\nAucun email ne sera envoyé.`)){ if(enAtt) await applyStatus([c.id],'OUI',{silent:true}); markCommande([c.id]); } }
     else if(act==='uncommande') unmarkCommande([c.id]);
     else if(act==='fait') markFait([c.id]);
     else if(act==='unfait') unmarkFait([c.id]);
@@ -2845,7 +2859,7 @@ function renderDashboard(total,attente,m){
 
     const urgTag=c=>{ const j=daysLeft(c.date); return j!==null&&j<=2?`<span class="urg" style="margin-left:0;">${badgeColor(j).label}</span>`:''; };
     const actionsDe=c=>{ const st=stageOf(c);
-        if(st==='avalider'||st==='acommander') return `<button class="btn-sm" data-suivi-act="refuser" data-id="${c.id}">Refuser</button><button class="btn-sm pri" data-suivi-act="commande" data-id="${c.id}" title="${st==='avalider'?'Envoie la confirmation à la demandeuse':'Aucun email'}">${icon('check',13)} Commande passée</button>`;
+        if(st==='avalider'||st==='acommander') return `<button class="btn-sm" data-suivi-act="refuser" data-id="${c.id}">Refuser</button>${!suiviOf(c).accuse&&!suiviOf(c).direct&&mailsOn('confirmation')?`<button class="btn-sm" style="background:#15803d;border-color:#15803d;color:#fff;" data-suivi-act="accuse" data-id="${c.id}">${icon('mail',13)} Accuser réception</button>`:''}<button class="btn-sm pri" data-suivi-act="commande" data-id="${c.id}" title="Aucun email">${icon('check',13)} Commande passée</button>`;
         return ''; };
     const table=`<div class="tbl-wrap"><table class="pro-table"><thead><tr><th>Prestation</th><th>Date</th><th>Statut</th><th style="text-align:right;">Action</th></tr></thead><tbody>
         ${aFaire.map(c=>`<tr>
@@ -3817,7 +3831,7 @@ function renderMe(m){
         ...interv.filter(s=>isoDay(new Date(s.interv))===k).map(s=>({h:new Date(s.interv).getHours()*60+new Date(s.interv).getMinutes(),html:`<div class="tl-row" data-me="open" data-id="${s.id}"><div class="tl-h">${hh(s.interv)}</div><span class="dot" style="background:#5b21b6;margin-top:5px;"></span><div style="min-width:0;"><div class="tl-t">${icon('tool',13)} ${esc(s.titre)}</div><div class="tl-m">${esc(meZone(s))}${s.interv_par?` · ${esc(s.interv_par)}`:''}</div></div>${mePill(s)}</div>`}))].sort((a,b)=>a.h-b.h);
         return L.length?`<div class="tl">${L.map(x=>x.html).join('')}</div>`:''; };
     const auj=jour(todayK), dem=jour(tomK);
-    const act=c=>{ const st=stageOf(c); return (st==='avalider'||st==='acommander')?`<button class="btn-sm" data-suivi-act="refuser" data-id="${c.id}">Refuser</button><button class="btn-sm pri" data-suivi-act="commande" data-id="${c.id}">${icon('check',13)} Commande passée</button>`:false?`<button class="btn-sm" data-suivi-act="refuser" data-id="${c.id}">Refuser</button><button class="btn-sm pri" data-suivi-act="valider" data-id="${c.id}">Valider</button>`:st==='acommander'?`<button class="btn-sm" data-suivi-act="commande" data-id="${c.id}">${icon('check',13)} Commande passée</button>`:''; };
+    const act=c=>{ const st=stageOf(c); return (st==='avalider'||st==='acommander')?`<button class="btn-sm" data-suivi-act="refuser" data-id="${c.id}">Refuser</button>${!suiviOf(c).accuse&&!suiviOf(c).direct&&mailsOn('confirmation')?`<button class="btn-sm" style="background:#15803d;border-color:#15803d;color:#fff;" data-suivi-act="accuse" data-id="${c.id}">${icon('mail',13)} Accuser réception</button>`:''}<button class="btn-sm pri" data-suivi-act="commande" data-id="${c.id}">${icon('check',13)} Commande passée</button>`:false?`<button class="btn-sm" data-suivi-act="refuser" data-id="${c.id}">Refuser</button><button class="btn-sm pri" data-suivi-act="valider" data-id="${c.id}">Valider</button>`:st==='acommander'?`<button class="btn-sm" data-suivi-act="commande" data-id="${c.id}">${icon('check',13)} Commande passée</button>`:''; };
     const cmdRows=aTraiter.slice(0,6).map(c=>`<div class="me-act"><span class="me-act-k" style="color:${STAGES[stageOf(c)].color};border-color:${STAGES[stageOf(c)].color}33;background:${STAGES[stageOf(c)].color}0f;">${STAGES[stageOf(c)].label||stageOf(c)}</span><div class="me-act-t" data-open-detail='${JSON.stringify(c).replace(/'/g,"&apos;")}'><div class="t">${typeIc(c.type,14)}<b>${esc(titreDe(c))}</b></div><div class="m">${dateCourte(c)}${c.heure?' · '+esc(c.heure):''}${where(c)?' · '+where(c):''}${c.demandeur?' · '+demHtml(c):''}</div></div><div class="me-act-b">${act(c)}</div></div>`).join('');
     const intRows=A.slice(0,6).map(({s,k,why,btns,group,list})=>`<div class="me-act"><span class="me-act-k" style="color:${KL[k][1]};border-color:${KL[k][1]}33;background:${KL[k][1]}0f;">${KL[k][0]}</span>${group?`<div class="me-act-t" data-nav='{"adminTab":"me-stat"}'><div class="t"><b>${esc(group)}</b></div><div class="m">${why}</div></div>`:`<div class="me-act-t" data-me="open" data-id="${s.id}"><div class="t">${meUrgDot(s)}<b>${esc(s.titre)}</b></div><div class="m">${esc(meZone(s))} · ${why}</div></div>`}<div class="me-act-b">${btns}</div></div>`).join('');
     const prenom=(adminName()||'').split(' ')[0], salut=now.getHours()<18?'Bonjour':'Bonsoir';
@@ -5052,7 +5066,7 @@ document.addEventListener('change',e=>{ const s=e.target.closest('[data-eq-alias
     const E={...equipe(),v:1}; E.alias={...E.alias,[s.getAttribute('data-eq-alias')]:s.value}; settings.equipe=E; saveSettings(settings); showToast(`✓ Rattaché à ${s.value}`); render(); });
 function renderReglagesEmails(secHead){
     const L=[['alerte','Nouvelle demande','À Julia et Arnaud (administrateurs), dès qu’une assistante ou un invité envoie une demande.'],
-             ['confirmation','Confirmation','À l’assistante, quand vous cliquez « Commande passée » sur sa demande.'],
+             ['confirmation','Accusé de réception','À l’assistante, quand vous cliquez « Accuser réception » sur sa demande. « Commande passée » n’envoie plus d’email.'],
              ['copie','Copie de la demande','À l’assistante qui coche « Recevoir une copie » en envoyant sa demande.'],
              ['annulation','Annulation','À l’assistante, quand vous refusez ou annulez sa demande.'],
              ['outlook','Invitation Outlook','Le rendez-vous dans l’agenda de Julia et Arnaud, à chaque commande ajoutée, modifiée ou annulée.']];
