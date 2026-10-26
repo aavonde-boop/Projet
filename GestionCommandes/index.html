@@ -3130,7 +3130,7 @@ function stockSave(){ clearTimeout(_stockT); const snap=JSON.parse(JSON.stringif
 function stockAlerte(){ return ((state.stock&&state.stock.items)||[]).filter(x=>x.st==='bas'||x.st==='vide'); }
 /* ══ PARKING & VÉHICULES (Julia et Arnaud) ══ */
 const PK_TYPES={std:['Normale','#475569','#f1f5f9'],borne:['Borne électrique','#15803d','#dcfce7'],pmr:['PMR','#1d4ed8','#dbeafe']};
-async function loadParking(){ try{ state.pk=await paramGet('parking'); }catch(e){} if(!state.pk||typeof state.pk!=='object') state.pk={}; state.pk.places=state.pk.places||[]; state.pk.vehicules=state.pk.vehicules||[]; state.pkLoaded=true; }
+async function loadParking(){ try{ state.pk=await paramGet('parking'); }catch(e){} if(!state.pk||typeof state.pk!=='object') state.pk={}; state.pk.places=state.pk.places||[]; state.pk.vehicules=state.pk.vehicules||[]; if(isAdmin()&&pkSeed()) pkSave(); state.pkLoaded=true; }
 let _pkT=null;
 function pkSave(){ clearTimeout(_pkT); const snap=JSON.parse(JSON.stringify(state.pk)); _pkT=setTimeout(()=>paramSet('parking',snap).catch(()=>showToast(`${icon('alert',13)} Parking non enregistré (réseau)`)),400); }
 const pkId=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
@@ -3145,6 +3145,74 @@ function pkAlertes(){
     return out;
 }
 function pkBornesPanne(){ return ((state.pk&&state.pk.places)||[]).filter(p=>p.type==='borne'&&p.panne); }
+/* ── Plans des niveaux (photos du plan du parking, places de l'entreprise positionnées dessus) ── */
+const PK_PLAN={
+ '-2':{img:'plans/niveau-2.jpg',ox:380,oy:400,w:1120,h:1300,pts:{
+  '282':[726,872,112,46,20],'158':[710,915,112,46,20],'157':[692,965,112,46,20],'156':[673,1012,112,46,20],'155':[657,1055,112,46,20],'154':[639,1104,112,46,20],'153':[622,1147,112,46,20],'152':[606,1190,112,46,20],'151':[588,1242,112,46,20],'150':[571,1286,112,46,20],'149':[510,1488,112,46,20],'148':[493,1530,112,46,20],
+  '185':[850,802,46,104,0],'186':[846,1071,46,104,0],'187':[820,1160,108,46,20],'186b':[802,1208,108,46,20],'188':[930,777,104,48,0],'189':[930,825,104,48,0],
+  '190':[925,973,104,48,0],'191':[925,1021,104,48,0],'192':[925,1075,104,48,0],'193':[925,1129,104,48,0],'194':[925,1181,104,48,0],'195':[926,1229,104,48,0],
+  '196':[1136,919,104,48,0],'197':[1136,976,104,48,0],'198':[1136,1020,104,44,0],'199':[1136,1081,104,48,0],'200':[1136,1126,104,44,0],'201':[1135,1233,104,48,0],
+  '202':[1243,768,104,48,0],'203':[1243,818,104,48,0],'205':[1241,919,104,48,0],'206':[1241,976,104,48,0],'207':[1241,1020,104,44,0],'208':[1241,1126,104,48,0],
+  '258':[849,1308,48,104,0],'259':[903,1308,48,104,0],'260':[951,1308,48,104,0],'261':[1113,1308,48,104,0],'262':[1162,1308,48,104,0]}},
+ '-3':{img:'plans/niveau-3.jpg',ox:140,oy:300,w:1320,h:1320,pts:{
+  '160':[552,757,112,46,20],'159':[536,802,112,46,20],'158':[518,851,112,46,20],'157':[502,897,112,46,20],'156':[485,944,112,46,20],'155':[466,995,112,46,20],'154':[450,1040,112,46,20],'153':[431,1091,112,46,20],'152':[414,1137,112,46,20],'151':[398,1183,112,46,20],
+  '179':[665,571,48,104,0],'180':[713,571,48,104,0],'181':[763,571,48,104,0],'188':[672,686,46,104,0],'191':[752,655,104,46,0],'192':[752,703,104,46,0],'190':[665,948,50,104,0],
+  '189':[633,1043,112,46,20],'189b':[614,1093,112,46,20],'193':[750,857,104,48,0],'194':[750,906,104,48,0],'195':[752,959,104,48,0],'196':[752,1013,104,48,0],'197':[754,1068,104,48,0],'198':[755,1115,104,48,0],
+  '199':[960,652,104,48,0],'200':[960,700,104,48,0],'201':[960,749,104,48,0],'202':[960,801,104,48,0],'203':[960,852,104,48,0],'204':[960,901,104,48,0],'205':[962,960,104,48,0],'206':[963,1008,104,48,0],
+  '265':[680,1198,50,104,0],'266':[735,1198,50,104,0],'267':[783,1196,50,104,0],'272':[563,1393,108,50,0],'273':[564,1447,108,50,0]}}
+};
+const pkKey=n=>String(n||'').toLowerCase().replace(/\s+/g,'');
+function pkPlanHtml(m){
+    const nivs=Object.keys(PK_PLAN); const niv=PK_PLAN[state.pkNiv]?state.pkNiv:nivs[0], P=PK_PLAN[niv];
+    const q=(state.pkQ||'').trim().toLowerCase().replace(/[\s-]/g,'');
+    const places=state.pk.places.filter(p=>String(p.niv||'')===niv);
+    const byKey={}; places.forEach(p=>byKey[pkKey(p.num)]=p);
+    const hit=p=>q&&p&&[p.num,p.tit,p.plaque,p.dir,(pkJum(p)||{}).num].join(' ').toLowerCase().replace(/[\s-]/g,'').includes(q);
+    const anyHit=q&&places.some(hit);
+    const col=p=>!p?null:p.ko?['#b91c1c',.5]:p.tit?['#2c5f85',.42]:['#16a34a',.38];
+    const rects=Object.entries(P.pts).map(([k,[x,y,w,h,r]])=>{ const p=byKey[k]; if(!p) return ''; const [c,o]=col(p), H=hit(p);
+        const tip=`${niv} · n° ${p.num}${pkJum(p)?' + '+pkJum(p).num:''} · ${p.ko?'hors service':p.tit?p.tit+(p.plaque?' · '+p.plaque:''):'libre'}${p.type==='borne'?' · borne'+(p.panne?' en panne':''):''}`;
+        return `<g data-pk="edit" data-id="${p.id}" style="cursor:pointer;" transform="translate(${x} ${y}) rotate(${r})" opacity="${anyHit&&!H?.25:1}"><title>${esc(tip)}</title>
+            <rect x="${-w/2}" y="${-h/2}" width="${w}" height="${h}" rx="5" fill="${c}" fill-opacity="${o}" stroke="${H?'#f59e0b':c}" stroke-width="${H?7:2}"/>
+            ${p.type==='borne'?`<g transform="rotate(${-r}) translate(${w/2-14} ${-h/2+14})"><circle r="12" fill="${p.panne?'#b91c1c':'#15803d'}"/><path d="M1.5 -7 L-4 1 L0 1 L-1.5 7 L4 -1 L0 -1 Z" fill="#fff"/></g>`:''}</g>`; }).join('');
+    const sans=places.filter(p=>!P.pts[pkKey(p.num)]);
+    return `<div class="card" style="padding:12px;">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
+            ${nivs.map(n=>`<button class="nf-chip ${n===niv?'on':''}" style="height:32px;font-size:12.5px;" data-nav='{"pkNiv":"${n}"}'>Niveau ${n}</button>`).join('')}
+            <span style="display:flex;gap:12px;flex-wrap:wrap;margin-left:auto;font-size:12px;color:var(--ink-mid);">
+                <span><i style="display:inline-block;width:12px;height:12px;border-radius:3px;background:#2c5f8566;border:2px solid #2c5f85;vertical-align:-2px;"></i> Attribuée</span>
+                <span><i style="display:inline-block;width:12px;height:12px;border-radius:3px;background:#16a34a55;border:2px solid #16a34a;vertical-align:-2px;"></i> Libre</span>
+                <span><i style="display:inline-block;width:12px;height:12px;border-radius:3px;background:#b91c1c77;border:2px solid #b91c1c;vertical-align:-2px;"></i> Hors service</span>
+                <span><i style="display:inline-block;width:12px;height:12px;border-radius:50%;background:#15803d;vertical-align:-2px;"></i> Borne</span>
+            </span>
+        </div>
+        <div style="overflow:auto;border-radius:8px;border:1px solid var(--border-light);background:#fff;">
+            <svg viewBox="${P.ox} ${P.oy} ${P.w} ${P.h}" style="display:block;width:100%;min-width:${m?'720px':'0'};height:auto;" xmlns="http://www.w3.org/2000/svg">
+                <image href="${P.img}" x="${P.ox}" y="${P.oy}" width="${P.w}" height="${P.h}" opacity=".9"/>${rects}
+            </svg>
+        </div>
+        <div style="font-size:12px;color:var(--ink-soft);margin-top:8px;">Touchez une place pour l’ouvrir. La recherche (nom, plaque, numéro) met la place en évidence.${sans.length?` · Places de ce niveau absentes du plan : ${sans.map(p=>esc(p.num)).join(', ')}`:''}</div>
+    </div>`;
+}
+/* ── Reprise du tableau Excel (une seule fois) ── */
+const PK_SEED=[
+ ['-1','12','Sylvain BELORGEY','FY-598-RX'],['-1','13','Pauline JOLLY','',1,'14'],['-1','14'],['-1','15','','',0,'','Place réservée'],['-1','16','','',0,'','Place réservée'],['-1','17','','',1,'','Place réservée'],
+ ['-2','148','Alexandra JULITTE','HF-635-MP'],['-2','149','Franck BADUEL','GL-415-CP',1],['-2','150','Alain GUIOT'],['-2','151','','',1,'','Place réservée'],['-2','152','Lucile OLIVAS','GW-001-AB'],['-2','153','Thiery POIRAT','GB-351-EY',1],
+ ['-2','154','Marc RIPOTOT','GS-869-RQ'],['-2','155','','',0,'','Place réservée'],['-2','156','Mercillia MANOLESCU','GR-923-RM',1],['-2','157','Grégoire KOUGRINE'],['-2','158','Cyrius PETER','GB-351-SM',1,'282'],['-2','282'],
+ ['-2','185','Christophe CARRER'],['-2','186','Julien GUENET','GF-568-PM',1],['-2','186 B'],['-2','187'],['-2','188'],['-2','189'],['-2','190'],['-2','191'],['-2','192'],['-2','193'],['-2','194'],['-2','195'],['-2','196'],['-2','197'],['-2','198'],['-2','199'],['-2','200'],['-2','201'],
+ ['-2','202','Luc FOURNIER','',1,'203'],['-2','203'],['-2','205'],['-2','206'],['-2','207','Sylvain LEMERCIER','',1],['-2','208','Alberic CHOPELIN','',1],['-2','258'],['-2','259'],['-2','260'],['-2','261'],['-2','262'],
+ ...['151','152','153','154','155','156','157','158','159','160','179','180','181','188','189','189 B','190','191','192','193','194','195','196','197','198','199','200','201','202','203','204','205','206','265','266','267','272','273'].map(n=>['-3',n])
+];
+function pkSeed(){
+    if(!state.pk||state.pk.seedV) return false;
+    const P=state.pk.places, find=(niv,num)=>P.find(x=>String(x.niv||'')===niv&&pkKey(x.num)===pkKey(num));
+    PK_SEED.forEach(([niv,num,tit='',plaque='',borne=0,lie='',note=''])=>{
+        let p=find(niv,num); if(!p){ p={id:pkId(),niv,num,type:'std',tit:''}; pkH(p,'Place créée (reprise du tableau Excel)'); P.push(p); }
+        if(tit&&!p.tit){ p.tit=tit; pkH(p,`Attribuée à ${tit} (reprise du tableau Excel)`); } if(plaque&&!p.plaque) p.plaque=plaque; if(borne) p.type='borne'; if(note&&!p.note) p.note=note;
+    });
+    PK_SEED.forEach(([niv,num,tit='',plaque='',borne=0,lie=''])=>{ if(!lie) return; const a=find(niv,num), b=find(niv,lie); if(a&&b&&!a.lie&&!b.lie){ a.lie=b.id; b.lie=a.id; Object.assign(b,{tit:a.tit,plaque:a.plaque}); if(a.type==='borne') b.type=b.type||'std'; } });
+    state.pk.seedV=1; return true;
+}
 function renderParking(m){
     if(!state.pkLoaded){ loadParking().then(render); return `<div class="empty-note" style="padding:60px;">Chargement…</div>`; }
     const tab=state.pkTab||'places';
@@ -3166,6 +3234,7 @@ function pkPlacesHtml(m){
     const type=p=>{ const t=PK_TYPES[p.type]||PK_TYPES.std, j=pkJum(p); return (p.type&&p.type!=='std'?`<span class="me-pill" style="color:${t[1]};background:${t[2]};">${t[0]}${p.panne?' · en panne':''}</span> `:'')+(j?`<span class="me-pill" style="color:#7c2d12;background:#ffedd5;">2 places</span> `:'')+(p.ko?`<span class="me-pill" style="color:#b91c1c;background:#fee2e2;">Hors service</span>`:''); };
     const edit=state.pkEdit?pkEditHtml():'';
     const outils=state.pkOutils?pkOutilsHtml():'';
+    const vue=state.pkVue||'plan';
     return `${outils}${edit}
     <div class="kpis">
         <div class="stat-card kpi"><span class="kpi-l">Places</span><span class="kpi-v">${P.length}</span><span class="kpi-s">${nivs.length} niveau${nivs.length>1?'x':''}</span></div>
@@ -3177,8 +3246,8 @@ function pkPlacesHtml(m){
         <label class="me-search">${icon('search',14)}<input id="pkQ" type="search" value="${esc(state.pkQ||'')}" placeholder="Nom, plaque ou numéro de place…" autocomplete="off"></label>
         <select class="me-sel" data-pk-niv><option value="">Tous les niveaux</option>${nivs.map(n=>`<option ${n===niv?'selected':''}>${esc(n)}</option>`).join('')}</select>
     </div>
-    <div class="nf-row" style="margin-bottom:14px;">${chips.map(([k,l,n])=>`<button class="nf-chip ${f===k?'on':''}" style="height:32px;font-size:12.5px;" data-nav='{"pkF":"${k}"}'>${l} · ${n}</button>`).join('')}</div>
-    ${!P.length?`<div class="card empty-note" style="padding:40px;">Aucune place pour l’instant. « Créer / importer des places » pour créer un niveau entier d’un coup ou coller votre liste Excel.</div>`
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:14px;"><div class="me-vue">${[['plan','Plan'],['liste','Liste']].map(([k,l])=>`<button class="${vue===k?'on':''}" data-nav='{"pkVue":"${k}"}'>${l}</button>`).join('')}</div>${vue==='liste'?`<div class="nf-row">${chips.map(([k,l,n])=>`<button class="nf-chip ${f===k?'on':''}" style="height:32px;font-size:12.5px;" data-nav='{"pkF":"${k}"}'>${l} · ${n}</button>`).join('')}</div>`:''}</div>
+    ${vue==='plan'?pkPlanHtml(m):!P.length?`<div class="card empty-note" style="padding:40px;">Aucune place pour l’instant. « Créer / importer des places » pour créer un niveau entier d’un coup ou coller votre liste Excel.</div>`
     :L.length?`<div class="card"><div class="tbl-wrap"><table class="pro-table"><thead><tr><th>Place</th><th>Titulaire</th><th>Plaque</th><th>Direction / service</th><th></th></tr></thead><tbody>
         ${L.slice(0,state.pkAll?99999:200).map(p=>`<tr data-pk="edit" data-id="${p.id}" style="cursor:pointer;"><td><b>${esc(p.num)}${pkJum(p)?' + '+esc(pkJum(p).num):''}</b>${p.niv?`<div class="m" style="font-size:12px;color:var(--ink-soft);">Niveau ${esc(p.niv)}</div>`:''}</td><td>${p.tit?esc(p.tit):p.ko?'<span style="color:#b91c1c;">—</span>':'<span style="color:#15803d;font-weight:600;">Libre</span>'}</td><td style="font-family:ui-monospace,monospace;">${esc(p.plaque||'')}</td><td style="color:var(--ink-mid)">${esc(p.dir||'')}</td><td style="text-align:right;">${type(p)}</td></tr>`).join('')}
     </tbody></table></div>${L.length>200&&!state.pkAll?`<button class="card-link" style="padding:10px 16px;" data-nav='{"pkAll":true}'>Afficher les ${L.length} places</button>`:''}</div>`
