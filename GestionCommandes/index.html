@@ -1248,7 +1248,7 @@ function upperize(obj) {
 async function dbInsert(item) {
     upperize(item);
     await sbPret();
-    if (viaRpc()) { try { const x=await sbRpc('gs_nouvelle_demande',{r:appToRow(item)}); if(!x.absente) return x.val?rowToApp(x.val):item; } catch(e){ console.error('Supabase insert:', e); showToast(`${icon('alert',13)} Demande non enregistrée, réessayez`); return item; } }
+    if (viaRpc()) { try { const x=await sbRpc('gs_nouvelle_demande',{r:appToRow(item)}); if(!x.absente) return x.val&&!Array.isArray(x.val)?rowToApp(x.val):item; } catch(e){ console.error('Supabase insert:', e); showToast(`${icon('alert',13)} Demande non enregistrée, réessayez`); return item; } }
     try {
         const r = await fetch(SB_TABLE, {
             method: 'POST',
@@ -1937,8 +1937,8 @@ function nfRecents(type,champ,n=4){
     const cpt={}; state.data.filter(c=>c.type===type&&c[champ]).forEach(c=>{ const v=String(c[champ]).trim(); const k=v.toUpperCase(); if(!k||k==='—')return; cpt[k]=cpt[k]||{v,n:0}; cpt[k].n++; });
     return Object.values(cpt).sort((a,b)=>b.n-a.n).slice(0,n).map(x=>x.v);
 }
-function nfNuits(f){ return Math.max(1,parseInt(f.nights)||1); }
-function nfDepart(f){ const d=parseDate(f.date); if(!d) return ''; const x=new Date(d); x.setDate(x.getDate()+nfNuits(f)); return isoDay(x); }
+function nfNuits(f){ if(f.dateFin){ const a=parseDate(f.date), b=parseDate(f.dateFin); if(a&&b) return Math.max(1,Math.round((b-a)/864e5)); } return Math.max(1,parseInt(f.nights)||1); }
+function nfDepart(f){ if(f.dateFin) return f.dateFin; const d=parseDate(f.date); if(!d) return ''; const x=new Date(d); x.setDate(x.getDate()+nfNuits(f)); return isoDay(x); }
 function nfQui(f){ return f.type==='repas'?(f.participants||''):(f.pourQui.includes('__autre__')?[...f.pourQui.filter(v=>v!=='__autre__'),f.pourQuiAutre||'Autre'].join(', '):f.pourQui.join(', ')); }
 function nfSummaryRows(f){
     const d=parseDate(f.date); const dl=d?dateLongue(d):'—';
@@ -1946,7 +1946,7 @@ function nfSummaryRows(f){
     if(f.type==='repas') R.push(['Repas',f.desc||'—'],['Date',dl],['Heure',f.heure||'—'],['Personnes',f.nb||'1'],['Participants',nfQui(f)||'—'],['Lieu',f.lieu||'—'],['Restaurant',f.presta||'—']);
     else if(f.type==='coursier') R.push(['Date',dl],['Heure',f.heure||'—'],['Pour',nfQui(f)||'—'],['Objet',f.desc||'—'],['Enlèvement',f.de||'—'],['Livraison',f.vers||'—'],['Coursier',f.presta||'—']);
     else if(f.type==='taxi') R.push(['Date',dl],['Heure',f.heure||'—'],['Pour',nfQui(f)||'—'],['Départ',f.de||'—'],['Arrivée',f.vers||'—'],['Téléphone',f.tel||'—'],['Prestataire',f.presta||'—']);
-    else { const dd=parseDate(nfDepart(f)); R.push(['Arrivée',dl],['Départ',dd?dateLongue(dd):'—'],['Nuits',String(nfNuits(f))],['Pour',nfQui(f)||'—'],['Voyageur(s)',f.desc||'—'],['Ville',f.lieu||'—'],['Hôtel',f.presta||'—']); }
+    else { const dd=parseDate(nfDepart(f)); R.push(['Arrivée',dl],['Départ',dd?dateLongue(dd):'—'],['Nuits',String(nfNuits(f))],['Pour',nfQui(f)||'—'],['Hôtel',f.presta||'—']); }
     R.unshift(['Demandeur',f.dem||'—']);
     if(f.type==='repas'&&regimesTxt(f)) R.push(['Régimes',regimesTxt(f).replace(/^Régimes : /,'')]);
     return R;
@@ -1954,7 +1954,7 @@ function nfSummaryRows(f){
 function nfSummaryHtml(){ return nfSummaryRows(state.form).map(([k,v])=>`<div class="nf-tk"><span>${k}</span><b class="${v==='—'?'vide':''}">${esc(v)}</b></div>`).join(''); }
 function nfBarHtml(){
     const f=state.form, d=parseDate(f.date);
-    const a=f.type==='repas'?[f.desc||'Repas',`${f.nb||1} pers.`,f.presta].filter(Boolean).join(' · '):f.type==='taxi'?`Taxi${f.vers?' → '+String(f.vers).split(',')[0]:''}`:f.type==='coursier'?`Coursier${f.vers?' → '+String(f.vers).split(',')[0]:''}`:`Hôtel${f.lieu?' · '+f.lieu:''} · ${nfNuits(f)} nuit${nfNuits(f)>1?'s':''}`;
+    const a=f.type==='repas'?[f.desc||'Repas',`${f.nb||1} pers.`,f.presta].filter(Boolean).join(' · '):f.type==='taxi'?`Taxi${f.vers?' → '+String(f.vers).split(',')[0]:''}`:f.type==='coursier'?`Coursier${f.vers?' → '+String(f.vers).split(',')[0]:''}`:`Hôtel${f.presta?' · '+f.presta:''} · ${nfNuits(f)} nuit${nfNuits(f)>1?'s':''}`;
     const b=d?`${JOURS_C[d.getDay()]} ${d.getDate()}${f.type!=='hotel'&&f.heure?' · '+f.heure:''}`:'';
     return `<b>${esc(a)}</b><span>${esc(b)}</span>`;
 }
@@ -2010,8 +2010,7 @@ function renderInlineForm(m){
     let quandBody='', quandAside=dsel?dateLongue(dsel):'';
     if(T==='hotel'){
         const n=nfNuits(f), dd=parseDate(nfDepart(f));
-        quandBody=lbl('Arrivée *')+daysHtml+`<div class="nf-step-row"><div><b>Nombre de nuits</b><span>${dd?'Départ le '+dateLongue(dd):''}</span></div>
-            <div class="nf-stepper"><button type="button" data-nf="nights" data-v="-1">${icon('minus',16)}</button><b>${n}</b><button type="button" data-nf="nights" data-v="1">${icon('plus',16)}</button></div></div>`;
+        quandBody=`<div class="nf-grid2"><div>${lbl('Date de début *')}<input id="formHDebut" type="date" class="form-input nf-in" value="${esc(f.date||'')}"></div><div>${lbl('Date de fin *')}<input id="formHFin" type="date" class="form-input nf-in" min="${esc(f.date||'')}" value="${esc(f.dateFin||nfDepart(f)||'')}"></div></div>`;
         quandAside=dsel?`${n} nuit${n>1?'s':''}`:'';
     } else {
         const H=NF_HEURES[T]||NF_HEURES.repas, autreH=f.heureAutre||(f.heure&&!H.includes(f.heure));
@@ -2047,8 +2046,11 @@ function renderInlineForm(m){
             +`<div class="nf-grid2" style="margin-top:14px;"><div>${lbl('Téléphone du destinataire','optionnel')}<input id="formTel" type="tel" class="form-input nf-in" value="${esc(f.tel||'')}" placeholder="06 12 34 56 78"></div>
                <div>${lbl('Société de coursier','optionnel')}<input id="formPresta" type="text" class="form-input nf-in" value="${esc(f.presta||'')}" placeholder="Ex : coursier habituel"></div></div>`;
     } else {
-        detTitre='L’hébergement'; detIc='bed';
-        det=`<div class="nf-grid2"><div>${lbl('Voyageur(s)')}<input id="formDesc" type="text" class="form-input nf-in" value="${esc(f.desc||'')}" placeholder="Ex : Jean Dupont"></div>
+        detTitre='Hôtel'; detIc='bed';
+        const autreH=f.presta&&!P_HOTEL.includes(f.presta)||f.hotelAutre;
+        det=`<div class="nf-row">${P_HOTEL.map(p=>chip('set','presta',p,esc(p),f.presta===p)).join('')}${chip('hotelautre','','','Autre…',autreH)}</div>`
+            +(autreH?`<input id="formHotel" type="text" class="form-input nf-in" style="margin-top:8px;" placeholder="Nom de l’hôtel" value="${esc(P_HOTEL.includes(f.presta)?'':(f.presta||''))}">`:'');
+        if(false) det=`<div class="nf-grid2"><div>${lbl('Voyageur(s)')}<input id="formDesc" type="text" class="form-input nf-in" value="${esc(f.desc||'')}" placeholder="Ex : Jean Dupont"></div>
                <div>${lbl('Ville *')}<input id="formLieu" type="text" class="form-input nf-in" value="${esc(f.lieu||'')}" placeholder="Ex : Lyon"></div></div>`+recents(nfRecents('hotel','lieu',3),'lieu')
             +`<div class="nf-step-row"><div><b>Nombre de personnes</b><span>&nbsp;</span></div>
                 <div class="nf-stepper"><button type="button" data-nf="nb" data-v="-1">${icon('minus',16)}</button><b>${esc(f.nb||'1')}</b><button type="button" data-nf="nb" data-v="1">${icon('plus',16)}</button></div></div>`
@@ -2065,7 +2067,7 @@ function renderInlineForm(m){
         <div class="nf-note">${isAdmin()?"Ajoutée directement au suivi, déjà validée. Aucun email envoyé.":state.form.invite&&!state.form.inviteMail?"Indiquez votre email pour recevoir la confirmation.":"Vous recevrez un email de confirmation et un code de suivi."}</div></div>
     </aside>`;
     return `<div class="nf-layout">
-        <div class="nf-col">${secQui}${secQuand}${secDet}${secPlus}</div>
+        <div class="nf-col">${secQui}${secQuand}${secDet}${T==='hotel'?'':secPlus}</div>
         ${m?'':recap}
     </div>
     ${m?`<div class="nf-bar"><div id="nfBar" class="nf-bar-sum">${nfBarHtml()}</div><button class="nf-btn f-send" style="width:100%;">${isAdmin()?`${icon('check',16)} Ajouter la commande`:`${icon('send',16)} Envoyer la demande`}</button></div>`:''}`;
@@ -5948,7 +5950,6 @@ function attachEvents(){
             if(!f.lieu){showToast(`${icon('alert',13)} Le lieu est obligatoire`);return;}
         }
         if(f.type==='hotel'){
-            if(!f.lieu){showToast(`${icon('alert',13)} La ville est obligatoire`);return;}
             if(!f.dateDepart){showToast(`${icon('alert',13)} La date de départ est obligatoire`);return;}
             if(parseDate(f.dateDepart)<=parseDate(f.date)){showToast(`${icon('alert',13)} La date de départ doit être après l'arrivée`);return;}
         }
@@ -5969,7 +5970,7 @@ function attachEvents(){
     const _submitForm=async()=>{
         const f=state.form;
         const pourQuiLabel=f.type==='repas'?(f.participants||''):(f.pourQui.includes('__autre__')?(f.pourQuiAutre||'Autre'):f.pourQui.join(', '));
-        const descFinal=f.type==='coursier'?`Coursier : ${f.desc||'?'}`:f.type==='taxi'?`Taxi ${(f.de||'?').split(',')[0]} → ${(f.vers||'?').split(',')[0]}`:f.type==='hotel'?(f.desc||`Hôtel ${f.lieu||'?'}`):(f.desc||'Commande repas');
+        const descFinal=f.type==='coursier'?`Coursier : ${f.desc||'?'}`:f.type==='taxi'?`Taxi ${(f.de||'?').split(',')[0]} → ${(f.vers||'?').split(',')[0]}`:f.type==='hotel'?(f.presta?`Hôtel ${f.presta}`:'Hôtel'):(f.desc||'Commande repas');
         const code=genCode(f.type), ADM=isAdmin();
         const newItem={id:Date.now(),code,pris:ADM?"OUI":"En attente",demandeur:f.dem,pourQui:pourQuiLabel,date:f.date,dateDepart:f.type==='hotel'?f.dateDepart:'',desc:descFinal,lieu:f.type==='taxi'||f.type==='coursier'?f.de:f.lieu,heure:f.heure,presta:f.presta,prix:0,paie:"",nb:parseInt(f.nb)||1,comment:f.com,type:f.type,depart:f.de,arrivee:f.vers,vol:f.vol||'',tel:f.tel||''};
         state.data=[newItem,...state.data];
@@ -6046,6 +6047,9 @@ function attachEvents(){
         if(g('formAllergies')) f.allergies=g('formAllergies').value;
         if(g('formCopyMail')) f.copyMail=g('formCopyMail').checked;
         if(assistanteName()) f.dem=assistanteName();
+        if(g('formHDebut')) f.date=g('formHDebut').value;
+        if(g('formHFin')) f.dateFin=g('formHFin').value;
+        if(g('formHotel')) f.presta=g('formHotel').value.trim();
         if(f.type==='hotel') f.dateDepart=nfDepart(f);
     };
     const nfRefresh=()=>{ const s=document.getElementById('nfSum'); if(s) s.innerHTML=nfSummaryHtml(); const b=document.getElementById('nfBar'); if(b) b.innerHTML=nfBarHtml(); };
@@ -6055,7 +6059,7 @@ function attachEvents(){
         const f=state.form, act=el.getAttribute('data-nf'), k=el.getAttribute('data-k'), v=el.getAttribute('data-v');
         if(act==='type'){ if(f.type!==v){ f.type=v; f.presta=''; f.desc=''; f.lieu=''; f.heureAutre=false; } window.scrollTo(0,0); }
         else if(act==='back'){ f.type=null; window.scrollTo(0,0); }
-        else if(act==='set'){ f[k]=(f[k]===v&&k!=='date'&&k!=='lieu'&&k!=='de'&&k!=='vers')?'':v; if(k==='date') f.dateAutre=false; if(k==='heure') f.heureAutre=false; if(k==='dem') f.invite=false; if(k==='dem') lsSet('nf_dem',v); }
+        else if(act==='set'){ if(k==='presta') f.hotelAutre=false; f[k]=(f[k]===v&&k!=='date'&&k!=='lieu'&&k!=='de'&&k!=='vers')?'':v; if(k==='date') f.dateAutre=false; if(k==='heure') f.heureAutre=false; if(k==='dem') f.invite=false; if(k==='dem') lsSet('nf_dem',v); }
         else if(act==='toggle'){ const a=f[k]||[]; f[k]=a.includes(v)?a.filter(x=>x!==v):[...a,v]; }
         else if(act==='addpart'){ const cur=String(f.participants||'').trim(); f.participants=cur?cur.replace(/,\s*$/,'')+', '+v:v; }
         else if(act==='nb'){ f.nb=String(Math.max(1,Math.min(500,(parseInt(f.nb)||1)+(+v)))); }
@@ -6064,6 +6068,7 @@ function attachEvents(){
         else if(act==='emailok'){ f.fromEmail=null; }
         else if(act==='invite'){ f.invite=!f.invite; f.dem=''; if(f.invite) setTimeout(()=>document.getElementById('formInvite')?.focus(),60); }
         else if(act==='dateautre'){ f.dateAutre=true; }
+        else if(act==='hotelautre'){ f.hotelAutre=true; if(P_HOTEL.includes(f.presta)) f.presta=''; setTimeout(()=>document.getElementById('formHotel')?.focus(),60); }
         else if(act==='heureautre'){ f.heureAutre=true; if(NF_HEURES[f.type]?.includes(f.heure)) f.heure=''; }
         if(f.type==='hotel') f.dateDepart=nfDepart(f);
         render();
@@ -6078,7 +6083,7 @@ function attachEvents(){
         if(!f.date) return err('Choisissez la date');
         if(f.type!=='hotel'&&!f.heure) return err('Choisissez l’heure');
         if(f.type==='repas'){ if(!f.presta) return err('Choisissez le restaurant'); if(!f.lieu) return err('Le lieu de livraison est obligatoire'); }
-        if(f.type==='hotel'){ if(!f.lieu) return err('La ville est obligatoire'); f.dateDepart=nfDepart(f); }
+        if(f.type==='hotel'){ if(!f.dateFin) return err('Indiquez la date de fin'); if(f.dateFin<=f.date) return err('La date de fin doit être après la date de début'); f.dateDepart=f.dateFin; }
         if(f.type==='taxi'){
             if(!f.de) return err('L’adresse de départ est obligatoire');
             if(!f.vers) return err('L’adresse d’arrivée est obligatoire');
