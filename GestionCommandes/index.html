@@ -2138,10 +2138,11 @@ function renderAdminView(m){
     else if(state.adminTab==='suivi')        main=renderSuivi(m);
     else if(state.adminTab==='calendrier')   main=renderCalendrier(m);
     else if(state.adminTab==='stock')        main=renderStock(m);
+    else if(state.adminTab==='parking')      main=renderParking(m);
 
     else main=meOk()?renderMe(m):renderDashboard(total,attente,m);
 
-    const TITRES={stock:'Stock',dashboard:'Tableau de bord',suivi:'Suivi des demandes',calendrier:'Agenda',activite:'Historique',stats:'Statistiques',analyse:'Statistiques',me:'Mon écran','me-bat':'Signalements du bâtiment','me-stat':'Actions et stats','me-memo':'Mémo perso',settings:'Réglages'};
+    const TITRES={parking:'Parking & véhicules',stock:'Stock',dashboard:'Tableau de bord',suivi:'Suivi des demandes',calendrier:'Agenda',activite:'Historique',stats:'Statistiques',analyse:'Statistiques',me:'Mon écran','me-bat':'Signalements du bâtiment','me-stat':'Actions et stats','me-memo':'Mémo perso',settings:'Réglages'};
     if(m) return `
     <div class="mobile-header">
         <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
@@ -2184,6 +2185,7 @@ function renderAdminView(m){
             <div class="side-grp"><h6 class="side-lbl">Commandes</h6>
                 ${item('suivi','clipboard','Suivi des demandes')}${item('calendrier','calendar','Agenda')}${item('activite','grid','Historique')}${item('stock','box','Stock')}</div>
             ${meOk()?`<div class="side-grp perso"><h6 class="side-lbl">Bâtiment ${icon('lock',10)}</h6>${item('me-bat','tool','Signalements')}${item('me-stat','check','Actions et stats')}</div>`:''}
+            <div class="side-grp"><h6 class="side-lbl">Site</h6>${item('parking','car','Parking & véhicules')}</div>
             <div class="side-grp"><h6 class="side-lbl">Analyses</h6>
                 ${item('stats','chart','Statistiques')}</div>
         </div>
@@ -2197,7 +2199,7 @@ function renderAdminView(m){
     <div class="shell-main">
         <header class="topbar">
             <button data-back-home class="btn-sm" title="Ouvrir la page de demande des assistantes">${icon('home',15)} Page de demande</button>
-            <div class="crumb">${state.adminTab==='me'||state.adminTab==='me-memo'?'Personnel 🔒':String(state.adminTab).startsWith('me')?'Bâtiment 🔒':['suivi','calendrier','activite','stock'].includes(state.adminTab)?'Commandes':['stats','analyse'].includes(state.adminTab)?'Analyses':'Administration'} / <b>${state.saisieDirecte?'Saisie directe':TITRES[state.adminTab]||''}</b></div>
+            <div class="crumb">${state.adminTab==='me'||state.adminTab==='me-memo'?'Personnel 🔒':String(state.adminTab).startsWith('me')?'Bâtiment 🔒':['suivi','calendrier','activite','stock'].includes(state.adminTab)?'Commandes':state.adminTab==='parking'?'Site':['stats','analyse'].includes(state.adminTab)?'Analyses':'Administration'} / <b>${state.saisieDirecte?'Saisie directe':TITRES[state.adminTab]||''}</b></div>
             <div style="margin-left:auto;display:flex;gap:8px;align-items:center;">
                 <button data-live-open class="btn-sm" title="Écran live (plein écran, pour un PC ou une TV)">${icon('dashboard',15)} Écran live</button>
                 <button data-activate-notifs class="ic-btn" title="${notifsReady()?'Notifications activées':'Activer les notifications et la pastille'}">${icon('bell',16)}${notifsReady()?'':'<i></i>'}</button>
@@ -2630,7 +2632,7 @@ function mobileNavHtml(){
     </div></nav>
     ${state.moreOpen?`<div data-nav='{"moreOpen":false}' style="position:fixed;inset:0;background:rgba(15,23,42,.35);z-index:9500;display:flex;align-items:flex-end;">
         <div style="background:#fff;width:100%;border-radius:20px 20px 0 0;padding:14px 14px calc(14px + env(safe-area-inset-bottom,0px));">
-            ${[...(meOk()?[["me-memo","edit","Mémo perso"],["me-bat","tool","Signalements du bâtiment"],["me-stat","check","Actions et stats"]]:[]),["stock","box","Stock"],["stats","chart","Statistiques"]].map(([t,ic,l])=>`<button data-admin-tab="${t}" style="display:flex;align-items:center;gap:12px;width:100%;background:none;border:none;padding:14px 8px;font-size:15px;font-weight:600;color:var(--ink);cursor:pointer;border-bottom:1px solid #f0f1f4;">${icon(ic,18)} ${l}</button>`).join('')}
+            ${[...(meOk()?[["me-memo","edit","Mémo perso"],["me-bat","tool","Signalements du bâtiment"],["me-stat","check","Actions et stats"]]:[]),["stock","box","Stock"],["parking","car","Parking & véhicules"],["stats","chart","Statistiques"]].map(([t,ic,l])=>`<button data-admin-tab="${t}" style="display:flex;align-items:center;gap:12px;width:100%;background:none;border:none;padding:14px 8px;font-size:15px;font-weight:600;color:var(--ink);cursor:pointer;border-bottom:1px solid #f0f1f4;">${icon(ic,18)} ${l}</button>`).join('')}
             <button data-back-home style="display:flex;align-items:center;gap:12px;width:100%;background:none;border:none;padding:14px 8px;font-size:15px;font-weight:600;color:var(--ink);cursor:pointer;border-bottom:1px solid #f0f1f4;">${icon('home',18)} Page de demande</button>
             <button data-admin-logout style="display:flex;align-items:center;gap:12px;width:100%;background:none;border:none;padding:14px 8px;font-size:15px;font-weight:600;color:#b91c1c;cursor:pointer;">${icon('logout',18)} Se déconnecter</button>
         </div></div>`:''}`;
@@ -3126,6 +3128,174 @@ async function loadStock(){ try{ state.stock=await paramGet('stock'); }catch(e){
 let _stockT=null;
 function stockSave(){ clearTimeout(_stockT); const snap=JSON.parse(JSON.stringify(state.stock)); _stockT=setTimeout(()=>paramSet('stock',snap).catch(()=>showToast(`${icon('alert',13)} Stock non enregistré (réseau)`)),400); }
 function stockAlerte(){ return ((state.stock&&state.stock.items)||[]).filter(x=>x.st==='bas'||x.st==='vide'); }
+/* ══ PARKING & VÉHICULES (Julia et Arnaud) ══ */
+const PK_TYPES={std:['Normale','#475569','#f1f5f9'],borne:['Borne électrique','#15803d','#dcfce7'],pmr:['PMR','#1d4ed8','#dbeafe']};
+async function loadParking(){ try{ state.pk=await paramGet('parking'); }catch(e){} if(!state.pk||typeof state.pk!=='object') state.pk={}; state.pk.places=state.pk.places||[]; state.pk.vehicules=state.pk.vehicules||[]; state.pkLoaded=true; }
+let _pkT=null;
+function pkSave(){ clearTimeout(_pkT); const snap=JSON.parse(JSON.stringify(state.pk)); _pkT=setTimeout(()=>paramSet('parking',snap).catch(()=>showToast(`${icon('alert',13)} Parking non enregistré (réseau)`)),400); }
+const pkId=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+const pkNat=(a,b)=>String(a).localeCompare(String(b),'fr',{numeric:true});
+const pkJum=p=>p&&p.lie?state.pk.places.find(x=>x.id===p.lie):null;
+const pkLib=p=>{ const j=pkJum(p); return `${p.niv?p.niv+' · ':''}n° ${p.num}${j?' + '+j.num:''}`; };
+const VH_ECH=[['revision','Révision'],['ct','Contrôle technique'],['assurance','Assurance'],['finLoc','Fin de location']];
+function vhJours(d){ if(!d) return null; return Math.round((new Date(d+'T12:00')-new Date())/864e5); }
+function pkAlertes(){
+    const out=[]; if(!state.pk) return out;
+    (state.pk.vehicules||[]).forEach(v=>VH_ECH.forEach(([k,l])=>{ const j=vhJours(v[k]); if(j!==null&&j<=30) out.push({v,k,l,j}); }));
+    return out;
+}
+function pkBornesPanne(){ return ((state.pk&&state.pk.places)||[]).filter(p=>p.type==='borne'&&p.panne); }
+function renderParking(m){
+    if(!state.pkLoaded){ loadParking().then(render); return `<div class="empty-note" style="padding:60px;">Chargement…</div>`; }
+    const tab=state.pkTab||'places';
+    const head=`<div class="page-head"><div><h1>Parking & véhicules</h1><p>Visible uniquement par Julia et toi</p></div>
+        <div class="page-actions"><div class="me-vue">${[['places','Places'],['vehicules','Véhicules']].map(([k,l])=>`<button class="${tab===k?'on':''}" data-nav='{"pkTab":"${k}","pkEdit":null}'>${l}</button>`).join('')}</div>
+        ${tab==='places'?`<button class="btn-sm" data-pk="outils">${icon('plus',14)} Créer / importer des places</button><button class="btn-sm pri" data-pk="new">${icon('plus',14)} Nouvelle place</button>`:`<button class="btn-sm pri" data-pk="vnew">${icon('plus',14)} Nouveau véhicule</button>`}</div></div>`;
+    return `<div>${head}${tab==='places'?pkPlacesHtml(m):pkVehiculesHtml(m)}</div>`;
+}
+function pkPlacesHtml(m){
+    const P=state.pk.places, q=(state.pkQ||'').trim().toLowerCase(), niv=state.pkNiv||'', f=state.pkF||'all';
+    const nivs=[...new Set(P.map(p=>p.niv||''))].filter(Boolean).sort(pkNat);
+    const ordre=(a,b)=>pkNat(a.niv||'',b.niv||'')||pkNat(a.num,b.num);
+    let L=P.filter(p=>(!niv||p.niv===niv)).filter(p=>{ const j=pkJum(p); return !j||ordre(p,j)<0; });
+    if(f==='libres') L=L.filter(p=>!p.tit&&!p.ko); else if(f==='ko') L=L.filter(p=>p.ko); else if(f==='bornes') L=L.filter(p=>p.type==='borne'); else if(f==='pmr') L=L.filter(p=>p.type==='pmr');
+    if(q) L=L.filter(p=>[p.num,p.niv,p.tit,p.plaque,p.dir,p.note].join(' ').toLowerCase().replace(/[\s-]/g,'').includes(q.replace(/[\s-]/g,'')));
+    L=[...L].sort(ordre);
+    const att=P.filter(p=>p.tit).length, ko=P.filter(p=>p.ko).length, libres=P.filter(p=>!p.tit&&!p.ko).length, bornes=P.filter(p=>p.type==='borne'), panne=pkBornesPanne();
+    const chips=[['all','Toutes',P.length],['libres','Libres',libres],['bornes','Bornes',bornes.length],['pmr','PMR',P.filter(p=>p.type==='pmr').length],...(ko?[['ko','Hors service',ko]]:[])];
+    const type=p=>{ const t=PK_TYPES[p.type]||PK_TYPES.std, j=pkJum(p); return (p.type&&p.type!=='std'?`<span class="me-pill" style="color:${t[1]};background:${t[2]};">${t[0]}${p.panne?' · en panne':''}</span> `:'')+(j?`<span class="me-pill" style="color:#7c2d12;background:#ffedd5;">2 places</span> `:'')+(p.ko?`<span class="me-pill" style="color:#b91c1c;background:#fee2e2;">Hors service</span>`:''); };
+    const edit=state.pkEdit?pkEditHtml():'';
+    const outils=state.pkOutils?pkOutilsHtml():'';
+    return `${outils}${edit}
+    <div class="kpis">
+        <div class="stat-card kpi"><span class="kpi-l">Places</span><span class="kpi-v">${P.length}</span><span class="kpi-s">${nivs.length} niveau${nivs.length>1?'x':''}</span></div>
+        <div class="stat-card kpi"><span class="kpi-l">Attribuées</span><span class="kpi-v">${att}</span><span class="kpi-s">${P.length?Math.round(att/P.length*100):0} %</span></div>
+        <div class="stat-card kpi"><span class="kpi-l">Libres</span><span class="kpi-v" style="color:#15803d;">${libres}</span><span class="kpi-s">à attribuer${ko?' · '+ko+' hors service':''}</span></div>
+        <div class="stat-card kpi"><span class="kpi-l">Bornes électriques</span><span class="kpi-v">${bornes.length}</span><span class="kpi-s" style="${panne.length?'color:#b91c1c;font-weight:600;':''}">${panne.length?panne.length+' en panne':'toutes en service'}</span></div>
+    </div>
+    <div class="me-bar">
+        <label class="me-search">${icon('search',14)}<input id="pkQ" type="search" value="${esc(state.pkQ||'')}" placeholder="Nom, plaque ou numéro de place…" autocomplete="off"></label>
+        <select class="me-sel" data-pk-niv><option value="">Tous les niveaux</option>${nivs.map(n=>`<option ${n===niv?'selected':''}>${esc(n)}</option>`).join('')}</select>
+    </div>
+    <div class="nf-row" style="margin-bottom:14px;">${chips.map(([k,l,n])=>`<button class="nf-chip ${f===k?'on':''}" style="height:32px;font-size:12.5px;" data-nav='{"pkF":"${k}"}'>${l} · ${n}</button>`).join('')}</div>
+    ${!P.length?`<div class="card empty-note" style="padding:40px;">Aucune place pour l’instant. « Créer / importer des places » pour créer un niveau entier d’un coup ou coller votre liste Excel.</div>`
+    :L.length?`<div class="card"><div class="tbl-wrap"><table class="pro-table"><thead><tr><th>Place</th><th>Titulaire</th><th>Plaque</th><th>Direction / service</th><th></th></tr></thead><tbody>
+        ${L.slice(0,state.pkAll?99999:200).map(p=>`<tr data-pk="edit" data-id="${p.id}" style="cursor:pointer;"><td><b>${esc(p.num)}${pkJum(p)?' + '+esc(pkJum(p).num):''}</b>${p.niv?`<div class="m" style="font-size:12px;color:var(--ink-soft);">Niveau ${esc(p.niv)}</div>`:''}</td><td>${p.tit?esc(p.tit):p.ko?'<span style="color:#b91c1c;">—</span>':'<span style="color:#15803d;font-weight:600;">Libre</span>'}</td><td style="font-family:ui-monospace,monospace;">${esc(p.plaque||'')}</td><td style="color:var(--ink-mid)">${esc(p.dir||'')}</td><td style="text-align:right;">${type(p)}</td></tr>`).join('')}
+    </tbody></table></div>${L.length>200&&!state.pkAll?`<button class="card-link" style="padding:10px 16px;" data-nav='{"pkAll":true}'>Afficher les ${L.length} places</button>`:''}</div>`
+    :`<div class="card empty-note" style="padding:30px;">Aucune place ne correspond.</div>`}`;
+}
+function pkEditHtml(){
+    const isNew=state.pkEdit==='new', p=isNew?{niv:state.pkNiv||'',num:'',type:'std'}:state.pk.places.find(x=>x.id===state.pkEdit); if(!p) return '';
+    const dirs=[...new Set([...(settings.directeurs||[]),...state.pk.places.map(x=>x.dir).filter(Boolean)])];
+    return `<div class="card" style="border-color:var(--accent);"><div class="card-h"><h3>${isNew?'Nouvelle place':'Place '+esc(pkLib(p))}</h3><button class="card-link" data-nav='{"pkEdit":null}'>Fermer</button></div>
+    <div style="padding:14px 16px;display:flex;flex-direction:column;gap:12px;">
+        <div class="form-row-2"><div><div class="nf-lbl">Niveau</div><input id="pkNiv" class="form-input" value="${esc(p.niv||'')}" placeholder="-1" style="text-transform:none;"></div><div><div class="nf-lbl">Numéro *</div><input id="pkNum" class="form-input" value="${esc(p.num||'')}" placeholder="045" style="text-transform:none;"></div></div>
+        <div><div class="nf-lbl">Type</div><div class="nf-row">${Object.entries(PK_TYPES).map(([k,[l]])=>`<button class="nf-chip ${(p.type||'std')===k?'on':''}" style="height:32px;font-size:12.5px;" data-pk="type" data-v="${k}">${l}</button>`).join('')}${(p.type==='borne')?`<label style="display:flex;align-items:center;gap:6px;font-size:13px;margin-left:8px;"><input type="checkbox" id="pkPanne" ${p.panne?'checked':''}> Borne en panne</label>`:''}</div></div>
+        <div class="form-row-2"><div><div class="nf-lbl">Jumelée avec la place n° <span style="font-weight:400;color:var(--ink-soft);">(gros véhicule sur 2 places)</span></div><input id="pkLie" class="form-input" value="${esc((pkJum(p)||{}).num||'')}" placeholder="Ex : 14" style="text-transform:none;"></div><div><div class="nf-lbl">État</div><label style="display:flex;align-items:center;gap:8px;height:42px;font-size:13.5px;"><input type="checkbox" id="pkKo" ${p.ko?'checked':''}> Place hors service</label></div></div>
+        <div class="form-row-2"><div><div class="nf-lbl">Titulaire</div><input id="pkTit" class="form-input" value="${esc(p.tit||'')}" placeholder="Laisser vide si libre" style="text-transform:none;"></div><div><div class="nf-lbl">Plaque</div><input id="pkPlaque" class="form-input" value="${esc(p.plaque||'')}" placeholder="AB-123-CD"></div></div>
+        <div class="form-row-2"><div><div class="nf-lbl">Direction / service</div><input id="pkDir" class="form-input" list="pkDirs" value="${esc(p.dir||'')}" style="text-transform:none;"><datalist id="pkDirs">${dirs.map(d=>`<option value="${esc(d)}">`).join('')}</datalist></div><div><div class="nf-lbl">Remarque</div><input id="pkNote" class="form-input" value="${esc(p.note||'')}" style="text-transform:none;"></div></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;"><button class="btn-sm pri" data-pk="save">${icon('save',14)} Enregistrer</button>${!isNew&&p.tit?`<button class="btn-sm" data-pk="liberer">Libérer la place</button>`:''}${!isNew?`<button class="btn-sm" style="color:#b91c1c;margin-left:auto;" data-pk="del">${icon('trash',14)} Supprimer</button>`:''}</div>
+        ${!isNew&&(p.hist||[]).length?`<div><div class="nf-lbl">Historique</div><div style="font-size:12.5px;color:var(--ink-mid);display:flex;flex-direction:column;gap:3px;">${[...p.hist].reverse().slice(0,12).map(h=>`<div>${new Date(h.t).toLocaleDateString('fr-FR')} · ${esc(h.txt)}</div>`).join('')}</div></div>`:''}
+    </div></div>`;
+}
+function pkOutilsHtml(){
+    return `<div class="card" style="border-color:var(--accent);"><div class="card-h"><h3>Créer / importer des places</h3><button class="card-link" data-nav='{"pkOutils":false}'>Fermer</button></div>
+    <div style="padding:14px 16px;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr));gap:20px;">
+        <div><b style="font-size:14px;">Créer un niveau entier</b><div style="font-size:12.5px;color:var(--ink-soft);margin:4px 0 10px;">Ex. : niveau -3, places 151 à 206.</div>
+            <div class="form-row-2"><div><div class="nf-lbl">Niveau</div><input id="pkGNiv" class="form-input" placeholder="-1"></div><div><div class="nf-lbl">Chiffres</div><select id="pkGPad" class="form-select"><option value="0" selected>1, 2, 3…</option><option value="2">01, 02…</option><option value="3">001, 002…</option></select></div></div>
+            <div class="form-row-2" style="margin-top:8px;"><div><div class="nf-lbl">De</div><input id="pkGDe" type="number" class="form-input" value="1"></div><div><div class="nf-lbl">À</div><input id="pkGA" type="number" class="form-input" placeholder="120"></div></div>
+            <button class="btn-sm pri" style="margin-top:10px;" data-pk="gen">${icon('plus',13)} Créer les places</button></div>
+        <div><b style="font-size:14px;">Coller une liste (Excel)</b><div style="font-size:12.5px;color:var(--ink-soft);margin:4px 0 10px;">Dans votre tableau Excel, sélectionnez les colonnes <b>Niveau → plaque</b> (avec ou sans la ligne de titres), copiez, collez ici. Noms, plaques, bornes et places « KO » sont reconnus ; les « ??? » sont ignorés. Les places existantes sont mises à jour.</div>
+            <textarea id="pkImport" class="form-input" style="min-height:120px;font-family:ui-monospace,monospace;font-size:12px;text-transform:none;" placeholder="-1	045	Jean DUPONT	AB-123-CD	Direction financière"></textarea>
+            <button class="btn-sm pri" style="margin-top:10px;" data-pk="import">${icon('download',13)} Importer</button></div>
+    </div></div>`;
+}
+function pkVehiculesHtml(m){
+    const V=[...state.pk.vehicules].sort((a,b)=>pkNat(a.plaque,b.plaque));
+    const ech=v=>VH_ECH.map(([k,l])=>{ const j=vhJours(v[k]); if(j===null) return ''; const c=j<0?'#b91c1c':j<=30?'#b45309':'var(--ink-mid)'; return `<div style="font-size:12px;color:${c};${j<=30?'font-weight:600;':''}">${l} : ${new Date(v[k]+'T12:00').toLocaleDateString('fr-FR')}${j<0?' (dépassée)':j<=30?` (dans ${j} j)`:''}</div>`; }).join('');
+    const edit=state.vhEdit?vhEditHtml():'';
+    const A=pkAlertes();
+    return `${edit}
+    <div class="kpis">
+        <div class="stat-card kpi"><span class="kpi-l">Véhicules</span><span class="kpi-v">${V.length}</span><span class="kpi-s">${V.filter(v=>v.cond).length} attribués</span></div>
+        <div class="stat-card kpi"><span class="kpi-l">Échéances à 30 jours</span><span class="kpi-v" style="${A.length?'color:#b45309;':''}">${A.filter(a=>a.j>=0).length}</span><span class="kpi-s">révision, CT, assurance, location</span></div>
+        <div class="stat-card kpi"><span class="kpi-l">Dépassées</span><span class="kpi-v" style="${A.some(a=>a.j<0)?'color:#b91c1c;':''}">${A.filter(a=>a.j<0).length}</span><span class="kpi-s">à régulariser</span></div>
+    </div>
+    ${V.length?`<div class="card"><div class="tbl-wrap"><table class="pro-table"><thead><tr><th>Véhicule</th><th>Conducteur</th><th>Place</th><th>Kilométrage</th><th>Échéances</th></tr></thead><tbody>
+    ${V.map(v=>`<tr data-pk="vedit" data-id="${v.id}" style="cursor:pointer;"><td><b style="font-family:ui-monospace,monospace;">${esc(v.plaque)}</b><div style="font-size:12px;color:var(--ink-soft);">${esc(v.modele||'')}</div></td><td>${esc(v.cond||'—')}</td><td>${esc(v.place||'')}</td><td>${v.km?Number(v.km).toLocaleString('fr-FR')+' km':''}</td><td>${ech(v)||'<span style="color:#c4c9d2">—</span>'}</td></tr>`).join('')}
+    </tbody></table></div></div>`:`<div class="card empty-note" style="padding:40px;">Aucun véhicule. « Nouveau véhicule » pour commencer.</div>`}`;
+}
+function vhEditHtml(){
+    const isNew=state.vhEdit==='new', v=isNew?{}:state.pk.vehicules.find(x=>x.id===state.vhEdit); if(!v) return '';
+    const places=state.pk.places.map(pkLib);
+    return `<div class="card" style="border-color:var(--accent);"><div class="card-h"><h3>${isNew?'Nouveau véhicule':esc(v.plaque)}</h3><button class="card-link" data-nav='{"vhEdit":null}'>Fermer</button></div>
+    <div style="padding:14px 16px;display:flex;flex-direction:column;gap:12px;">
+        <div class="form-row-2"><div><div class="nf-lbl">Plaque *</div><input id="vhPlaque" class="form-input" value="${esc(v.plaque||'')}" placeholder="AB-123-CD"></div><div><div class="nf-lbl">Modèle</div><input id="vhModele" class="form-input" value="${esc(v.modele||'')}" style="text-transform:none;"></div></div>
+        <div class="form-row-2"><div><div class="nf-lbl">Conducteur attribué</div><input id="vhCond" class="form-input" value="${esc(v.cond||'')}" style="text-transform:none;"></div><div><div class="nf-lbl">Place de parking</div><input id="vhPlace" class="form-input" list="vhPlaces" value="${esc(v.place||'')}" style="text-transform:none;"><datalist id="vhPlaces">${places.map(p=>`<option value="${esc(p)}">`).join('')}</datalist></div></div>
+        <div class="form-row-2"><div><div class="nf-lbl">Kilométrage</div><input id="vhKm" type="number" class="form-input" value="${esc(v.km||'')}"></div><div><div class="nf-lbl">Remarque</div><input id="vhNote" class="form-input" value="${esc(v.note||'')}" style="text-transform:none;"></div></div>
+        <div class="form-row-2">${VH_ECH.map(([k,l])=>`<div><div class="nf-lbl">${l}</div><input id="vh_${k}" type="date" class="form-input" value="${esc(v[k]||'')}"></div>`).join('')}</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;"><button class="btn-sm pri" data-pk="vsave">${icon('save',14)} Enregistrer</button>${!isNew?`<button class="btn-sm" style="color:#b91c1c;margin-left:auto;" data-pk="vdel">${icon('trash',14)} Supprimer</button>`:''}</div>
+        ${!isNew&&(v.hist||[]).length?`<div><div class="nf-lbl">Historique</div><div style="font-size:12.5px;color:var(--ink-mid);display:flex;flex-direction:column;gap:3px;">${[...v.hist].reverse().slice(0,15).map(h=>`<div>${new Date(h.t).toLocaleDateString('fr-FR')} · ${esc(h.txt)}</div>`).join('')}</div></div>`:''}
+    </div></div>`;
+}
+function pkH(o,txt){ o.hist=[...(o.hist||[]),{t:new Date().toISOString(),txt}]; }
+document.addEventListener('input',e=>{ if(e.target&&e.target.id==='pkQ'){ state.pkQ=e.target.value; clearTimeout(window._pkQT); window._pkQT=setTimeout(()=>{ const pos=e.target.selectionStart; render(); const el=document.getElementById('pkQ'); if(el){ el.focus(); try{ el.setSelectionRange(pos,pos); }catch(x){} } },250); } });
+document.addEventListener('change',e=>{ if(e.target&&e.target.matches&&e.target.matches('[data-pk-niv]')){ state.pkNiv=e.target.value; render(); } });
+document.addEventListener('click',e=>{
+    const b=e.target.closest('[data-pk]'); if(!b||!state.pk||!isAdmin()) return;
+    const a=b.getAttribute('data-pk'), g=id=>document.getElementById(id), val=id=>(g(id)?.value||'').trim();
+    if(a==='new'){ state.pkEdit='new'; state.pkType='std'; state.pkOutils=false; window.scrollTo(0,0); render(); return; }
+    if(a==='outils'){ state.pkOutils=!state.pkOutils; state.pkEdit=null; render(); return; }
+    if(a==='edit'){ state.pkEdit=b.getAttribute('data-id'); state.pkOutils=false; window.scrollTo(0,0); render(); return; }
+    if(a==='type'){ const isNew=state.pkEdit==='new'; const p=isNew?null:state.pk.places.find(x=>x.id===state.pkEdit); const keep={niv:val('pkNiv'),num:val('pkNum'),tit:val('pkTit'),plaque:val('pkPlaque'),dir:val('pkDir'),note:val('pkNote')};
+        if(p){ Object.assign(p,keep,{type:b.getAttribute('data-v')}); if(p.type!=='borne') delete p.panne; pkSave(); } else { state.pkDraft={...keep,type:b.getAttribute('data-v')}; }
+        render(); if(isNew&&state.pkDraft){ Object.entries({pkNiv:'niv',pkNum:'num',pkTit:'tit',pkPlaque:'plaque',pkDir:'dir',pkNote:'note'}).forEach(([id,k])=>{ if(g(id)) g(id).value=state.pkDraft[k]||''; }); } return; }
+    if(a==='save'){ const num=val('pkNum'); if(!num){ showToast(`${icon('alert',13)} Indiquez le numéro de la place`); return; }
+        const isNew=state.pkEdit==='new'; const p=isNew?{id:pkId(),type:(state.pkDraft&&state.pkDraft.type)||'std'}:state.pk.places.find(x=>x.id===state.pkEdit); if(!p) return;
+        const niv=val('pkNiv'); if(state.pk.places.some(x=>x!==p&&String(x.num)===num&&String(x.niv||'')===niv)){ showToast(`${icon('alert',13)} La place ${niv?niv+' · ':''}n° ${num} existe déjà`); return; }
+        const tit=val('pkTit'); if((p.tit||'')!==tit) pkH(p,tit?`Attribuée à ${tit}`+(p.tit?` (avant : ${p.tit})`:''):`Libérée (avant : ${p.tit})`);
+        Object.assign(p,{niv,num,tit,plaque:val('pkPlaque').toUpperCase(),dir:val('pkDir'),note:val('pkNote')});
+        const ko=!!g('pkKo')?.checked; if(!!p.ko!==ko) pkH(p,ko?'Mise hors service':'Remise en service'); p.ko=ko;
+        const lieNum=val('pkLie'), ancien=pkJum(p);
+        if(lieNum){ const j=state.pk.places.find(x=>x!==p&&String(x.niv||'')===niv&&String(x.num).toLowerCase()===lieNum.toLowerCase());
+            if(!j){ showToast(`${icon('alert',13)} La place ${niv?niv+' · ':''}n° ${lieNum} n’existe pas`); return; }
+            if(j.lie&&j.lie!==p.id){ const k=state.pk.places.find(x=>x.id===j.lie); if(k) delete k.lie; }
+            if(ancien&&ancien!==j) delete ancien.lie;
+            if(p.lie!==j.id){ pkH(p,`Jumelée avec la place ${j.num}`); pkH(j,`Jumelée avec la place ${num}`); }
+            p.lie=j.id; j.lie=p.id; if((j.tit||'')!==tit) pkH(j,tit?`Attribuée à ${tit} (2 places)`:'Libérée'); Object.assign(j,{tit,plaque:p.plaque,dir:p.dir});
+        } else if(ancien){ delete ancien.lie; delete p.lie; pkH(p,`Plus jumelée avec la place ${ancien.num}`); }
+        if(p.type==='borne'){ const pn=!!g('pkPanne')?.checked; if(!!p.panne!==pn) pkH(p,pn?'Borne signalée en panne':'Borne remise en service'); p.panne=pn; }
+        if(isNew){ pkH(p,'Place créée'); state.pk.places.push(p); }
+        state.pkEdit=null; state.pkDraft=null; pkSave(); render(); showToast('✓ Place enregistrée'); return; }
+    if(a==='liberer'){ const p=state.pk.places.find(x=>x.id===state.pkEdit); if(!p) return; [p,pkJum(p)].filter(Boolean).forEach(x=>{ pkH(x,`Libérée (avant : ${x.tit})`); x.tit=''; x.plaque=''; x.dir=''; }); pkSave(); render(); showToast('✓ Place libérée'); return; }
+    if(a==='del'){ const p=state.pk.places.find(x=>x.id===state.pkEdit); if(!p||!confirm(`Supprimer la place ${pkLib(p)} ?`)) return; const j=pkJum(p); if(j) delete j.lie; state.pk.places=state.pk.places.filter(x=>x!==p); state.pkEdit=null; pkSave(); render(); return; }
+    if(a==='gen'){ const niv=val('pkGNiv'), de=parseInt(val('pkGDe')), aa=parseInt(val('pkGA')), pad=+val('pkGPad')||0;
+        if(!(de>=0)||!(aa>=de)||aa-de>999){ showToast(`${icon('alert',13)} Indiquez une plage valide (ex. 1 à 120)`); return; }
+        let n=0; for(let i=de;i<=aa;i++){ const num=String(i).padStart(pad,'0'); if(state.pk.places.some(x=>String(x.niv||'')===niv&&String(x.num)===num)) continue; const p={id:pkId(),niv,num,type:'std',tit:''}; pkH(p,'Place créée'); state.pk.places.push(p); n++; }
+        pkSave(); state.pkOutils=false; state.pkNiv=niv; render(); showToast(`✓ ${n} place${n>1?'s':''} créée${n>1?'s':''}${niv?' au niveau '+niv:''}`); return; }
+    if(a==='import'){ const lignes=val('pkImport').split(/\r?\n/).map(l=>l.split(/\t|;/).map(x=>x.trim()));
+        const PL=/^[A-Z]{2}[- ]?\d{3}[- ]?[A-Z]{2}$/i; let cr=0, maj=0, n=0;
+        lignes.forEach(c=>{ const iN=c.findIndex(x=>/^-?\d{1,2}$/.test(x)); if(iN<0||!c[iN+1]) return;
+            const niv=c[iN]; let num=c[iN+1].replace(/\s+/g,' ').trim(); if(!/^\d/.test(num)) return;
+            let ko=false; if(/\bKO\b/i.test(num)){ ko=true; num=num.replace(/\s*KO\b/i,'').trim(); } num=num.replace(/\s+([a-z])$/i,(m,l)=>' '+l.toUpperCase());
+            let tit='', plaque='', borne=false; c.slice(iN+2).forEach(x=>{ if(!x||/^\?+$/.test(x)||/^place r[ée]serv[ée]e$/i.test(x)) return; if(/borne/i.test(x)){ borne=true; return; } if(/\bKO\b/i.test(x)&&x.length<4){ ko=true; return; } if(PL.test(x)){ plaque=x.toUpperCase().replace(/\s/g,'-'); return; } if(!tit&&/[a-zà-ÿ]/i.test(x)) tit=x; });
+            n++; let p=state.pk.places.find(x=>String(x.niv||'')===niv&&String(x.num).toLowerCase()===num.toLowerCase());
+            if(!p){ p={id:pkId(),niv,num,type:'std',tit:''}; pkH(p,'Place créée (import)'); state.pk.places.push(p); cr++; } else maj++;
+            if(tit&&p.tit!==tit) pkH(p,`Attribuée à ${tit} (import)`);
+            if(tit) p.tit=tit; if(plaque) p.plaque=plaque; if(borne) p.type='borne'; if(ko) p.ko=true; });
+        if(!n){ showToast(`${icon('alert',13)} Rien de reconnu : collez les colonnes Niveau et N° de place`); return; }
+        pkSave(); state.pkOutils=false; render(); showToast(`✓ Import : ${cr} place${cr>1?'s':''} créée${cr>1?'s':''}, ${maj} mise${maj>1?'s':''} à jour · pensez à jumeler les places des gros véhicules`); return; }
+    if(a==='vnew'){ state.vhEdit='new'; window.scrollTo(0,0); render(); return; }
+    if(a==='vedit'){ state.vhEdit=b.getAttribute('data-id'); window.scrollTo(0,0); render(); return; }
+    if(a==='vsave'){ const plaque=val('vhPlaque').toUpperCase(); if(!plaque){ showToast(`${icon('alert',13)} Indiquez la plaque`); return; }
+        const isNew=state.vhEdit==='new'; const v=isNew?{id:pkId()}:state.pk.vehicules.find(x=>x.id===state.vhEdit); if(!v) return;
+        const cond=val('vhCond'); if((v.cond||'')!==cond) pkH(v,cond?`Attribué à ${cond}`+(v.cond?` (avant : ${v.cond})`:''):`Plus de conducteur (avant : ${v.cond})`);
+        const km=val('vhKm'); if(km&&String(v.km||'')!==km) pkH(v,`Kilométrage : ${Number(km).toLocaleString('fr-FR')} km`);
+        Object.assign(v,{plaque,modele:val('vhModele'),cond,place:val('vhPlace'),km,note:val('vhNote')}); VH_ECH.forEach(([k,l])=>{ const d=val('vh_'+k); if((v[k]||'')!==d&&d) pkH(v,`${l} : ${new Date(d+'T12:00').toLocaleDateString('fr-FR')}`); v[k]=d; });
+        if(isNew){ pkH(v,'Véhicule ajouté'); state.pk.vehicules.push(v); }
+        state.vhEdit=null; pkSave(); render(); showToast('✓ Véhicule enregistré'); return; }
+    if(a==='vdel'){ const v=state.pk.vehicules.find(x=>x.id===state.vhEdit); if(!v||!confirm(`Supprimer le véhicule ${v.plaque} ?`)) return; state.pk.vehicules=state.pk.vehicules.filter(x=>x!==v); state.vhEdit=null; pkSave(); render(); return; }
+});
 function renderStock(m){
     if(!state.stockLoaded){ loadStock().then(render); return `<div class="empty-note" style="padding:60px;">Chargement du stock…</div>`; }
     const I=state.stock.items, A=stockAlerte(), C=I.filter(x=>x.st==='cmd');
@@ -3155,6 +3325,8 @@ function prixASaisir(){ const t0=new Date(); t0.setHours(0,0,0,0); return (state
 function anomalies(){
     const out=[], now=new Date(), t0=new Date(); t0.setHours(0,0,0,0);
     const actives=state.data.filter(c=>c.pris!=='Annulé');
+    const _vh=pkAlertes(); if(_vh.length) out.push({niv:_vh.some(x=>x.j<0)?3:2,ic:'car',titre:`${_vh.length} échéance${_vh.length>1?'s':''} véhicule${_vh.length>1?'s':''}`,detail:_vh.slice(0,3).map(x=>`${x.v.plaque} : ${x.l.toLowerCase()} ${x.j<0?'dépassée':'dans '+x.j+' j'}`).join(' · '),nav:{adminTab:'parking',pkTab:'vehicules'}});
+    const _bp=pkBornesPanne(); if(_bp.length) out.push({niv:1,ic:'car',titre:`${_bp.length} borne${_bp.length>1?'s':''} électrique${_bp.length>1?'s':''} en panne`,detail:_bp.map(pkLib).join(', '),nav:{adminTab:'parking',pkTab:'places',pkF:'bornes'}});
     const _st=stockAlerte(); if(_st.length) out.push({niv:_st.some(x=>x.st==='vide')?2:1,ic:'box',titre:`${_st.length} article${_st.length>1?'s':''} à commander`,detail:_st.map(x=>x.nom+(x.st==='vide'?' (vide)':'')).join(', '),nav:{adminTab:'stock'}});
     const _sp=prixASaisir(); if(_sp.length) out.push({niv:1,ic:'wallet',titre:`${_sp.length} prix à saisir`,detail:'Commandes faites sans montant : à compléter à réception de la facture',c:_sp[0],nav:{adminTab:'activite',activiteTab:'historique',histPrix:true,histPage:0}});
     const futur=actives.filter(c=>{ const d=parseDate(c.date); return d&&d>=t0; });
@@ -6124,7 +6296,7 @@ if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.
     trackFirstSeen(data);
     // Session admin encore valide → on revient directement dans l'admin
     if (sessionValid()) {
-        await Promise.all([loadTrash(), loadJournal(), loadStock(), /avonde/i.test(`${userEmail()} ${userName()}`)?loadMe():null]);
+        await Promise.all([loadTrash(), loadJournal(), loadStock(), loadParking(), /avonde/i.test(`${userEmail()} ${userName()}`)?loadMe():null]);
         if (lsGet('last_vue') === 'admin' || state.live) { state.vue = 'admin'; state.authed = true; state.adminTab = 'dashboard'; }
     }
     state.loading = false;
@@ -6144,7 +6316,7 @@ if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.
             if(isTyping || isInForm){ updateBadgeFrom(fresh); return; }
             state.data=fresh;
             trackFirstSeen(fresh);
-            if(state.vue==='admin' && state.authed){ await Promise.all([loadTrash(), loadJournal(), loadStock(), loadSuivi()]); }
+            if(state.vue==='admin' && state.authed){ await Promise.all([loadTrash(), loadJournal(), loadStock(), loadParking(), loadSuivi()]); }
             else if(AUTH){ await loadSuivi(); }
             render();
             if(sessionValid() && nouvelles.length){
