@@ -2746,7 +2746,7 @@ function renderDetail(d,m){
     <button data-back-detail class="back-btn-dark" style="margin-bottom:18px;">← Retour à la liste</button>
     <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px;">${avatar(d.demandeur,48)}<div><div style="font-family:var(--ft);font-weight:650;letter-spacing:-.01em;font-size:19px;">${typeIcon} ${d.desc}</div><div style="color:#8b93a1;font-size:12px;">${demHtml(d,{role:true})}${d.pourQui?' · Pour '+esc(d.pourQui):''}</div></div></div>`}
 
-    <div style="display:flex;gap:8px;margin-bottom:16px;">${chip(d.pris)} ${typeTag(d.type)}</div>
+    <div style="display:flex;gap:8px;margin-bottom:16px;align-items:center;flex-wrap:wrap;">${chip(d.pris)} ${typeTag(d.type)}${isAdmin()?`<button class="btn-sm" data-refaire="${d.id}" style="margin-left:auto;">${icon('plus',13)} Refaire cette demande</button>`:''}</div>
 
     ${suiviBlock(d)}
 
@@ -3704,7 +3704,7 @@ function meStats(m){
     const st=ME_ST.map(([k,l])=>[k,l,S.soucis.filter(s=>s.statut===k).length]);
     const cst=open.filter(s=>(s.constat||[]).length);
     return `<div>
-    <div class="page-head"><div><h1>Actions et stats</h1><p>Privé · le bâtiment en chiffres et ce qu’il reste à faire</p></div><div class="page-actions"><button class="btn-sm" data-nav='{"adminTab":"me-bat"}'>${icon('tool',14)} Liste des signalements</button></div></div>
+    <div class="page-head"><div><h1>Actions et stats</h1><p>Privé · le bâtiment en chiffres et ce qu’il reste à faire</p></div><div class="page-actions"><button class="btn-sm pri" data-me-rapport>${icon('download',14)} Point d’avancement (PDF)</button><button class="btn-sm" data-nav='{"adminTab":"me-bat"}'>${icon('tool',14)} Liste des signalements</button></div></div>
     <div class="kpis">
         <div class="stat-card kpi"><span class="kpi-l">En cours</span><span class="kpi-v">${open.length}</span><span class="kpi-s">sur ${S.soucis.length} signalés</span></div>
         <div class="stat-card kpi"><span class="kpi-l">Urgents</span><span class="kpi-v" style="color:#b91c1c;">${open.filter(s=>s.urgence==='urgent').length}</span><span class="kpi-s">à traiter en priorité</span></div>
@@ -3718,7 +3718,7 @@ function meStats(m){
         <div>
         <div class="card"><div class="card-h"><h3>Par statut</h3></div><div style="padding:14px 16px;"><div class="me-stack">${st.filter(x=>x[2]).map(([k,l,n])=>`<span style="flex:${n};background:${ME_STC[k][2]};color:${ME_STC[k][1]};">${n}</span>`).join('')}</div><div class="me-leg">${st.map(([k,l,n])=>`<span><i style="background:${ME_STC[k][1]}"></i>${ME_STC[k][0]} · ${n}</span>`).join('')}</div></div></div>
         <div class="card"><div class="card-h"><h3>Ancienneté des signalements en cours</h3></div><div style="padding:10px 16px 14px;">${ages.map(([l,n])=>`<div class="me-bar-row"><span class="l">${l}</span><span class="b"><span style="width:${n/amax*100}%;background:${l.startsWith('Plus')?'#b91c1c':'#2c5f85'};"></span></span><span class="n"><b>${n}</b></span></div>`).join('')}</div></div>
-        <div class="card"><div class="card-h"><h3>Par intervenant</h3></div><div class="tbl-wrap"><table class="pro-table"><thead><tr><th>Intervenant</th><th>En cours</th><th>Urgents</th><th>Résolus</th><th>Plus ancien</th></tr></thead><tbody>${Q.map(([k,v])=>`<tr><td><b>${esc(k)}</b></td><td>${v.o}</td><td style="${v.u?'color:#b91c1c;font-weight:600;':'color:var(--ink-soft)'}">${v.u||'—'}</td><td style="color:var(--ink-soft)">${v.r||'—'}</td><td style="color:var(--ink-soft)">${v.o?meAge(Date.now()-v.old*864e5):'—'}</td></tr>`).join('')}</tbody></table></div></div>
+        <div class="card"><div class="card-h"><h3>Par intervenant</h3></div><div class="tbl-wrap"><table class="pro-table"><thead><tr><th>Intervenant</th><th>En cours</th><th>Urgents</th><th>Résolus</th><th>Plus ancien</th></tr></thead><tbody>${Q.map(([k,v])=>`<tr><td><b>${esc(k)}</b>${v.o&&k!=='Non attribué'?`<div><button class="card-link" style="padding:2px 0;font-size:12px;display:inline-flex;align-items:center;gap:4px;" data-me-relmail="${esc(k)}">${icon('mail',12)} Préparer la relance</button></div>`:''}</td><td>${v.o}</td><td style="${v.u?'color:#b91c1c;font-weight:600;':'color:var(--ink-soft)'}">${v.u||'—'}</td><td style="color:var(--ink-soft)">${v.r||'—'}</td><td style="color:var(--ink-soft)">${v.o?meAge(Date.now()-v.old*864e5):'—'}</td></tr>`).join('')}</tbody></table></div></div>
         </div>
     </div></div>`;
 }
@@ -3820,6 +3820,67 @@ function meMemo(m){
     </div>`;
 }
 function meCompress(file,cb){ const rd=new FileReader(); rd.onload=()=>{ const img=new Image(); img.onload=()=>{ const S=900, k=Math.min(1,S/Math.max(img.width,img.height)); const cv=document.createElement('canvas'); cv.width=Math.round(img.width*k); cv.height=Math.round(img.height*k); cv.getContext('2d').drawImage(img,0,0,cv.width,cv.height); cb(cv.toDataURL('image/jpeg',0.62)); }; img.src=rd.result; }; rd.readAsDataURL(file); }
+/* ══ Relance d’un intervenant : email prêt, avec tous ses points en cours ══ */
+function meDerniere(s){ const L=[...(s.journal||[]),...(s.notes||[])].filter(x=>x&&x.txt&&!/^constat commissaire/i.test(x.txt)).sort((a,b)=>new Date(b.t)-new Date(a.t)); return L[0]||null; }
+function meRelanceTexte(k){
+    const L=(state.me.soucis||[]).filter(s=>s.statut!=='resolu'&&(s.interv_par||'')===k).sort((a,b)=>(b.urgence==='urgent')-(a.urgence==='urgent')||new Date(a.t)-new Date(b.t));
+    const d=x=>new Date(x).toLocaleDateString('fr-FR');
+    const lignes=L.map((s,i)=>{ const dn=meDerniere(s); return `${i+1}. ${s.titre}${s.urgence==='urgent'?' (URGENT)':''}\n   ${s.lieu||meZone(s)} · signalé le ${d(s.t)} (depuis ${meAge(s.t)})${s.entreprise?' · entreprise : '+s.entreprise:''}${s.interv?'\n   Intervention annoncée le '+d(s.interv)+(new Date(s.interv)<new Date()?' : toujours pas réalisée':''):''}${dn?'\n   Dernière nouvelle ('+d(dn.t)+') : '+dn.txt:''}`; });
+    const moi=userName()||'';
+    return { n:L.length, sujet:`Points en attente sur le site (${L.length})`, corps:`Bonjour,\n\nJe reviens vers vous concernant les points suivants, toujours en attente à ce jour :\n\n${lignes.join('\n\n')}\n\nMerci de m’indiquer, pour chacun, la date d’intervention prévue ou ce qui bloque.\n\nBien cordialement,\n${moi}` };
+}
+document.addEventListener('click',async e=>{
+    const b=e.target.closest('[data-me-relmail]'); if(!b||!state.me||!meOk()) return;
+    const k=b.getAttribute('data-me-relmail'), x=meRelanceTexte(k); if(!x.n) return;
+    try{ await navigator.clipboard.writeText(x.corps); }catch(err){}
+    const to=(pInfo(k).email||'').trim(), long=x.corps.length>1800;
+    const body=long?'(La liste complète est copiée : collez-la ici avec Ctrl+V)\n\n':x.corps;
+    location.href=`mailto:${encodeURIComponent(to)}?subject=${encodeURIComponent(x.sujet)}&body=${encodeURIComponent(body)}`;
+    const r=new Date(); r.setDate(r.getDate()+7); r.setHours(9,0,0,0);
+    state.me.soucis.filter(s=>s.statut!=='resolu'&&(s.interv_par||'')===k).forEach(s=>{ s.relance=r.toISOString(); if(s.statut==='signale') s.statut='contacte'; meJ(s,'Relance envoyée par email'); });
+    meSave(); render();
+    showToast(`✓ Email prêt pour ${k}${to?'':' (pas d’adresse : à compléter dans Réglages › Prestataires)'} · texte copié · rappel le ${meDate(r.toISOString())}`);
+});
+/* ══ Point d’avancement imprimable (réunion gestionnaire / direction) ══ */
+function mePointAvancement(){
+    const S=state.me, now=Date.now(), d=x=>x?new Date(x).toLocaleDateString('fr-FR'):'', J=x=>Math.round((now-new Date(x))/864e5);
+    const open=S.soucis.filter(s=>s.statut!=='resolu'), lim=now-30*864e5;
+    const regles=S.soucis.filter(s=>s.statut==='resolu'&&s.resolu&&new Date(s.resolu)>=lim).sort((a,b)=>new Date(b.resolu)-new Date(a.resolu));
+    const prom=open.filter(s=>s.interv&&new Date(s.interv)<now);
+    const silence=open.filter(s=>J(meLast(s))>90);
+    const G={}; open.forEach(s=>{ const k=s.interv_par||'Non attribué'; (G[k]=G[k]||[]).push(s); });
+    const STL={signale:'Signalé',contacte:'Contacté',prevu:'Intervention prévue'};
+    const row=s=>{ const dn=meDerniere(s); return `<tr class="${s.urgence==='urgent'?'u':''}"><td><b>${esc(s.titre)}</b>${s.entreprise?`<br><small>Entreprise : ${esc(s.entreprise)}</small>`:''}</td><td>${esc(meZone(s))}</td><td>${STL[s.statut]||''}${s.interv?`<br><small>${new Date(s.interv)<now?'<span class="r">annoncée le '+d(s.interv)+', non réalisée</span>':'prévue le '+d(s.interv)}</small>`:''}</td><td>${d(s.t)}<br><small>${meAge(s.t)}</small></td><td>${dn?`<small>${d(dn.t)} : ${esc(dn.txt)}</small>`:'—'}${J(meLast(s))>90?'<br><small class="r">sans nouvelles depuis '+meAge(meLast(s))+'</small>':''}</td></tr>`; };
+    const html=`<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>Point d’avancement bâtiment · ${d(now)}</title><style>
+        body{font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:#1a1f36;margin:28px;font-size:12px;} h1{font-size:21px;margin:0 0 2px;} h2{font-size:14px;margin:22px 0 8px;color:#2c5f85;border-bottom:2px solid #2c5f85;padding-bottom:4px;} .sub{color:#6b7280;margin:0 0 16px;}
+        .k{display:flex;gap:10px;margin:12px 0 4px;} .k div{flex:1;border:1px solid #e5e7eb;border-radius:8px;padding:10px 12px;} .k b{display:block;font-size:20px;} .k span{color:#6b7280;font-size:11px;}
+        table{width:100%;border-collapse:collapse;} th{text-align:left;font-size:10.5px;text-transform:uppercase;color:#6b7280;border-bottom:1px solid #d1d5db;padding:5px 6px;} td{border-bottom:1px solid #eef0f3;padding:6px;vertical-align:top;} small{color:#6b7280;} tr.u td:first-child{border-left:3px solid #b91c1c;} .r{color:#b91c1c;font-weight:600;}
+        ul{margin:0;padding-left:18px;} li{margin:3px 0;} h2,tr{break-inside:avoid;} @media print{body{margin:12mm;}}
+    </style></head><body>
+    <h1>Point d’avancement bâtiment</h1><p class="sub">Établi le ${d(now)} · ${esc(userName()||'')}</p>
+    <div class="k"><div><b>${open.length}</b><span>points en cours</span></div><div><b>${open.filter(s=>s.urgence==='urgent').length}</b><span>urgents</span></div><div><b>${regles.length}</b><span>réglés sur 30 jours</span></div><div><b>${prom.length}</b><span>interventions annoncées non réalisées</span></div><div><b>${silence.length}</b><span>sans nouvelles depuis 3 mois</span></div></div>
+    ${regles.length?`<h2>Réglés depuis le ${d(lim)}</h2><ul>${regles.map(s=>`<li><b>${esc(s.titre)}</b> · ${esc(meZone(s))} · résolu le ${d(s.resolu)}${s.interv_par?' · '+esc(s.interv_par):''}</li>`).join('')}</ul>`:''}
+    ${Object.entries(G).sort((a,b)=>b[1].length-a[1].length).map(([k,l])=>`<h2>${esc(k)} · ${l.length} point${l.length>1?'s':''} en cours</h2><table><thead><tr><th style="width:34%">Point</th><th>Zone</th><th>État</th><th>Signalé</th><th style="width:30%">Dernière nouvelle</th></tr></thead><tbody>${l.sort((a,b)=>(b.urgence==='urgent')-(a.urgence==='urgent')||new Date(a.t)-new Date(b.t)).map(row).join('')}</tbody></table>`).join('')}
+    <script>window.onload=()=>{window.print();}<\/script></body></html>`;
+    const w=window.open('','_blank'); if(!w){ showToast('Autorisez les fenêtres pop-up pour imprimer'); return; }
+    w.document.open(); w.document.write(html); w.document.close();
+}
+document.addEventListener('click',e=>{ if(e.target.closest('[data-me-rapport]')&&state.me&&meOk()) mePointAvancement(); });
+/* ══ Refaire une demande passée : tout est repris, seule la date est à choisir ══ */
+document.addEventListener('click',e=>{
+    const b=e.target.closest('[data-refaire]'); if(!b||!isAdmin()) return;
+    const c=(state.data||[]).find(x=>String(x.id)===b.getAttribute('data-refaire')); if(!c) return;
+    if(c.type==='commande'){
+        state.adminForm={dem:c.demandeur||'',pourQui:[],pourQuiAutre:'',vol:'',date:today(),dateDepart:'',heure:c.heure||'12h00',lieu:c.lieu||'',de:'',vers:'',presta:c.presta||'',desc:c.desc&&c.desc!=='Commande'?c.desc:'',nb:'1',com:c.comment||'',step:1};
+        setState({detail:null,saisieType:'commande',saisieDirecte:false}); showToast('Commande reprise : vérifiez la date'); return;
+    }
+    const noms=String(c.pourQui||'').split(',').map(x=>x.trim()).filter(Boolean), dirs=settings.directeurs||[];
+    const connus=noms.filter(n=>dirs.includes(n)), autres=noms.filter(n=>!dirs.includes(n));
+    const desc=c.type==='coursier'?String(c.desc||'').replace(/^Coursier\s*:\s*/i,''):c.type==='taxi'?'':(c.desc||'');
+    state.form={type:c.type,step:2,sent:false,dem:c.demandeur||'',pourQui:c.type==='repas'?[]:[...connus,...(autres.length?['__autre__']:[])],pourQuiAutre:autres.join(', '),participants:c.type==='repas'?(c.pourQui||''):'',
+        vol:'',tel:c.tel||'',copyMail:false,date:today(),dateDepart:'',heure:c.heure||'12h00',lieu:c.type==='taxi'||c.type==='coursier'?'':(c.lieu||''),de:c.depart||(c.type==='coursier'?c.lieu:'')||'',vers:c.arrivee||'',presta:c.presta||'',desc,nb:String(c.nb||'1'),com:c.comment||''};
+    setState({detail:null,saisieDirecte:true,saisieType:null,vue:'admin'}); window.scrollTo(0,0); showToast('Demande reprise : choisissez la nouvelle date');
+});
 function meJ(s,txt){ s.journal=[...(s.journal||[]),{t:new Date().toISOString(),txt}]; }
 function meDraftRead(){ const d=state.meDraft; if(!d) return; const g=id=>document.getElementById(id); if(g('meTitre')) d.titre=g('meTitre').value; if(g('meDesc')) d.desc=g('meDesc').value; if(g('meLieuLibre')&&g('meLieuLibre').value.trim()) d.lieu=g('meLieuLibre').value.trim(); }
 function meMDraftRead(){ const g=id=>document.getElementById(id); const d=state.meMDraft=state.meMDraft||{tag:'bat'}; if(g('meMTxt')) d.texte=g('meMTxt').value; if(g('meMRappel')) d.rappel=g('meMRappel').value; if(g('meMPin')) d.pin=g('meMPin').checked; return d; }
