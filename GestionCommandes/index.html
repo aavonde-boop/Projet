@@ -708,6 +708,21 @@ const SB_URL  = 'https://yvlcmdcnjeoiffrlawti.supabase.co';
 const SB_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl2bGNtZGNuamVvaWZmcmxhd3RpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYyODYwNjEsImV4cCI6MjA5MTg2MjA2MX0.-ePViMbJVA0UhC4WY3fYciUcw0gP6yJWau_P1AspdlI';
 const SB_HDR  = { 'Content-Type':'application/json', 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_KEY}` };
 const SB_TABLE = `${SB_URL}/rest/v1/commandes`;
+// En-têtes : la session de la personne connectée (sinon accès public). Supabase applique les règles d'accès.
+function sbH(extra){ const ok=typeof AUTH!=='undefined'&&AUTH&&AUTH.access_token&&AUTH.expires_at>Date.now(); return { ...SB_HDR, ...(ok?{Authorization:`Bearer ${AUTH.access_token}`}:{}), ...(extra||{}) }; }
+// Fonctions contrôlées côté serveur (page publique, assistantes). null = pas encore installées → ancien fonctionnement.
+// Session expirée (appli restée en arrière-plan) : on la renouvelle avant d'interroger Supabase
+let _sbRefresh=null;
+async function sbPret(){ if(typeof AUTH!=='undefined'&&AUTH&&AUTH.refresh_token&&AUTH.expires_at<Date.now()+60000){ _sbRefresh=_sbRefresh||authRefresh().finally(()=>{ _sbRefresh=null; }); await _sbRefresh; } }
+async function sbRpc(fn, args){
+    await sbPret();
+    const r=await fetch(`${SB_URL}/rest/v1/rpc/${fn}`,{method:'POST',headers:sbH(),body:JSON.stringify(args||{})});
+    const txt=await r.text();
+    if(r.status===404||/PGRST202|Could not find the function/i.test(txt)) return {absente:true};
+    if(!r.ok) throw new Error(txt||('HTTP '+r.status));
+    return {val: txt?JSON.parse(txt):null};
+}
+const viaRpc=()=>!sessionValid();
 const SB_PARAMS = `${SB_URL}/rest/v1/parametres`;
 
 function loadSettingsLocal() {
@@ -749,8 +764,9 @@ function saveSettingsLocal(s) {
 }
 
 async function loadSettingsFromDB() {
+    await sbPret();
     try {
-        const r = await fetch(`${SB_PARAMS}?select=cle,valeur&cle=in.(assistantes,directeurs,prestatairesRepas,typesRepas,prestatairesTaxi,prestatairesCommande,prestatairesHotel,emails,adminEmails,yoozMap,loginObligatoire,prestaInfo,marque,equipe,mails)`, { headers: SB_HDR });
+        const r = await fetch(`${SB_PARAMS}?select=cle,valeur&cle=in.(assistantes,directeurs,prestatairesRepas,typesRepas,prestatairesTaxi,prestatairesCommande,prestatairesHotel,emails,adminEmails,yoozMap,loginObligatoire,prestaInfo,marque,equipe,mails)`, { headers: sbH() });
         if (!r.ok) throw new Error(await r.text());
         const rows = await r.json();
         if (!rows || rows.length === 0) {
@@ -784,17 +800,18 @@ async function loadSettingsFromDB() {
 }
 
 async function saveSettingsToDB(s) {
+    await sbPret();
     saveSettingsLocal(s);
     const keys = ['assistantes','directeurs','prestatairesRepas','typesRepas','prestatairesTaxi','prestatairesCommande','prestatairesHotel','emails','adminEmails','yoozMap','loginObligatoire','prestaInfo','marque','equipe','mails'];
     for (const cle of keys) {
         try {
             await fetch(`${SB_PARAMS}?cle=eq.${cle}`, {
                 method: 'DELETE',
-                headers: SB_HDR
+                headers: sbH()
             });
             await fetch(SB_PARAMS, {
                 method: 'POST',
-                headers: { ...SB_HDR, 'Prefer': 'return=minimal' },
+                headers: { ...sbH(), 'Prefer': 'return=minimal' },
                 body: JSON.stringify({ cle, valeur: s[cle] })
             });
         } catch(e) {
@@ -1182,14 +1199,16 @@ function appToRow(c) {
 }
 
 async function dbLoad() {
+    await sbPret();
     try {
-        const r = await fetch(`${SB_TABLE}?order=date.desc&limit=1000`, { headers: SB_HDR });
+        const r = await fetch(`${SB_TABLE}?order=date.desc&limit=1000`, { headers: sbH() });
         if (!r.ok) throw new Error(await r.text());
         const rows = await r.json();
-        if (!rows || rows.length === 0) {
+        if (!rows || rows.length === 0) return []; // plus d'import automatique des données de démonstration
+        if (false) {
             // Table vide → importer les données initiales
             await dbImportAll();
-            const r2 = await fetch(`${SB_TABLE}?order=date.desc&limit=1000`, { headers: SB_HDR });
+            const r2 = await fetch(`${SB_TABLE}?order=date.desc&limit=1000`, { headers: sbH() });
             const rows2 = await r2.json();
             return rows2.map(rowToApp);
         }
@@ -1208,7 +1227,7 @@ async function dbImportAll() {
         const batch = rows.slice(i, i + 50);
         await fetch(SB_TABLE, {
             method: 'POST',
-            headers: { ...SB_HDR, 'Prefer': 'return=minimal' },
+            headers: { ...sbH(), 'Prefer': 'return=minimal' },
             body: JSON.stringify(batch)
         });
     }
@@ -1228,10 +1247,12 @@ function upperize(obj) {
 
 async function dbInsert(item) {
     upperize(item);
+    await sbPret();
+    if (viaRpc()) { try { const x=await sbRpc('gs_nouvelle_demande',{r:appToRow(item)}); if(!x.absente) return x.val?rowToApp(x.val):item; } catch(e){ console.error('Supabase insert:', e); showToast(`${icon('alert',13)} Demande non enregistrée, réessayez`); return item; } }
     try {
         const r = await fetch(SB_TABLE, {
             method: 'POST',
-            headers: { ...SB_HDR, 'Prefer': 'return=representation' },
+            headers: { ...sbH(), 'Prefer': 'return=representation' },
             body: JSON.stringify(appToRow(item))
         });
         const rows = await r.json();
@@ -1242,7 +1263,12 @@ async function dbInsert(item) {
     }
 }
 
+async function annulerDemande(c){
+    if (viaRpc()) { try { const x=await sbRpc('gs_annuler',{p_id:String(c.id),p_code:c.code||''}); if(!x.absente){ if(!x.val) showToast(`${icon('alert',13)} Annulation impossible : la demande a déjà été traitée`); return; } } catch(e){ console.error('Annulation:',e); return; } }
+    await dbUpdate(c.id,{pris:'Annulé'});
+}
 async function dbUpdate(id, fields) {
+    await sbPret();
     fields = upperize({ ...fields });
     // garder l'affichage cohérent avec ce qui est enregistré
     const appKeys = { descr: 'desc', pour_qui: 'pourQui' };
@@ -1265,7 +1291,7 @@ async function dbUpdate(id, fields) {
         });
         await fetch(`${SB_TABLE}?id=eq.${id}`, {
             method: 'PATCH',
-            headers: { ...SB_HDR, 'Prefer': 'return=minimal' },
+            headers: { ...sbH(), 'Prefer': 'return=minimal' },
             body: JSON.stringify(row)
         });
     } catch(e) {
@@ -1274,8 +1300,9 @@ async function dbUpdate(id, fields) {
 }
 
 async function dbDelete(id) {
+    await sbPret();
     try {
-        await fetch(`${SB_TABLE}?id=eq.${id}`, { method: 'DELETE', headers: SB_HDR });
+        await fetch(`${SB_TABLE}?id=eq.${id}`, { method: 'DELETE', headers: sbH() });
     } catch(e) {
         console.error('Supabase delete:', e);
     }
@@ -1289,16 +1316,18 @@ function dbSaveDebounced() {} // non utilisé avec Supabase (opérations atomiqu
    de structure de la base n'est nécessaire.
 ══════════════════════════════════════ */
 async function paramGet(cle) {
-    const r = await fetch(`${SB_PARAMS}?cle=eq.${cle}&select=valeur`, { headers: SB_HDR });
+    await sbPret();
+    const r = await fetch(`${SB_PARAMS}?cle=eq.${cle}&select=valeur`, { headers: sbH() });
     if (!r.ok) throw new Error(await r.text());
     const rows = await r.json();
     return rows && rows[0] ? rows[0].valeur : null;
 }
 async function paramSet(cle, valeur) {
+    await sbPret();
     // 1) mise à jour en place ; 2) si la clé n'existe pas encore, création.
     const r = await fetch(`${SB_PARAMS}?cle=eq.${cle}`, {
         method: 'PATCH',
-        headers: { ...SB_HDR, 'Prefer': 'return=representation' },
+        headers: { ...sbH(), 'Prefer': 'return=representation' },
         body: JSON.stringify({ valeur })
     });
     if (r.ok) {
@@ -1307,7 +1336,7 @@ async function paramSet(cle, valeur) {
     }
     const r2 = await fetch(SB_PARAMS, {
         method: 'POST',
-        headers: { ...SB_HDR, 'Prefer': 'return=minimal' },
+        headers: { ...sbH(), 'Prefer': 'return=minimal' },
         body: JSON.stringify({ cle, valeur })
     });
     if (!r2.ok) throw new Error(await r2.text());
@@ -1388,6 +1417,7 @@ function logAction(action, items, detail) {
     // Écritures en série : on relit la version en base pour ne pas écraser
     // les entrées ajoutées depuis un autre poste.
     _journalChain = _journalChain.then(async () => {
+        if (viaRpc()) { try { const x=await sbRpc('gs_journal',{p_entrees:entries.slice(0,20)}); if(!x.absente) return; } catch(e){ return; } }
         try {
             const cur = (await paramGet('journal')) || [];
             const merged = [...entries, ...cur].slice(0, JOURNAL_MAX);
@@ -2235,15 +2265,16 @@ async function loadSuivi(){ try{ state.suivi=(await paramGet('suivi'))||{}; }cat
 let _suiviChain=Promise.resolve();
 function setSuivi(ids, patchFn){
     ids=[].concat(ids);
-    const next={...(state.suivi||{})};
+    const next={...(state.suivi||{})}, patches={};
     ids.forEach(id=>{
-        const cur={...(next[id]||{})}; const p=patchFn(cur);
+        const cur={...(next[id]||{})}; const p=patchFn(cur); patches[id]=p;
         Object.entries(p).forEach(([k,v])=>{ if(v===null||v===undefined||v==='') delete cur[k]; else cur[k]=v; });
         if(Object.keys(cur).length) next[id]=cur; else delete next[id];
     });
     state.suivi=next; render();
     const snapshot=Object.fromEntries(ids.map(id=>[id,next[id]]));
     _suiviChain=_suiviChain.then(async()=>{
+        if(viaRpc()){ try{ let abs=false; for(const id of ids){ const x=await sbRpc('gs_suivi_maj',{p_id:String(id),p_patch:Object.fromEntries(Object.entries(patches[id]||{}).map(([k,v])=>[k,v===undefined?null:v]))}); if(x.absente){ abs=true; break; } } if(!abs) return; }catch(e){ console.error('Suivi save:',e); return; } }
         try{
             const db=(await paramGet('suivi'))||{};
             Object.entries(snapshot).forEach(([id,v])=>{ if(v) db[id]=v; else delete db[id]; });
@@ -3885,6 +3916,10 @@ function cxUpdate(fn){
 function trackConnexion(){
     if(!AUTH) return; const e=userEmail(); if(!e) return;
     const jour=isoDay(new Date()); if(lsGet('cx_jour_'+e)===jour) return; lsSet('cx_jour_'+e,jour);
+    if(viaRpc()){ sbRpc('gs_connexion',{p_nom:userName()}).then(x=>{ if(x.absente) trackConnexionAncien(e,jour); }).catch(()=>{}); return; }
+    trackConnexionAncien(e,jour);
+}
+function trackConnexionAncien(e,jour){
     cxUpdate(cx=>{ const u=cx.users[e]||{first:new Date().toISOString(),jours:[]};
         u.nom=userName(); u.last=new Date().toISOString(); u.admin=isAdmin();
         if(!u.jours.includes(jour)) u.jours=[...u.jours,jour].slice(-180);
@@ -3892,6 +3927,7 @@ function trackConnexion(){
 }
 function trackDemandeVia(code){
     if(!code) return; const e=AUTH?userEmail():'';
+    if(viaRpc()){ sbRpc('gs_via',{p_code:code}).then(x=>{ if(x.absente) cxUpdate(cx=>{ cx.via[code]=e||'-'; }); }).catch(()=>{}); return; }
     cxUpdate(cx=>{ cx.via[code]=e||'-'; const k=Object.keys(cx.via); if(k.length>3000) k.slice(0,k.length-3000).forEach(x=>delete cx.via[x]); });
 }
 async function loadConnexions(){ try{ state.cx=(await paramGet('connexions'))||{users:{},via:{}}; }catch(e){ state.cx={users:{},via:{}}; } }
@@ -5318,6 +5354,7 @@ function attachEvents(){
         const found=state.data.find(c=>c.code&&c.code.toUpperCase()===code);
         state.trackResult=found||false;
         render();
+        if(!found&&viaRpc()) sbRpc('gs_suivre',{p_code:code}).then(x=>{ if(x&&x.val){ state.trackResult=rowToApp(x.val); render(); } }).catch(()=>{});
     }
     document.getElementById('trackSearchBtn')?.addEventListener('click', doTrackSearch);
     document.getElementById('trackInput')?.addEventListener('input',e=>{state.trackCode=e.target.value;});
@@ -5330,7 +5367,7 @@ function attachEvents(){
         showToast('✓ Demande annulée');
         render();
         logAction('Statut', {...r,pris:'Annulé'}, `${ST[r.pris]?.label||r.pris} → Annulé (par le demandeur)`);
-        await dbUpdate(r.id,{pris:'Annulé'});
+        await annulerDemande(r);
     });
 
     // Filtres Activité
@@ -5485,7 +5522,7 @@ function attachEvents(){
         state.data=state.data.map(x=>x.id===c.id?{...x,pris:'Annulé'}:x);
         logAction('Statut',{...c,pris:'Annulé'},`${ST[c.pris]?.label||c.pris} → Annulé (par la demandeuse)`);
         showToast('✓ Demande annulée'); render();
-        await dbUpdate(c.id,{pris:'Annulé'});
+        await annulerDemande(c);
     });
     // Comptes : connexion, création, mot de passe oublié, nouveau mot de passe
     document.querySelectorAll('[data-auth-mode]').forEach(el=>el.onclick=()=>setState({authMode:el.getAttribute('data-auth-mode'),authError:'',authInfo:''}));
@@ -6040,6 +6077,7 @@ if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.
             const isTyping = activeEl && (activeEl.tagName==='INPUT'||activeEl.tagName==='TEXTAREA'||activeEl.tagName==='SELECT');
             const isInForm = state.form && state.form.step >= 1 && state.form.type && !state.form.sent;
             const fresh=await dbLoad();
+            if(!fresh.length && (state.data||[]).length>5) return; // réponse vide inattendue : on garde l'affichage
             const nouvelles=fresh.filter(c=>c.pris==='En attente'&&!_seenPending.has(c.id));
             _seenPending=new Set(fresh.filter(c=>c.pris==='En attente').map(c=>c.id));
             if(isTyping || isInForm){ updateBadgeFrom(fresh); return; }
