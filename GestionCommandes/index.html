@@ -3176,6 +3176,9 @@ function pkPlanHtml(m){
             <rect x="${-w/2}" y="${-h/2}" width="${w}" height="${h}" rx="5" fill="${c}" fill-opacity="${o}" stroke="${H?'#f59e0b':c}" stroke-width="${H?7:2}"/>
             ${p.type==='borne'?`<g transform="rotate(${-r}) translate(${w/2-14} ${-h/2+14})"><circle r="12" fill="${p.panne?'#b91c1c':'#15803d'}"/><path d="M1.5 -7 L-4 1 L0 1 L-1.5 7 L4 -1 L0 -1 Z" fill="#fff"/></g>`:''}</g>`; }).join('');
     const sans=places.filter(p=>!P.pts[pkKey(p.num)]);
+    // cadrage serré sur les places de l'entreprise
+    const xs=[],ys=[]; Object.values(P.pts).forEach(([x,y,w,h])=>{ const d=Math.max(w,h)/2+30; xs.push(x-d,x+d); ys.push(y-d,y+d); });
+    const vb=[Math.max(P.ox,Math.min(...xs)),Math.max(P.oy,Math.min(...ys))]; vb.push(Math.min(P.ox+P.w,Math.max(...xs))-vb[0], Math.min(P.oy+P.h,Math.max(...ys))-vb[1]);
     return `<div class="card" style="padding:12px;">
         <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
             ${nivs.map(n=>`<button class="nf-chip ${n===niv?'on':''}" style="height:32px;font-size:12.5px;" data-nav='{"pkNiv":"${n}"}'>Niveau ${n}</button>`).join('')}
@@ -3187,7 +3190,7 @@ function pkPlanHtml(m){
             </span>
         </div>
         <div style="overflow:auto;border-radius:8px;border:1px solid var(--border-light);background:#fff;">
-            <svg viewBox="${P.ox} ${P.oy} ${P.w} ${P.h}" style="display:block;width:100%;min-width:${m?'720px':'0'};height:auto;" xmlns="http://www.w3.org/2000/svg">
+            <svg viewBox="${vb.join(' ')}" preserveAspectRatio="xMidYMid meet" style="display:block;width:100%;height:auto;max-height:${m?'60vh':'min(62vh,560px)'};" xmlns="http://www.w3.org/2000/svg">
                 <image href="${P.img}" x="${P.ox}" y="${P.oy}" width="${P.w}" height="${P.h}" opacity=".9"/>${rects}
             </svg>
         </div>
