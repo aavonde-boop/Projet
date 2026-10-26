@@ -962,7 +962,7 @@ function emailRows(c){
     else rows.push(['Date', emailDateLong(c.date) + (c.heure ? ` à ${c.heure}` : '')]);
     if(c.type==='taxi') rows.push(['Trajet', `${c.depart||'—'} → ${c.arrivee||'—'}`]);
     else if(c.type==='repas') rows.push(['Salle / lieu', c.lieu || 'Non précisé']);
-    else if(c.type==='hotel') rows.push(['Ville', c.lieu || 'Non précisée']);
+    else if(c.type==='hotel') { if(c.lieu) rows.push(['Ville', c.lieu]); }
     else if(c.lieu) rows.push(['Lieu de livraison', c.lieu]);
     if(c.type==='repas' || c.type==='hotel') rows.push(['Personnes', String(c.nb || 1)]);
     if(c.desc && c.type!=='commande') rows.push(['Description', c.desc]);
