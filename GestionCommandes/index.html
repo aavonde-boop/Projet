@@ -1159,7 +1159,7 @@ function rowToApp(r) {
         pourQui:   r.pour_qui  || '',
         date:      r.date      || '',
         desc:      r.descr     || '',
-        nb:        r.nb        || 0,
+        nb:        nbAvecNoms(r),
         lieu:      r.lieu      || '',
         heure:     r.heure     || '',
         presta:    r.presta    || '',
@@ -1204,6 +1204,10 @@ function appToRow(c) {
     };
 }
 
+// Nombre de personnes d'un repas : jamais moins que le nombre de participants nommés
+function compteNoms(s){ return String(s||'').split(/[,;\n\/]+|\s+et\s+|\s+&\s+/i).map(x=>x.trim()).filter(x=>x&&/[a-zà-ÿ]/i.test(x)).length; }
+function nbAvecNoms(r){ const n=parseInt(r.nb)||0; return (r.type||'repas')==='repas'?Math.max(n,compteNoms(r.pour_qui)):(r.nb||0); }
+function nfSyncNb(f){ if(!f||f.type!=='repas') return; const k=compteNoms(f.participants); f.nb=String(f.nbTouche?Math.max(parseInt(f.nb)||1,k):Math.max(1,k)); }
 async function dbLoad() {
     await sbPret();
     try {
@@ -6111,6 +6115,7 @@ function attachEvents(){
     // ── Nouveau formulaire : pastilles, saisie, envoi ──
     const nfSave=()=>{ const f=state.form, g=id=>document.getElementById(id);
         if(g('formParticipants')) f.participants=g('formParticipants').value;
+        nfSyncNb(f);
         if(g('pourQuiAutreInput')) f.pourQuiAutre=g('pourQuiAutreInput').value;
         if(g('formDate')) f.date=g('formDate').value;
         if(g('formHeure')) f.heure=g('formHeure').value;
@@ -6132,7 +6137,7 @@ function attachEvents(){
         if(g('formHotel')) f.presta=g('formHotel').value.trim();
         if(f.type==='hotel') f.dateDepart=nfDepart(f);
     };
-    const nfRefresh=()=>{ const s=document.getElementById('nfSum'); if(s) s.innerHTML=nfSummaryHtml(); const b=document.getElementById('nfBar'); if(b) b.innerHTML=nfBarHtml(); };
+    const nfRefresh=()=>{ const nbB=document.querySelector('[data-nf="nb"]')?.parentElement?.querySelector('b'); if(nbB&&state.form.type==='repas') nbB.textContent=state.form.nb||'1'; const s=document.getElementById('nfSum'); if(s) s.innerHTML=nfSummaryHtml(); const b=document.getElementById('nfBar'); if(b) b.innerHTML=nfBarHtml(); };
     document.querySelectorAll('.nf-in').forEach(el=>{ el.addEventListener('input',()=>{ nfSave(); nfRefresh(); }); el.addEventListener('change',()=>{ nfSave(); nfRefresh(); }); });
     document.querySelectorAll('[data-nf]').forEach(el=>el.onclick=e=>{
         e.preventDefault(); nfSave();
@@ -6142,7 +6147,7 @@ function attachEvents(){
         else if(act==='set'){ if(k==='presta') f.hotelAutre=false; f[k]=(f[k]===v&&k!=='date'&&k!=='lieu'&&k!=='de'&&k!=='vers')?'':v; if(k==='date') f.dateAutre=false; if(k==='heure') f.heureAutre=false; if(k==='dem') f.invite=false; if(k==='dem') lsSet('nf_dem',v); }
         else if(act==='toggle'){ const a=f[k]||[]; f[k]=a.includes(v)?a.filter(x=>x!==v):[...a,v]; }
         else if(act==='addpart'){ const cur=String(f.participants||'').trim(); f.participants=cur?cur.replace(/,\s*$/,'')+', '+v:v; }
-        else if(act==='nb'){ f.nb=String(Math.max(1,Math.min(500,(parseInt(f.nb)||1)+(+v)))); }
+        else if(act==='nb'){ f.nb=String(Math.max(1,Math.min(500,(parseInt(f.nb)||1)+(+v)))); f.nbTouche=true; }
         else if(act==='nights'){ f.nights=Math.max(1,Math.min(60,nfNuits(f)+(+v))); }
         else if(act==='rg'){ const r={...(f.regimes||{})}; const n=r[v]||0; r[v]=k==='toggle'?(n?0:1):Math.max(0,Math.min(500,n+(+k))); f.regimes=r; }
         else if(act==='emailok'){ f.fromEmail=null; }
@@ -6151,6 +6156,7 @@ function attachEvents(){
         else if(act==='hotelautre'){ f.hotelAutre=true; if(P_HOTEL.includes(f.presta)) f.presta=''; setTimeout(()=>document.getElementById('formHotel')?.focus(),60); }
         else if(act==='heureautre'){ f.heureAutre=true; if(NF_HEURES[f.type]?.includes(f.heure)) f.heure=''; }
         if(f.type==='hotel') f.dateDepart=nfDepart(f);
+        nfSyncNb(f);
         render();
     });
     document.querySelectorAll('.f-send').forEach(btn=>btn.onclick=()=>{
