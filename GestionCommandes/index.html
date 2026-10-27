@@ -599,6 +599,9 @@
         .me-th{background:none;border:0;font:inherit;color:inherit;text-transform:inherit;letter-spacing:inherit;cursor:pointer;padding:0;} .me-th.on{color:var(--ink);}
         .me-tbl .pro-table td{padding:10px 16px;} .me-td-t{white-space:normal!important;min-width:280px;} .me-td-t .t span{line-height:1.3;}
         .me-cards{display:none;}
+        .nt-row{display:flex;align-items:center;gap:12px;padding:11px 16px;border-top:1px solid var(--border-light);} .nt-row:first-child{border-top:0;} .nt-ic{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;} .nt-row .nt-t{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;background:none!important;padding:0!important;border:0!important;margin:0!important;white-space:normal!important;} .nt-t b{font-size:13.5px;font-weight:600;} .nt-t span{font-size:12.5px;color:var(--ink-soft);overflow:hidden;text-overflow:ellipsis;} .nt-ago{font-size:12px;color:var(--ink-soft);white-space:nowrap;}
+        .mh-n,.ic-n{position:absolute;top:-4px;right:-4px;background:#d97706;color:#fff;font:700 10px/16px var(--fb);min-width:16px;height:16px;border-radius:8px;padding:0 4px;font-style:normal;}
+        @media(max-width:767px){ .nt-row{flex-wrap:wrap;} .nt-ago{order:3;margin-left:42px;} }
         .stk-row{display:flex;align-items:center;gap:12px;padding:10px 16px;border-top:1px solid var(--border-light);} .stk-n{flex:1;min-width:0;display:flex;flex-direction:column;} .stk-n b{font-size:14px;font-weight:600;} .stk-n span{font-size:12px;color:var(--ink-soft);}
         .stk-seg{display:flex;gap:4px;} .stk-seg button{border:1px solid var(--border);background:#fff;border-radius:7px;height:32px;padding:0 10px;font:600 12px var(--fb);color:var(--ink-mid);cursor:pointer;white-space:nowrap;}
         .stk-x{border:0;background:none;color:#b4bac4;cursor:pointer;padding:6px;} .stk-x:hover{color:#b91c1c;}
@@ -2157,10 +2160,11 @@ function renderAdminView(m){
     else if(state.adminTab==='calendrier')   main=renderCalendrier(m);
     else if(state.adminTab==='stock')        main=renderStock(m);
     else if(state.adminTab==='parking')      main=renderParking(m);
+    else if(state.adminTab==='notifs')       main=renderNotifs(m);
 
     else main=meOk()?renderMe(m):renderDashboard(total,attente,m);
 
-    const TITRES={parking:'Parking & véhicules',stock:'Stock',dashboard:'Tableau de bord',suivi:'Suivi des demandes',calendrier:'Agenda',activite:'Historique',stats:'Statistiques',analyse:'Statistiques',me:'Mon écran','me-bat':'Signalements du bâtiment','me-stat':'Actions et stats','me-memo':'Mémo perso',settings:'Réglages'};
+    const TITRES={notifs:'Notifications',parking:'Parking & véhicules',stock:'Stock',dashboard:'Tableau de bord',suivi:'Suivi des demandes',calendrier:'Agenda',activite:'Historique',stats:'Statistiques',analyse:'Statistiques',me:'Mon écran','me-bat':'Signalements du bâtiment','me-stat':'Actions et stats','me-memo':'Mémo perso',settings:'Réglages'};
     if(m) return `
     <div class="mobile-header">
         <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
@@ -2172,7 +2176,7 @@ function renderAdminView(m){
                 </div>
             </div>
             <div style="display:flex;gap:6px;flex-shrink:0;">
-                <button data-activate-notifs aria-label="Notifications" class="mh-btn" style="position:relative;">${icon('bell',17)}${notifsReady()?'':'<i class="mh-dot"></i>'}</button>
+                <button data-admin-tab="notifs" aria-label="Notifications" class="mh-btn ${state.adminTab==='notifs'?'on':''}" style="position:relative;">${icon('bell',17)}${ntCount()?`<i class="mh-n">${ntCount()}</i>`:''}</button>
                 <button data-admin-tab="settings" aria-label="Réglages" class="mh-btn ${state.adminTab==='settings'?'on':''}">${icon('sliders',17)}</button>
             </div>
         </div>
@@ -2190,7 +2194,7 @@ function renderAdminView(m){
     ${state.saisieDirecte?'':mobileNavHtml()}`;
 
     const nAF=aFaireCount();
-    const item=(tab,ic,label)=>`<button data-admin-tab="${tab}" class="side-it ${state.adminTab===tab?'on':''}" title="${label}">${icon(ic,17)}<span class="side-lbl">${label}</span>${tab==='suivi'&&nAF?`<span class="side-n">${nAF}</span>`:''}${tab==='me-bat'&&meBadge()?`<span class="side-n" style="background:#b91c1c;">${meBadge()}</span>`:''}</button>`;
+    const item=(tab,ic,label)=>`<button data-admin-tab="${tab}" class="side-it ${state.adminTab===tab?'on':''}" title="${label}">${icon(ic,17)}<span class="side-lbl">${label}</span>${tab==='suivi'&&nAF?`<span class="side-n">${nAF}</span>`:''}${tab==='notifs'&&ntCount()?`<span class="side-n" style="background:#2c5f85;">${ntCount()}</span>`:''}${tab==='me-bat'&&meBadge()?`<span class="side-n" style="background:#b91c1c;">${meBadge()}</span>`:''}</button>`;
     const nom=adminName()||'Administrateur';
     const init=nom.split(/\s+/).map(w=>w[0]||'').join('').slice(0,2).toUpperCase();
     return `
@@ -2199,7 +2203,7 @@ function renderAdminView(m){
         <div class="side-brand">${logoHtml(16)}<div class="side-lbl"><b>${esc(marqueNom())}</b><span>Administration</span></div></div>
         <div class="side-scroll">
             <div class="side-grp" style="padding-top:12px;">
-                ${item('dashboard','dashboard','Tableau de bord')}${meOk()?`<div class="perso">${item('me-memo','edit','Mémo perso')}</div>`:''}</div>
+                ${item('dashboard','dashboard','Tableau de bord')}${item('notifs','bell','Notifications')}${meOk()?`<div class="perso">${item('me-memo','edit','Mémo perso')}</div>`:''}</div>
             <div class="side-grp"><h6 class="side-lbl">Commandes</h6>
                 ${item('suivi','clipboard','Suivi des demandes')}${item('calendrier','calendar','Agenda')}${item('activite','grid','Historique')}${item('stock','box','Stock')}</div>
             ${meOk()?`<div class="side-grp perso"><h6 class="side-lbl">Bâtiment ${icon('lock',10)}</h6>${item('me-bat','tool','Signalements')}${item('me-stat','check','Actions et stats')}</div>`:''}
@@ -2220,7 +2224,7 @@ function renderAdminView(m){
             <div class="crumb">${state.adminTab==='me'||state.adminTab==='me-memo'?'Personnel 🔒':String(state.adminTab).startsWith('me')?'Bâtiment 🔒':['suivi','calendrier','activite','stock'].includes(state.adminTab)?'Commandes':state.adminTab==='parking'?'Site':['stats','analyse'].includes(state.adminTab)?'Analyses':'Administration'} / <b>${state.saisieDirecte?'Saisie directe':TITRES[state.adminTab]||''}</b></div>
             <div style="margin-left:auto;display:flex;gap:8px;align-items:center;">
                 <button data-live-open class="btn-sm" title="Écran live (plein écran, pour un PC ou une TV)">${icon('dashboard',15)} Écran live</button>
-                <button data-activate-notifs class="ic-btn" title="${notifsReady()?'Notifications activées':'Activer les notifications et la pastille'}">${icon('bell',16)}${notifsReady()?'':'<i></i>'}</button>
+                <button data-admin-tab="notifs" class="ic-btn" title="Notifications" style="position:relative;">${icon('bell',16)}${ntCount()?`<i class="ic-n">${ntCount()}</i>`:''}</button>
                 <div style="position:relative;display:inline-block;">
                     <button id="fabAdminMain" class="btn-sm pri" style="padding:8px 14px;" title="Ajout direct, déjà validé, sans email">${icon('plus',15)} Saisie directe <span class="tb-nomail">${icon('x',10)} sans email</span></button>
                     <div id="fabAdminMenu" class="drop-menu" style="display:none;">
@@ -2651,7 +2655,7 @@ function mobileNavHtml(){
     </div></nav>
     ${state.moreOpen?`<div data-nav='{"moreOpen":false}' style="position:fixed;inset:0;background:rgba(15,23,42,.35);z-index:9500;display:flex;align-items:flex-end;">
         <div style="background:#fff;width:100%;border-radius:20px 20px 0 0;padding:14px 14px calc(14px + env(safe-area-inset-bottom,0px));">
-            ${[...(meOk()?[["me-memo","edit","Mémo perso"],["me-bat","tool","Signalements du bâtiment"],["me-stat","check","Actions et stats"]]:[]),["stock","box","Stock"],["parking","car","Parking & véhicules"],["stats","chart","Statistiques"]].map(([t,ic,l])=>`<button data-admin-tab="${t}" style="display:flex;align-items:center;gap:12px;width:100%;background:none;border:none;padding:14px 8px;font-size:15px;font-weight:600;color:var(--ink);cursor:pointer;border-bottom:1px solid #f0f1f4;">${icon(ic,18)} ${l}</button>`).join('')}
+            ${[...(meOk()?[["me-memo","edit","Mémo perso"],["me-bat","tool","Signalements du bâtiment"],["me-stat","check","Actions et stats"]]:[]),["notifs","bell","Notifications"],["stock","box","Stock"],["parking","car","Parking & véhicules"],["stats","chart","Statistiques"]].map(([t,ic,l])=>`<button data-admin-tab="${t}" style="display:flex;align-items:center;gap:12px;width:100%;background:none;border:none;padding:14px 8px;font-size:15px;font-weight:600;color:var(--ink);cursor:pointer;border-bottom:1px solid #f0f1f4;">${icon(ic,18)} ${l}</button>`).join('')}
             <button data-back-home style="display:flex;align-items:center;gap:12px;width:100%;background:none;border:none;padding:14px 8px;font-size:15px;font-weight:600;color:var(--ink);cursor:pointer;border-bottom:1px solid #f0f1f4;">${icon('home',18)} Page de demande</button>
             <button data-admin-logout style="display:flex;align-items:center;gap:12px;width:100%;background:none;border:none;padding:14px 8px;font-size:15px;font-weight:600;color:#b91c1c;cursor:pointer;">${icon('logout',18)} Se déconnecter</button>
         </div></div>`:''}`;
@@ -3387,6 +3391,63 @@ document.addEventListener('click',e=>{
         if(isNew){ pkH(v,'Véhicule ajouté'); state.pk.vehicules.push(v); }
         state.vhEdit=null; pkSave(); render(); showToast('✓ Véhicule enregistré'); return; }
     if(a==='vdel'){ const v=state.pk.vehicules.find(x=>x.id===state.vhEdit); if(!v||!confirm(`Supprimer le véhicule ${v.plaque} ?`)) return; state.pk.vehicules=state.pk.vehicules.filter(x=>x!==v); state.vhEdit=null; pkSave(); render(); return; }
+});
+/* ══ NOTIFICATIONS (onglet) : ce qui s'est passé, à marquer « vu » ══ */
+const NT_CATS=[['all','Toutes'],['dem','Demandes'],['equipe','Équipe'],['att','Points d’attention'],['bat','Bâtiment']];
+async function loadNotifsVues(){ try{ const all=(await paramGet('notifsVues'))||{}; const me=all[userEmail()]||null; state.nv=me||{depuis:new Date(Date.now()-7*864e5).toISOString(),vus:{}}; if(!me) ntSave(); }catch(e){ state.nv=state.nv||{depuis:new Date(Date.now()-7*864e5).toISOString(),vus:{}}; } state.nvLoaded=true; }
+let _ntT=null;
+function ntSave(){ clearTimeout(_ntT); _ntT=setTimeout(async()=>{ try{ const e=userEmail(); if(!e||!state.nv) return; const lim=Date.now()-90*864e5; Object.entries(state.nv.vus||{}).forEach(([k,v])=>{ if(+new Date(v)<lim) delete state.nv.vus[k]; }); const all=(await paramGet('notifsVues'))||{}; all[e]=state.nv; await paramSet('notifsVues',all); }catch(err){ console.error('Notifications :',err); } },500); }
+const ntH=s=>{ let h=0; s=String(s); for(let i=0;i<s.length;i++) h=(h*31+s.charCodeAt(i))|0; return (h>>>0).toString(36); };
+function ntListe(){
+    if(!state.nv) return [];
+    const me=userName(), depuis=+new Date(state.nv.depuis||0), L=[];
+    const estAdmin=q=>{ const r=personne(q).role; return r==='responsable'||r==='polyvalente'; };
+    (state.journal||[]).forEach(e=>{
+        const t=+new Date(e.t); if(!(t>depuis)||!e.qui||e.qui===me||e.qui==='Admin'&&!AUTH) return;
+        const dem=!estAdmin(e.qui)||e.qui==='Demandeur';
+        if(dem&&!/nouvelle demande|statut|modif/i.test(e.action)) return;
+        const annul=/annulé \(par/i.test(e.detail||'');
+        const quoi=[TYPE_LABEL[e.type]||'',e.desc||'',e.code||''].filter(Boolean).join(' · ');
+        L.push({key:'j'+ntH(e.t+e.action+e.id+e.detail),cat:dem?'dem':'equipe',t,ic:annul?'x':dem?'clipboard':'user',ton:annul?'#b91c1c':dem?'#b45309':'#2c5f85',
+            titre:annul?`${e.qui==='Demandeur'?'Un demandeur':e.qui} a annulé sa demande`:/nouvelle demande/i.test(e.action)?`Nouvelle demande de ${e.qui==='Demandeur'?'un invité':e.qui}`:`${e.qui} · ${e.action}`,
+            detail:[quoi,annul?'':e.detail].filter(Boolean).join(' — '),id:e.id});
+    });
+    try{ anomalies().forEach(a=>L.push({key:'a'+ntH(a.titre+'|'+a.detail),cat:'att',t:null,ic:a.ic||'alert',ton:a.niv>=3?'#b91c1c':a.niv===2?'#b45309':'#2c5f85',titre:a.titre,detail:a.detail||'',nav:a.nav,id:a.nav?null:(a.c&&a.c.id)})); }catch(e){}
+    if(meOk()&&state.me){ const auj=isoDay(new Date());
+        meEnCours().filter(meRelanceDue).forEach(s=>L.push({key:'br'+ntH(s.id+(s.relance||'')),cat:'bat',t:s.relance?+new Date(s.relance):null,ic:'tool',ton:'#b91c1c',titre:`Relance à faire : ${s.titre}`,detail:[meZone(s),s.interv_par].filter(Boolean).join(' · '),me:s.id}));
+        (state.me.soucis||[]).filter(s=>s.statut!=='resolu'&&s.interv&&isoDay(new Date(s.interv))===auj).forEach(s=>L.push({key:'bi'+ntH(s.id+s.interv),cat:'bat',t:+new Date(s.interv),ic:'calendar',ton:'#5b21b6',titre:`Intervention aujourd’hui : ${s.titre}`,detail:[new Date(s.interv).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}),s.interv_par,s.entreprise].filter(Boolean).join(' · '),me:s.id}));
+    }
+    const vus=state.nv.vus||{};
+    return L.filter(n=>!vus[n.key]).sort((a,b)=>(b.t||Date.now())-(a.t||Date.now()));
+}
+function ntCount(){ try{ return isAdmin()&&state.nvLoaded?ntListe().length:0; }catch(e){ return 0; } }
+function renderNotifs(m){
+    if(!state.nvLoaded){ loadNotifsVues().then(render); return `<div class="empty-note" style="padding:60px;">Chargement…</div>`; }
+    const all=ntListe(), f=state.ntF||'all', L=f==='all'?all:all.filter(n=>n.cat===f);
+    const autre=equipe().polyvalente.concat(equipe().responsable).filter(n=>_pn(n)!==_pn(userName())).map(n=>n.split(' ')[0]).join(', ');
+    const cats=NT_CATS.filter(([k])=>k!=='bat'||meOk()).map(([k,l])=>[k,k==='equipe'&&autre?l+' ('+autre+')':l]);
+    const ago=t=>{ if(!t) return ''; const d=(Date.now()-t)/6e4; return d<0?'à venir':d<60?`il y a ${Math.max(1,Math.round(d))} min`:d<1440?`il y a ${Math.round(d/60)} h`:new Date(t).toLocaleDateString('fr-FR',{day:'numeric',month:'short'}); };
+    return `<div>
+    <div class="page-head"><div><h1>Notifications</h1><p>${all.length?`${all.length} à voir`:'Tout est vu'} · cliquez « Vu » une fois pris en compte</p></div>
+        <div class="page-actions">${!notifsReady()?`<button class="btn-sm" data-activate-notifs>${icon('bell',14)} Activer sur cet appareil</button>`:''}${L.length?`<button class="btn-sm pri" data-nt="tout">${icon('check',14)} Tout marquer comme vu</button>`:''}</div></div>
+    <div class="nf-row" style="margin-bottom:14px;">${cats.map(([k,l])=>{ const n=k==='all'?all.length:all.filter(x=>x.cat===k).length; return `<button class="nf-chip ${f===k?'on':''}" style="height:32px;font-size:12.5px;" data-nav='{"ntF":"${k}"}'>${l}${n?' · '+n:''}</button>`; }).join('')}</div>
+    ${L.length?`<div class="card">${L.map(n=>`<div class="nt-row">
+        <span class="nt-ic" style="color:${n.ton};background:${n.ton}14;">${icon(n.ic,15)}</span>
+        <div class="nt-t" ${n.id||n.nav||n.me?`data-nt="ouvrir" data-k="${n.key}" style="cursor:pointer;"`:''}><b>${esc(n.titre)}</b>${n.detail?`<span>${esc(n.detail)}</span>`:''}</div>
+        <span class="nt-ago">${ago(n.t)}</span>
+        <button class="btn-sm" data-nt="vu" data-k="${n.key}">${icon('check',13)} Vu</button>
+    </div>`).join('')}</div>`:`<div class="card empty-note" style="padding:40px;">${icon('check',18)}<br>Rien de nouveau${f!=='all'?' dans cette catégorie':''}.</div>`}
+    </div>`;
+}
+document.addEventListener('click',e=>{
+    const b=e.target.closest('[data-nt]'); if(!b||!state.nv) return;
+    const a=b.getAttribute('data-nt'), k=b.getAttribute('data-k'); state.nv.vus=state.nv.vus||{};
+    if(a==='vu'){ state.nv.vus[k]=new Date().toISOString(); ntSave(); render(); return; }
+    if(a==='tout'){ const f=state.ntF||'all'; ntListe().filter(n=>f==='all'||n.cat===f).forEach(n=>state.nv.vus[n.key]=new Date().toISOString()); ntSave(); render(); showToast('✓ Tout est marqué comme vu'); return; }
+    if(a==='ouvrir'){ const n=ntListe().find(x=>x.key===k); if(!n) return;
+        if(n.me){ state.meSouci=n.me; setState({adminTab:'me-bat'}); return; }
+        if(n.nav){ setState(n.nav); return; }
+        const c=(state.data||[]).find(x=>String(x.id)===String(n.id)); if(c) setState({detail:c}); else showToast('Demande introuvable (supprimée ?)'); }
 });
 function renderStock(m){
     if(!state.stockLoaded){ loadStock().then(render); return `<div class="empty-note" style="padding:60px;">Chargement du stock…</div>`; }
@@ -5997,6 +6058,7 @@ function attachEvents(){
         trackDemandeVia(newItem.code);
         const saved=await dbInsert(newItem);
         if(saved.id!==newItem.id){state.data=state.data.map(c=>c.id===newItem.id?saved:c);}
+        if(!ADM){ try{ logAction('Nouvelle demande', saved.id?saved:newItem); }catch(e){} }
         if(ADM){ try{ logAction('Ajoutée directement (admin)',newItem); }catch(e){} setSuivi([saved.id||newItem.id],()=>({direct:new Date().toISOString(),par:personne(newItem.demandeur).role==='invite'?userName():null})); return; } // Julia / Arnaud : ajout direct, pas d'email
         // Fallback localStorage si Supabase pas encore chargé
         const adminEmailsSafe = (settings.adminEmails||[]).filter(Boolean).length
@@ -6391,7 +6453,7 @@ if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.
     trackFirstSeen(data);
     // Session admin encore valide → on revient directement dans l'admin
     if (sessionValid()) {
-        await Promise.all([loadTrash(), loadJournal(), loadStock(), loadParking(), /avonde/i.test(`${userEmail()} ${userName()}`)?loadMe():null]);
+        await Promise.all([loadTrash(), loadJournal(), loadStock(), loadParking(), loadNotifsVues(), /avonde/i.test(`${userEmail()} ${userName()}`)?loadMe():null]);
         if (lsGet('last_vue') === 'admin' || state.live) { state.vue = 'admin'; state.authed = true; state.adminTab = 'dashboard'; }
     }
     state.loading = false;
