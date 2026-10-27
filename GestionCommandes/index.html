@@ -2721,7 +2721,7 @@ function renderDetail(d,m){
 
         <div class="form-group"><label class="form-label">${isRepas?"Type de repas":"Description"}</label>
             ${isRepas
-                ? `<select id="editDesc" class="form-select"><option value="">— Choisir —</option>${P_TYPES.map(p=>`<option ${d.desc===p?'selected':''}>${p}</option>`).join('')}</select>`
+                ? (()=>{ const nz=s=>sansAccent(String(s||'')).toLowerCase().trim(); const hit=P_TYPES.find(p=>nz(p)===nz(d.desc)); const opts=[...P_TYPES,...(!hit&&d.desc?[d.desc]:[])]; return `<select id="editDesc" class="form-select"><option value="">— Choisir —</option>${opts.map(p=>`<option ${p===(hit||d.desc)?'selected':''}>${esc(p)}</option>`).join('')}</select>`; })()
                 : `<input id="editDesc" type="text" value="${d.desc||''}" class="form-input">`
             }
         </div>
@@ -2729,7 +2729,7 @@ function renderDetail(d,m){
         ${isRepas?`
         <div class="form-group"><label class="form-label">${icon('utensils',13)} Restaurant / prestataire</label><select id="editPresta" class="form-select"><option value="">—</option>${d.presta&&!P_REPAS.includes(d.presta)?`<option selected>${d.presta}</option>`:""  }${P_REPAS.map(p=>`<option ${d.presta===p?'selected':''}>${p}</option>`).join('')}</select></div>
         <div class="form-group"><label class="form-label">Lieu</label><input id="editLieu" type="text" value="${d.lieu||''}" class="form-input"></div>
-        <div class="form-group"><label class="form-label">Nb personnes</label><select id="editNb" class="form-select">${['1','2','3','4','5','6','7','8','9','10+'].map(n=>`<option ${String(d.nb)===n?'selected':''}>${n}</option>`).join('')}</select></div>
+        <div class="form-group"><label class="form-label">Nb personnes</label><input id="editNb" type="number" min="1" max="500" class="form-input" value="${esc(String(d.nb||1))}"></div>
         `:''}
 
         ${isTaxi?`
