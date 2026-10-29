@@ -2417,9 +2417,9 @@ function downloadRappels(c, which){
 
 /* Carte d'une demande, avec les actions de son étape */
 function suiviCard(c,{compact=false,showStage=false,select=false}={}){
-    const st=stageOf(c), s=suiviOf(c), j=daysLeft(c.date);
+    const st=stageOf(c), s=suiviOf(c), j=daysLeft(c.date), rec=s.recurrent||/^repas r[ée]current$/i.test(c.comment||'');
     const urg=(st==='avalider'||st==='acommander')&&j!==null&&j<=2?badgeColor(j):null;
-    const meta=[`${dateCourte(c)}${c.heure?' · '+c.heure:''}`];
+    const meta=[`${dateCourte(c)}${c.heure?' · '+c.heure:''}`]; if(rec) meta.push('🔁 récurrent');
     if(c.type==='repas'){ if(c.lieu) meta.push(esc(c.lieu)); meta.push(`${c.nb||1} pers.`); }
     if((c.type==='taxi'||c.type==='coursier')) meta.push(`${esc(c.depart||'—')} → ${esc(c.arrivee||'—')}`);
     if(c.type==='hotel'){ if(c.lieu) meta.push(esc(c.lieu)); if(c.dateDepart) meta.push(`→ ${dateCourte({date:c.dateDepart})}`); }
@@ -3452,6 +3452,58 @@ document.addEventListener('click',e=>{
         if(n.me){ state.meSouci=n.me; setState({adminTab:'me-bat'}); return; }
         if(n.nav){ setState(n.nav); return; }
         const c=(state.data||[]).find(x=>String(x.id)===String(n.id)); if(c) setState({detail:c}); else showToast('Demande introuvable (supprimée ?)'); }
+});
+/* ══ DEMANDES RÉCURRENTES : créées automatiquement chaque jour ouvré, refusables une par une ══ */
+const REC_HORIZON=7; // jours à l'avance
+function ferieFR(d){ const y=d.getFullYear(), k=`${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    if(['01-01','05-01','05-08','07-14','08-15','11-01','11-11','12-25'].includes(k)) return true;
+    const a=y%19,b=Math.floor(y/100),c=y%100,dd=Math.floor(b/4),e=b%4,f=Math.floor((b+8)/25),g=Math.floor((b-f+1)/3),h=(19*a+b-dd-g+15)%30,i=Math.floor(c/4),kk=c%4,l=(32+2*e+2*i-h-kk)%7,m=Math.floor((a+11*h+22*l)/451),mo=Math.floor((h+l-7*m+114)/31),da=((h+l-7*m+114)%31)+1;
+    const paques=new Date(y,mo-1,da), plus=n=>{ const x=new Date(paques); x.setDate(x.getDate()+n); return isoDay(x); };
+    return [plus(1),plus(39),plus(50)].includes(isoDay(d));
+}
+const REC_SEED=[{id:'rec-cyrius',actif:true,type:'repas',demandeur:'Julia POITIER',pourQui:'Cyrius PETER',presta:'Ciboulette',heure:'12h00',desc:'Déjeuner',lieu:'Bureau',nb:1,jours:[1,2,3,4,5],faits:[]}];
+async function loadRecurrences(){ try{ state.rec=await paramGet('recurrences'); }catch(e){ state.rec=null; return false; }
+    if(!state.rec||!Array.isArray(state.rec.regles)) state.rec={regles:[],seed:0};
+    if(!state.rec.seed){ REC_SEED.forEach(r=>{ if(!state.rec.regles.some(x=>x.id===r.id)) state.rec.regles.push(JSON.parse(JSON.stringify(r))); }); state.rec.seed=1; await paramSet('recurrences',state.rec).catch(()=>{}); }
+    return true; }
+let _recEnCours=false, _recDernier=0;
+async function genRecurrences(force){
+    if(!sessionValid()||_recEnCours||(!force&&Date.now()-_recDernier<3600e3)) return; _recEnCours=true; _recDernier=Date.now();
+    try{
+        if(!(await loadRecurrences())) return;
+        const norm=s=>sansAccent(String(s||'')).toUpperCase().replace(/\s+/g,' ').trim(); let crees=0, change=false;
+        for(const r of state.rec.regles){ if(!r.actif) continue; r.faits=r.faits||[];
+            for(let i=0;i<=REC_HORIZON;i++){ const d=new Date(); d.setHours(12,0,0,0); d.setDate(d.getDate()+i); const k=isoDay(d);
+                if(!(r.jours||[1,2,3,4,5]).includes(d.getDay())||ferieFR(d)||r.faits.includes(k)) continue;
+                const deja=(state.data||[]).some(c=>c.type===r.type&&String(c.date).slice(0,10)===k&&norm(c.presta)===norm(r.presta)&&norm(c.pourQui).includes(norm(r.pourQui)));
+                r.faits.push(k); change=true; if(deja) continue;
+                const it={id:Date.now()+i,code:genCode(r.type),pris:'En cours',demandeur:r.demandeur,pourQui:r.pourQui,date:k,dateDepart:'',desc:r.desc,lieu:r.lieu,heure:r.heure,presta:r.presta,prix:0,paie:'',nb:r.nb||1,comment:'Repas récurrent',type:r.type,depart:'',arrivee:'',vol:'',yooz:'',tel:''};
+                const saved=await dbInsert(it); state.data=[saved,...state.data.filter(c=>c.id!==it.id)];
+                try{ setSuivi([saved.id||it.id],()=>({recurrent:r.id})); }catch(e){} crees++;
+            }
+            r.faits=r.faits.filter(k=>k>=isoDay(new Date(Date.now()-60*864e5)));
+        }
+        if(change) await paramSet('recurrences',state.rec);
+        if(crees){ try{ logAction('Demandes récurrentes créées',[{id:null,desc:`${crees} repas récurrent${crees>1?'s':''}`}]); }catch(e){} render(); }
+    }catch(e){ console.error('Récurrences :',e); } finally{ _recEnCours=false; }
+}
+function renderReglagesRecurrences(secHead){
+    const R=(state.rec&&state.rec.regles)||[]; const J=['dim.','lun.','mar.','mer.','jeu.','ven.','sam.'];
+    if(!state.rec){ loadRecurrences().then(render); return '<div class="empty-note" style="padding:30px;">Chargement…</div>'; }
+    return `<div class="settings-section">${secHead('calendar','Demandes récurrentes',`Créées automatiquement ${REC_HORIZON} jours à l’avance, jours ouvrés hors jours fériés. Chaque jour arrive dans « Reçue » : « Refuser » annule seulement ce jour-là.`)}
+    ${R.length?R.map(r=>`<div class="settings-item" style="align-items:flex-start;gap:12px;">
+        <div style="flex:1;min-width:0;"><b style="font-size:14px;">${esc(TYPE_LABEL[r.type]||'')} · ${esc(r.pourQui)}</b>
+            <div style="font-size:12.5px;color:var(--ink-soft);margin-top:2px;">${esc(r.presta)} · ${esc(r.heure)} · ${esc(r.lieu||'')} · ${r.nb||1} pers. · demandeur ${esc(r.demandeur)}</div>
+            <div style="font-size:12.5px;color:var(--ink-soft);">${(r.jours||[]).map(j=>J[j]).join(' ')}${r.actif?'':' · <b style="color:#b45309;">en pause</b>'}</div></div>
+        <button class="btn-sm" data-rec="pause" data-id="${esc(r.id)}">${r.actif?'Mettre en pause':'Reprendre'}</button>
+        <button class="btn-sm" style="color:#b91c1c;" data-rec="del" data-id="${esc(r.id)}">${icon('trash',13)} Supprimer</button></div>`).join(''):'<div class="empty-note" style="padding:20px;">Aucune demande récurrente.</div>'}
+    </div>`;
+}
+document.addEventListener('click',async e=>{ const b=e.target.closest('[data-rec]'); if(!b||!state.rec||!isAdmin()) return;
+    const r=state.rec.regles.find(x=>x.id===b.getAttribute('data-id')); if(!r) return;
+    if(b.getAttribute('data-rec')==='pause'){ r.actif=!r.actif; }
+    else { if(!confirm(`Supprimer la récurrence « ${r.pourQui} · ${r.presta} » ?\n\nLes demandes déjà créées restent dans le suivi.`)) return; state.rec.regles=state.rec.regles.filter(x=>x!==r); }
+    await paramSet('recurrences',state.rec).catch(()=>showToast(`${icon('alert',13)} Non enregistré (réseau)`)); render(); if(r.actif) genRecurrences(true);
 });
 function renderStock(m){
     if(!state.stockLoaded){ loadStock().then(render); return `<div class="empty-note" style="padding:60px;">Chargement du stock…</div>`; }
@@ -5184,6 +5236,7 @@ function renderSettings(){
         ['equipe','shield','Équipe & accès',`${adminList().length} admin${adminList().length>1?'s':''} · ${settings.assistantes.length} assistantes · ${(settings.directeurs||[]).length} directeurs`],
         ['prestataires','box','Prestataires',`${['prestatairesRepas','prestatairesTaxi','prestatairesCommande','prestatairesHotel'].reduce((n,k)=>n+(settings[k]||[]).length,0)} entrées`],
         ['emails','mail','Emails',`${['alerte','confirmation','copie','annulation'].filter(mailsOn).length} type${['alerte','confirmation','copie','annulation'].filter(mailsOn).length>1?'s':''} activé${['alerte','confirmation','copie','annulation'].filter(mailsOn).length>1?'s':''}`],
+        ['recurrents','calendar','Demandes récurrentes',`${((state.rec&&state.rec.regles)||[]).filter(r=>r.actif).length} active(s)`],
         ['apparence','sliders','Apparence','Nom, logo, couleurs'],
         ['donnees','grid','Données','Corbeille'],
     ];
@@ -5282,6 +5335,7 @@ function renderSettings(){
     </div>
 `;
     else if(cur[0]==='emails') body=renderReglagesEmails(secHead);
+    else if(cur[0]==='recurrents') body=renderReglagesRecurrences(secHead);
     else if(cur[0]==='apparence') body=renderApparence();
     else if(cur[0]==='prestataires') body=`
     ${renderPrestaModal()}
@@ -6461,6 +6515,7 @@ if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.
     if (sessionValid()) {
         await Promise.all([loadTrash(), loadJournal(), loadStock(), loadParking(), loadNotifsVues(), /avonde/i.test(`${userEmail()} ${userName()}`)?loadMe():null]);
         if (lsGet('last_vue') === 'admin' || state.live) { state.vue = 'admin'; state.authed = true; state.adminTab = 'dashboard'; }
+        setTimeout(()=>genRecurrences(true),1500);
     }
     state.loading = false;
     render();
@@ -6479,7 +6534,7 @@ if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.
             if(isTyping || isInForm){ updateBadgeFrom(fresh); return; }
             state.data=fresh;
             trackFirstSeen(fresh);
-            if(state.vue==='admin' && state.authed){ await Promise.all([loadTrash(), loadJournal(), loadStock(), loadParking(), loadSuivi()]); }
+            if(state.vue==='admin' && state.authed){ await Promise.all([loadTrash(), loadJournal(), loadStock(), loadParking(), loadSuivi()]); genRecurrences(); }
             else if(AUTH){ await loadSuivi(); }
             render();
             if(sessionValid() && nouvelles.length){
