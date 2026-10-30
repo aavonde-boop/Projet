@@ -20,7 +20,7 @@
 import nodemailer from "npm:nodemailer@6.9.16";
 
 type Row = Record<string, any>;
-type Ev = { uid: string; start: Wall; minutes: number; title: string; location: string; desc: string; alarm: number };
+type Ev = { uid: string; start: Wall; minutes: number; title: string; location: string; desc: string; alarm: number; libre?: boolean };
 type Wall = { y: number; mo: number; d: number; h: number; mi: number }; // heure de Paris
 
 const TZ = "Europe/Paris";
@@ -105,7 +105,7 @@ export function rappels(c: Row, now: Wall = parisNow()): Ev[] {
   const out: Ev[] = [{
     uid: (String(c.id) + "-commande@gestion-commandes"), start: cmd, minutes: 15,
     title: ("Commander · " + String(t) + " (" + String(jourCourt(start)) + ")"), location: "",
-    desc: ("À commander auprès de " + String(c.presta || "du prestataire") + ".\n\n" + String(infos) + "\n\n——— Message prêt à envoyer ———\n" + String(messageCommande(c, start))), alarm: 0,
+    desc: ("À commander auprès de " + String(c.presta || "du prestataire") + ".\n\n" + String(infos) + "\n\n——— Message prêt à envoyer ———\n" + String(messageCommande(c, start))), alarm: 0, libre: true,
   }];
   // 2) Mise en place
   const avant = c.type === "taxi" ? 15 : 30;
@@ -135,8 +135,9 @@ export function ics(ev: Ev, method: "REQUEST" | "CANCEL", organizer: string, att
     ("DTSTART;TZID=" + String(TZ) + ":" + String(icsWall(ev.start))), ("DTEND;TZID=" + String(TZ) + ":" + String(icsWall(addMin(ev.start, ev.minutes)))),
     fold(("SUMMARY:" + String(esc(ev.title)))), ev.location ? fold(("LOCATION:" + String(esc(ev.location)))) : "", fold(("DESCRIPTION:" + String(esc(ev.desc)))),
     fold(("ORGANIZER;CN=Gestion des services:mailto:" + String(organizer))),
-    ...attendees.map((a) => fold(("ATTENDEE;ROLE=REQ-PARTICIPANT;PARTSTAT=NEEDS-ACTION;RSVP=FALSE:mailto:" + String(a)))),
-    ("STATUS:" + String(method === "CANCEL" ? "CANCELLED" : "CONFIRMED")), "TRANSP:OPAQUE", "CLASS:PUBLIC",
+    // Rappel « Commander » : déjà accepté et affiché « Disponible » ; les autres rappels ne changent pas
+    ...attendees.map((a) => fold(("ATTENDEE;ROLE=REQ-PARTICIPANT;PARTSTAT=" + String(ev.libre ? "ACCEPTED" : "NEEDS-ACTION") + ";RSVP=FALSE:mailto:" + String(a)))),
+    ("STATUS:" + String(method === "CANCEL" ? "CANCELLED" : "CONFIRMED")), ("TRANSP:" + String(ev.libre ? "TRANSPARENT" : "OPAQUE")), "CLASS:PUBLIC",
     "X-MICROSOFT-CDO-BUSYSTATUS:FREE", "X-MICROSOFT-CDO-INTENDEDSTATUS:FREE",
     ...(method === "REQUEST" ? ["BEGIN:VALARM", "ACTION:DISPLAY", ("TRIGGER:-PT" + String(ev.alarm) + "M"), fold(("DESCRIPTION:" + String(esc(ev.title)))), "END:VALARM"] : []),
     "END:VEVENT", "END:VCALENDAR"];
