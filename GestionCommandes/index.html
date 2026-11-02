@@ -718,7 +718,7 @@ function sbH(extra){ const ok=typeof AUTH!=='undefined'&&AUTH&&AUTH.access_token
 // Fonctions contrôlées côté serveur (page publique, assistantes). null = pas encore installées → ancien fonctionnement.
 // Session expirée (appli restée en arrière-plan) : on la renouvelle avant d'interroger Supabase
 let _sbRefresh=null;
-async function sbPret(){ if(typeof AUTH!=='undefined'&&AUTH&&AUTH.refresh_token&&AUTH.expires_at<Date.now()+60000){ _sbRefresh=_sbRefresh||authRefresh().finally(()=>{ _sbRefresh=null; }); await _sbRefresh; } }
+async function sbPret(){ if(typeof AUTH!=='undefined'&&AUTH&&AUTH.refresh_token&&AUTH.expires_at<Date.now()+60000){ _sbRefresh=_sbRefresh||authRefresh().finally(()=>{ _sbRefresh=null; }); const ok=await _sbRefresh; if(!ok&&AUTH&&AUTH.expires_at<Date.now()&&!window._sessWarn){ window._sessWarn=1; try{ showToast(`${icon('alert',13)} Session expirée : déconnectez-vous puis reconnectez-vous`); }catch(e){} } } }
 async function sbRpc(fn, args){
     await sbPret();
     const r=await fetch(`${SB_URL}/rest/v1/rpc/${fn}`,{method:'POST',headers:sbH(),body:JSON.stringify(args||{})});
@@ -3470,7 +3470,7 @@ async function loadRecurrences(){ try{ state.rec=await paramGet('recurrences'); 
     return true; }
 let _recEnCours=false, _recDernier=0;
 async function genRecurrences(force){
-    if(!sessionValid()||_recEnCours||(!force&&Date.now()-_recDernier<3600e3)) return; _recEnCours=true; _recDernier=Date.now();
+    if(!sessionValid()||_recEnCours||(!force&&Date.now()-_recDernier<3600e3)||!(state.data||[]).length||!(AUTH&&AUTH.expires_at>Date.now())) return; _recEnCours=true; _recDernier=Date.now();
     try{
         if(!(await loadRecurrences())) return;
         const norm=s=>sansAccent(String(s||'')).toUpperCase().replace(/\s+/g,' ').trim(); let crees=0, change=false;
@@ -3594,6 +3594,10 @@ function recuInfo(s){ if(!s.recu) return ''; const t=new Date(s.recu).toLocaleTi
 ══════════════════════════════════════ */
 let _liveTimer=null;
 function renderLive(){
+    if(!sessionValid()) return `<div class="lv" style="display:flex;align-items:center;justify-content:center;"><div style="text-align:center;max-width:520px;padding:40px;border:1px solid rgba(255,255,255,.12);border-radius:16px;background:rgba(255,255,255,.04);">
+        <div style="font-size:34px;margin-bottom:10px;">🔒</div><div style="font-size:22px;font-weight:700;color:#fff;margin-bottom:8px;">Session expirée</div>
+        <div style="color:#a9b8ca;font-size:15px;margin-bottom:20px;">L’écran live a besoin d’un compte administrateur connecté pour afficher les demandes.</div>
+        <button data-live-exit class="btn-primary" style="padding:12px 22px;">Se reconnecter</button></div></div>`;
     const now=new Date(), todayK=isoDay(now), tom=new Date(now); tom.setDate(now.getDate()+1);
     const ev=eventsByDay(); const today=(ev[todayK]||[]), demain=(ev[isoDay(tom)]||[]);
     const P=meOk()&&state.me?state.me:null, mn=d=>{ const x=new Date(d); return x.getHours()*60+x.getMinutes(); };
@@ -6153,7 +6157,7 @@ function attachEvents(){
     if(sb)sb.onclick=_submitForm;
     // ── Écran live / vue express / bien reçu ──
     document.querySelectorAll('[data-live-open]').forEach(el=>el.onclick=()=>{ state.live=true; render(); try{ document.documentElement.requestFullscreen?.(); }catch(e){} });
-    document.querySelectorAll('[data-live-exit]').forEach(el=>el.onclick=()=>{ state.live=false; clearInterval(_liveTimer); _liveTimer=null; try{ if(document.fullscreenElement) document.exitFullscreen(); }catch(e){} if(location.hash==='#live') history.replaceState(null,'',location.pathname); render(); });
+    document.querySelectorAll('[data-live-exit]').forEach(el=>el.onclick=()=>{ state.live=false; if(!sessionValid()){ state.loginScreen=true; state.vue='select'; } clearInterval(_liveTimer); _liveTimer=null; try{ if(document.fullscreenElement) document.exitFullscreen(); }catch(e){} if(location.hash==='#live') history.replaceState(null,'',location.pathname); render(); });
     document.querySelectorAll('[data-express-go]').forEach(el=>el.onclick=()=>{ let nav={}; try{ nav=JSON.parse(el.getAttribute('data-express-go')); }catch(e){} history.replaceState(null,'',location.pathname); setState({express:false,vue:'admin',authed:isAdmin(),...nav}); });
     document.querySelectorAll('[data-recu]').forEach(el=>el.onclick=e=>{ e.stopPropagation(); confirmerReception(el.getAttribute('data-recu')); });
     // ── Email collé ──
