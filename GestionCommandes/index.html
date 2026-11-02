@@ -502,8 +502,8 @@
         .lv-now span{ position:absolute; top:-22px; left:50%; transform:translateX(-50%); background:#f43f5e; color:#fff; font-size:11px; font-weight:700; padding:2px 7px; border-radius:6px; white-space:nowrap; }
         .lv-now::after{ content:''; position:absolute; bottom:-4px; left:-4px; width:10px; height:10px; border-radius:50%; background:#f43f5e; animation:lvPing 1.6s infinite; }
         @keyframes lvPing{ 0%{ box-shadow:0 0 0 0 rgba(244,63,94,.6); } 100%{ box-shadow:0 0 0 14px rgba(244,63,94,0); } }
-        .lv-ev{ position:absolute; min-width:150px; max-width:220px; padding:8px 11px; border-radius:10px; background:color-mix(in srgb,var(--c) 18%,#0b1422); border:1px solid color-mix(in srgb,var(--c) 55%,transparent); border-left:4px solid var(--c); animation:lvPop .6s cubic-bezier(.2,.8,.2,1) both; }
-        .lv-ev b{ display:block; font-size:13px; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; } .lv-ev span{ display:block; font-size:11.5px; color:#a9b8ca; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .lv-ev{ position:absolute; min-width:160px; max-width:240px; padding:8px 11px; border-radius:10px; background:color-mix(in srgb,var(--c) 18%,#0b1422); border:1px solid color-mix(in srgb,var(--c) 55%,transparent); border-left:4px solid var(--c); animation:lvPop .6s cubic-bezier(.2,.8,.2,1) both; }
+        .lv-ev b{ display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; font-size:12.5px; line-height:1.25; color:#fff; overflow:hidden; } .lv-ev span{ display:block; font-size:11px; color:#a9b8ca; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; } .lv-ev span i{ font-style:normal; color:var(--c); font-weight:600; } .lv-ev.rap{ border-style:dashed; border-left-style:solid; }
         .lv-ev.ok{ opacity:.55; } .lv-ev.ok b::after{ content:' ✓'; color:#4ade80; }
         @keyframes lvPop{ from{ opacity:0; transform:scale(.85) translateY(8px); } to{ opacity:1; transform:none; } }
         .lv-empty{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; color:#7d8ea3; font-size:15px; }
@@ -3604,14 +3604,19 @@ function renderLive(){
     const hhmm=d=>new Date(d).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}).replace(':','h');
     const LS=P?liveStats(now):null;
     const n=countStages(); const recus=today.filter(c=>suiviOf(c).recu||stageOf(c)==='fait').length;
-    const hrs=[...today.map(c=>heureMin(c.heure)).filter(x=>x!==9999),...ints.map(s=>mn(s.interv))].map(x=>x/60);
+    const aCmd=c=>['avalider','acommander'].includes(stageOf(c));
+    const RAP=[...demain.filter(c=>c.type!=='hotel'||true).map(c=>({r:c,m:10*60,demain:true})),...today.filter(c=>aCmd(c)&&heureMin(c.heure)!==9999&&heureMin(c.heure)-60>now.getHours()*60+now.getMinutes()).map(c=>({r:c,m:Math.max(7*60,heureMin(c.heure)-60),demain:false}))];
+    const HOT=today.filter(c=>c.type==='hotel'&&heureMin(c.heure)===9999).map(c=>({h:c,m:18*60}));
+    const MEM=(rapp||[]).filter(x=>isoDay(new Date(x.rappel))===todayK&&(new Date(x.rappel).getHours()||new Date(x.rappel).getMinutes())).map(x=>({mm:x,m:mn(x.rappel)}));
+    const hrs=[...today.map(c=>heureMin(c.heure)).filter(x=>x!==9999),...ints.map(s=>mn(s.interv)),...RAP.map(x=>x.m),...HOT.map(x=>x.m),...MEM.map(x=>x.m)].map(x=>x/60);
     const H0=Math.min(7,Math.floor(Math.min(24,...hrs))), H1=Math.max(21,Math.ceil(Math.max(0,...hrs))+1), pos=c=>{ const mn=heureMin(c.heure); return mn===9999?null:Math.max(0,Math.min(100,(mn/60-H0)/(H1-H0)*100)); };
     const nowPos=Math.max(0,Math.min(100,((now.getHours()+now.getMinutes()/60)-H0)/(H1-H0)*100)); window._lvRange=[H0,H1];
     const COL={avalider:'#f59e0b',acommander:'#f59e0b',commandee:'#60a5fa',fait:'#4ade80',refusee:'#f87171'};
     const timed=today.filter(c=>pos(c)!==null);
     const posI=s=>Math.max(0,Math.min(100,(mn(s.interv)/60-H0)/(H1-H0)*100));
-    const TL=[...timed.map(c=>({c,p:pos(c),m:heureMin(c.heure)})),...ints.map(s=>({s,p:posI(s),m:mn(s.interv)}))].sort((a,b)=>a.m-b.m);
-    const lanes=[]; TL.forEach(x=>{ const p=x.p; let l=lanes.findIndex(y=>p-y>14); if(l<0){ l=lanes.length; lanes.push(p);} else lanes[l]=p; x.lane=l; });
+    const posM=m=>Math.max(0,Math.min(100,(m/60-H0)/(H1-H0)*100));
+    const TL=[...timed.map(c=>({c,p:pos(c),m:heureMin(c.heure)})),...ints.map(s=>({s,p:posI(s),m:mn(s.interv)})),...RAP.map(x=>({...x,p:posM(x.m)})),...HOT.map(x=>({...x,p:posM(x.m)})),...MEM.map(x=>({...x,p:posM(x.m)}))].sort((a,b)=>a.m-b.m);
+    const lanes=[]; TL.forEach(x=>{ const p=x.p; let l=lanes.findIndex(y=>p-y>15.5); if(l<0){ l=lanes.length; lanes.push(p);} else lanes[l]=p; x.lane=l; });
     const prochaines=today.filter(c=>{ const hp=heurePrevue(c); return !hp||hp>=new Date(now.getTime()-30*60000); }).slice(0,6);
     const cpt=(v,l,col,i)=>`<div class="lv-kpi" style="animation-delay:${i*120}ms;"><span class="lv-kpi-v" data-count="${v}" style="color:${col};">0</span><span class="lv-kpi-l">${l}</span></div>`;
     const ligne=c=>{ const st=stageOf(c), s=suiviOf(c), hp=heurePrevue(c), bientot=hp&&hp-now<45*60000&&hp>now;
@@ -3630,10 +3635,18 @@ function renderLive(){
         </div>
         <section class="lv-tl">
             <div class="lv-tl-h">${Array.from({length:H1-H0+1},(_,i)=>`<span style="left:${i/(H1-H0)*100}%;">${H0+i}h</span>`).join('')}</div>
-            <div class="lv-tl-b" style="height:${Math.max(P?2:3,lanes.length)*76+20}px;">
+            <div class="lv-tl-b" style="height:${Math.max(P?2:3,lanes.length)*96+20}px;">
                 ${Array.from({length:H1-H0+1},(_,i)=>`<i style="left:${i/(H1-H0)*100}%;"></i>`).join('')}
                 <div class="lv-now" id="lvNow" style="left:${nowPos}%;"><span>${now.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})}</span></div>
-                ${TL.map((x,i)=>{ if(x.s) return `<div class="lv-ev" style="left:${x.p}%;top:${x.lane*76+10}px;width:13%;--c:#a78bfa;animation-delay:${300+i*90}ms;"><b>${hhmm(x.s.interv)} 🔧 ${esc(x.s.titre)}</b><span>${esc([meZone(x.s),x.s.interv_par].filter(Boolean).join(' · '))}</span></div>`; const c=x.c; const st=stageOf(c), s=suiviOf(c); return `<div class="lv-ev ${s.recu?'ok':''}" style="left:${x.p}%;top:${x.lane*76+10}px;width:13%;--c:${COL[st]};animation-delay:${300+i*90}ms;"><b>${esc(c.heure)} ${esc(titreDe(c))}</b><span>${esc(c.type==='repas'?`${c.nb||1} pers. · ${c.lieu||''}`:c.type==='taxi'?(c.arrivee||''):(c.lieu||''))}</span></div>`; }).join('')}
+                ${TL.map((x,i)=>{ const top=x.lane*96+10, d=`animation-delay:${300+i*90}ms;`, IC={repas:'🍽',taxi:'🚕',coursier:'📦',commande:'📦',hotel:'🛏'};
+                    const bloc=(cls,col,l1,l2,l3)=>`<div class="lv-ev ${cls}" style="left:${x.p}%;top:${top}px;width:15%;--c:${col};${d}"><b>${l1}</b>${l2?`<span>${l2}</span>`:''}${l3?`<span>${l3}</span>`:''}</div>`;
+                    if(x.s) return bloc('','#a78bfa',`${hhmm(x.s.interv)} 🔧 ${esc(x.s.titre)}`,esc(meZone(x.s)),esc([x.s.interv_par,x.s.entreprise].filter(Boolean).join(' · ')));
+                    if(x.mm) return bloc('','#94a3b8',`${hhmm(x.mm.rappel)} 📝 ${esc(String(x.mm.texte||x.mm.txt||'Rappel').split('\n')[0].slice(0,60))}`,'Mémo','');
+                    if(x.r){ const c=x.r, ok=!aCmd(c); return bloc(ok?'ok':'rap','#f59e0b',`${x.demain?'10h00':hhmm(new Date(new Date().setHours(0,x.m,0,0)))} 📋 Commander ${esc(titreDe(c))}`,`${x.demain?'pour demain':'aujourd’hui'} ${esc(c.heure||'')} · ${esc(c.pourQui||'')}`,esc(c.presta||'prestataire à choisir')); }
+                    if(x.h){ const c=x.h, st=stageOf(c); return bloc(suiviOf(c).recu?'ok':'',COL[st],`🛏 Arrivée hôtel · ${esc(c.pourQui||'')}`,esc(c.presta||'hôtel à choisir'),c.dateDepart?'jusqu’au '+esc(dateCourte({date:c.dateDepart})):''); }
+                    const c=x.c, st=stageOf(c), s=suiviOf(c), ETQ={avalider:'à commander',acommander:'à commander',commandee:'commandée',fait:'faite'};
+                    const ou=c.type==='taxi'||c.type==='coursier'?`${c.depart||'?'} → ${c.arrivee||'?'}`:c.type==='repas'?`${c.nb||1} pers. · ${c.lieu||''}`:(c.lieu||'');
+                    return bloc(s.recu?'ok':'',COL[st],`${esc(c.heure)} ${IC[c.type]||''} ${esc(titreDe(c))}`,esc([c.pourQui,c.presta].filter(Boolean).join(' · ')),`${esc(ou)} · <i>${s.recu?'livrée':ETQ[st]||''}</i>`); }).join('')}
                 ${TL.length?'':`<div class="lv-empty">Aucune prestation${P?' ni intervention':''} aujourd’hui</div>`}
             </div>
         </section>
