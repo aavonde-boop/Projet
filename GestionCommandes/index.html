@@ -522,7 +522,10 @@
         .lv-next-l{ grid-column:1/-1; color:#9fb0c4; font-size:14px; text-transform:uppercase; letter-spacing:.08em; font-weight:600; margin-bottom:6px; }
         .lv-next-cd{ font:700 54px var(--ft); color:#fff; letter-spacing:-.02em; font-variant-numeric:tabular-nums; line-height:1; }
         .lv-next-d b{ display:block; font-size:22px; color:#fff; } .lv-next-d span{ display:block; color:#a9b8ca; font-size:15px; margin-top:4px; }
-.lv-p{ grid-template-rows:auto auto auto auto 1fr auto; } .lv-p{ overflow-y:auto; } .lv-p .lv-tl,.lv-p .lv-next,.lv-p .lv-stats{ min-height:fit-content; }
+.lv-p{ grid-template-rows:auto auto auto auto minmax(0,1fr) auto; } .lv-p{ overflow:hidden; } .lv-p .lv-stats{ min-height:0; overflow:hidden; } .lv-list{ overflow:hidden; min-height:0; } .lv-ev{ overflow:hidden; box-sizing:border-box; } .lv-tl-b.c2 .lv-ev span+span{ display:none; } .lv-tl-b.c1 .lv-ev span{ display:none; } .lv-tl-b.c1 .lv-ev b{ -webkit-line-clamp:1; }
+        .lv.dense{ gap:12px 20px; padding-top:14px; } .lv.dense .lv-kpi{ padding:10px 16px; } .lv.dense .lv-kpi-v{ font-size:32px; } .lv.dense .lv-next{ padding:12px 20px; } .lv.dense .lv-next-cd{ font-size:34px; } .lv.dense .lv-item{ padding:8px 12px; margin-bottom:7px; } .lv.dense .lv-clock{ font-size:32px; } .lv:not(.lv-p) .lv-list{ align-self:stretch; }
+        @media(max-height:900px){ .lv-p .lv-stats{ align-self:stretch; } .lv-p .lv-s-row{ flex:1; min-height:0; } .lv-p .lv-s{ min-height:0; overflow:hidden; } .lv-p .lv-bars{ flex:1; height:auto!important; min-height:22px; max-height:72px; } }
+        @media(max-height:820px){ .lv.dense{ gap:10px 18px; padding-top:10px; } .lv.dense .lv-kpi-v{ font-size:28px!important; } .lv.dense .lv-kpi-l{ margin-top:2px!important; font-size:12.5px!important; } .lv.dense .lv-s{ padding:8px 14px; } .lv.dense .lv-s-v{ font-size:22px!important; } .lv.dense .lv-next-cd{ font-size:30px!important; } .lv.dense .lv-ticker{ height:46px; } .lv.dense .lv-ring{ } .lv.dense .lv-s-bat svg{ width:56px; height:56px; } }
         @media(max-height:980px){ .lv-p{ gap:16px 24px; padding-top:20px; } .lv-p .lv-kpi{ padding:12px 18px; } .lv-p .lv-kpi-v{ font-size:38px; } .lv-p .lv-kpi-l{ font-size:13.5px; margin-top:4px; } .lv-p .lv-next{ padding:14px 22px; } .lv-p .lv-next-cd{ font-size:40px; } .lv-p .lv-next-d b{ font-size:18px; } .lv-p .lv-s-v{ font-size:24px; } .lv-p .lv-bars{ height:52px; } .lv-p .lv-clock{ font-size:36px; } } .lv-p .lv-list{ grid-row:3 / span 3; } .lv-p .lv-ticker{ grid-row:6; }
         .lv-stats{ grid-column:1; grid-row:5; align-self:start; display:flex; flex-direction:column; gap:14px; }
         .lv-s-grid{ display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:14px; }
@@ -3619,7 +3622,8 @@ function renderLive(){
     const timed=today.filter(c=>pos(c)!==null);
     const posI=s=>Math.max(0,Math.min(100,(mn(s.interv)/60-H0)/(H1-H0)*100));
     const posM=m=>Math.max(0,Math.min(100,(m/60-H0)/(H1-H0)*100));
-    const TL=[...timed.map(c=>({c,p:pos(c),m:heureMin(c.heure)})),...ints.map(s=>({s,p:posI(s),m:mn(s.interv)})),...RAP.map(x=>({...x,p:posM(x.m)})),...HOT.map(x=>({...x,p:posM(x.m)})),...MEM.map(x=>({...x,p:posM(x.m)}))].sort((a,b)=>a.m-b.m);
+    const RG={}; RAP.forEach(x=>{ const k=x.m+(x.demain?'d':''); (RG[k]=RG[k]||{rg:[],m:x.m,demain:x.demain}).rg.push(x.r); });
+    const TL=[...timed.map(c=>({c,p:pos(c),m:heureMin(c.heure)})),...ints.map(s=>({s,p:posI(s),m:mn(s.interv)})),...Object.values(RG).map(x=>({...x,p:posM(x.m)})),...HOT.map(x=>({...x,p:posM(x.m)})),...MEM.map(x=>({...x,p:posM(x.m)}))].sort((a,b)=>a.m-b.m);
     const lanes=[]; TL.forEach(x=>{ const p=x.p; let l=lanes.findIndex(y=>p-y>15.5); if(l<0){ l=lanes.length; lanes.push(p);} else lanes[l]=p; x.lane=l; });
     const prochaines=today.filter(c=>{ const hp=heurePrevue(c); return !hp||hp>=new Date(now.getTime()-30*60000); }).slice(0,6);
     const cpt=(v,l,col,i)=>`<div class="lv-kpi" style="animation-delay:${i*120}ms;"><span class="lv-kpi-v" data-count="${v}" style="color:${col};">0</span><span class="lv-kpi-l">${l}</span></div>`;
@@ -3627,7 +3631,7 @@ function renderLive(){
         return `<div class="lv-item ${bientot?'pulse':''}" style="--c:${COL[st]};"><span class="lv-h">${esc(c.heure||'—')}</span><div style="min-width:0;flex:1;"><b>${esc(titreDe(c))}${c.type==='repas'?` · ${c.nb||1} pers.`:''}</b><span>${esc([c.type==='taxi'?`${c.depart||''} → ${c.arrivee||''}`:c.lieu,c.presta,c.demandeur].filter(Boolean).join(' · '))}</span></div><span class="lv-st">${s.recu?'Livré ✓':bientot?'Imminent':STAGES[st].court}</span></div>`; };
     const tkI=intsDem.map(s=>`<span>🔧 ${hhmm(s.interv)} ${esc(s.titre)} · ${esc(meZone(s))}</span>`).join('');
     const ticker=(demain.length||tkI)?tkI+demain.map(c=>`<span>${icon(c.type==='taxi'?'car':c.type==='coursier'?'send':c.type==='hotel'?'bed':'utensils',16)} ${esc(c.heure||'')} ${esc(titreDe(c))}${c.type==='repas'?` · ${c.nb||1} pers.`:''}${c.lieu?' · '+esc(c.lieu):''}</span>`).join(''):'<span>Rien de prévu demain pour l’instant</span>';
-    return `<div class="lv ${P?'lv-p':''}">
+    return `<div class="lv ${P?'lv-p dense':''}">
         <div class="lv-bg"></div>
         <header class="lv-top">
             <div class="lv-brand">${logoHtml(18)}<div><b>${esc(marqueNom())}</b><span>Écran live · ${dateLongue(now)} ${now.getFullYear()}</span></div></div>
@@ -3639,14 +3643,16 @@ function renderLive(){
         </div>
         <section class="lv-tl">
             <div class="lv-tl-h">${Array.from({length:H1-H0+1},(_,i)=>`<span style="left:${i/(H1-H0)*100}%;">${H0+i}h</span>`).join('')}</div>
-            <div class="lv-tl-b" style="height:${Math.max(P?2:3,lanes.length)*96+20}px;">
+            ${(()=>{ const nl=Math.max(P?2:3,lanes.length), hb=Math.min(nl*88+10,(P?Math.max((window.innerHeight||900)*.21,(window.innerHeight||900)-680):(window.innerHeight||900)*.32)), lp=hb/nl; return `<div class="lv-tl-b ${lp<46?'c1':lp<68?'c2':''}" style="height:${Math.round(hb)}px;">`; })()}
                 ${Array.from({length:H1-H0+1},(_,i)=>`<i style="left:${i/(H1-H0)*100}%;"></i>`).join('')}
                 <div class="lv-now" id="lvNow" style="left:${nowPos}%;"><span>${now.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})}</span></div>
-                ${TL.map((x,i)=>{ const top=x.lane*96+10, d=`animation-delay:${300+i*90}ms;`, IC={repas:'🍽',taxi:'🚕',coursier:'📦',commande:'📦',hotel:'🛏'};
-                    const bloc=(cls,col,l1,l2,l3)=>`<div class="lv-ev ${cls}" style="left:${x.p}%;top:${top}px;width:15%;--c:${col};${d}"><b>${l1}</b>${l2?`<span>${l2}</span>`:''}${l3?`<span>${l3}</span>`:''}</div>`;
+                ${TL.map((x,i)=>{ const NL=Math.max(P?2:3,lanes.length), top=x.lane/NL*100, d=`animation-delay:${300+i*90}ms;`, IC={repas:'🍽',taxi:'🚕',coursier:'📦',commande:'📦',hotel:'🛏'};
+                    const bloc=(cls,col,l1,l2,l3)=>`<div class="lv-ev ${cls}" style="left:${x.p}%;top:calc(${top}% + 4px);height:calc(${100/NL}% - 8px);width:15%;--c:${col};${d}"><b>${l1}</b>${l2?`<span>${l2}</span>`:''}${l3?`<span>${l3}</span>`:''}</div>`;
                     if(x.s) return bloc('','#a78bfa',`${hhmm(x.s.interv)} 🔧 ${esc(x.s.titre)}`,esc(meZone(x.s)),esc([x.s.interv_par,x.s.entreprise].filter(Boolean).join(' · ')));
                     if(x.mm) return bloc('','#94a3b8',`${hhmm(x.mm.rappel)} 📝 ${esc(String(x.mm.texte||x.mm.txt||'Rappel').split('\n')[0].slice(0,60))}`,'Mémo','');
-                    if(x.r){ const c=x.r, ok=!aCmd(c); return bloc(ok?'ok':'rap','#f59e0b',`${x.demain?'10h00':hhmm(new Date(new Date().setHours(0,x.m,0,0)))} 📋 Commander ${esc(titreDe(c))}`,`${x.demain?'pour demain':'aujourd’hui'} ${esc(c.heure||'')} · ${esc(c.pourQui||'')}`,esc(c.presta||'prestataire à choisir')); }
+                    if(x.rg){ const L=x.rg, reste=L.filter(aCmd), h=x.demain?'10h00':hhmm(new Date(new Date().setHours(0,x.m,0,0)));
+                        if(L.length===1){ const c=L[0]; return bloc(reste.length?'rap':'ok','#f59e0b',`${h} 📋 Commander ${esc(titreDe(c))}`,`${x.demain?'pour demain':'aujourd’hui'} ${esc(c.heure||'')} · ${esc(c.pourQui||'')}`,esc(c.presta||'prestataire à choisir')); }
+                        return bloc(reste.length?'rap':'ok','#f59e0b',`${h} 📋 ${reste.length?`${reste.length} à commander`:'Tout est commandé'} ${x.demain?'pour demain':''}`,esc(L.slice(0,3).map(c=>`${c.heure||''} ${titreDe(c)}`).join(' · ')),L.length>3?`+ ${L.length-3} autre${L.length-3>1?'s':''}`:esc(L.map(c=>c.presta).filter(Boolean).join(', '))); }
                     if(x.h){ const c=x.h, st=stageOf(c); return bloc(suiviOf(c).recu?'ok':'',COL[st],`🛏 Arrivée hôtel · ${esc(c.pourQui||'')}`,esc(c.presta||'hôtel à choisir'),c.dateDepart?'jusqu’au '+esc(dateCourte({date:c.dateDepart})):''); }
                     const c=x.c, st=stageOf(c), s=suiviOf(c), ETQ={avalider:'à commander',acommander:'à commander',commandee:'commandée',fait:'faite'};
                     const ou=c.type==='taxi'||c.type==='coursier'?`${c.depart||'?'} → ${c.arrivee||'?'}`:c.type==='repas'?`${c.nb||1} pers. · ${c.lieu||''}`:(c.lieu||'');
