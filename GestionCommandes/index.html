@@ -2359,7 +2359,7 @@ async function copyText(t){
 }
 
 /* ── Rappels agenda (.ics, s'ouvre dans Outlook, Google Agenda, iPhone…) ──
-   1) « Commander » : le jour même à 9h, 1 h avant si la prestation est avant 10h (ou dans l'heure si c'est déjà passé)
+   1) « Commander » : le jour même à 9h ; la veille à 16h avant 11h ou pour un hôtel (ou dans l'heure si c'est déjà passé)
    2) « Mise en place » : 30 min avant l'heure de la prestation, avec le lieu et toutes les infos */
 function icsDate(d){ const p=n=>String(n).padStart(2,'0'); return `${d.getFullYear()}${p(d.getMonth()+1)}${p(d.getDate())}T${p(d.getHours())}${p(d.getMinutes())}00`; }
 function icsText(t){ return String(t||'').replace(/\\/g,'\\\\').replace(/;/g,'\\;').replace(/,/g,'\\,').replace(/\r?\n/g,'\\n'); }
@@ -2384,7 +2384,7 @@ function rappelEvents(c, which){
         suiviOf(c).note?`Note interne : ${suiviOf(c).note}`:'', c.code?`Code : ${c.code}`:''
     ].filter(Boolean).join('\n');
     if(which!=='mep'){
-        let r=new Date(start); r.setHours(9,0,0,0); if(start.getHours()<10) r=new Date(start.getTime()-60*60000);
+        let r=new Date(start); r.setHours(9,0,0,0); if(start.getHours()<11||c.type==='hotel'){ r.setDate(r.getDate()-1); r.setHours(16,0,0,0); }
         if(r<now){ r=new Date(now.getTime()+60*60000); r.setMinutes(0,0,0); }
         if(r>start) r=new Date(start.getTime()-60*60000);
         ev.push({uid:`${c.id}-commande`, start:r, min:15, title:`Commander · ${titre} (${dateCourte(c)})`, location:'',
