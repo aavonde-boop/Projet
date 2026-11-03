@@ -2175,10 +2175,9 @@ function renderAdminView(m){
     else if(state.adminTab==='settings')        main=renderSettings();
     else if(state.adminTab==='activite')     main=renderActivite(m);
     else if(state.adminTab==='stats'||state.adminTab==='analyse') main=renderStatsPage(m);
-    else if(String(state.adminTab).startsWith('me')) main=meOk()||!state.meLoaded?renderMe(m):renderDashboard(total,attente,m);
+    else if(String(state.adminTab).startsWith('me')) main=meOk()?renderMe(m):renderDashboard(total,attente,m);
     else if(state.adminTab==='suivi')        main=renderSuivi(m);
     else if(state.adminTab==='calendrier')   main=renderCalendrier(m);
-    else if(state.adminTab==='stock')        main=renderStock(m);
     else if(state.adminTab==='parking')      main=renderParking(m);
     else if(state.adminTab==='notifs')       main=renderNotifs(m);
 
@@ -2225,7 +2224,7 @@ function renderAdminView(m){
             <div class="side-grp" style="padding-top:12px;">
                 ${item('dashboard','dashboard','Tableau de bord')}${item('notifs','bell','Notifications')}${meOk()?`<div class="perso">${item('me-memo','edit','Mémo perso')}</div>`:''}</div>
             <div class="side-grp"><h6 class="side-lbl">Commandes</h6>
-                ${item('suivi','clipboard','Suivi des demandes')}${item('calendrier','calendar','Agenda')}${item('activite','grid','Historique')}${item('stock','box','Stock')}</div>
+                ${item('suivi','clipboard','Suivi des demandes')}${item('calendrier','calendar','Agenda')}${item('activite','grid','Historique')}</div>
             ${meOk()?`<div class="side-grp perso"><h6 class="side-lbl">Bâtiment ${icon('lock',10)}</h6>${item('me-bat','tool','Signalements')}${item('me-stat','check','Actions et stats')}</div>`:''}
             <div class="side-grp"><h6 class="side-lbl">Site</h6>${item('parking','car','Parking & véhicules')}</div>
             <div class="side-grp"><h6 class="side-lbl">Analyses</h6>
@@ -2689,7 +2688,7 @@ function mobileNavHtml(){
     </div></nav>
     ${state.moreOpen?`<div data-nav='{"moreOpen":false}' style="position:fixed;inset:0;background:rgba(15,23,42,.35);z-index:9500;display:flex;align-items:flex-end;">
         <div style="background:#fff;width:100%;border-radius:20px 20px 0 0;padding:14px 14px calc(14px + env(safe-area-inset-bottom,0px));">
-            ${[...(meOk()?[["me-memo","edit","Mémo perso"],["me-bat","tool","Signalements du bâtiment"],["me-stat","check","Actions et stats"]]:[]),["notifs","bell","Notifications"],["stock","box","Stock"],["parking","car","Parking & véhicules"],["stats","chart","Statistiques"]].map(([t,ic,l])=>`<button data-admin-tab="${t}" style="display:flex;align-items:center;gap:12px;width:100%;background:none;border:none;padding:14px 8px;font-size:15px;font-weight:600;color:var(--ink);cursor:pointer;border-bottom:1px solid #f0f1f4;">${icon(ic,18)} ${l}</button>`).join('')}
+            ${[...(meOk()?[["me-memo","edit","Mémo perso"],["me-bat","tool","Signalements du bâtiment"],["me-stat","check","Actions et stats"]]:[]),["notifs","bell","Notifications"],["parking","car","Parking & véhicules"],["stats","chart","Statistiques"]].map(([t,ic,l])=>`<button data-admin-tab="${t}" style="display:flex;align-items:center;gap:12px;width:100%;background:none;border:none;padding:14px 8px;font-size:15px;font-weight:600;color:var(--ink);cursor:pointer;border-bottom:1px solid #f0f1f4;">${icon(ic,18)} ${l}</button>`).join('')}
             <button data-back-home style="display:flex;align-items:center;gap:12px;width:100%;background:none;border:none;padding:14px 8px;font-size:15px;font-weight:600;color:var(--ink);cursor:pointer;border-bottom:1px solid #f0f1f4;">${icon('home',18)} Page de demande</button>
             <button data-admin-logout style="display:flex;align-items:center;gap:12px;width:100%;background:none;border:none;padding:14px 8px;font-size:15px;font-weight:600;color:#b91c1c;cursor:pointer;">${icon('logout',18)} Se déconnecter</button>
         </div></div>`:''}`;
@@ -3562,7 +3561,7 @@ function anomalies(){
     const actives=state.data.filter(c=>c.pris!=='Annulé');
     const _vh=pkAlertes(); if(_vh.length) out.push({niv:_vh.some(x=>x.j<0)?3:2,ic:'car',titre:`${_vh.length} échéance${_vh.length>1?'s':''} véhicule${_vh.length>1?'s':''}`,detail:_vh.slice(0,3).map(x=>`${x.v.plaque} : ${x.l.toLowerCase()} ${x.j<0?'dépassée':'dans '+x.j+' j'}`).join(' · '),nav:{adminTab:'parking',pkTab:'vehicules'}});
     const _bp=pkBornesPanne(); if(_bp.length) out.push({niv:1,ic:'car',titre:`${_bp.length} borne${_bp.length>1?'s':''} électrique${_bp.length>1?'s':''} en panne`,detail:_bp.map(pkLib).join(', '),nav:{adminTab:'parking',pkTab:'places',pkF:'bornes'}});
-    const _st=stockAlerte(); if(_st.length) out.push({niv:_st.some(x=>x.st==='vide')?2:1,ic:'box',titre:`${_st.length} article${_st.length>1?'s':''} à commander`,detail:_st.map(x=>x.nom+(x.st==='vide'?' (vide)':'')).join(', '),nav:{adminTab:'stock'}});
+    const _st=[]; if(_st.length) out.push({niv:_st.some(x=>x.st==='vide')?2:1,ic:'box',titre:`${_st.length} article${_st.length>1?'s':''} à commander`,detail:_st.map(x=>x.nom+(x.st==='vide'?' (vide)':'')).join(', '),nav:{adminTab:'stock'}});
     const _sp=prixASaisir(); if(_sp.length) out.push({niv:1,ic:'wallet',titre:`${_sp.length} prix à saisir`,detail:'Commandes faites sans montant : à compléter à réception de la facture',c:_sp[0],nav:{adminTab:'activite',activiteTab:'historique',histPrix:true,histPage:0}});
     const futur=actives.filter(c=>{ const d=parseDate(c.date); return d&&d>=t0; });
     const norm=s=>String(s||'').trim().toUpperCase();
@@ -3947,7 +3946,8 @@ const ME_URG={normal:['Normal','#9ca3af'],semaine:['Cette semaine','#d97706'],ur
 const ME_TAGS=[['bat','Bâtiment','b'],['achats','Achats','p'],['idees','Idées','g'],['infos','Infos utiles','y'],['autre','Autre','w']];
 const ME_LIEUX_DEF=['Accueil','Salle France','Salle Conseil','Cuisine','Open space','Sanitaires','Parking'];
 let _meChain=Promise.resolve();
-function meOk(){ if(!AUTH||!isAdmin()) return false; const e=userEmail(); const o=state.me&&state.me.owner; return o? o===e : /avonde/i.test(`${e} ${userName()}`); }
+const ME_RETIRE=true; // Bâtiment et Mémo perso retirés (données conservées)
+function meOk(){ if(ME_RETIRE||!AUTH||!isAdmin()) return false; const e=userEmail(); const o=state.me&&state.me.owner; return o? o===e : /avonde/i.test(`${e} ${userName()}`); }
 async function loadMe(){ try{ state.me=(await paramGet('monEspace'))||null; }catch(e){ state.me=state.me||null; } if(!state.me) state.me={soucis:[],memos:[],lieux:[...ME_LIEUX_DEF]}; state.me.soucis=state.me.soucis||[]; state.me.memos=state.me.memos||[]; state.me.lieux=state.me.lieux||[...ME_LIEUX_DEF]; if(meSepEntreprise()) meSave(); state.meLoaded=true; }
 function meSepEntreprise(){ let n=0; (state.me?.soucis||[]).forEach(s=>{ const v=String(s.interv_par||''); if(!v.includes('/')) return; const [a,...r]=v.split('/').map(x=>x.trim()).filter(Boolean); s.interv_par=a||''; if(r.length&&!s.entreprise) s.entreprise=r.join(' / '); n++; }); return n; }
 function meSave(){ if(!meOk()) return; const e=userEmail(); state.me.owner=state.me.owner||e; const snap=JSON.parse(JSON.stringify(state.me));
