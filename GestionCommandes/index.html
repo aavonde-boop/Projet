@@ -406,7 +406,7 @@
         .ch-hero h1{ color:#fff; font:700 34px var(--ft); letter-spacing:-.02em; margin-top:6px; line-height:1.15; }
         .ch-hero p{ color:#aab6c6; font-size:15px; margin-top:10px; max-width:560px; line-height:1.5; }
         .ch-main{ margin-top:-64px; padding-bottom:48px; }
-        .ch-grid{ display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:18px; }
+        .ch-grid{ display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:16px; }
         .ch-card{ display:flex; flex-direction:column; text-align:left; background:#fff; border:1px solid var(--border); border-radius:16px; overflow:hidden; cursor:pointer; font:inherit; color:var(--ink); padding:0; box-shadow:0 10px 30px rgba(15,27,45,.10); transition:transform .18s, box-shadow .18s, border-color .18s; position:relative; }
         .ch-card:hover{ transform:translateY(-4px); box-shadow:0 18px 40px rgba(15,27,45,.16); border-color:var(--c); }
         .ch-vis{ position:relative; height:132px; background:linear-gradient(135deg,var(--t1),var(--t2)); display:flex; align-items:center; justify-content:center; overflow:hidden; }
@@ -1745,7 +1745,7 @@ let state = {
     deletedData:[], journal:[], sel:[], suivi:{}, suiviStage:null, suiviType:'all', moreOpen:false, calDay:null, statsPeriod:'annee', statsFrom:'', statsTo:'', journalSearch:'', confirmRm:null, confirmDelete:null, yoozMap:null, settingsTab:null, adminForm:null,
     form:{ type:null, step:1, sent:false, code:null,
         dem:"", pourQui:[], pourQuiAutre:"", participants:"", vol:"", tel:"", copyMail:false,
-        date:today(), dateDepart:"", heure:"12h00",
+        date:today(), dateDepart:"", heure:"",
         lieu:"", de:"", vers:"",
         presta:"", desc:"", nb:"1", com:"" }
 };
@@ -1813,6 +1813,7 @@ function renderTrackCode(m){
         resultHtml='<div style="text-align:center;color:#94a3b8;padding:20px;font-size:14px;">Aucune demande trouvée avec ce code</div>';
     } else if(result){
         let cancelHtml='';
+        if(result.pris!=='En attente'&&result.pris!=='Annulé'&&daysLeft(result.date)!==null&&daysLeft(result.date)>=0) cancelHtml='<div style="margin-top:14px;font-size:12.5px;color:#4b5563;background:#fffbeb;border-radius:10px;padding:10px 12px;">Demande déjà prise en charge : pour l’annuler ou la modifier, contactez Julia POITIER ou Arnaud AVONDE.</div>';
         if(result.pris==='En attente'){
             cancelHtml='<button id="cancelTrackBtn" style="width:100%;margin-top:16px;background:#fef2f2;border:1px solid #fecaca;border-radius:12px;padding:10px;color:#b91c1c;cursor:pointer;font-size:13px;font-weight:600;">Annuler cette demande</button>';
         }
@@ -1820,9 +1821,16 @@ function renderTrackCode(m){
             +'<div style="font-size:20px;margin-bottom:8px;">'+typeIcon(result.type)+' <strong>'+(result.desc||'—')+'</strong></div>'
             +'<div style="font-size:12px;color:#94a3b8;margin-bottom:14px;">'+result.code+'</div>'
             +trackSteps(state.data.find(c=>c.id===result.id)||result)
-            +'<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #f1f2f4;font-size:13px;"><span style="color:#94a3b8;">Statut</span><span style="font-weight:600;">'+(ST_LABEL[result.pris]||result.pris)+'</span></div>'
-            +'<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #f1f2f4;font-size:13px;"><span style="color:#94a3b8;">Date</span><span>'+$d(result.date)+'</span></div>'
-            +'<div style="display:flex;justify-content:space-between;padding:6px 0;font-size:13px;"><span style="color:#94a3b8;">Pour qui</span><span>'+(result.pourQui||'—')+'</span></div>'
+            +(()=>{ const r=result, dt=parseDate(r.date), L=[];
+                const row=(l,v)=>{ if(v!==undefined&&v!==null&&String(v).trim()!=='') L.push('<div style="display:flex;justify-content:space-between;gap:12px;padding:7px 0;border-bottom:1px solid #f1f2f4;font-size:13px;"><span style="color:#94a3b8;">'+l+'</span><span style="font-weight:600;text-align:right;">'+v+'</span></div>'); };
+                row(r.type==='hotel'?'Arrivée':'Quand',dt?dateLongue(dt)+(r.heure?' · '+esc(r.heure):''):'');
+                if(r.type==='hotel'&&r.dateDepart){ const df=parseDate(r.dateDepart); row('Départ',df?dateLongue(df):''); }
+                if(r.type==='taxi'||r.type==='coursier'){ row('Départ',esc(r.depart||r.lieu||'')); row('Arrivée',esc(r.arrivee||'')); }
+                else row(r.type==='hotel'?'Ville':'Lieu',esc(r.lieu||''));
+                if(r.type==='repas') row('Personnes',(r.nb||1)+' pers.');
+                row(r.type==='hotel'?'Hôtel':r.type==='repas'?'Restaurant':'Prestataire',esc(r.presta||''));
+                row('Pour qui',esc(r.pourQui||''));
+                return L.join(''); })()
             +cancelHtml+'</div>';
     }
 
@@ -1872,7 +1880,7 @@ function installHintHtml(){
     </div>`;
 }
 
-const CLIENT_LBL={avalider:['En attente','hourglass','avalider'],acommander:['Validée','check','commandee'],commandee:['Commandée','check','commandee'],fait:['Faite','check','fait'],refusee:['Annulée','x','refusee']};
+const CLIENT_LBL={avalider:['Reçue','hourglass','avalider'],acommander:['Reçue','hourglass','avalider'],commandee:['Commandée','check','commandee'],fait:['Faite','check','fait'],refusee:['Annulée','x','refusee']};
 function clientPill(st){ const [l,ic,k]=CLIENT_LBL[st]; const S=STAGES[k]; return `<span style="display:inline-flex;align-items:center;gap:4px;background:${S.bg};color:${S.color};border:1px solid ${S.border};border-radius:8px;padding:2px 9px;font-size:11px;font-weight:700;white-space:nowrap;">${icon(ic,11)} ${l}</span>`; }
 function mesDemandesHtml(m){
     const moi=assistanteName()||userName();
@@ -1888,6 +1896,7 @@ function mesDemandesHtml(m){
             <div style="margin-top:8px;">${trackSteps(c)}</div>
             ${peutConfirmer(c)?`<button class="recu-btn" data-recu="${c.id}">${icon('check',14)} Bien reçu</button> `:''}${suiviOf(c).recu?`<div style="font-size:12px;color:#15803d;margin-top:6px;">${icon('check',12)} ${recuInfo(suiviOf(c))}</div>`:''}
             ${c.pris==='En attente'?`<button data-mes-annuler="${c.id}" style="background:#fff;border:1px solid #fecaca;color:#b91c1c;border-radius:10px;padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer;">${icon('x',12)} Annuler ma demande</button>`:''}
+            ${c.pris!=='En attente'&&c.pris!=='Annulé'&&daysLeft(c.date)!==null&&daysLeft(c.date)>=0?`<div style="font-size:12px;color:#6b7280;margin-top:4px;">Déjà prise en charge : pour l’annuler ou la modifier, contactez Julia POITIER ou Arnaud AVONDE.</div>`:''}
         </div>`; };
     return `<div style="margin-top:28px;">
         <div style="display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:12px;">
@@ -1922,11 +1931,11 @@ function renderHome(m){
         const C=NF_CHOIX();
         return `<div class="pub">
         <header class="pub-top ch-top">
-            ${bar(m&&!(settings.marque||{}).nom?'Commandes':marqueNom())}
+            ${bar(marqueNom())}
             <div class="pub-in ch-hero">
                 <div class="ch-hello">${prenom?`Bonjour ${esc(prenom)}`:esc((settings.marque||{}).sous||'Espace demandes')}</div>
                 <h1>Que souhaitez-vous réserver ?</h1>
-                <p>Choisissez le type de demande. Elle sera transmise à l’administration pour validation.</p>
+                <p>Choisissez le type de demande. Elle sera transmise à Julia et Arnaud, qui la prendront en charge.</p>
             </div>
         </header>
         <main class="pub-in ch-main">
@@ -1945,7 +1954,7 @@ function renderHome(m){
             </div>
             <div class="ch-sub">
                 <button class="ch-link" data-email-open><span class="ch-link-ic" style="background:#eef6ff;color:#1d4ed8;">${icon('mail',17)}</span><span><b>Remplir depuis un email</b><span>Collez le message reçu, la demande se pré-remplit</span></span>${icon('arrow',16)}</button>
-                <button class="ch-link go-track"><span class="ch-link-ic">${icon('search',17)}</span><span><b>Suivre ou modifier une demande</b><span>Avec votre code de suivi (AAG-…)</span></span>${icon('arrow',16)}</button>
+                <button class="ch-link go-track"><span class="ch-link-ic">${icon('search',17)}</span><span><b>Suivre ou annuler une demande</b><span>Avec votre code de suivi (AAG-…)</span></span>${icon('arrow',16)}</button>
                 ${AUTH?'':`<button data-login class="ch-link"><span class="ch-link-ic">${icon('user',17)}</span><span><b>Se connecter</b><span>Pour retrouver toutes vos demandes</span></span>${icon('arrow',16)}</button>`}
             </div>
             ${AUTH?mesDemandesHtml(m):''}
@@ -2115,7 +2124,7 @@ function renderInlineForm(m){
         <div class="nf-recap-h"><b>Récapitulatif</b><span>${isAdmin()?'À ajouter':'À envoyer'}</span></div>
         <div id="nfSum" class="nf-sum">${nfSummaryHtml()}</div>
         <div style="padding:0 18px 18px;"><button class="nf-btn f-send" style="width:100%;">${isAdmin()?`${icon('check',16)} Ajouter la commande`:`${icon('send',16)} Envoyer la demande`}</button>
-        <div class="nf-note">${isAdmin()?"Ajoutée directement au suivi, déjà validée. Aucun email envoyé.":state.form.invite&&!state.form.inviteMail?"Indiquez votre email pour recevoir la confirmation.":"Vous recevrez un email de confirmation et un code de suivi."}</div></div>
+        <div class="nf-note">${isAdmin()?"Ajoutée directement au suivi, déjà validée. Aucun email envoyé.":state.form.invite&&!state.form.inviteMail?"Indiquez votre email pour recevoir la confirmation.":"Votre code de suivi s’affiche tout de suite, puis vous recevez un email dès que la demande est prise en charge."}</div></div>
     </aside>`;
     return `<div class="nf-layout">
         <div class="nf-col">${secQui}${secQuand}${secDet}${T==='hotel'?'':secPlus}</div>
@@ -6040,10 +6049,10 @@ function attachEvents(){
     document.querySelectorAll('[data-saisie-type]').forEach(el=>el.onclick=()=>{ const ty=el.getAttribute('data-saisie-type');
         if(ty==='commande'){ setState({saisieType:ty,saisieDirecte:false,fabOpen:false}); return; }
         const keep=state.saisieDirecte&&state.form&&!state.form.sent?state.form:null;
-        state.form=keep?{...keep,type:ty,step:2}:{type:ty,step:2,sent:false,dem:"",pourQui:[],pourQuiAutre:"",participants:"",vol:"",tel:"",copyMail:false,date:today(),dateDepart:"",heure:"12h00",lieu:"",de:"",vers:"",presta:"",desc:"",nb:"1",com:""};
+        state.form=keep?{...keep,type:ty,step:2}:{type:ty,step:2,sent:false,dem:"",pourQui:[],pourQuiAutre:"",participants:"",vol:"",tel:"",copyMail:false,date:today(),dateDepart:"",heure:"",lieu:"",de:"",vers:"",presta:"",desc:"",nb:"1",com:""};
         if(!keep){ const me=userName(); if(me) state.form.dem=me; }
         setState({saisieDirecte:true,saisieType:null,fabOpen:false,detail:null}); window.scrollTo(0,0); });
-    document.querySelectorAll('[data-saisie-close]').forEach(el=>el.onclick=()=>setState({saisieDirecte:false,form:{type:null,step:1,sent:false,dem:"",pourQui:[],pourQuiAutre:"",participants:"",vol:"",copyMail:false,date:today(),dateDepart:"",heure:"12h00",lieu:"",de:"",vers:"",presta:"",desc:"",nb:"1",com:""}}));
+    document.querySelectorAll('[data-saisie-close]').forEach(el=>el.onclick=()=>setState({saisieDirecte:false,form:{type:null,step:1,sent:false,dem:"",pourQui:[],pourQuiAutre:"",participants:"",vol:"",copyMail:false,date:today(),dateDepart:"",heure:"",lieu:"",de:"",vers:"",presta:"",desc:"",nb:"1",com:""}}));
     document.querySelectorAll('[data-close-modal]').forEach(el=>el.onclick=e=>{if(e.target===el)setState({saisieType:null});});
 
     // Detail
@@ -6358,10 +6367,10 @@ function attachEvents(){
         _submitForm();
     });
 
-    document.querySelectorAll('[data-reset-form]').forEach(el=>el.onclick=()=>setState({form:{type:null,step:1,sent:false,dem:"",pourQui:[],pourQuiAutre:"",participants:"",vol:"",copyMail:false,date:today(),dateDepart:"",heure:"12h00",lieu:"",de:"",vers:"",presta:"",desc:"",nb:"1",com:""}}));
-    document.querySelectorAll('[data-back-admin-agenda]').forEach(el=>el.onclick=()=>{ const c=(state.data||[]).find(x=>x.code===state.form.code); const d=c&&parseDate(c.date); state.flashId=c&&c.id; setState({vue:'admin',authed:true,adminTab:'calendrier',saisieDirecte:false,calDay:d?isoDay(d):null,calMonth:d?`${d.getFullYear()}-${d.getMonth()}`:null,form:{type:null,step:1,sent:false,dem:"",pourQui:[],pourQuiAutre:"",participants:"",vol:"",copyMail:false,date:today(),dateDepart:"",heure:"12h00",lieu:"",de:"",vers:"",presta:"",desc:"",nb:"1",com:""}}); });
+    document.querySelectorAll('[data-reset-form]').forEach(el=>el.onclick=()=>setState({form:{type:null,step:1,sent:false,dem:"",pourQui:[],pourQuiAutre:"",participants:"",vol:"",copyMail:false,date:today(),dateDepart:"",heure:"",lieu:"",de:"",vers:"",presta:"",desc:"",nb:"1",com:""}}));
+    document.querySelectorAll('[data-back-admin-agenda]').forEach(el=>el.onclick=()=>{ const c=(state.data||[]).find(x=>x.code===state.form.code); const d=c&&parseDate(c.date); state.flashId=c&&c.id; setState({vue:'admin',authed:true,adminTab:'calendrier',saisieDirecte:false,calDay:d?isoDay(d):null,calMonth:d?`${d.getFullYear()}-${d.getMonth()}`:null,form:{type:null,step:1,sent:false,dem:"",pourQui:[],pourQuiAutre:"",participants:"",vol:"",copyMail:false,date:today(),dateDepart:"",heure:"",lieu:"",de:"",vers:"",presta:"",desc:"",nb:"1",com:""}}); });
     document.querySelectorAll('[data-back-admin-suivi]').forEach(el=>el.onclick=()=>{ const c=(state.data||[]).find(x=>x.code===state.form.code); state.flashId=c&&c.id; if(c) state.suiviStage=stageOf(c);
-        setState({vue:'admin',authed:true,adminTab:'suivi',saisieDirecte:false,form:{type:null,step:1,sent:false,dem:"",pourQui:[],pourQuiAutre:"",participants:"",vol:"",copyMail:false,date:today(),dateDepart:"",heure:"12h00",lieu:"",de:"",vers:"",presta:"",desc:"",nb:"1",com:""}});
+        setState({vue:'admin',authed:true,adminTab:'suivi',saisieDirecte:false,form:{type:null,step:1,sent:false,dem:"",pourQui:[],pourQuiAutre:"",participants:"",vol:"",copyMail:false,date:today(),dateDepart:"",heure:"",lieu:"",de:"",vers:"",presta:"",desc:"",nb:"1",com:""}});
         setTimeout(()=>{ const n=document.querySelector('.suivi-card.flash'); if(n) n.scrollIntoView({block:'center',behavior:'smooth'}); },150); });
 
     // Saisie save
