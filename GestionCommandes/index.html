@@ -705,9 +705,10 @@ const EJS_SERVICE  = "service_assistantes";
 const EJS_TEMPLATE = "template_xz4on7w";
 // Génération code unique REP/TAX/CMD-XXXX
 function genCode(type){
-    const suffix=type==='repas'?'R':type==='taxi'?'T':type==='coursier'?'K':'C';
-    const num=Math.floor(1000+Math.random()*9000);
-    return `AAG-${suffix}${num}`;
+    const suffix=type==='repas'?'R':type==='taxi'?'T':type==='coursier'?'K':type==='hotel'?'H':'C';
+    const pris=new Set(((typeof state!=='undefined'&&state.data)||[]).map(c=>String(c.code||'').toUpperCase()));
+    let code; do { code=`AAG-${suffix}${Math.floor(100000+Math.random()*900000)}`; } while(pris.has(code)); // 900 000 numéros par type, jamais deux fois le même
+    return code;
 }
 
 const YOOZ_MAP = {
@@ -1819,7 +1820,7 @@ function renderTrackCode(m){
         +'<div style="background:var(--white);border-radius:8px;padding:'+(m?'28px 20px':'40px')+';border:1px solid var(--border);width:100%;max-width:400px;">'
         +'<button id="closeTrackBtn" style="background:none;border:none;color:#94a3b8;cursor:pointer;font-size:13px;margin-bottom:16px;">← Retour</button>'
         +'<div style="font-family:var(--ft);font-weight:650;letter-spacing:-.01em;font-size:22px;margin-bottom:6px;">'+icon('search',19)+' Suivre ma demande</div>'
-        +'<div style="color:#8b93a1;font-size:13px;margin-bottom:20px;">Entrez votre code AAG-XXXXX</div>'
+        +'<div style="color:#8b93a1;font-size:13px;margin-bottom:20px;">Entrez votre code AAG-…</div>'
         +'<div style="display:flex;gap:8px;margin-bottom:4px;">'
         +'<input id="trackInput" type="text" value="'+code+'" placeholder="AAG-R2847" style="flex:1;border:1.5px solid var(--border);border-radius:12px;padding:12px;font-family:monospace;font-size:16px;letter-spacing:2px;">'
         +'<button id="trackSearchBtn" style="background:var(--accent);color:#fff;border:none;border-radius:12px;padding:12px 16px;font-size:13px;font-weight:600;cursor:pointer;">OK</button>'
