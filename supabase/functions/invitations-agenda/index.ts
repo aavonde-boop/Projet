@@ -56,6 +56,18 @@ const jourLong = (w: Wall) => { const j = JOURS[new Date(Date.UTC(w.y, w.mo - 1,
 const jourCourt = (w: Wall) => (String(w.d) + "/" + String(pad(w.mo)));
 
 // ── Contenu des rappels (mêmes règles que le bouton Agenda de l'appli) ─
+// Titre court et distinctif : type, pour qui, prestataire (Outlook coupe les titres longs)
+const cap = (s: string) => { const x = String(s || "").trim().toLowerCase(); return x ? x[0].toUpperCase() + x.slice(1) : ""; };
+function court(c: Row) {
+  const kind = c.type === "repas" ? (cap(c.descr).slice(0, 14) || "Repas") : c.type === "taxi" ? "Taxi" : c.type === "hotel" ? "Hôtel" : c.type === "coursier" ? "Coursier" : "Commande";
+  const noms = String(c.pour_qui || "").split(/[,;\n]+/).map((x: string) => x.trim()).filter(Boolean);
+  const qui = c.type === "commande" ? String(c.presta || "") : noms.length ? (String(noms[0]) + String(noms.length > 1 ? (" +" + String(noms.length - 1)) : "")) : String(c.demandeur || "");
+  const dj = parseDay(c.date), df = parseDay(c.date_depart);
+  const det = c.type === "taxi" ? (c.arrivee ? ("→ " + String(c.arrivee).slice(0, 28)) : String(c.presta || ""))
+    : c.type === "hotel" ? (String(c.presta || "") + String(dj && df ? (" (" + String(dj.d) + "→" + String(jourCourt(df)) + ")") : ""))
+    : c.type === "commande" ? String(c.descr || "").slice(0, 28) : String(c.presta || "");
+  return { kind, qui, det };
+}
 function titre(c: Row) { return c.type === "commande" ? (c.presta || c.descr || "Commande") : (c.descr || TYPE[c.type] || "Demande"); }
 function messageCommande(c: Row, start: Wall) {
   const quand = (String(jourLong(start)) + " " + String(start.y) + String(c.heure ? (" à " + String(c.heure)) : ""));
@@ -88,7 +100,7 @@ export function rappels(c: Row, now: Wall = parisNow()): Ev[] {
   const day = parseDay(c.date); if (!day) return [];
   const hm = heureMin(c.heure);
   const start: Wall = { ...day, h: hm !== null ? Math.floor(hm / 60) : 9, mi: hm !== null ? hm % 60 : 0 };
-  const t = titre(c);
+  const t = titre(c); const k = court(c);
   const lieu = c.type === "taxi" ? (c.depart || c.lieu || "") : (c.lieu || "");
   const infos = [
     (String(TYPE[c.type] || "") + " : " + String(t)), ("Quand : " + String(jourLong(start)) + String(c.heure ? " à " + c.heure : "")),
@@ -107,15 +119,15 @@ export function rappels(c: Row, now: Wall = parisNow()): Ev[] {
   if (toDate(cmd) > toDate(start)) cmd = addMin(start, -60);
   const out: Ev[] = [{
     uid: (String(c.id) + "-commande@gestion-commandes"), start: cmd, minutes: 15,
-    title: ("Commander · " + String(t) + " (" + String(jourCourt(start)) + ")"), location: "",
+    title: (String(k.kind) + " " + String(k.qui) + String(k.det ? (String(c.type === "taxi" ? " " : " · ") + k.det) : "") + String(c.type === "hotel" ? "" : (" (" + String(jourCourt(start)) + ")"))), location: "",
     desc: ("À commander auprès de " + String(c.presta || "du prestataire") + ".\n\n" + String(infos) + "\n\n——— Message prêt à envoyer ———\n" + String(messageCommande(c, start))), alarm: 0, libre: true,
   }];
   // 2) Mise en place
   const avant = c.type === "taxi" ? 15 : 30;
-  const lbl = c.type === "taxi" ? "Taxi" : c.type === "hotel" ? "Arrivée hôtel" : c.type === "commande" ? "Livraison" : "Mise en place";
+  const lbl = c.type === "hotel" ? "Arrivée hôtel" : c.type === "commande" ? "Livraison" : k.kind;
   out.push({
     uid: (String(c.id) + "-miseenplace@gestion-commandes"), start: addMin(start, -avant), minutes: avant + (c.type === "repas" ? 30 : 0),
-    title: (String(lbl) + " · " + String(t) + String(lieu ? " — " + lieu : "")), location: lieu, desc: infos, alarm: 15,
+    title: (String(c.heure ? (String(c.heure) + " ") : "") + String(lbl) + " " + String(c.type === "commande" ? (c.presta || k.qui) : k.qui) + String(lieu ? (" · " + lieu) : "")), location: lieu, desc: infos, alarm: 15,
   });
   return out;
 }
@@ -211,7 +223,7 @@ Deno.serve(async (req) => {
     if (!to.length) return new Response(JSON.stringify({ ok: false, error: "Aucun email admin dans les réglages" }), { status: 200 });
 
     let evs = rappels(row, now);
-    if (p.type === "COMMANDE") evs = evs.filter((e) => e.uid.includes("-commande@")).map((e) => ({ ...e, title: e.title.replace(/^Commander · /, "✅ Commandé · "), desc: ("Commande passée.\n\n" + String(e.desc)), sansAlarme: true }));
+    if (p.type === "COMMANDE") evs = evs.filter((e) => e.uid.includes("-commande@")).map((e) => ({ ...e, title: ("✅ " + String(e.title)), desc: ("Commande passée.\n\n" + String(e.desc)), sansAlarme: true }));
     const seq = Math.floor(Date.now() / 1000) - 1760000000; // croissant : chaque mise à jour remplace la précédente
     // Port 465 (SSL) : les ports 25 et 587 sont bloqués dans les Edge Functions Supabase
     const transport = nodemailer.createTransport({ host: "smtp-relay.brevo.com", port: 465, secure: true, auth: { user: login, pass: key } });
