@@ -199,11 +199,51 @@ export function decide(type: string, rec: Row, old?: Row): "REQUEST" | "CANCEL" 
   return null;
 }
 
+// ── Remise à jour unique de l'agenda (bouton Réglages › Emails, admin connecté) ──
+async function resync(req: Request, now: Wall) {
+  const url = Deno.env.get("SUPABASE_URL"), anon = Deno.env.get("SUPABASE_ANON_KEY");
+  const u = await fetch((String(url) + "/auth/v1/user"), { headers: { apikey: anon!, Authorization: (req.headers.get("Authorization") || "") } });
+  const me = u.ok ? await u.json() : null;
+  const to = await adminEmails();
+  const email = String((me && me.email) || "").toLowerCase();
+  if (!email || !to.map((x) => x.toLowerCase()).includes(email)) return new Response(JSON.stringify({ ok: false, error: "Réservé aux administrateurs connectés" }), { headers: CORS });
+  const login = Deno.env.get("BREVO_SMTP_LOGIN")!, key = Deno.env.get("BREVO_SMTP_KEY")!, user = Deno.env.get("EXPEDITEUR")!;
+  if (!login || !key || !user) return new Response(JSON.stringify({ ok: false, error: "Secrets Brevo manquants" }), { headers: CORS });
+  const rows: Row[] = (await sbGet("commandes?select=*")) || [];
+  const srows = await sbGet("parametres?cle=eq.suivi&select=valeur");
+  let suivi = srows?.[0]?.valeur; if (typeof suivi === "string") { try { suivi = JSON.parse(suivi); } catch (_) { suivi = {}; } }
+  suivi = suivi || {};
+  const transport = nodemailer.createTransport({ host: "smtp-relay.brevo.com", port: 465, secure: true, auth: { user: login, pass: key } });
+  const seq = Math.floor(Date.now() / 1000) - 1760000000;
+  let renvoyes = 0, retires = 0, mails = 0;
+  for (const row of rows) {
+    if (mails >= 120) break; // limite d'envoi Brevo
+    if (row.pris === "Annulé" || passee(row, now)) continue;
+    const s = suivi[String(row.id)] || {};
+    const sans = !!(s.direct || s.recurrent || /^repas r[ée]current$/i.test(String(row.comment || "")));
+    let evs = rappels(row, now);
+    const method = sans ? "CANCEL" : "REQUEST";
+    if (!sans && s.cmd) evs = evs.map((e) => e.uid.includes("-commande@") ? { ...e, title: ("✅ " + String(e.title)), desc: ("Commande passée.\n\n" + String(e.desc)), sansAlarme: true } : e);
+    for (const ev of evs) {
+      await transport.sendMail({
+        from: ("\"Gestion des services\" <" + String(user) + ">"), to,
+        subject: method === "CANCEL" ? ("Retiré : " + String(ev.title)) : ev.title,
+        text: method === "CANCEL" ? "Rappel retiré de votre agenda (saisie directe ou repas récurrent)." : ev.desc,
+        icalEvent: { method, filename: "invitation.ics", content: ics(ev, method, user, to, seq) },
+      });
+      mails++;
+    }
+    if (sans) retires++; else renvoyes++;
+  }
+  return new Response(JSON.stringify({ ok: true, renvoyes, retires, mails }), { headers: CORS });
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
   try {
     const p = await req.json();
     const now = parisNow();
+    if (p.type === "RESYNC") return await resync(req, now);
     let rec: Row = p.record || p.old_record || {};
     let method = p.type === "COMMANDE" ? "REQUEST" : decide(p.type, p.record || {}, p.old_record);
     const skip = (why: string) => new Response(JSON.stringify({ ok: true, skipped: why }), { headers: CORS });
