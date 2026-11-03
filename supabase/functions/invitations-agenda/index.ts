@@ -188,7 +188,7 @@ function passee(c: Row, now: Wall) {
 const CORS = { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "authorization, apikey, content-type", "Content-Type": "application/json" };
 const CHAMPS = ["date", "heure", "lieu", "descr", "nb", "depart", "arrivee", "presta", "pour_qui", "comment", "date_depart", "vol", "tel", "type"];
 export function decide(type: string, rec: Row, old?: Row): "REQUEST" | "CANCEL" | null {
-  if (type === "INSERT") return (rec.pris === "En attente" || rec.pris === "En cours") ? "REQUEST" : null; // saisie directe (« OUI ») : rien
+  if (type === "INSERT") return rec.pris === "En attente" ? "REQUEST" : null; // saisie directe (« OUI ») et repas récurrents (« En cours ») : rien
   if (type === "UPDATE" && old) {
     if (rec.pris === "Annulé" && old.pris !== "Annulé") return "CANCEL";
     if (rec.pris === "Annulé") return null;
@@ -215,7 +215,7 @@ Deno.serve(async (req) => {
     }
     const row = method === "CANCEL" && p.type === "DELETE" ? p.old_record : rec;
     if (passee(row, now)) return skip("prestation passée");
-    if (p.type !== "INSERT") { const s = await suiviDe(row.id); if (s.direct) return skip("saisie directe"); if (p.type === "COMMANDE" && !s.cmd) return skip("pas commandée"); }
+    if (p.type !== "INSERT") { const s = await suiviDe(row.id); if (s.direct) return skip("saisie directe"); if (s.recurrent) return skip("repas récurrent"); if (p.type === "COMMANDE" && !s.cmd) return skip("pas commandée"); }
 
     const login = Deno.env.get("BREVO_SMTP_LOGIN")!, key = Deno.env.get("BREVO_SMTP_KEY")!, user = Deno.env.get("EXPEDITEUR")!;
     if (!login || !key || !user) return new Response(JSON.stringify({ ok: false, error: "Secrets Brevo manquants" }), { status: 200 });
