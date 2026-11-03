@@ -2313,7 +2313,10 @@ function stageOf(c){
 function titreDe(c){ return c.type==='commande' ? (c.presta||c.desc||'Commande') : (c.desc||TYPE_LABEL[c.type]||'—'); }
 function typeIc(t,s=14){ return icon(t==='taxi'?'car':t==='coursier'?'send':t==='repas'?'utensils':t==='hotel'?'bed':'box',s); }
 function stagePill(st){ const S=STAGES[st]; return `<span style="display:inline-flex;align-items:center;gap:5px;background:${S.bg};color:${S.color};border-radius:5px;padding:3px 8px;font-size:11.5px;font-weight:600;white-space:nowrap;">${S.court}</span>`; }
-function countStages(list){ const n={avalider:0,acommander:0,commandee:0,fait:0,refusee:0}; (list||state.data).forEach(c=>n[stageOf(c)]++); return n; }
+/* Repas récurrents au-delà de demain : pas encore à traiter (masqués du suivi et des compteurs) */
+function estRecurrent(c){ return !!(suiviOf(c).recurrent||/^repas r[ée]current$/i.test(c.comment||'')); }
+function recPlusTard(c){ const j=daysLeft(c.date); return estRecurrent(c)&&j!==null&&j>1&&['avalider','acommander'].includes(stageOf(c)); }
+function countStages(list){ const n={avalider:0,acommander:0,commandee:0,fait:0,refusee:0}; (list||state.data).forEach(c=>{ if(!recPlusTard(c)) n[stageOf(c)]++; }); return n; }
 function aFaireCount(){ const n=countStages(); return n.avalider+n.acommander; }
 
 async function loadSuivi(){ try{ state.suivi=(await paramGet('suivi'))||{}; }catch(e){ console.error('Suivi load:',e); } }
@@ -2495,7 +2498,7 @@ function renderSuivi(m){
     const lim=new Date(); lim.setHours(0,0,0,0); lim.setDate(lim.getDate()-14);
     const all=filtreSuivi(state.data);
     const cols={};
-    STAGE_ORDER.forEach(k=>cols[k]=all.filter(c=>etape(c)===k));
+    STAGE_ORDER.forEach(k=>cols[k]=all.filter(c=>etape(c)===k&&!recPlusTard(c))); const recCaches=all.filter(recPlusTard).length;
     cols.fait=cols.fait.filter(c=>{ const s=suiviOf(c); return (s.fait&&new Date(s.fait)>=lim)||((parseDate(c.date)||0)>=lim); }).sort((a,b)=>byDateAsc(b,a));
     ['recue','commandee'].forEach(k=>cols[k].sort(byDateAsc));
     const types=[['all','Tout'],['repas','Repas'],['taxi','Taxi'],['coursier','Coursier'],['hotel','Hôtel'],['commande','Commande']];
@@ -2524,7 +2527,7 @@ function renderSuivi(m){
     }
     return `<div>${head}
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,250px),1fr));gap:14px;align-items:start;">
-        ${STAGE_ORDER.map(k=>`<div style="background:#fafbfc;border:1px solid var(--border);border-radius:8px;padding:12px;min-height:200px;">${colHead(k)}${list(k)}</div>`).join('')}
+        ${STAGE_ORDER.map(k=>`<div style="background:#fafbfc;border:1px solid var(--border);border-radius:8px;padding:12px;min-height:200px;">${colHead(k)}${list(k)}${k==='recue'&&recCaches?`<div style="font-size:12px;color:#8b93a1;text-align:center;margin-top:8px;">🔁 + ${recCaches} repas récurrent${recCaches>1?'s':''} les jours suivants (dans l’historique)</div>`:''}</div>`).join('')}
     </div></div>`;
 }
 
@@ -2847,7 +2850,7 @@ function renderDetail(d,m){
     <button data-back-detail class="back-btn-dark" style="margin-bottom:18px;">← Retour à la liste</button>
     <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px;">${avatar(d.demandeur,48)}<div><div style="font-family:var(--ft);font-weight:650;letter-spacing:-.01em;font-size:19px;">${typeIcon} ${d.desc}</div><div style="color:#8b93a1;font-size:12px;">${demHtml(d,{role:true})}${d.pourQui?' · Pour '+esc(d.pourQui):''}</div></div></div>`}
 
-    <div style="display:flex;gap:8px;margin-bottom:16px;align-items:center;flex-wrap:wrap;">${stagePill(stageOf(d))} ${typeTag(d.type)}${isAdmin()?`<button class="btn-sm" data-refaire="${d.id}" style="margin-left:auto;">${icon('plus',13)} Refaire cette demande</button>`:''}</div>
+    <div style="display:flex;gap:8px;margin-bottom:16px;align-items:center;flex-wrap:wrap;">${stagePill(stageOf(d))} ${typeTag(d.type)}</div>
 
     ${ficheInfos(d)}
     ${ficheActions(d)}
@@ -2905,8 +2908,8 @@ function renderDashboard(total,attente,m){
     const today=(ev[todayK]||[]), demain=(ev[tomK]||[]);
     const prenom=(adminName()||'').split(' ')[0];
     const h=now.getHours(), salut=h<18?'Bonjour':'Bonsoir';
-    const avalider=state.data.filter(c=>stageOf(c)==='avalider').sort(byDateAsc);
-    const acommander=state.data.filter(c=>stageOf(c)==='acommander').sort(byDateAsc);
+    const avalider=state.data.filter(c=>stageOf(c)==='avalider'&&!recPlusTard(c)).sort(byDateAsc);
+    const acommander=state.data.filter(c=>stageOf(c)==='acommander'&&!recPlusTard(c)).sort(byDateAsc);
     const urgentCmd=acommander.filter(c=>{ const j=daysLeft(c.date); return j!==null&&j<=3; });
     const aFaire=[...avalider,...acommander].sort(byDateAsc).slice(0,8);
     const resteAFaire=avalider.length+acommander.length-aFaire.length;
@@ -3673,7 +3676,7 @@ function renderLive(){
     const hhmm=d=>new Date(d).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}).replace(':','h');
     const LS=P?liveStats(now):null;
     const n=countStages(); const recus=today.filter(c=>suiviOf(c).recu||stageOf(c)==='fait').length;
-    const aCmd=c=>['avalider','acommander'].includes(stageOf(c));
+    const aCmd=c=>['avalider','acommander'].includes(stageOf(c))&&!recPlusTard(c);
     const RAP=[...demain.filter(c=>c.type!=='hotel'||true).map(c=>({r:c,m:10*60,demain:true})),...today.filter(c=>aCmd(c)&&heureMin(c.heure)!==9999&&heureMin(c.heure)-60>now.getHours()*60+now.getMinutes()).map(c=>({r:c,m:Math.max(7*60,heureMin(c.heure)-60),demain:false}))];
     const HOT=today.filter(c=>c.type==='hotel'&&heureMin(c.heure)===9999).map(c=>({h:c,m:18*60}));
     const MEM=(rapp||[]).filter(x=>isoDay(new Date(x.rappel))===todayK&&(new Date(x.rappel).getHours()||new Date(x.rappel).getMinutes())).map(x=>({mm:x,m:mn(x.rappel)}));
