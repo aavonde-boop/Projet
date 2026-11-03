@@ -1285,6 +1285,7 @@ async function annulerDemande(c){
 async function dbUpdate(id, fields) {
     await sbPret();
     fields = upperize({ ...fields });
+    if (fields.pris === 'Annulé') { fields.prix = 0; state.data = state.data.map(c => String(c.id) === String(id) ? { ...c, prix: 0 } : c); if (state.detail && String(state.detail.id) === String(id)) state.detail = { ...state.detail, prix: 0 }; }
     // garder l'affichage cohérent avec ce qui est enregistré
     const appKeys = { descr: 'desc', pour_qui: 'pourQui' };
     const patch = {};
@@ -5598,8 +5599,8 @@ function attachEvents(){
             }
             const current=state.data.find(c=>String(c.id)===String(id));
             if(!current || current[field]===value) return; // rien à sauvegarder
-            state.data=state.data.map(c=>String(c.id)===String(id)?{...c,[field]:value}:c);
-            if(state.detail && String(state.detail.id)===String(id)) state.detail={...state.detail,[field]:value};
+            state.data=state.data.map(c=>String(c.id)===String(id)?{...c,[field]:value,...(field==='pris'&&value==='Annulé'?{prix:0}:{})}:c);
+            if(state.detail && String(state.detail.id)===String(id)) state.detail={...state.detail,[field]:value,...(field==='pris'&&value==='Annulé'?{prix:0}:{})};
             showToast('✓ Sauvegardé');
             render();
             const fmt=v=>field==='prix'?$m(v):(ST[v]?.label||v||'—');
