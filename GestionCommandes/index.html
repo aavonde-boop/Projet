@@ -523,7 +523,14 @@
         .lv-next-cd{ font:700 54px var(--ft); color:#fff; letter-spacing:-.02em; font-variant-numeric:tabular-nums; line-height:1; }
         .lv-next-d b{ display:block; font-size:22px; color:#fff; } .lv-next-d span{ display:block; color:#a9b8ca; font-size:15px; margin-top:4px; }
 .lv-p{ grid-template-rows:auto auto auto auto minmax(0,1fr) auto; } .lv-p{ overflow:hidden; } .lv-p .lv-stats{ min-height:0; overflow:hidden; } .lv-list{ overflow:hidden; min-height:0; } .lv-ev{ overflow:hidden; box-sizing:border-box; } .lv-tl-b.c2 .lv-ev span+span{ display:none; } .lv-tl-b.c1 .lv-ev span{ display:none; } .lv-tl-b.c1 .lv-ev b{ -webkit-line-clamp:1; }
-        .fa{ display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:10px; margin-top:16px; }
+        .fi{ display:grid; grid-template-columns:repeat(auto-fill,minmax(190px,1fr)); gap:14px 20px; background:#fff; border:1px solid var(--border); border-radius:10px; padding:18px 20px; margin-bottom:2px; }
+        .fi-f{ min-width:0; } .fi-f span,.fi-com span{ display:block; font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.05em; color:#8b93a1; margin-bottom:3px; }
+        .fi-f b{ display:block; font-size:15px; font-weight:600; color:var(--ink); overflow-wrap:anywhere; } .fi-f b a{ color:var(--accent); }
+        .fi-f.big{ grid-column:span 2; } .fi-f.big b{ font-size:18px; font-weight:700; }
+        .fi-com{ grid-column:1/-1; background:#fffbeb; border-radius:8px; padding:10px 12px; } .fi-com div{ font-size:14px; color:#4b3b0a; line-height:1.45; }
+        .fi-ct{ grid-column:1/-1; display:flex; gap:8px; flex-wrap:wrap; }
+        @media(max-width:520px){ .fi{ grid-template-columns:1fr 1fr; padding:14px; gap:12px 14px; } .fi-f.big{ grid-column:1/-1; } .fi-f b{ font-size:14px; } }
+        .fa{ display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:10px; margin-top:12px; }
         .fa-row{ display:grid; grid-template-columns:26px minmax(0,1fr); grid-template-rows:auto 1fr; column-gap:10px; row-gap:12px; padding:12px; border:1px solid var(--border); border-radius:10px; background:#fff; min-width:0; }
         .fa-row .fa-r{ grid-column:1 / -1; align-self:end; display:flex; flex-wrap:wrap; gap:8px; }
         .fa-row .fa-b{ flex:1 1 100%; white-space:nowrap; } .fa-row .fa-px{ flex:1 1 100%; min-width:0; } .fa-row .fa-px input{ flex:1 1 0; width:0; min-width:0; box-sizing:border-box; }
@@ -2637,6 +2644,19 @@ function suiviBlock(d){
                 <span style="font-size:11px;font-weight:${ok?700:500};color:${ok?'var(--ink)':'#8b93a1'};">${l}</span></div>
             ${i<steps.length-1?`<div style="flex:1;height:2px;background:${steps[i+1][1]?STAGES.fait.color:'#e4e0d9'};margin:0 2px 18px;"></div>`:''}</div>`).join('')}</div>`;
     const btn=(act,label,ic,style)=>`<button data-suivi-act="${act}" data-id="${d.id}" style="display:inline-flex;align-items:center;gap:6px;border-radius:12px;padding:10px 14px;font-size:13px;font-weight:700;cursor:pointer;${style}">${icon(ic,14)} ${label}</button>`;
+    const histo=[s.cmd?`Commandé le ${new Date(s.cmd).toLocaleString('fr-FR',{dateStyle:'short',timeStyle:'short'})}${s.cmdBy&&s.cmdBy!=='Admin'?' par '+esc(s.cmdBy):''}`:'', s.fait?`Terminé le ${new Date(s.fait).toLocaleString('fr-FR',{dateStyle:'short',timeStyle:'short'})}${s.faitBy&&s.faitBy!=='Admin'?' par '+esc(s.faitBy):''}`:'', s.recu?recuInfo(s):''].filter(Boolean).join(' · ');
+    return `<div style="background:#fff;border:1px solid var(--border);border-radius:8px;padding:16px;margin-bottom:14px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:14px;"><div style="font-weight:700;font-size:13px;color:var(--ink-soft);">${icon('clipboard',13)} Suivi</div>${stagePill(st)}</div>
+        ${stepper}
+        ${histo?`<div style="font-size:11px;color:#8b93a1;margin-top:10px;">${histo}</div>`:''}
+        ${mailsHtml(d)}
+        ${notesHtml(d)}
+    </div>`;
+}
+
+/* Fiche : les 4 étapes (Bien reçu, Commande passée, Prix, Annuler) */
+function ficheActions(d){
+    const st=stageOf(d), s=suiviOf(d);
     const fd=x=>new Date(x).toLocaleString('fr-FR',{dateStyle:'short',timeStyle:'short'});
     const ligne=(n,titre,etat,droite,fait)=>`<div class="fa-row ${fait?'ok':''}"><span class="fa-n">${fait?icon('check',13):n}</span><div class="fa-t"><b>${titre}</b>${etat?`<span>${etat}</span>`:''}</div><div class="fa-r">${droite}</div></div>`;
     const B=(act,label,cls)=>`<button data-suivi-act="${act}" data-id="${d.id}" class="fa-b ${cls||''}">${label}</button>`;
@@ -2655,16 +2675,31 @@ function suiviBlock(d){
         const l4=ligne(4,'Annuler',`${mailsOn('annulation')&&!s.direct?`${esc(demNom(d))} recevra l’email d’annulation`:'Aucun email envoyé'} · prix remis à 0 €`,B('annuler','Annuler la demande','r'),false);
         actions=l1+l2+l3+l4;
     }
-    const histo=[s.cmd?`Commandé le ${new Date(s.cmd).toLocaleString('fr-FR',{dateStyle:'short',timeStyle:'short'})}${s.cmdBy&&s.cmdBy!=='Admin'?' par '+esc(s.cmdBy):''}`:'', s.fait?`Terminé le ${new Date(s.fait).toLocaleString('fr-FR',{dateStyle:'short',timeStyle:'short'})}${s.faitBy&&s.faitBy!=='Admin'?' par '+esc(s.faitBy):''}`:'', s.recu?recuInfo(s):''].filter(Boolean).join(' · ');
-    return `<div style="background:#fff;border:1px solid var(--border);border-radius:8px;padding:16px;margin-bottom:14px;">
-        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:14px;"><div style="font-weight:700;font-size:13px;color:var(--ink-soft);">${icon('clipboard',13)} Suivi</div>${stagePill(st)}</div>
-        ${stepper}
-        ${histo?`<div style="font-size:11px;color:#8b93a1;margin-top:10px;">${histo}</div>`:''}
-        ${mailsHtml(d)}
-        ${actions?`<div class="fa">${actions}</div>`:''}
-        ${['acommander','commandee'].includes(st)&&pContactHtml(d,{grand:true})?`<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;">${pContactHtml(d,{grand:true})}</div>`:''}
-        ${notesHtml(d)}
-    </div>`;
+    return actions?`<div class="fa">${actions}</div>`:'';
+}
+/* Fiche : toutes les informations de la commande, lisibles d'un coup d'œil */
+function ficheInfos(d){
+    const s=suiviOf(d), T=d.type, dt=parseDate(d.date), df=parseDate(d.dateDepart);
+    const quand=dt?`${dateLongue(dt)} ${dt.getFullYear()}${d.heure?' · '+esc(d.heure):''}`:'—';
+    const F=[];
+    const f=(l,v,big)=>{ if(v!==undefined&&v!==null&&String(v).trim()!=='') F.push(`<div class="fi-f${big?' big':''}"><span>${l}</span><b>${v}</b></div>`); };
+    f(T==='hotel'?'Arrivée':'Quand',quand,true);
+    if(T==='hotel') f('Départ',df?`${dateLongue(df)} ${df.getFullYear()}`:'',true);
+    if(T==='taxi'||T==='coursier'){ f('Départ',esc(d.depart||d.lieu||'')); f('Arrivée',esc(d.arrivee||'')); }
+    else f(T==='hotel'?'Ville':T==='commande'?'Livraison':'Lieu / salle',esc(d.lieu||''));
+    if(T==='repas') f('Personnes',`${d.nb||1} pers.`);
+    if(T==='hotel'&&d.nb) f('Personnes',`${d.nb}`);
+    f(T==='repas'?'Participants':'Pour qui',esc(d.pourQui||''));
+    f(T==='commande'?'Fournisseur':T==='hotel'?'Hôtel':'Prestataire',esc(d.presta||'')||'<i style="color:#b45309;font-style:normal;">à choisir</i>');
+    if(T==='repas'||T==='commande') f(T==='repas'?'Type de repas':'Ce qui est commandé',esc(d.desc||''));
+    f('Téléphone',d.tel?`<a href="tel:${esc(d.tel)}">${esc(d.tel)}</a>`:'');
+    f('Vol / train',esc(d.vol||''));
+    f('Demandé par',demHtml(d));
+    f('Code',d.code?`<span style="font-family:monospace;">${esc(d.code)}</span>`:'');
+    if(+d.prix>0) f('Prix',`${d.prix.toLocaleString('fr-FR',{minimumFractionDigits:2,maximumFractionDigits:2})} €${d.paie?' · '+esc(d.paie):''}`);
+    const com=d.comment?`<div class="fi-com"><span>Commentaire</span><div>${esc(d.comment).replace(/\n/g,'<br>')}</div></div>`:'';
+    const ct=pContactHtml(d,{grand:true});
+    return `<div class="fi">${F.join('')}${com}${ct?`<div class="fi-ct">${ct}</div>`:''}</div>`;
 }
 
 /* Étapes côté assistante (« Suivre ma demande ») */
@@ -2814,6 +2849,9 @@ function renderDetail(d,m){
 
     <div style="display:flex;gap:8px;margin-bottom:16px;align-items:center;flex-wrap:wrap;">${chip(d.pris)} ${typeTag(d.type)}${isAdmin()?`<button class="btn-sm" data-refaire="${d.id}" style="margin-left:auto;">${icon('plus',13)} Refaire cette demande</button>`:''}</div>
 
+    ${ficheInfos(d)}
+    ${ficheActions(d)}
+    <div style="height:14px"></div>
     ${suiviBlock(d)}
 
     ${editForm}
