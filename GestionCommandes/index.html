@@ -2993,7 +2993,7 @@ function renderDashboard(total,attente,m){
     <div class="kpis">
         ${tile('avalider',n.avalider+n.acommander,'Reçues',n.avalider+n.acommander?(urgentCmd.length||avalider.filter(c=>{ const j=daysLeft(c.date); return j!==null&&j<=3; }).length?`<b style="color:#b91c1c;">${urgentCmd.length+avalider.filter(c=>{ const j=daysLeft(c.date); return j!==null&&j<=3; }).length}</b> dans les 3 jours`:'À commander'):'Rien en attente','{"adminTab":"suivi","suiviStage":"recue"}')}
         ${tile('commandee',n.commandee,'Commandées',n.commandee?'En attente de prestation':'Aucune en cours','{"adminTab":"suivi","suiviStage":"commandee"}')}
-        ${tile('x-cal',$ms(totalMois),'Dépenses du mois',`${validesMois.length} commande${validesMois.length>1?'s':''} validée${validesMois.length>1?'s':''}`,'{"adminTab":"stats","statsPeriod":"mois"}')}
+        ${tile('x-cal',$ms(totalMois),'Dépenses du mois',`${validesMois.length} commande${validesMois.length>1?'s':''}`,'{"adminTab":"stats","statsPeriod":"mois"}')}
     </div>
     ${anomaliesHtml(m)}
     <div style="${large?'display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:16px;align-items:start;':''}">
@@ -3083,12 +3083,12 @@ function renderStats(m){
     ${period==='perso'?`<div style="display:flex;gap:8px;align-items:center;margin-bottom:16px;flex-wrap:wrap;font-size:13px;color:#6b7280;">Du <input type="date" id="statsFrom" class="form-input" value="${rg.fromIso||''}" style="width:auto;padding:7px 10px;"> au <input type="date" id="statsTo" class="form-input" value="${rg.toIso||''}" style="width:auto;padding:7px 10px;"></div>`:''}
 
     <div style="display:grid;grid-template-columns:${m?'repeat(2,minmax(0,1fr))':'repeat(auto-fit,minmax(180px,1fr))'};gap:12px;margin-bottom:16px;">
-        ${kpi('Dépenses validées',total?$m(total):'0 €',[delta===null?'':`${delta>=0?'+':''}${delta} % vs période préc.`,(()=>{ const e=valid.filter(c=>suiviOf(c).prixEst).reduce((a,c)=>a+(+c.prix||0),0); return e?`dont ≈ ${$m(e)} estimés`:''; })()].filter(Boolean).join(' · '),'#15803d')}
-        ${kpi('Commandes validées',valid.length,`${scope.length} demandes au total`)}
+        ${kpi('Dépenses',total?$m(total):'0 €',[delta===null?'':`${delta>=0?'+':''}${delta} % vs période préc.`,(()=>{ const e=valid.filter(c=>suiviOf(c).prixEst).reduce((a,c)=>a+(+c.prix||0),0); return e?`dont ≈ ${$m(e)} estimés`:''; })()].filter(Boolean).join(' · '),'#15803d')}
+        ${kpi('Commandes',valid.length,`${scope.length} demandes au total`)}
         ${kpi('Coût moyen',avecPrix.length?$m(total/avecPrix.length):'—',`sur ${avecPrix.length} avec prix`)}
         ${kpi('Annulées',annul,scope.length?`${Math.round(annul/scope.length*100)} % des demandes`:'','#b91c1c')}
     </div>
-    ${sansPrix?`<div style="background:#fffbeb;border:1px solid #fde68a;color:#92400e;border-radius:12px;padding:9px 12px;font-size:12px;margin-bottom:16px;display:flex;gap:7px;align-items:center;">${icon('alert',14)} ${sansPrix} commande${sansPrix>1?'s':''} validée${sansPrix>1?'s':''} sans prix saisi : non comptée${sansPrix>1?'s':''} dans les montants.</div>`:''}
+    ${sansPrix?`<div style="background:#fffbeb;border:1px solid #fde68a;color:#92400e;border-radius:12px;padding:9px 12px;font-size:12px;margin-bottom:16px;display:flex;gap:7px;align-items:center;">${icon('alert',14)} ${sansPrix} commande${sansPrix>1?'s':''} sans prix saisi : non comptée${sansPrix>1?'s':''} dans les montants.</div>`:''}
 
     <div class="stat-card" style="margin-bottom:16px;">
         <div style="font-weight:700;font-size:14px;margin-bottom:12px;display:flex;align-items:center;gap:8px;">${icon('calendar',15)} Dépenses par mois</div>
@@ -3115,7 +3115,7 @@ function renderStats(m){
         <div style="display:grid;grid-template-columns:${g2};gap:16px;margin-bottom:6px;align-items:start;"><div style="display:flex;flex-direction:column;gap:16px;min-width:0;">${hbars('Par rôle','shield',parRole,'#2c5f85')}${hbars('Par type de prestation','grid',parType,'#c2410c')}</div>${pers}</div>
         ${sec('Pour qui et chez qui')}
         <div style="display:grid;grid-template-columns:${g2};gap:16px;align-items:start;">${hbars('Par bénéficiaire','user',parDirecteur,'#7c3aed')}${hbars('Par prestataire','box',parPresta,'#1d4ed8')}</div>`; })()}
-    <div style="font-size:11px;color:#9ca3af;margin-top:12px;">Montants des commandes validées, selon la date de la prestation. Une commande pour plusieurs directeurs est répartie à parts égales.</div>
+    <div style="font-size:11px;color:#9ca3af;margin-top:12px;">Montants des commandes (hors annulées), selon la date de la prestation. Une commande pour plusieurs directeurs est répartie à parts égales.</div>
     </div>`;
 }
 
@@ -4542,7 +4542,7 @@ function renderAnalyse(m){
     const parHeure=['Matin (avant 11h)','Midi (11h–14h)','Après-midi (14h–18h)','Soir (après 18h)'].map(k=>[k,scope.filter(c=>c.type!=='hotel'&&tranche(c)===k).length]);
     const parAnt=[['Le jour même',x=>x===0],['La veille',x=>x===1],['2 à 3 jours avant',x=>x>=2&&x<=3],['4 à 7 jours avant',x=>x>=4&&x<=7],['Plus d’une semaine avant',x=>x>7]].map(([l,f])=>[l,ants.filter(f).length]);
     const parDelai=[['Moins d’1 h',x=>x<36e5],['1 à 4 h',x=>x>=36e5&&x<4*36e5],['4 à 24 h',x=>x>=4*36e5&&x<864e5],['Plus de 24 h',x=>x>=864e5]].map(([l,f])=>[l,delais.filter(f).length]);
-    const parStatut=[['Validées',scope.filter(isValide).length,'#15803d'],['En attente',scope.filter(c=>c.pris==='En attente'||c.pris==='En cours').length,'#b45309'],['Annulées',scope.filter(c=>c.pris==='Annulé').length,'#b91c1c']];
+    const parStatut=[['Reçues',scope.filter(c=>etape(c)==='recue').length,'#b45309'],['Commandées',scope.filter(c=>etape(c)==='commandee').length,'#1d4ed8'],['Faites',scope.filter(c=>etape(c)==='fait').length,'#15803d'],['Annulées',scope.filter(c=>c.pris==='Annulé').length,'#b91c1c']];
     const repas=scope.filter(c=>c.type==='repas'), repasV=repas.filter(isValide);
     const pers=repas.map(c=>+c.nb||0).filter(x=>x>0);
     const persPrix=repasV.filter(c=>c.prix>0&&c.nb>0);
@@ -4578,7 +4578,7 @@ function renderAnalyse(m){
         const d=new Date(r.u.last), j=Math.floor((Date.now()-d)/864e5);
         return `<span class="an-tag ${j<=7?'vert':j<=30?'ambre':'gris'}">${j===0?'Aujourd’hui':j===1?'Hier':`Il y a ${j} j`}</span>`; };
     const table=`<div class="tbl-wrap"><table class="pro-table an-table"><thead><tr>
-        <th>Personne</th><th style="text-align:right;">Demandes</th><th>Répartition</th><th style="text-align:right;">Validées</th><th style="text-align:right;">Montant validé</th><th style="text-align:right;">Anticipation</th><th>Dernière demande</th><th>Connexion</th><th style="text-align:right;">Via compte</th>
+        <th>Personne</th><th style="text-align:right;">Demandes</th><th>Répartition</th><th style="text-align:right;">Commandes</th><th style="text-align:right;">Montant</th><th style="text-align:right;">Anticipation</th><th>Dernière demande</th><th>Connexion</th><th style="text-align:right;">Via compte</th>
         </tr></thead><tbody>
         ${rows.map((r,i)=>`${i===0||rows[i-1].role!==r.role?`<tr class="an-grp"><td colspan="9">${roleTag(r.role)}<span class="m" style="margin-left:8px;">${rows.filter(x=>x.role===r.role).length} personne${rows.filter(x=>x.role===r.role).length>1?'s':''} · ${rows.filter(x=>x.role===r.role).reduce((a,x)=>a+x.tot,0)} demandes${r.role==='invite'?` · passées par ${esc(equipe().polyvalente[0])}`:''}</span></td></tr>`:''}<tr${r.tot?'':' class="an-zero"'}>
             <td><div style="display:flex;align-items:center;gap:9px;"><span class="side-av" style="width:26px;height:26px;font-size:10px;">${esc($ini(r.n))}</span><div><div style="font-weight:600;">${esc(r.n)}</div>${r.var.length?`<div class="m" title="${esc(r.var.join(' · '))}">${r.var.length} orthographe${r.var.length>1?'s':''} regroupée${r.var.length>1?'s':''}</div>`:''}</div></div></td>
@@ -4607,12 +4607,12 @@ function renderAnalyse(m){
     ${period==='perso'?`<div style="display:flex;gap:8px;align-items:center;margin-bottom:16px;flex-wrap:wrap;font-size:13px;color:#6b7280;">Du <input type="date" id="statsFrom" class="form-input" value="${rg.fromIso||''}" style="width:auto;padding:7px 10px;"> au <input type="date" id="statsTo" class="form-input" value="${rg.toIso||''}" style="width:auto;padding:7px 10px;"></div>`:''}
 
     <div class="kpis an-kpis">
-        ${tile('Demandes',nf(scope.length),delta===null?`${scope.filter(isValide).length} validées`:`<b style="color:${delta>=0?'#15803d':'#b91c1c'}">${delta>=0?'+':''}${delta} %</b> vs période préc.`,'#2c5f85')}
+        ${tile('Demandes',nf(scope.length),delta===null?`${scope.filter(isValide).length} commandes`:`<b style="color:${delta>=0?'#15803d':'#b91c1c'}">${delta>=0?'+':''}${delta} %</b> vs période préc.`,'#2c5f85')}
         ${tile('Assistantes actives',`${rows.filter(r=>r.tot&&r.dansListe).length}<span class="an-sur">/${assistantes.length}</span>`,'ont fait au moins une demande','#7c3aed')}
         ${tile('Taux de connexion',`${pct(connectees30,assistantes.length)} %`,`${connectees30} assistante${connectees30>1?'s':''} sur ${assistantes.length} · 30 derniers jours`,'#0f766e')}
         ${tile('Demandes via un compte',viaCodes.length?`${pct(viaCompte,viaCodes.length)} %`:'—',viaCodes.length?`${viaCompte} sur ${viaCodes.length} suivies`:'mesuré sur les nouvelles demandes','#1d4ed8')}
-        ${tile('Taux de validation',scope.length?`${pct(scope.filter(isValide).length,scope.length)} %`:'—',`${scope.filter(c=>c.pris==='Annulé').length} annulée${scope.filter(c=>c.pris==='Annulé').length>1?'s':''} (${pct(scope.filter(c=>c.pris==='Annulé').length,scope.length)} %)`,'#15803d')}
-        ${tile('Délai de validation',delaiMoy===null?'—':H(delaiMoy),delais.length?`moyenne sur ${delais.length} demande${delais.length>1?'s':''}`:'pas encore mesuré','#b45309')}
+        ${tile('Annulées',scope.length?`${pct(scope.filter(c=>c.pris==='Annulé').length,scope.length)} %`:'—',`${scope.filter(c=>c.pris==='Annulé').length} annulée${scope.filter(c=>c.pris==='Annulé').length>1?'s':''} sur ${scope.length}`,'#b91c1c')}
+        ${tile('Délai de prise en charge',delaiMoy===null?'—':H(delaiMoy),delais.length?`moyenne sur ${delais.length} demande${delais.length>1?'s':''}`:'pas encore mesuré','#b45309')}
         ${tile('Anticipation moyenne',antMoy===null?'—':`${String(Math.round(antMoy*10)/10).replace('.',',')} j`,ants.length?`${pct(derniereMin,ants.length)} % la veille ou le jour même`:'pas encore mesuré','#c2410c')}
         ${tile('Personnes par repas',pers.length?String(Math.round(pers.reduce((a,b)=>a+b,0)/pers.length*10)/10).replace('.',','):'—',coutPers?`${$m(coutPers)} par personne`:'coût par personne : —','#be185d')}
     </div>
@@ -4631,7 +4631,7 @@ function renderAnalyse(m){
         ${card('Jour de la prestation','',bars(parJour,'#7c3aed'))}
         ${card('Moment de la journée','repas et taxis',bars(parHeure,'#0e7490'))}
         ${card('Anticipation','délai entre la demande et la prestation',bars(parAnt,'#c2410c'))}
-        ${card('Délai de validation','par l’administration',bars(parDelai,'#b45309'))}
+        ${card('Délai de prise en charge','entre la demande et la commande',bars(parDelai,'#b45309'))}
         ${card('Prestataires les plus utilisés','',bars(topPresta,'#1d4ed8'))}
         ${card('Lieux de repas','',bars(topLieux,'#c2410c'))}
         ${card('Types de repas','',bars(topRepas,'#be185d'))}
@@ -4650,7 +4650,7 @@ function renderAnalyse(m){
             :'<div class="empty-note" style="padding:8px 0;">Aucune connexion enregistrée pour l’instant.</div>')}
         ${card('Actions dans le journal','',bars(parAction,'#6b7280'))}
     </div>
-    <div style="font-size:11.5px;color:#9ca3af;margin-top:14px;line-height:1.5;">Connexions et demandes « via un compte » suivies depuis le ${depuis}. Délai de validation calculé à partir du journal (500 dernières actions). Anticipation : écart entre l’envoi de la demande et la date de la prestation.</div>
+    <div style="font-size:11.5px;color:#9ca3af;margin-top:14px;line-height:1.5;">Connexions et demandes « via un compte » suivies depuis le ${depuis}. Délai de prise en charge calculé à partir du journal (500 dernières actions). Anticipation : écart entre l’envoi de la demande et la date de la prestation.</div>
     </div>`;
 }
 
