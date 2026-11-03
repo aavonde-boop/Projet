@@ -523,6 +523,16 @@
         .lv-next-cd{ font:700 54px var(--ft); color:#fff; letter-spacing:-.02em; font-variant-numeric:tabular-nums; line-height:1; }
         .lv-next-d b{ display:block; font-size:22px; color:#fff; } .lv-next-d span{ display:block; color:#a9b8ca; font-size:15px; margin-top:4px; }
 .lv-p{ grid-template-rows:auto auto auto auto minmax(0,1fr) auto; } .lv-p{ overflow:hidden; } .lv-p .lv-stats{ min-height:0; overflow:hidden; } .lv-list{ overflow:hidden; min-height:0; } .lv-ev{ overflow:hidden; box-sizing:border-box; } .lv-tl-b.c2 .lv-ev span+span{ display:none; } .lv-tl-b.c1 .lv-ev span{ display:none; } .lv-tl-b.c1 .lv-ev b{ -webkit-line-clamp:1; }
+        .fa{ display:flex; flex-direction:column; gap:8px; margin-top:16px; }
+        .fa-row{ display:flex; align-items:center; gap:12px; padding:10px 12px; border:1px solid var(--border); border-radius:10px; background:#fff; flex-wrap:wrap; }
+        .fa-row.ok{ background:#f6fbf7; border-color:#cfe9d6; }
+        .fa-n{ width:26px; height:26px; border-radius:50%; flex-shrink:0; display:flex; align-items:center; justify-content:center; font:700 12.5px var(--fb); background:#eef1f5; color:#4b5563; }
+        .fa-row.ok .fa-n{ background:#15803d; color:#fff; }
+        .fa-t{ flex:1; min-width:160px; } .fa-t b{ display:block; font-size:14px; color:var(--ink); } .fa-t span{ display:block; font-size:12px; color:#6b7280; margin-top:1px; }
+        .fa-r{ display:flex; align-items:center; gap:8px; }
+        .fa-b{ border-radius:9px; padding:9px 14px; font:700 13px var(--fb); cursor:pointer; border:1px solid var(--border); background:#fff; color:var(--ink); white-space:nowrap; }
+        .fa-b.g{ background:#15803d; border-color:#15803d; color:#fff; } .fa-b.p{ background:var(--accent); border-color:var(--accent); color:#fff; } .fa-b.r{ color:#b91c1c; border-color:#fecaca; } .fa-b.l{ color:#6b7280; font-weight:600; padding:7px 10px; }
+        .fa-px{ display:flex; align-items:center; gap:4px; font-weight:700; color:#4b5563; } .fa-px input{ width:86px; text-align:right; font:700 14px monospace; border:1px solid var(--border); border-radius:8px; padding:8px; }
         .lv.dense{ gap:12px 20px; padding-top:14px; } .lv.dense .lv-kpi{ padding:10px 16px; } .lv.dense .lv-kpi-v{ font-size:32px; } .lv.dense .lv-next{ padding:12px 20px; } .lv.dense .lv-next-cd{ font-size:34px; } .lv.dense .lv-item{ padding:8px 12px; margin-bottom:7px; } .lv.dense .lv-clock{ font-size:32px; } .lv:not(.lv-p) .lv-list{ align-self:stretch; }
         @media(max-height:900px){ .lv-p .lv-stats{ align-self:stretch; } .lv-p .lv-s-row{ flex:1; min-height:0; } .lv-p .lv-s{ min-height:0; overflow:hidden; } .lv-p .lv-bars{ flex:1; height:auto!important; min-height:22px; max-height:72px; } }
         @media(max-height:820px){ .lv.dense{ gap:10px 18px; padding-top:10px; } .lv.dense .lv-kpi-v{ font-size:28px!important; } .lv.dense .lv-kpi-l{ margin-top:2px!important; font-size:12.5px!important; } .lv.dense .lv-s{ padding:8px 14px; } .lv.dense .lv-s-v{ font-size:22px!important; } .lv.dense .lv-next-cd{ font-size:30px!important; } .lv.dense .lv-ticker{ height:46px; } .lv.dense .lv-ring{ } .lv.dense .lv-s-bat svg{ width:56px; height:56px; } }
@@ -2607,7 +2617,7 @@ function mailsHtml(d){
         if(personne(d.demandeur).role==='invite') L.push(s.email?['ok',`Email de l’invité : ${esc(s.email)}`]:['grey','Invité sans email : aucune confirmation possible']);
         if(s.accuse) L.push(['ok',`Accusé de réception envoyé à ${esc(demNom(d))} le ${f(s.accuse)}${s.accuseBy?' par '+esc(s.accuseBy):''}`]);
         else if(s.mailConf) L.push(['ok',`Confirmation envoyée à ${esc(demNom(d))} le ${f(s.mailConf)}`]);
-        else if(st==='avalider') L.push(mailsOn('confirmation')?['wait',`Accusé de réception : cliquez « Accuser réception » pour prévenir ${esc(demNom(d))}`]:['grey','Accusé de réception désactivé dans les réglages']);
+        else if(st==='avalider') L.push(mailsOn('confirmation')?['wait',`Accusé de réception : cliquez « Bien reçu » pour prévenir ${esc(demNom(d))}`]:['grey','Accusé de réception désactivé dans les réglages']);
     }
     if(st==='refusee') L.push(s.mailAnnul?['ok',`Annulation envoyée à ${esc(demNom(d))} le ${f(s.mailAnnul)}`]:['grey','Refusée / annulée : aucun email envoyé']);
     return `<div class="mails"><b>${icon('mail',13)} Emails</b>${L.map(([k,x])=>`<span class="m-${k}">${x}</span>`).join('')}</div>`;
@@ -2624,17 +2634,31 @@ function suiviBlock(d){
                 <span style="font-size:11px;font-weight:${ok?700:500};color:${ok?'var(--ink)':'#8b93a1'};">${l}</span></div>
             ${i<steps.length-1?`<div style="flex:1;height:2px;background:${steps[i+1][1]?STAGES.fait.color:'#e4e0d9'};margin:0 2px 18px;"></div>`:''}</div>`).join('')}</div>`;
     const btn=(act,label,ic,style)=>`<button data-suivi-act="${act}" data-id="${d.id}" style="display:inline-flex;align-items:center;gap:6px;border-radius:12px;padding:10px 14px;font-size:13px;font-weight:700;cursor:pointer;${style}">${icon(ic,14)} ${label}</button>`;
+    const fd=x=>new Date(x).toLocaleString('fr-FR',{dateStyle:'short',timeStyle:'short'});
+    const ligne=(n,titre,etat,droite,fait)=>`<div class="fa-row ${fait?'ok':''}"><span class="fa-n">${fait?icon('check',13):n}</span><div class="fa-t"><b>${titre}</b>${etat?`<span>${etat}</span>`:''}</div><div class="fa-r">${droite}</div></div>`;
+    const B=(act,label,cls)=>`<button data-suivi-act="${act}" data-id="${d.id}" class="fa-b ${cls||''}">${label}</button>`;
     let actions='';
-    if(st==='avalider'||st==='acommander') actions=`<div style="width:100%;font-size:12px;color:#4b5563;background:#fffbeb;border-radius:10px;padding:8px 10px;margin-bottom:2px;">Passez la commande auprès de <b>${esc(d.presta||'du prestataire')}</b>, puis cliquez « Commande passée » (aucun email).</div>`+(peutAccuser(d)?btn('accuse','Accuser réception','mail','background:#15803d;border:1px solid #15803d;color:#fff;'):'')+btn('commande','Commande passée','check','background:#1d4ed8;border:1px solid #1d4ed8;color:#fff;')+btn('refuser','Refuser','x','background:#fff;border:1px solid #fecaca;color:#b91c1c;');
-    else if(st==='commandee') actions=btn('fait','Prestation terminée','check','background:#fff;border:1.5px dashed #a5f3fc;color:#0e7490;')+btn('uncommande','Je n’ai pas encore commandé','arrow','background:#fff;border:1px solid var(--border);color:#6b7280;')+btn('annuler','Annuler la demande','x','background:#fff;border:1px solid #fecaca;color:#b91c1c;')
-    else if(st==='fait'&&s.fait) actions=btn('unfait','Rouvrir','arrow','background:#fff;border:1px solid var(--border);color:#6b7280;');
+    if(st!=='refusee'){
+        const pa=peutAccuser(d), dir=s.direct||['responsable','polyvalente'].includes(personne(d.demandeur).role);
+        const l1=s.accuse?ligne(1,'Bien reçu',`Accusé envoyé le ${fd(s.accuse)}`,'',true)
+            : dir?ligne(1,'Bien reçu','Saisie directe : pas d’accusé à envoyer','',true)
+            : pa?ligne(1,'Bien reçu',`Prévenir ${esc(demNom(d))} que la demande est prise en compte`,B('accuse','Bien reçu','g'),false)
+            : ligne(1,'Bien reçu',mailsOn('confirmation')?`Pas d’email pour ${esc(demNom(d))}`:'Accusé de réception désactivé (Réglages)','',false);
+        const cmdOk=!!s.cmd||(st==='fait'&&!s.cmd&&d.pris!=='En attente'&&d.pris!=='En cours');
+        const l2=cmdOk?ligne(2,'Commande passée',s.cmd?`Le ${fd(s.cmd)}${s.cmdBy&&s.cmdBy!=='Admin'?' par '+esc(s.cmdBy):''}`:'',s.cmd&&st!=='fait'?B('uncommande','Défaire','l'):'',true)
+            : ligne(2,'Commande passée',`Auprès de ${esc(d.presta||'du prestataire')}`,B('commande','Commande passée','p'),false);
+        const pv=+d.prix>0?d.prix.toLocaleString('fr-FR',{minimumFractionDigits:2,maximumFractionDigits:2}):'';
+        const l3=ligne(3,'Prix',pv?`${pv} €${d.paie?' · '+esc(d.paie):''}`:'À saisir à réception de la facture',`<span class="fa-px"><input id="fichePrix" type="text" inputmode="decimal" value="${pv}" placeholder="0,00"> €</span>${B('prix','Enregistrer','p')}`,!!pv);
+        const l4=ligne(4,'Annuler',`${mailsOn('annulation')&&!s.direct?`${esc(demNom(d))} recevra l’email d’annulation`:'Aucun email envoyé'} · prix remis à 0 €`,B('annuler','Annuler la demande','r'),false);
+        actions=l1+l2+l3+l4;
+    }
     const histo=[s.cmd?`Commandé le ${new Date(s.cmd).toLocaleString('fr-FR',{dateStyle:'short',timeStyle:'short'})}${s.cmdBy&&s.cmdBy!=='Admin'?' par '+esc(s.cmdBy):''}`:'', s.fait?`Terminé le ${new Date(s.fait).toLocaleString('fr-FR',{dateStyle:'short',timeStyle:'short'})}${s.faitBy&&s.faitBy!=='Admin'?' par '+esc(s.faitBy):''}`:'', s.recu?recuInfo(s):''].filter(Boolean).join(' · ');
     return `<div style="background:#fff;border:1px solid var(--border);border-radius:8px;padding:16px;margin-bottom:14px;">
         <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:14px;"><div style="font-weight:700;font-size:13px;color:var(--ink-soft);">${icon('clipboard',13)} Suivi</div>${stagePill(st)}</div>
         ${stepper}
         ${histo?`<div style="font-size:11px;color:#8b93a1;margin-top:10px;">${histo}</div>`:''}
         ${mailsHtml(d)}
-        ${actions?`<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;">${actions}</div>`:''}
+        ${actions?`<div class="fa">${actions}</div>`:''}
         ${['acommander','commandee'].includes(st)&&pContactHtml(d,{grand:true})?`<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;">${pContactHtml(d,{grand:true})}</div>`:''}
         ${notesHtml(d)}
     </div>`;
@@ -2695,7 +2719,10 @@ document.addEventListener('click', async e=>{
     else if(act==='refuser'){ const am=mailsOn('annulation')&&!suiviOf(c).direct; if(confirm(`Refuser « ${titreDe(c)} » ?\n\n${am?`${demNom(c)} recevra l’email d’annulation.`:`Aucun email ne sera envoyé : pensez à prévenir ${demNom(c)} si besoin.`}${stageOf(c)==='commandee'?`\nPensez aussi à prévenir ${c.presta||'le prestataire'}.`:''}`)) await applyStatus([c.id],'Annulé'); }
     else if(act==='copier'){ const ok=await copyText(orderMessage(c)); showToast(ok?'✓ Message copié : collez-le dans votre email au prestataire':`${icon('alert',13)} Copie impossible`); }
     else if(act==='commande'){ const enAtt=c.pris==='En attente'||c.pris==='En cours';
-        if(confirm(`Commande « ${titreDe(c)} » passée auprès de ${c.presta||'du prestataire'} ?\n\nAucun email ne sera envoyé.`)){ if(enAtt) await applyStatus([c.id],'OUI',{silent:true}); markCommande([c.id]); } }
+        if(a.classList.contains('fa-b')||confirm(`Commande « ${titreDe(c)} » passée auprès de ${c.presta||'du prestataire'} ?\n\nAucun email ne sera envoyé.`)){ if(enAtt) await applyStatus([c.id],'OUI',{silent:true}); markCommande([c.id]); } }
+    else if(act==='prix'){ const v=parseFloat((document.getElementById('fichePrix')?.value||'').replace(/\s/g,'').replace(',','.').replace('€',''))||0;
+        if(v!==(+c.prix||0)){ logAction('Prix',{...c,prix:v},`${$m(c.prix||0)} → ${$m(v)}`); state.data=state.data.map(x=>x.id===c.id?{...x,prix:v}:x); await dbUpdate(c.id,{prix:v}); if(suiviOf(c).prixEst) setSuivi([c.id],()=>({prixEst:null})); }
+        showToast('✓ Prix enregistré'); }
     else if(act==='uncommande') unmarkCommande([c.id]);
     else if(act==='fait') markFait([c.id]);
     else if(act==='unfait') unmarkFait([c.id]);
@@ -2722,8 +2749,8 @@ function renderDetail(d,m){
         : '<label class="form-label">Pour qui</label><div style="position:relative;" id="editPqWrapper"><button type="button" id="editPqToggle" style="width:100%;border:1.5px solid var(--border);border-radius:8px;padding:12px 14px;font-size:14px;background:var(--white);text-align:left;cursor:pointer;display:flex;justify-content:space-between;align-items:center;font-family:var(--fb);color:var(--ink);"><span id="editPqLabel">'+(d.pourQui||'— Choisir —')+'</span><span style="font-size:11px;color:var(--ink-soft);">▼</span></button><div id="editPqDropdown" style="display:none;position:absolute;top:calc(100% + 4px);left:0;right:0;background:var(--white);border:1.5px solid var(--border);border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,0.10);z-index:999;overflow:hidden;max-height:220px;overflow-y:auto;">'+settings.directeurs.map(dir=>'<label style="display:flex;align-items:center;gap:12px;padding:11px 16px;cursor:pointer;border-bottom:1px solid var(--border-light);"><input type="checkbox" class="edit-pq-check" value="'+dir+'" '+((d.pourQui||'').toUpperCase().includes(dir.toUpperCase())?'checked':'')+' style="width:17px;height:17px;accent-color:var(--accent);cursor:pointer;flex-shrink:0;"><span style="font-size:14px;">'+dir+'</span></label>').join('')+'<div style="padding:10px 16px;border-top:1px solid var(--border-light);"><input id="editPqAutre" type="text" placeholder="Autre nom..." value="'+(settings.directeurs.some(d2=>(d.pourQui||'').toUpperCase().includes(d2.toUpperCase()))?'':d.pourQui||'')+'" class="form-input" style="font-size:13px;padding:7px 10px;"></div></div></div>';
 
     const editForm=`
-    <div style="background:#fafaf8;border-radius:8px;padding:16px;margin-bottom:14px;">
-        <div style="font-weight:700;font-size:13px;margin-bottom:14px;color:var(--ink-soft);">${icon('edit',13)} Modifier la commande</div>
+    <details class="fa-edit" style="background:#fafaf8;border-radius:8px;padding:12px 16px;margin-bottom:14px;">
+        <summary style="font-weight:700;font-size:13px;color:var(--ink-soft);cursor:pointer;">${icon('edit',13)} Modifier les informations</summary><div style="height:12px"></div>
 
         <div class="form-group"><label class="form-label">${isRepas?"Type de repas":"Description"}</label>
             ${isRepas
@@ -2770,8 +2797,8 @@ function renderDetail(d,m){
             <div class="form-group"><label class="form-label">Paiement</label><select id="editPaie" class="form-select"><option ${d.paie==='CB'?'selected':''}>CB</option><option ${d.paie==='Facturation'?'selected':''}>Facturation</option></select></div>
         </div>
 
-        <button id="saveEdit" class="btn-primary" style="width:100%;padding:12px;margin-top:4px;">${icon('save',14)} Sauvegarder les modifications</button>
-    </div>`;
+        <button id="saveEdit" class="btn-primary" style="width:100%;padding:12px;margin-top:4px;">${icon('save',14)} Enregistrer les modifications</button>
+    </details>`;
 
     const inner=`
     ${m?`<div style="background:var(--side);padding:calc(16px + env(safe-area-inset-top,0px)) 20px 20px;">
@@ -2788,13 +2815,6 @@ function renderDetail(d,m){
 
     ${editForm}
 
-    <div style="margin-bottom:14px;">
-        <div class="form-label" style="margin-bottom:10px;">Statut de la commande</div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
-            <button data-set-status='${JSON.stringify({id:d.id,status:"En cours"})}' style="padding:8px 16px;border-radius:8px;font-size:13px;border:1.5px solid ${d.pris==='En cours'?'var(--accent)':'var(--border)'};background:${d.pris==='En cours'?'var(--accent)':'#fff'};color:${d.pris==='En cours'?'#fff':'#5a5550'};cursor:pointer;">${ST['En cours'].label}</button>
-            <button data-set-status='${JSON.stringify({id:d.id,status:"OUI"})}' style="padding:9px 18px;border-radius:8px;font-size:13px;font-weight:700;border:1.5px solid ${d.pris==='OUI'?'var(--accent)':'#22c55e'};background:${d.pris==='OUI'?'var(--accent)':'#f0fdf4'};color:${d.pris==='OUI'?'#fff':'#15803d'};cursor:pointer;">${icon('check',14)} Commande validée</button>
-        </div>
-    </div>
     ${state.confirmDelete===d.id?`
     <div style="background:#fef2f2;border:1.5px solid #fecaca;border-radius:8px;padding:14px 16px;margin-bottom:10px;">
         <div style="font-weight:700;font-size:14px;color:#b91c1c;margin-bottom:10px;display:flex;align-items:center;gap:7px;">${icon('alert',15)} Confirmer la suppression ?</div>
@@ -2804,7 +2824,7 @@ function renderDetail(d,m){
             <button id="confirmDeleteNo" style="flex:1;background:#f1f5f9;color:#5a5550;border:none;border-radius:10px;padding:10px;font-weight:600;font-size:14px;cursor:pointer;">Annuler</button>
         </div>
     </div>`:`
-    <button data-delete-item="${d.id}" class="btn-danger" style="width:100%;padding:12px;border-radius:8px;">${icon('trash',14)} Supprimer la commande</button>`}
+    <button data-delete-item="${d.id}" style="display:block;margin:6px auto 0;background:none;border:none;color:#9ca3af;font-size:12.5px;cursor:pointer;text-decoration:underline;">${icon('trash',12)} Supprimer définitivement (corbeille)</button>`}
     ${m?'</div>':''}`;
 
     if(m) return `<div class="detail-view">${inner}</div>${state.toast?`<div class="toast">${state.toast}</div>`:''}${mobileNavHtml()}`;
