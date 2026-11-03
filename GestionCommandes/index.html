@@ -2705,6 +2705,15 @@ function ficheInfos(d){
     return `<div class="fi">${F.join('')}${com}${ct?`<div class="fi-ct">${ct}</div>`:''}</div>`;
 }
 
+document.addEventListener('click',async e=>{ const b=e.target.closest('[data-agenda-resync]'); if(!b||!isAdmin()) return;
+    if(!confirm('Remettre l’agenda à jour ?\n\nLes rappels des demandes à venir vont être renvoyés au nouveau format, et ceux des saisies directes et des récurrents retirés. Vous allez recevoir une série de mails, une seule fois.')) return;
+    b.disabled=true; b.textContent='Envoi en cours… (1 à 2 minutes)';
+    try{ await sbPret(); const r=await fetch(SB_URL+'/functions/v1/invitations-agenda',{method:'POST',headers:{...sbH(),'Content-Type':'application/json'},body:JSON.stringify({type:'RESYNC'})}); const j=await r.json().catch(()=>({}));
+        if(j.ok) showToast(`✓ Agenda remis à jour : ${j.renvoyes||0} rappel(s) renvoyé(s), ${j.retires||0} retiré(s)`); else showToast(`${icon('alert',13)} ${j.error||j.skipped||'Échec'} : la fonction agenda est-elle bien redéployée sur Supabase ?`);
+    }catch(err){ showToast(`${icon('alert',13)} Échec de la remise à jour`); }
+    b.disabled=false; b.textContent='Remettre l’agenda à jour';
+});
+
 /* Étapes côté assistante (« Suivre ma demande ») */
 function trackSteps(c){
     const st=stageOf(c);
@@ -2941,7 +2950,7 @@ function renderDashboard(total,attente,m){
 
     const urgTag=c=>{ const j=daysLeft(c.date); return j!==null&&j<=2?`<span class="urg" style="margin-left:0;">${badgeColor(j).label}</span>`:''; };
     const actionsDe=c=>{ const st=stageOf(c);
-        if(st==='avalider'||st==='acommander') return `<button class="btn-sm" data-suivi-act="refuser" data-id="${c.id}">Refuser</button>${peutAccuser(c)?`<button class="btn-sm" style="background:#15803d;border-color:#15803d;color:#fff;" data-suivi-act="accuse" data-id="${c.id}">${icon('mail',13)} Accuser réception</button>`:''}<button class="btn-sm pri" data-suivi-act="commande" data-id="${c.id}" title="Aucun email">${icon('check',13)} Commande passée</button>`;
+        if(st==='avalider'||st==='acommander') return `${peutAccuser(c)?`<button class="btn-sm" style="background:#15803d;border-color:#15803d;color:#fff;" data-suivi-act="accuse" data-id="${c.id}">${icon('mail',13)} Accuser réception</button>`:''}<button class="btn-sm" data-open-detail='${JSON.stringify(c).replace(/'/g,"&apos;")}'>Ouvrir</button>`;
         return ''; };
     const table=`<div class="tbl-wrap"><table class="pro-table"><thead><tr><th>Prestation</th><th>Date</th><th>Statut</th><th style="text-align:right;">Action</th></tr></thead><tbody>
         ${aFaire.map(c=>`<tr>
@@ -5440,7 +5449,12 @@ function renderSettings(){
         <div style="font-size:11px;color:#8b93a1;margin-top:8px;">À activer une fois que chaque assistante a créé son compte (« Première connexion ? » sur l’écran de connexion, avec l’email renseigné dans la liste des assistantes ci-dessus).</div>
     </div>
 `;
-    else if(cur[0]==='emails') body=renderReglagesEmails(secHead);
+    else if(cur[0]==='emails') body=renderReglagesEmails(secHead)+`
+    <div class="settings-section">
+        ${secHead("calendar","Agenda Outlook : remise à jour","Une seule fois : retire les anciens rappels et renvoie ceux des demandes à venir au nouveau format.")}
+        <div style="font-size:12.5px;color:#4b5563;line-height:1.5;margin-bottom:10px;">• Demandes à venir : rappels renvoyés avec le nouveau titre et le nouvel horaire (ils remplacent les anciens, pas de doublon).<br>• Déjà commandées : passent en « ✅ ».<br>• Saisies directes et repas récurrents : rappels retirés de l’agenda.<br>Vous recevrez une série de mails d’un coup (cette fois seulement).</div>
+        <button data-agenda-resync style="width:100%;background:#fff;border:1.5px solid var(--border);border-radius:12px;padding:11px;font-size:14px;font-weight:600;color:var(--ink);cursor:pointer;">${icon('calendar',14)} Remettre l’agenda à jour</button>
+    </div>`;
     else if(cur[0]==='recurrents') body=renderReglagesRecurrences(secHead);
     else if(cur[0]==='apparence') body=renderApparence();
     else if(cur[0]==='prestataires') body=`
