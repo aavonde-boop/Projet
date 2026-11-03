@@ -2284,10 +2284,11 @@ const STAGES = {
     acommander: { label:'Reçue',       court:'Reçue',      color:'#b45309', bg:'#fffbeb', border:'#fde68a', icon:'hourglass' },
     commandee:  { label:'Commandée',   court:'Commandée',  color:'#1d4ed8', bg:'#eff6ff', border:'#bfdbfe', icon:'box' },
     fait:       { label:'Faite',       court:'Faite',      color:'#15803d', bg:'#f0fdf4', border:'#bbf7d0', icon:'check' },
-    refusee:    { label:'Refusé',      court:'Refusé',     color:'#b91c1c', bg:'#fef2f2', border:'#fecaca', icon:'x' },
+    refusee:    { label:'Annulée',     court:'Annulée',     color:'#b91c1c', bg:'#fef2f2', border:'#fecaca', icon:'x' },
 };
 const STAGE_ORDER = ['recue','commandee','fait'];
 const etape = c => { const s=stageOf(c); return s==='avalider'||s==='acommander'?'recue':s; };
+const etapeLabel = c => STAGES[etape(c)].label;
 const JOURS = ['dimanche','lundi','mardi','mercredi','jeudi','vendredi','samedi'];
 const JOURS_C = ['dim.','lun.','mar.','mer.','jeu.','ven.','sam.'];
 const MOIS = ['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
@@ -2461,7 +2462,7 @@ function suiviCard(c,{compact=false,showStage=false,select=false}={}){
     };
     let actions='', info='';
     if(st==='avalider'||st==='acommander'){ actions=(peutAccuser(c)?B.accuse:'')+pContactHtml(c); if(s.accuse) info=`${icon('check',12)} Réception accusée${s.accuseBy?' par '+esc(String(s.accuseBy).split(' ')[0]):''} le ${new Date(s.accuse).toLocaleString('fr-FR',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}`; }
-    else if(st==='commandee'){ actions=(peutConfirmer(c)?`<button data-recu="${c.id}" style="display:inline-flex;align-items:center;gap:5px;border-radius:8px;padding:6px 10px;font-size:12px;font-weight:700;cursor:pointer;background:#15803d;border:1px solid #15803d;color:#fff;">${icon('check',12)} Bien reçu</button>`:'')+B.fait; info=`${icon('check',11)} Commande passée le ${new Date(s.cmd).toLocaleDateString('fr-FR')}${s.cmdBy&&s.cmdBy!=='Admin'?' par '+esc(s.cmdBy):''} · <a href="#" data-suivi-act="uncommande" data-id="${c.id}" style="color:#8b93a1;">décocher</a>`; }
+    else if(st==='commandee'){ actions=(peutConfirmer(c)?`<button data-recu="${c.id}" style="display:inline-flex;align-items:center;gap:5px;border-radius:8px;padding:6px 10px;font-size:12px;font-weight:700;cursor:pointer;background:#15803d;border:1px solid #15803d;color:#fff;">${icon('check',12)} Bien reçu</button>`:''); info=`${icon('check',11)} Commande passée le ${new Date(s.cmd).toLocaleDateString('fr-FR')}${s.cmdBy&&s.cmdBy!=='Admin'?' par '+esc(s.cmdBy):''} · <a href="#" data-suivi-act="uncommande" data-id="${c.id}" style="color:#8b93a1;">décocher</a>`; }
     else if(st==='fait'){ info=s.recu?recuInfo(s):s.fait?`Terminé le ${new Date(s.fait).toLocaleDateString('fr-FR')}${s.cmd?'':''} · <a href="#" data-suivi-act="unfait" data-id="${c.id}" style="color:#8b93a1;">rouvrir</a>`:'Prestation passée'; }
     const sel=select?`<input type="checkbox" class="sel-box" data-sel-id="${c.id}" ${(state.sel||[]).includes(c.id)?'checked':''} style="width:16px;height:16px;accent-color:var(--accent);cursor:pointer;flex-shrink:0;margin-top:3px;">`:'';
     return `<div class="suivi-card${state.flashId===c.id?' flash':''}" style="background:#fff;border:1px solid var(--border);border-left:3px solid ${STAGES[st].color};border-radius:8px;padding:${compact?'10px 12px':'12px 14px'};display:flex;gap:10px;align-items:flex-start;">
@@ -2646,10 +2647,9 @@ function suiviBlock(d){
     const btn=(act,label,ic,style)=>`<button data-suivi-act="${act}" data-id="${d.id}" style="display:inline-flex;align-items:center;gap:6px;border-radius:12px;padding:10px 14px;font-size:13px;font-weight:700;cursor:pointer;${style}">${icon(ic,14)} ${label}</button>`;
     const histo=[s.cmd?`Commandé le ${new Date(s.cmd).toLocaleString('fr-FR',{dateStyle:'short',timeStyle:'short'})}${s.cmdBy&&s.cmdBy!=='Admin'?' par '+esc(s.cmdBy):''}`:'', s.fait?`Terminé le ${new Date(s.fait).toLocaleString('fr-FR',{dateStyle:'short',timeStyle:'short'})}${s.faitBy&&s.faitBy!=='Admin'?' par '+esc(s.faitBy):''}`:'', s.recu?recuInfo(s):''].filter(Boolean).join(' · ');
     return `<div style="background:#fff;border:1px solid var(--border);border-radius:8px;padding:16px;margin-bottom:14px;">
-        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:14px;"><div style="font-weight:700;font-size:13px;color:var(--ink-soft);">${icon('clipboard',13)} Suivi</div>${stagePill(st)}</div>
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:14px;"><div style="font-weight:700;font-size:13px;color:var(--ink-soft);">${icon('clipboard',13)} Suivi</div></div>
         ${stepper}
         ${histo?`<div style="font-size:11px;color:#8b93a1;margin-top:10px;">${histo}</div>`:''}
-        ${mailsHtml(d)}
         ${notesHtml(d)}
     </div>`;
 }
@@ -2847,7 +2847,7 @@ function renderDetail(d,m){
     <button data-back-detail class="back-btn-dark" style="margin-bottom:18px;">← Retour à la liste</button>
     <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px;">${avatar(d.demandeur,48)}<div><div style="font-family:var(--ft);font-weight:650;letter-spacing:-.01em;font-size:19px;">${typeIcon} ${d.desc}</div><div style="color:#8b93a1;font-size:12px;">${demHtml(d,{role:true})}${d.pourQui?' · Pour '+esc(d.pourQui):''}</div></div></div>`}
 
-    <div style="display:flex;gap:8px;margin-bottom:16px;align-items:center;flex-wrap:wrap;">${chip(d.pris)} ${typeTag(d.type)}${isAdmin()?`<button class="btn-sm" data-refaire="${d.id}" style="margin-left:auto;">${icon('plus',13)} Refaire cette demande</button>`:''}</div>
+    <div style="display:flex;gap:8px;margin-bottom:16px;align-items:center;flex-wrap:wrap;">${stagePill(stageOf(d))} ${typeTag(d.type)}${isAdmin()?`<button class="btn-sm" data-refaire="${d.id}" style="margin-left:auto;">${icon('plus',13)} Refaire cette demande</button>`:''}</div>
 
     ${ficheInfos(d)}
     ${ficheActions(d)}
@@ -4679,12 +4679,24 @@ function renderJournal(m){
      mais ces deux cellules s'éditent directement, comme dans Excel ─── */
 const STATUS_MAP={'OUI':{bg:'#f0fdf4',color:'#15803d',label:'Validé'},'En attente':{bg:'#fffbeb',color:'#b45309',label:'En attente'},'En cours':{bg:'#eff6ff',color:'#1e40af',label:'En cours'},'Annulé':{bg:'#fef2f2',color:'#b91c1c',label:'Annulé'},'Reçu':{bg:'#f0f9ff',color:'#0369a1',label:'Reçu'}};
 function statusEditCell(c){
-    const st=STATUS_MAP[c.pris]||{bg:'#f1f5f9',color:'#5a6a85'};
-    const opts=Object.keys(STATUS_MAP).map(k=>`<option value="${k}" ${c.pris===k?'selected':''}>${STATUS_MAP[k].label}</option>`).join('');
+    const e=etape(c), S=STAGES[e];
+    const opts=[['recue','Reçue'],['commandee','Commandée'],['fait','Faite'],['refusee','Annulée']].map(([k,l])=>`<option value="${k}" ${e===k?'selected':''}>${l}</option>`).join('');
     return `<td style="padding:3px 8px;text-align:center;" onclick="event.stopPropagation()">
-        <select class="cell-input" data-inline-edit data-id="${c.id}" data-field="pris" style="width:100%;padding:2px 5px;border-radius:8px;font-size:11px;font-weight:600;background:${st.bg};color:${st.color};border:1px solid transparent;cursor:pointer;">${opts}</select>
+        <select class="cell-input" data-etape-edit="${c.id}" style="width:100%;padding:2px 5px;border-radius:8px;font-size:11px;font-weight:600;background:${S.bg};color:${S.color};border:1px solid transparent;cursor:pointer;">${opts}</select>
     </td>`;
 }
+/* Changer l'étape depuis l'historique (mêmes actions que la fiche) */
+async function setEtape(c,v){
+    const cur=etape(c), s=suiviOf(c), enAtt=c.pris==='En attente'||c.pris==='En cours';
+    if(v===cur) return;
+    if(v==='refusee'){ if(!confirm(`Annuler « ${titreDe(c)} » du ${dateCourte(c)} ?\n\n${mailsOn('annulation')&&!s.direct?`${demNom(c)} recevra l’email d’annulation.`:'Aucun email ne sera envoyé.'}\nLe prix passera à 0 €.`)){ render(); return; } await applyStatus([c.id],'Annulé'); showToast('Demande annulée'); return; }
+    if(c.pris==='Annulé'||enAtt) await applyStatus([c.id],'OUI',{silent:true,noMail:true});
+    if(v==='recue'){ if(s.cmd||s.fait){ setSuivi([c.id],()=>({cmd:null,cmdBy:null,fait:null,faitBy:null})); logAction('Commande annulée',[c]); } showToast(daysLeft(c.date)<0?'Remise en « Reçue » (la date est passée : elle reste dans Faite)':'Remise en « Reçue »'); }
+    else if(v==='commandee'){ if(s.fait) unmarkFait([c.id]); else if(!s.cmd) markCommande([c.id]); }
+    else if(v==='fait') markFait([c.id]);
+    render();
+}
+document.addEventListener('change',e=>{ const el=e.target.closest&&e.target.closest('[data-etape-edit]'); if(!el) return; const c=state.data.find(x=>String(x.id)===String(el.getAttribute('data-etape-edit'))); if(c) setEtape(c,el.value); });
 function prixEditCell(c){
     const val=c.prix?c.prix.toLocaleString('fr-FR',{minimumFractionDigits:2,maximumFractionDigits:2}):(c.pris==='Annulé'?'0,00':'');
     const est=suiviOf(c).prixEst;
@@ -5779,7 +5791,7 @@ function attachEvents(){
             'Pour qui':c.pourQui||'',
             'Titre':c.desc||'',
             'Type':typeLabel(c.type),
-            'Statut':statusLabel(c.pris),
+            'Statut':etapeLabel(c),
             'Prestataire':c.presta||'',
             'Lieu':c.lieu||'',
             'Heure':c.heure||'',
