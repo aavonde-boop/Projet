@@ -2766,7 +2766,7 @@ function renderDetail(d,m){
         <div class="form-group"><label class="form-label">Commentaire</label><textarea id="editComment" class="form-input" style="min-height:60px;resize:vertical;">${d.comment||''}</textarea></div>
 
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-            <div class="form-group"><label class="form-label">Prix (€)</label><input id="detailPrix" type="text" inputmode="decimal" value="${d.prix?d.prix.toLocaleString('fr-FR',{minimumFractionDigits:2,maximumFractionDigits:2}):''}" placeholder="0,00" class="form-input" style="text-align:right;font-weight:600;"></div>
+            <div class="form-group"><label class="form-label">Prix (€)</label><input id="detailPrix" type="text" inputmode="decimal" value="${d.prix?d.prix.toLocaleString('fr-FR',{minimumFractionDigits:2,maximumFractionDigits:2}):(d.pris==='Annulé'?'0,00':'')}" placeholder="0,00" class="form-input" style="text-align:right;font-weight:600;"></div>
             <div class="form-group"><label class="form-label">Paiement</label><select id="editPaie" class="form-select"><option ${d.paie==='CB'?'selected':''}>CB</option><option ${d.paie==='Facturation'?'selected':''}>Facturation</option></select></div>
         </div>
 
@@ -4624,7 +4624,7 @@ function statusEditCell(c){
     </td>`;
 }
 function prixEditCell(c){
-    const val=c.prix?c.prix.toLocaleString('fr-FR',{minimumFractionDigits:2,maximumFractionDigits:2}):'';
+    const val=c.prix?c.prix.toLocaleString('fr-FR',{minimumFractionDigits:2,maximumFractionDigits:2}):(c.pris==='Annulé'?'0,00':'');
     const est=suiviOf(c).prixEst;
     return `<td style="padding:3px 8px;text-align:right;white-space:nowrap;" onclick="event.stopPropagation()" ${est?'title="Prix estimé (moyenne constatée) : saisissez le vrai prix pour le remplacer"':''}>${est?'<span class="px-est">≈</span>':''}
         <input type="text" inputmode="decimal" class="cell-input" data-inline-edit data-id="${c.id}" data-field="prix" value="${val}" placeholder="—" style="width:84px;text-align:right;font-weight:700;font-family:monospace;font-size:13px;background:transparent;border:1px solid transparent;border-radius:6px;padding:3px 6px;color:${c.prix?'#16a34a':'#94a3b8'};">
@@ -5598,7 +5598,7 @@ function attachEvents(){
                 value=parseFloat(value.replace(/\s/g,'').replace(',','.').replace('€',''))||0;
             }
             const current=state.data.find(c=>String(c.id)===String(id));
-            if(!current || current[field]===value) return; // rien à sauvegarder
+            if(!current || current[field]===value || (field==='prix'&&!(+current.prix)&&!value)) return; // rien à sauvegarder
             state.data=state.data.map(c=>String(c.id)===String(id)?{...c,[field]:value,...(field==='pris'&&value==='Annulé'?{prix:0}:{})}:c);
             if(state.detail && String(state.detail.id)===String(id)) state.detail={...state.detail,[field]:value,...(field==='pris'&&value==='Annulé'?{prix:0}:{})};
             showToast('✓ Sauvegardé');
