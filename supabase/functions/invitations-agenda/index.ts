@@ -4,7 +4,7 @@
 //  Appelée par un « Database Webhook » Supabase sur la table 'commandes'
 //  (INSERT + UPDATE). Pour chaque nouvelle demande, envoie aux emails admin
 //  (Réglages › Notifications › Emails admin) deux invitations Outlook :
-//    1. « Commander »      : le jour même à 9h (1 h avant si la prestation est avant 10h)
+//    1. « Commander »      : le jour même à 9h (la veille à 16h avant 11h ou pour un hôtel)
 //    2. « Mise en place »  : 30 min avant (15 min pour un taxi), avec lieu et infos
 //  Outlook les place tout seul dans l'agenda (comme une invitation de réunion).
 //  Pas d'invitation pour les saisies directes (Julia / Arnaud), pas de mise à jour
@@ -99,9 +99,10 @@ export function rappels(c: Row, now: Wall = parisNow()): Ev[] {
     c.code ? ("Code : " + String(c.code)) : "",
   ].filter(Boolean).join("\n");
 
-  // 1) Commander : le jour même à 9h (1 h avant si la prestation est avant 10h) ; si c'est déjà passé, dans l'heure ; jamais après la prestation
+  // 1) Commander : le jour même à 9h ; la veille à 16h si la prestation est avant 11h ou si c'est un hôtel ;
+  //    si c'est déjà passé, dans l'heure ; jamais après la prestation
   let cmd: Wall = { ...day, h: 9, mi: 0 };
-  if (start.h < 10) cmd = addMin(start, -60);
+  if (start.h < 11 || c.type === "hotel") cmd = { ...addMin({ ...day, h: 0, mi: 0 }, -24 * 60), h: 16, mi: 0 };
   if (toDate(cmd) < toDate(now)) { cmd = addMin({ ...now, mi: 0 }, 60); }
   if (toDate(cmd) > toDate(start)) cmd = addMin(start, -60);
   const out: Ev[] = [{
