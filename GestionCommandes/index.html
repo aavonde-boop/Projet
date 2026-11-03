@@ -2318,7 +2318,7 @@ function setSuivi(ids, patchFn){
     });
 }
 function itemsById(ids){ return state.data.filter(c=>ids.map(String).includes(String(c.id))); }
-function markCommande(ids){ const now=new Date().toISOString(), who=adminName(); setSuivi(ids,()=>({cmd:now,cmdBy:who,fait:null,faitBy:null})); logAction('Commandée',itemsById(ids)); showToast('✓ Commande passée enregistrée'); }
+function markCommande(ids){ const now=new Date().toISOString(), who=adminName(); setSuivi(ids,()=>({cmd:now,cmdBy:who,fait:null,faitBy:null})); _suiviChain=_suiviChain.then(()=>Promise.all([].concat(ids).map(id=>fetch(SB_URL+'/functions/v1/invitations-agenda',{method:'POST',headers:{'Content-Type':'application/json',apikey:SB_KEY,Authorization:'Bearer '+SB_KEY},body:JSON.stringify({type:'COMMANDE',record:{id}})}).catch(()=>{})))).catch(()=>{}); logAction('Commandée',itemsById(ids)); showToast('✓ Commande passée enregistrée'); }
 function unmarkCommande(ids){ setSuivi(ids,()=>({cmd:null,cmdBy:null,fait:null,faitBy:null})); logAction('Commande annulée',itemsById(ids)); showToast('Remis dans « Reçue »'); }
 function markFait(ids){ const now=new Date().toISOString(), who=adminName(); setSuivi(ids,c=>({fait:now,faitBy:who,cmd:c.cmd||now,cmdBy:c.cmdBy||who})); logAction('Terminée',itemsById(ids)); showToast('✓ Terminé'); }
 function unmarkFait(ids){ setSuivi(ids,()=>({fait:null,faitBy:null})); showToast('Remis en cours'); }
@@ -2359,7 +2359,7 @@ async function copyText(t){
 }
 
 /* ── Rappels agenda (.ics, s'ouvre dans Outlook, Google Agenda, iPhone…) ──
-   1) « Commander » : la veille de la prestation à 10h (ou dans l'heure si c'est déjà passé)
+   1) « Commander » : le jour même à 9h, 1 h avant si la prestation est avant 10h (ou dans l'heure si c'est déjà passé)
    2) « Mise en place » : 30 min avant l'heure de la prestation, avec le lieu et toutes les infos */
 function icsDate(d){ const p=n=>String(n).padStart(2,'0'); return `${d.getFullYear()}${p(d.getMonth()+1)}${p(d.getDate())}T${p(d.getHours())}${p(d.getMinutes())}00`; }
 function icsText(t){ return String(t||'').replace(/\\/g,'\\\\').replace(/;/g,'\\;').replace(/,/g,'\\,').replace(/\r?\n/g,'\\n'); }
@@ -2384,7 +2384,7 @@ function rappelEvents(c, which){
         suiviOf(c).note?`Note interne : ${suiviOf(c).note}`:'', c.code?`Code : ${c.code}`:''
     ].filter(Boolean).join('\n');
     if(which!=='mep'){
-        let r=new Date(start); r.setDate(r.getDate()-1); r.setHours(10,0,0,0);
+        let r=new Date(start); r.setHours(9,0,0,0); if(start.getHours()<10) r=new Date(start.getTime()-60*60000);
         if(r<now){ r=new Date(now.getTime()+60*60000); r.setMinutes(0,0,0); }
         if(r>start) r=new Date(start.getTime()-60*60000);
         ev.push({uid:`${c.id}-commande`, start:r, min:15, title:`Commander · ${titre} (${dateCourte(c)})`, location:'',

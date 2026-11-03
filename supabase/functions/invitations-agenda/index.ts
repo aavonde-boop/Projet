@@ -4,11 +4,12 @@
 //  Appelée par un « Database Webhook » Supabase sur la table 'commandes'
 //  (INSERT + UPDATE). Pour chaque nouvelle demande, envoie aux emails admin
 //  (Réglages › Notifications › Emails admin) deux invitations Outlook :
-//    1. « Commander »      : la veille à 10h (ou dans l'heure si c'est trop tard)
+//    1. « Commander »      : le jour même à 9h (1 h avant si la prestation est avant 10h)
 //    2. « Mise en place »  : 30 min avant (15 min pour un taxi), avec lieu et infos
 //  Outlook les place tout seul dans l'agenda (comme une invitation de réunion).
-//  Si la demande est modifiée (date, heure, lieu…), les invitations sont mises
-//  à jour ; si elle est annulée, elles sont retirées des agendas.
+//  Pas d'invitation pour les saisies directes (Julia / Arnaud), pas de mise à jour
+//  quand la demande est modifiée. Annulée : retirée des agendas. « Commande passée »
+//  (appel de l'appli, type COMMANDE) : le rappel devient « ✅ Commandé ».
 //
 //  Envoi par Brevo (SMTP, gratuit jusqu'à 300 emails/jour).
 //  Secrets à définir dans Supabase (Edge Functions › Secrets) :
@@ -20,7 +21,7 @@
 import nodemailer from "npm:nodemailer@6.9.16";
 
 type Row = Record<string, any>;
-type Ev = { uid: string; start: Wall; minutes: number; title: string; location: string; desc: string; alarm: number; libre?: boolean };
+type Ev = { uid: string; start: Wall; minutes: number; title: string; location: string; desc: string; alarm: number; libre?: boolean; sansAlarme?: boolean };
 type Wall = { y: number; mo: number; d: number; h: number; mi: number }; // heure de Paris
 
 const TZ = "Europe/Paris";
@@ -98,8 +99,9 @@ export function rappels(c: Row, now: Wall = parisNow()): Ev[] {
     c.code ? ("Code : " + String(c.code)) : "",
   ].filter(Boolean).join("\n");
 
-  // 1) Commander : la veille à 10h ; si c'est déjà passé, dans l'heure ; jamais après la prestation
-  let cmd: Wall = { ...addMin({ ...day, h: 0, mi: 0 }, -24 * 60), h: 10, mi: 0 };
+  // 1) Commander : le jour même à 9h (1 h avant si la prestation est avant 10h) ; si c'est déjà passé, dans l'heure ; jamais après la prestation
+  let cmd: Wall = { ...day, h: 9, mi: 0 };
+  if (start.h < 10) cmd = addMin(start, -60);
   if (toDate(cmd) < toDate(now)) { cmd = addMin({ ...now, mi: 0 }, 60); }
   if (toDate(cmd) > toDate(start)) cmd = addMin(start, -60);
   const out: Ev[] = [{
@@ -139,7 +141,7 @@ export function ics(ev: Ev, method: "REQUEST" | "CANCEL", organizer: string, att
     ...attendees.map((a) => fold(("ATTENDEE;ROLE=REQ-PARTICIPANT;PARTSTAT=" + String(ev.libre ? "ACCEPTED" : "NEEDS-ACTION") + ";RSVP=FALSE:mailto:" + String(a)))),
     ("STATUS:" + String(method === "CANCEL" ? "CANCELLED" : "CONFIRMED")), ("TRANSP:" + String(ev.libre ? "TRANSPARENT" : "OPAQUE")), "CLASS:PUBLIC",
     "X-MICROSOFT-CDO-BUSYSTATUS:FREE", "X-MICROSOFT-CDO-INTENDEDSTATUS:FREE",
-    ...(method === "REQUEST" ? ["BEGIN:VALARM", "ACTION:DISPLAY", ("TRIGGER:-PT" + String(ev.alarm) + "M"), fold(("DESCRIPTION:" + String(esc(ev.title)))), "END:VALARM"] : []),
+    ...(method === "REQUEST" && !ev.sansAlarme ? ["BEGIN:VALARM", "ACTION:DISPLAY", ("TRIGGER:-PT" + String(ev.alarm) + "M"), fold(("DESCRIPTION:" + String(esc(ev.title)))), "END:VALARM"] : []),
     "END:VEVENT", "END:VCALENDAR"];
   return L.filter(Boolean).join("\r\n") + "\r\n";
 }
@@ -154,34 +156,61 @@ async function adminEmails(): Promise<string[]> {
   return [...new Set(list.map((x: string) => String(x).trim()).filter((x: string) => /@/.test(x)))] as string[];
 }
 
+async function sbGet(path: string) {
+  const url = Deno.env.get("SUPABASE_URL"), key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  const r = await fetch((String(url) + "/rest/v1/" + String(path)), { headers: { apikey: key!, Authorization: ("Bearer " + String(key)) } });
+  return await r.json();
+}
+async function suiviDe(id: any): Promise<Row> {
+  const rows = await sbGet("parametres?cle=eq.suivi&select=valeur");
+  let v = rows?.[0]?.valeur; if (typeof v === "string") { try { v = JSON.parse(v); } catch (_) { v = {}; } }
+  return (v && v[String(id)]) || {};
+}
+function passee(c: Row, now: Wall) {
+  const day = parseDay(c.date); if (!day) return true;
+  const hm = heureMin(c.heure);
+  const fin = c.type === "hotel" ? (parseDay(c.date_depart) || day) : { ...day, h: hm !== null ? Math.floor(hm / 60) : 23, mi: hm !== null ? hm % 60 : 59 };
+  return toDate(fin) < toDate(now);
+}
+const CORS = { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "authorization, apikey, content-type", "Content-Type": "application/json" };
 const CHAMPS = ["date", "heure", "lieu", "descr", "nb", "depart", "arrivee", "presta", "pour_qui", "comment", "date_depart", "vol", "tel", "type"];
 export function decide(type: string, rec: Row, old?: Row): "REQUEST" | "CANCEL" | null {
-  if (type === "INSERT") return rec.pris === "Annulé" ? null : "REQUEST";
+  if (type === "INSERT") return (rec.pris === "En attente" || rec.pris === "En cours") ? "REQUEST" : null; // saisie directe (« OUI ») : rien
   if (type === "UPDATE" && old) {
     if (rec.pris === "Annulé" && old.pris !== "Annulé") return "CANCEL";
     if (rec.pris === "Annulé") return null;
     if (old.pris === "Annulé") return "REQUEST"; // demande réactivée
-    if (CHAMPS.some((k) => String(rec[k] ?? "") !== String(old[k] ?? ""))) return "REQUEST";
+    // modifications : plus de mise à jour envoyée
   }
   if (type === "DELETE" && old) return "CANCEL"; // supprimée (corbeille)
   return null;
 }
 
 Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
   try {
     const p = await req.json();
-    const rec: Row = p.record || p.old_record || {};
-    const method = decide(p.type, p.record || {}, p.old_record);
-    if (!method) return new Response(JSON.stringify({ ok: true, skipped: true }), { headers: { "Content-Type": "application/json" } });
+    const now = parisNow();
+    let rec: Row = p.record || p.old_record || {};
+    let method = p.type === "COMMANDE" ? "REQUEST" : decide(p.type, p.record || {}, p.old_record);
+    const skip = (why: string) => new Response(JSON.stringify({ ok: true, skipped: why }), { headers: CORS });
+    if (!method) return skip("rien à envoyer");
+    if (p.type === "COMMANDE") { // l'appli signale « Commande passée » : on relit tout côté serveur
+      const rows = await sbGet(("commandes?id=eq." + encodeURIComponent(String(rec.id || "")) + "&select=*"));
+      rec = rows?.[0]; if (!rec) return skip("introuvable");
+      if (rec.pris === "Annulé") return skip("annulée");
+    }
     const row = method === "CANCEL" && p.type === "DELETE" ? p.old_record : rec;
+    if (passee(row, now)) return skip("prestation passée");
+    if (p.type !== "INSERT") { const s = await suiviDe(row.id); if (s.direct) return skip("saisie directe"); if (p.type === "COMMANDE" && !s.cmd) return skip("pas commandée"); }
 
     const login = Deno.env.get("BREVO_SMTP_LOGIN")!, key = Deno.env.get("BREVO_SMTP_KEY")!, user = Deno.env.get("EXPEDITEUR")!;
     if (!login || !key || !user) return new Response(JSON.stringify({ ok: false, error: "Secrets Brevo manquants" }), { status: 200 });
     const to = await adminEmails();
     if (!to.length) return new Response(JSON.stringify({ ok: false, error: "Aucun email admin dans les réglages" }), { status: 200 });
 
-    const now = parisNow();
-    const evs = rappels(row, now);
+    let evs = rappels(row, now);
+    if (p.type === "COMMANDE") evs = evs.filter((e) => e.uid.includes("-commande@")).map((e) => ({ ...e, title: e.title.replace(/^Commander · /, "✅ Commandé · "), desc: ("Commande passée.\n\n" + String(e.desc)), sansAlarme: true }));
     const seq = Math.floor(Date.now() / 1000) - 1760000000; // croissant : chaque mise à jour remplace la précédente
     // Port 465 (SSL) : les ports 25 et 587 sont bloqués dans les Edge Functions Supabase
     const transport = nodemailer.createTransport({ host: "smtp-relay.brevo.com", port: 465, secure: true, auth: { user: login, pass: key } });
@@ -194,7 +223,7 @@ Deno.serve(async (req) => {
         icalEvent: { method, filename: "invitation.ics", content },
       });
     }
-    return new Response(JSON.stringify({ ok: true, method, envoyes: evs.length, a: to }), { headers: { "Content-Type": "application/json" } });
+    return new Response(JSON.stringify({ ok: true, method, envoyes: evs.length, a: to }), { headers: CORS });
   } catch (e) {
     console.error(e);
     return new Response(JSON.stringify({ ok: false, error: String(e) }), { status: 500 });
