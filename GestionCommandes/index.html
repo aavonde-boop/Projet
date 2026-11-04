@@ -2214,7 +2214,7 @@ function renderAdminView(m){
 
     else main=meOk()?renderMe(m):renderDashboard(total,attente,m);
 
-    const TITRES={notifs:'Notifications',parking:'Parking & véhicules',stock:'Stock',dashboard:'Tableau de bord',suivi:'Suivi des demandes',calendrier:'Agenda',activite:'Historique',stats:'Statistiques',analyse:'Statistiques',me:'Mon écran','me-bat':'Signalements du bâtiment','me-stat':'Actions et stats','me-memo':'Mémo perso',settings:'Réglages'};
+    const TITRES={notifs:'Notifications',parking:'Parking & véhicules',stock:'Stock',dashboard:'Tableau de bord',suivi:'Suivi des demandes',calendrier:'Agenda',activite:'Base des demandes',stats:'Statistiques',analyse:'Statistiques',me:'Mon écran','me-bat':'Signalements du bâtiment','me-stat':'Actions et stats','me-memo':'Mémo perso',settings:'Réglages'};
     if(m) return `
     <div class="mobile-header">
         <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
@@ -2255,7 +2255,7 @@ function renderAdminView(m){
             <div class="side-grp" style="padding-top:12px;">
                 ${item('dashboard','dashboard','Tableau de bord')}${meOk()?`<div class="perso">${item('me-memo','edit','Mémo perso')}</div>`:''}</div>
             <div class="side-grp"><h6 class="side-lbl">Commandes</h6>
-                ${item('suivi','clipboard','Suivi des demandes')}${item('calendrier','calendar','Agenda')}${item('activite','grid','Historique')}</div>
+                ${item('suivi','clipboard','Suivi des demandes')}${item('calendrier','calendar','Agenda')}${item('activite','grid','Base des demandes')}</div>
             ${meOk()?`<div class="side-grp perso"><h6 class="side-lbl">Bâtiment ${icon('lock',10)}</h6>${item('me-bat','tool','Signalements')}${item('me-stat','check','Actions et stats')}</div>`:''}
             <div class="side-grp"><h6 class="side-lbl">Analyses</h6>
                 ${item('stats','chart','Statistiques')}</div>
@@ -2277,7 +2277,7 @@ function renderAdminView(m){
                 <div style="position:relative;display:inline-block;">
                     <button id="fabAdminMain" class="btn-sm pri" title="Ajouter une commande directement (aucun email)">${icon('plus',13)} Saisie directe</button>
                     <div id="fabAdminMenu" class="drop-menu" style="display:none;">
-                        <div class="drop-note"><b>Saisie directe</b>La commande est ajoutée à l’historique et au suivi, déjà validée. Aucun email n’est envoyé.</div>
+                        <div class="drop-note"><b>Saisie directe</b>La commande est ajoutée à la base des demandes et au suivi, déjà validée. Aucun email n’est envoyé.</div>
                         ${[["repas","utensils","Repas"],["taxi","car","Taxi"],["commande","box","Commande"],["hotel","bed","Hôtel"]].map(([t,ic,l])=>`<button data-saisie-type="${t}">${icon(ic,15)} ${l}</button>`).join('')}
                     </div>
                 </div>
@@ -2553,7 +2553,7 @@ function renderSuivi(m){
     }
     return `<div>${head}
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,250px),1fr));gap:14px;align-items:start;">
-        ${STAGE_ORDER.map(k=>`<div style="background:#fafbfc;border:1px solid var(--border);border-radius:8px;padding:12px;min-height:200px;">${colHead(k)}${list(k)}${k==='recue'&&recCaches?`<div style="font-size:12px;color:#8b93a1;text-align:center;margin-top:8px;">🔁 + ${recCaches} repas récurrent${recCaches>1?'s':''} les jours suivants (dans l’historique)</div>`:''}</div>`).join('')}
+        ${STAGE_ORDER.map(k=>`<div style="background:#fafbfc;border:1px solid var(--border);border-radius:8px;padding:12px;min-height:200px;">${colHead(k)}${list(k)}${k==='recue'&&recCaches?`<div style="font-size:12px;color:#8b93a1;text-align:center;margin-top:8px;">🔁 + ${recCaches} repas récurrent${recCaches>1?'s':''} les jours suivants (dans la base des demandes)</div>`:''}</div>`).join('')}
     </div></div>`;
 }
 
@@ -2754,7 +2754,7 @@ function trackSteps(c){
 
 /* Navigation mobile commune */
 function mobileNavHtml(){
-    const items=[["dashboard","dashboard","Accueil"],["suivi","clipboard","Suivi"],["calendrier","calendar","Agenda"],["activite","grid","Historique"]];
+    const items=[["dashboard","dashboard","Accueil"],["suivi","clipboard","Suivi"],["calendrier","calendar","Agenda"],["activite","grid","Base"]];
     const n=aFaireCount();
     return `<nav class="mobile-nav"><div class="mobile-nav-items">
         ${items.map(([tab,ic,label])=>`<button class="mobile-nav-btn ${state.adminTab===tab&&!state.detail?'active':''}" data-admin-tab="${tab}" style="position:relative;">
@@ -2966,8 +2966,8 @@ function renderDash4(m){
             aTraiter.slice(0,4).map(c=>ligne(c,`${dateCourte(c)}${c.heure?' · '+esc(c.heure):''}`)),'Rien à traiter ✓','Ouvrir le suivi')}
         ${carte('calendrier','calendar','#1d4ed8','Agenda · aujourd’hui',[kpi(auj.length,'prestations aujourd’hui'),kpi(dem.length,'demain')],
             auj.slice(0,4).map(c=>ligne(c,esc(c.heure||'—'))),'Rien de prévu aujourd’hui','Ouvrir l’agenda')}
-        ${carte('activite','grid','#475569','Historique',[kpi(mois.length,'demandes ce mois'),kpi(sansPrix,'prix à saisir',sansPrix?'#b45309':''),kpi(annulM,'annulées ce mois')],
-            recents.map(c=>ligne(c,dateCourte(c))),'Aucune demande','Ouvrir l’historique')}
+        ${carte('activite','grid','#475569','Base des demandes',[kpi(mois.length,'demandes ce mois'),kpi(sansPrix,'prix à saisir',sansPrix?'#b45309':''),kpi(annulM,'annulées ce mois')],
+            recents.map(c=>ligne(c,dateCourte(c))),'Aucune demande','Ouvrir la base')}
         ${carte('stats','chart','#15803d','Statistiques · ce mois',[kpi(eur(tM),'dépensés','#15803d'),kpi(delta===null?'—':`${delta>0?'+':''}${delta} %`,'vs mois dernier',delta>0?'#b91c1c':delta<0?'#15803d':''),kpi(top?esc(top[0]):'—','prestataire n°1')],
             tops.slice(0,4).map(([p,x])=>`<div class="d4-l" data-admin-tab="stats"><span class="d4-t">${esc(p)}</span><span class="d4-h" style="min-width:0;">${x.n} commande${x.n>1?'s':''}${x.e?' · '+eur(x.e):''}</span></div>`),`Aucune commande ce mois · ${eur(tP)} le mois dernier`,'Voir les statistiques')}
         </div></div>`;
@@ -5915,9 +5915,9 @@ function attachEvents(){
         // Largeurs colonnes
         ws['!cols']=[{wch:12},{wch:12},{wch:22},{wch:22},{wch:30},{wch:12},{wch:12},{wch:20},{wch:20},{wch:10},{wch:12},{wch:10},{wch:12},{wch:30}];
         const wb=XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb,ws,'Historique');
+        XLSX.utils.book_append_sheet(wb,ws,'Demandes');
         const now=new Date();
-        const fname=`Historique_${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}.xlsx`;
+        const fname=`Base_des_demandes_${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}.xlsx`;
         XLSX.writeFile(wb,fname);
         showToast('✓ Export Excel téléchargé !');
     });
