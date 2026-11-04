@@ -523,6 +523,8 @@
         .lv-next-cd{ font:700 54px var(--ft); color:#fff; letter-spacing:-.02em; font-variant-numeric:tabular-nums; line-height:1; }
         .lv-next-d b{ display:block; font-size:22px; color:#fff; } .lv-next-d span{ display:block; color:#a9b8ca; font-size:15px; margin-top:4px; }
 .lv-p{ grid-template-rows:auto auto auto auto minmax(0,1fr) auto; } .lv-p{ overflow:hidden; } .lv-p .lv-stats{ min-height:0; overflow:hidden; } .lv-list{ overflow:hidden; min-height:0; } .lv-ev{ overflow:hidden; box-sizing:border-box; } .lv-tl-b.c2 .lv-ev span+span{ display:none; } .lv-tl-b.c1 .lv-ev span{ display:none; } .lv-tl-b.c1 .lv-ev b{ -webkit-line-clamp:1; }
+        .hf{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:14px; } .hf-p{ flex-basis:100%; display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:10px; background:#fff; border:1px solid var(--border); border-radius:10px; padding:12px; }
+        .hf-f span{ display:block; font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.05em; color:#8b93a1; margin-bottom:4px; } @media(max-width:700px){ .hf-p{ grid-template-columns:1fr 1fr; } }
         .fi{ display:grid; grid-template-columns:repeat(auto-fill,minmax(190px,1fr)); gap:14px 20px; background:#fff; border:1px solid var(--border); border-radius:10px; padding:18px 20px; margin-bottom:2px; }
         .fi-f{ min-width:0; } .fi-f span,.fi-com span{ display:block; font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.05em; color:#8b93a1; margin-bottom:3px; }
         .fi-f b{ display:block; font-size:15px; font-weight:600; color:var(--ink); overflow-wrap:anywhere; } .fi-f b a{ color:var(--accent); }
@@ -2265,7 +2267,7 @@ function renderAdminView(m){
                 <button data-live-open class="btn-sm" title="Écran live (plein écran, pour un PC ou une TV)">${icon('dashboard',15)} Écran live</button>
                 <button data-admin-tab="notifs" class="nt-bell ${state.adminTab==='notifs'?'on':''} ${ntCount()?'has':''}" title="Notifications">${icon('bell',17)}<span>Notifications</span>${ntCount()?`<span class="nt-badge">${ntCount()}</span>`:''}</button>
                 <div style="position:relative;display:inline-block;">
-                    <button id="fabAdminMain" class="btn-sm pri" style="padding:8px 14px;" title="Ajout direct, déjà validé, sans email">${icon('plus',15)} Saisie directe <span class="tb-nomail">${icon('x',10)} sans email</span></button>
+                    <button id="fabAdminMain" class="btn-sm pri" title="Ajouter une commande directement (aucun email)">${icon('plus',13)} Saisie directe</button>
                     <div id="fabAdminMenu" class="drop-menu" style="display:none;">
                         <div class="drop-note"><b>Saisie directe</b>La commande est ajoutée à l’historique et au suivi, déjà validée. Aucun email n’est envoyé.</div>
                         ${[["repas","utensils","Repas"],["taxi","car","Taxi"],["commande","box","Commande"],["hotel","bed","Hôtel"]].map(([t,ic,l])=>`<button data-saisie-type="${t}">${icon(ic,15)} ${l}</button>`).join('')}
@@ -4837,7 +4839,10 @@ function renderActivite(m){
     const subNav=`<div style="display:flex;gap:4px;flex-wrap:wrap;background:var(--border-light);padding:4px;border-radius:6px;width:fit-content;margin-bottom:10px;">
         ${TABS.map(([k,ic,l])=>`<button data-activite-tab="${k}" style="display:flex;align-items:center;gap:6px;padding:6px 13px;border:none;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;white-space:nowrap;background:${tab===k?'var(--white)':'transparent'};color:${tab===k?'var(--ink)':'var(--ink-soft)'};box-shadow:${tab===k?'0 1px 3px rgba(0,0,0,0.08)':'none'};transition:all 0.15s;">${icon(ic,14)} ${l}</button>`).join('')}
     </div>`;
+    const _full=state.data, _hf=state.hf||{}, filtreBar=histFiltreHtml(_full);
+    if(tab!=='corbeille'&&tab!=='journal') state.data=_full.filter(c=>histPasse(c,_hf));
     let body;
+    try{
     if(tab==='commandes') body=renderCommandes(m);
     else if(tab==='hotels') body=renderHotels(m);
     else if(tab==='historique') body=renderHistorique(m);
@@ -4845,15 +4850,43 @@ function renderActivite(m){
     else if(tab==='journal') body=renderJournal(m);
     else if(tab==='tout') body=renderActiviteTout(m);
     else body=renderReservations(m);
+    } finally { state.data=_full; }
     // Sur desktop, les icônes de sous-onglets sont déjà dans la barre du haut (voir renderAdminView) :
     // pas besoin de les répéter ici. Sur mobile, il n'y a pas de barre du haut équivalente.
-    const addBar=`<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:14px;padding:10px 12px;background:var(--accent-soft,#e3edf3);border-radius:8px;">
-        <span style="font-size:13px;font-weight:700;color:var(--accent);margin-right:4px;display:flex;align-items:center;gap:5px;">${icon('plus',15)} Ajouter</span>
-        ${[["commande","box","Commande"],["repas","utensils","Repas"],["taxi","car","Taxi"],["coursier","send","Coursier"],["hotel","bed","Hôtel"]].map(([t,ic,l])=>`<button data-saisie-type="${t}" style="display:flex;align-items:center;gap:5px;background:#fff;border:1px solid var(--border);border-radius:8px;padding:6px 12px;font-size:13px;font-weight:600;color:var(--ink);cursor:pointer;">${icon(ic,13)} ${l}</button>`).join('')}
-    </div>`;
-    return `<div>${m?subNav:''}${tab==='corbeille'||tab==='journal'?'':addBar}${body}</div>`;
+    return `<div>${m?subNav:''}${tab==='corbeille'||tab==='journal'?'':filtreBar}${body}</div>`;
 }
 
+
+/* Historique : filtres (statut, demandeur, prestataire, période) */
+function histPeriode(k){ const t=new Date(); t.setHours(0,0,0,0); const d=new Date(t);
+    if(k==='mois') return [new Date(t.getFullYear(),t.getMonth(),1),null];
+    if(k==='moisprec') return [new Date(t.getFullYear(),t.getMonth()-1,1),new Date(t.getFullYear(),t.getMonth(),1)];
+    if(k==='3mois') { d.setMonth(d.getMonth()-3); return [d,null]; }
+    if(k==='annee') return [new Date(t.getFullYear(),0,1),null];
+    if(k==='avenir') return [t,null];
+    return [null,null]; }
+function histPasse(c,F){
+    if(F.etape&&etape(c)!==F.etape) return false;
+    if(F.dem&&_pn(demNom(c))!==_pn(F.dem)) return false;
+    if(F.presta&&_pn(c.presta||'')!==_pn(F.presta)) return false;
+    if(F.periode){ const [a,b]=histPeriode(F.periode), d=parseDate(c.date); if(!d) return false; if(a&&d<a) return false; if(b&&d>=b) return false; }
+    return true; }
+function histFiltreHtml(D){
+    const F=state.hf||{}, n=['etape','dem','presta','periode'].filter(k=>F[k]).length, open=state.hfOpen||n>0;
+    const uniq=a=>[...new Map(a.filter(Boolean).map(x=>[_pn(x),x])).values()].sort((x,y)=>x.localeCompare(y,'fr'));
+    const sel=(k,lbl,opts)=>`<label class="hf-f"><span>${lbl}</span><select class="form-select" data-hf="${k}"><option value="">Tous</option>${opts.map(([v,l])=>`<option value="${esc(v)}" ${F[k]===v?'selected':''}>${esc(l)}</option>`).join('')}</select></label>`;
+    return `<div class="hf">
+        <button type="button" class="btn-sm ${n?'pri':''}" data-hf-toggle>${icon('sliders',13)} Filtres${n?` · ${n}`:''}</button>
+        ${n?`<button type="button" class="btn-sm" data-hf-clear>${icon('x',12)} Effacer</button>`:''}
+        ${open?`<div class="hf-p">
+            ${sel('periode','Période',[['avenir','À venir'],['mois','Ce mois'],['moisprec','Mois dernier'],['3mois','3 derniers mois'],['annee','Cette année']])}
+            ${sel('etape','Statut',[['recue','Reçue'],['commandee','Commandée'],['fait','Faite'],['refusee','Annulée']])}
+            ${sel('dem','Demandeur',uniq(D.map(c=>demNom(c))).map(x=>[x,x]))}
+            ${sel('presta','Prestataire',uniq(D.map(c=>c.presta)).map(x=>[x,x]))}
+        </div>`:''}
+    </div>`; }
+document.addEventListener('change',e=>{ const el=e.target; if(!(el.matches&&el.matches('[data-hf]'))) return; state.hf={...(state.hf||{}),[el.getAttribute('data-hf')]:el.value}; state.histPage=0; render(); });
+document.addEventListener('click',e=>{ if(e.target.closest('[data-hf-toggle]')){ state.hfOpen=!(state.hfOpen||Object.values(state.hf||{}).some(Boolean)); if(!state.hfOpen) state.hf={}; render(); return; } if(e.target.closest('[data-hf-clear]')){ state.hf={}; state.hfOpen=false; render(); } });
 
 function renderReservations(m){
     const search=(state.search||'').toLowerCase();
