@@ -523,13 +523,6 @@
         .lv-next-cd{ font:700 54px var(--ft); color:#fff; letter-spacing:-.02em; font-variant-numeric:tabular-nums; line-height:1; }
         .lv-next-d b{ display:block; font-size:22px; color:#fff; } .lv-next-d span{ display:block; color:#a9b8ca; font-size:15px; margin-top:4px; }
 .lv-p{ grid-template-rows:auto auto auto auto minmax(0,1fr) auto; } .lv-p{ overflow:hidden; } .lv-p .lv-stats{ min-height:0; overflow:hidden; } .lv-list{ overflow:hidden; min-height:0; } .lv-ev{ overflow:hidden; box-sizing:border-box; } .lv-tl-b.c2 .lv-ev span+span{ display:none; } .lv-tl-b.c1 .lv-ev span{ display:none; } .lv-tl-b.c1 .lv-ev b{ -webkit-line-clamp:1; }
-        .dp{ display:flex; flex-direction:column; gap:8px; margin-top:12px; } .dp-c{ background:#fffbeb; border:1px solid #fde68a; border-radius:10px; padding:10px 12px; font-size:13px; color:#4b3b0a; }
-        .dp-c b{ display:block; margin-bottom:4px; color:#92400e; } .dp-c div{ margin-top:2px; } .dp-c span{ font-weight:600; margin-right:6px; } .dp-c span::after{ content:' :'; }
-        .dg{ margin-top:12px; border:1px solid #bfdbfe; background:#eff6ff; border-radius:10px; padding:10px 12px; } .dg-h{ font-weight:700; font-size:13px; color:#1d4ed8; margin-bottom:6px; }
-        .dg-c{ display:flex; align-items:center; justify-content:space-between; gap:10px; padding:6px 0; border-top:1px solid #dbeafe; } .dg-c:first-of-type{ border-top:none; } .dg-c b{ display:block; font-size:13px; } .dg-c span{ display:block; font-size:12px; color:#475569; }
-        details.di{ border:1px solid var(--border); border-radius:10px; margin-bottom:8px; background:#fff; } details.di summary{ cursor:pointer; padding:12px 14px; display:flex; justify-content:space-between; gap:10px; } details.di summary span{ font-size:12px; color:#8b93a1; }
-        .di-b{ padding:4px 14px 14px; } .di-g{ display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:10px; margin-top:12px; }
-        .di-gu{ display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:10px; margin-bottom:10px; padding:12px; border:1px solid var(--border); border-radius:10px; background:#fafbfc; } @media(max-width:900px){ .di-gu{ grid-template-columns:1fr 1fr; } }
         .fi{ display:grid; grid-template-columns:repeat(auto-fill,minmax(190px,1fr)); gap:14px 20px; background:#fff; border:1px solid var(--border); border-radius:10px; padding:18px 20px; margin-bottom:2px; }
         .fi-f{ min-width:0; } .fi-f span,.fi-com span{ display:block; font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.05em; color:#8b93a1; margin-bottom:3px; }
         .fi-f b{ display:block; font-size:15px; font-weight:600; color:var(--ink); overflow-wrap:anywhere; } .fi-f b a{ color:var(--accent); }
@@ -2064,7 +2057,6 @@ function renderInlineForm(m){
         qui=lbl('Pour qui ? *','plusieurs choix possibles')+`<div class="nf-row">${settings.directeurs.map(d=>chip('toggle','pourQui',d,(f.pourQui.includes(d)?icon('check',13)+' ':'')+esc(d),f.pourQui.includes(d))).join('')}${chip('toggle','pourQui','__autre__','Autre…',f.pourQui.includes('__autre__'))}</div>`
             +(f.pourQui.includes('__autre__')?`<input id="pourQuiAutreInput" type="text" class="form-input nf-in" style="margin-top:8px;" placeholder="Préciser le nom…" value="${esc(f.pourQuiAutre||'')}">`:'');
     }
-    dirAppliquer(f); qui+=dirPrefsHtml(dirDuForm(f),T);
     const nQui=T==='repas'?String(f.participants||'').split(',').filter(s=>s.trim()).length:f.pourQui.length;
     const secQui=sec('users','Pour qui ?',lbl('Demandeur *')+demandeur+`<div style="height:14px"></div>`+qui,nQui?`${nQui} personne${nQui>1?'s':''}`:'');
 
@@ -2093,7 +2085,7 @@ function renderInlineForm(m){
     let det='', detTitre='', detIc='';
     if(T==='repas'){
         detTitre='Le repas'; detIc='utensils';
-        det=lbl('Type de repas')+`<div class="nf-tiles">${P_TYPES.map(t=>`<button type="button" data-nf="set" data-k="desc" data-v="${esc(t)}" class="nf-tile ${f.desc===t?'on':''}">${icon(nfIcRepas(t),20)}<span>${esc(t)}</span></button>`).join('')}</div>`+guideHtml(f)
+        det=lbl('Type de repas')+`<div class="nf-tiles">${P_TYPES.map(t=>`<button type="button" data-nf="set" data-k="desc" data-v="${esc(t)}" class="nf-tile ${f.desc===t?'on':''}">${icon(nfIcRepas(t),20)}<span>${esc(t)}</span></button>`).join('')}</div>`
             +`<div class="nf-step-row"><div><b>Nombre de personnes</b><span>participants compris</span></div>
                 <div class="nf-stepper"><button type="button" data-nf="nb" data-v="-1">${icon('minus',16)}</button><b>${esc(f.nb||'1')}</b><button type="button" data-nf="nb" data-v="1">${icon('plus',16)}</button></div></div>`
             +lbl('Restaurant / prestataire *')+`<div class="nf-row">${P_REPAS.map(p=>chip('set','presta',p,esc(p),f.presta===p)).join('')}</div>${(()=>{ const al=pDelaiAlerte(f.presta,f.date,f.heure); return al?`<div class="nf-warn">${icon('clock',14)} <span><b>${esc(f.presta)}</b> demande au moins ${al.h} h de délai. Cette demande risque d’arriver trop tard : choisissez une autre date ou un autre prestataire, ou prévenez l’administration en commentaire.</span></div>`:''; })()}`+`<div style="height:16px"></div>`+lbl('Régimes et allergies','optionnel')+`<div class="rg-row">${REGIMES.map(k=>{ const n=(f.regimes||{})[k]||0; return n?`<div class="rg on"><button type="button" data-nf="rg" data-k="toggle" data-v="${k}">${icon('check',13)} ${k}</button><span class="rg-n"><button type="button" data-nf="rg" data-k="-1" data-v="${k}">${icon('minus',12)}</button><b>${n}</b><button type="button" data-nf="rg" data-k="1" data-v="${k}">${icon('plus',12)}</button></span></div>`:`<div class="rg"><button type="button" data-nf="rg" data-k="toggle" data-v="${k}">${k}</button></div>`; }).join('')}</div>
@@ -2719,8 +2711,7 @@ function ficheInfos(d){
     if(+d.prix>0) f('Prix',`${d.prix.toLocaleString('fr-FR',{minimumFractionDigits:2,maximumFractionDigits:2})} €${d.paie?' · '+esc(d.paie):''}`);
     const com=d.comment?`<div class="fi-com"><span>Commentaire</span><div>${esc(d.comment).replace(/\n/g,'<br>')}</div></div>`:'';
     const ct=pContactHtml(d,{grand:true});
-    const pr=dirPrefsHtml(dirDuTexte(d.pourQui),T);
-    return `<div class="fi">${F.join('')}${com}${pr?`<div style="grid-column:1/-1;">${pr}</div>`:''}${ct?`<div class="fi-ct">${ct}</div>`:''}</div>`;
+    return `<div class="fi">${F.join('')}${com}${ct?`<div class="fi-ct">${ct}</div>`:''}</div>`;
 }
 
 document.addEventListener('click',async e=>{ const b=e.target.closest('[data-agenda-resync]'); if(!b||!isAdmin()) return;
@@ -2730,107 +2721,6 @@ document.addEventListener('click',async e=>{ const b=e.target.closest('[data-age
         if(j.ok) showToast(`✓ Agenda remis à jour : ${j.renvoyes||0} rappel(s) renvoyé(s), ${j.retires||0} retiré(s)`); else showToast(`${icon('alert',13)} ${j.error||j.skipped||'Échec'} : la fonction agenda est-elle bien redéployée sur Supabase ?`);
     }catch(err){ showToast(`${icon('alert',13)} Échec de la remise à jour`); }
     b.disabled=false; b.textContent='Remettre l’agenda à jour';
-});
-
-/* ══ Préférences des directeurs + guide « Que commander ? » ══
-   Param « directeursInfo » = { fiches:{ [directeur]:{assistantes:[], restaurant, habitudes, evite, regimes:[], petitdej, taxi, adresse, hotel, remarques} }, guide:[…] }
-   Rempli par Julia et Arnaud ; une assistante ne voit que les fiches des directeurs qui lui sont rattachés. */
-async function loadDirInfo(){
-    let v=null;
-    try{
-        if(isAdmin()) v=await paramGet('directeursInfo');
-        else { const x=await sbRpc('gs_directeurs_info',{}); if(x.absente){ v=await paramGet('directeursInfo'); if(v&&v.fiches){ const me=assistanteName(); v={...v,fiches:Object.fromEntries(Object.entries(v.fiches).filter(([,f])=>(f.assistantes||[]).some(a=>_pn(a)===_pn(me||''))))}; } } else v=x.val; }
-    }catch(e){ console.error('Directeurs :',e); }
-    state.dirInfo={fiches:(v&&v.fiches)||{},guide:(v&&Array.isArray(v.guide))?v.guide:[]}; state.dirLoaded=true;
-}
-let _dirT=null;
-function dirSave(){ clearTimeout(_dirT); const snap=JSON.parse(JSON.stringify(state.dirInfo)); _dirT=setTimeout(()=>paramSet('directeursInfo',snap).then(()=>showToast('✓ Enregistré')).catch(()=>showToast(`${icon('alert',13)} Non enregistré, réessayez`)),700); }
-function dirFiche(nom){ const F=(state.dirInfo&&state.dirInfo.fiches)||{}; const k=Object.keys(F).find(x=>_pn(x)===_pn(nom||'')); return k?F[k]:null; }
-function dirDuTexte(txt){ const T=sansAccent(String(txt||'')).toUpperCase(); return (settings.directeurs||[]).filter(d=>T.includes(sansAccent(String(d)).toUpperCase())); }
-function dirDuForm(f){ return f.type==='repas'?dirDuTexte(f.participants):(f.pourQui||[]).filter(d=>d!=='__autre__'); }
-function dirHabitude(nom,type){ const n={}; (state.data||[]).filter(c=>c.type===type&&c.pris!=='Annulé'&&c.presta&&dirDuTexte(c.pourQui).some(d=>_pn(d)===_pn(nom))).forEach(c=>n[c.presta]=(n[c.presta]||0)+1); const b=Object.entries(n).sort((a,b)=>b[1]-a[1])[0]; return b&&b[1]>=2?{presta:b[0],n:b[1]}:null; }
-function dirPrefsHtml(noms,type){
-    if(!state.dirLoaded){ loadDirInfo().then(render); return ''; }
-    const L=noms.map(nom=>{ const F=dirFiche(nom), it=[];
-        if(F){
-            if(type==='repas'){ if(F.restaurant) it.push(['Restaurant',F.restaurant]); if(F.habitudes) it.push(['Habitudes',F.habitudes]); if(F.evite) it.push(['À éviter',F.evite]); if((F.regimes||[]).length) it.push(['Régime',F.regimes.join(', ')]); if(F.petitdej) it.push(['Petit-déj / pauses',F.petitdej]); }
-            if(type==='taxi'||type==='coursier'){ if(F.taxi) it.push(['Taxi',F.taxi]); if(F.adresse) it.push(['Adresse habituelle',F.adresse]); }
-            if(type==='hotel'&&F.hotel) it.push(['Hôtel',F.hotel]);
-            if(F.remarques) it.push(['À savoir',F.remarques]);
-        }
-        if(!it.length){ const h=dirHabitude(nom,type); if(h) it.push(['D’habitude',`${h.presta} (${h.n} fois)`]); }
-        return it.length?`<div class="dp-c"><b>💡 ${esc(nom)}</b>${it.map(([l,v])=>`<div><span>${l}</span>${esc(v)}</div>`).join('')}</div>`:''; }).filter(Boolean);
-    return L.length?`<div class="dp">${L.join('')}</div>`:'';
-}
-/* Pré-remplit le formulaire avec les préférences (une seule fois par directeur ajouté) */
-function dirAppliquer(f){
-    if(!state.dirLoaded) return; f._prefs=f._prefs||[];
-    dirDuForm(f).forEach(nom=>{ if(f._prefs.includes(nom)) return; f._prefs.push(nom); const F=dirFiche(nom); if(!F) return;
-        const P=f.type==='repas'?F.restaurant:(f.type==='taxi'?F.taxi:(f.type==='hotel'?F.hotel:''));
-        if(P&&!f.presta) f.presta=P;
-        if(f.type==='repas'&&(F.regimes||[]).length){ f.regimes={...(f.regimes||{})}; F.regimes.forEach(r=>{ if(!f.regimes[r]) f.regimes[r]=1; }); }
-    });
-}
-function guideHtml(f){
-    if(!state.dirLoaded) return ''; const nb=+f.nb||1;
-    const G=(state.dirInfo.guide||[]).filter(g=>(!g.type||sansAccent(g.type).toLowerCase()===sansAccent(f.desc||'').toLowerCase())&&(!(+g.nbMin)||nb>=+g.nbMin)&&(!(+g.nbMax)||nb<=+g.nbMax));
-    if(!G.length) return '';
-    return `<div class="dg"><div class="dg-h">💡 Que commander ?</div>${G.map(g=>`<div class="dg-c"><div><b>${esc(g.titre||'')}</b><span>${esc([g.presta,g.prix?`≈ ${g.prix} €/pers.`:'',g.delai].filter(Boolean).join(' · '))}</span>${g.texte?`<span>${esc(g.texte)}</span>`:''}</div>${g.presta?`<button type="button" data-nf="set" data-k="presta" data-v="${esc(g.presta)}" class="nf-chip ${f.presta===g.presta?'on':''}">${f.presta===g.presta?'✓ Choisi':'Choisir'}</button>`:''}</div>`).join('')}</div>`;
-}
-/* Réglages › Directeurs */
-function renderReglagesDirecteurs(secHead){
-    if(!state.dirLoaded){ loadDirInfo().then(render); return '<div class="empty-note" style="padding:30px;">Chargement…</div>'; }
-    const D=settings.directeurs||[], A=settings.assistantes||[], F=state.dirInfo.fiches;
-    const inp=(nom,k,ph,big)=>{ const v=(F[nom]||{})[k]||''; return big?`<textarea class="form-input" data-di="${esc(nom)}" data-k="${k}" placeholder="${ph}" style="min-height:56px;">${esc(v)}</textarea>`:`<input class="form-input" data-di="${esc(nom)}" data-k="${k}" placeholder="${ph}" value="${esc(v)}">`; };
-    const sugg=nom=>{ const n={}; (state.data||[]).filter(c=>dirDuTexte(c.pourQui).some(d=>_pn(d)===_pn(nom))).forEach(c=>{ if(A.some(a=>_pn(a)===_pn(c.demandeur))) n[c.demandeur]=(n[c.demandeur]||0)+1; }); return Object.keys(n).sort((a,b)=>n[b]-n[a]); };
-    const fiche=nom=>{ const f=F[nom]||{}, as=f.assistantes||[], sg=sugg(nom).filter(x=>!as.some(a=>_pn(a)===_pn(x)));
-        const rempli=['restaurant','habitudes','evite','petitdej','taxi','adresse','hotel','remarques'].filter(k=>f[k]).length+((f.regimes||[]).length?1:0);
-        return `<details class="di" data-di-open="${esc(nom)}" ${state.diOpen===nom?'open':''}><summary><b>${esc(nom)}</b><span>${as.length?`${as.length} assistante${as.length>1?'s':''}`:'<i>aucune assistante</i>'} · ${rempli?`${rempli} préférence${rempli>1?'s':''}`:'vide'}</span></summary>
-        <div class="di-b">
-            <div class="nf-lbl">Assistantes qui voient cette fiche</div>
-            <div class="nf-row">${A.map(a=>`<button type="button" class="nf-chip ${as.some(x=>_pn(x)===_pn(a))?'on':''}" data-di-as="${esc(nom)}" data-v="${esc(a)}">${esc(a)}</button>`).join('')}</div>
-            ${sg.length?`<div class="nf-hint" style="margin-top:6px;">D’après l’historique, commandent pour lui : ${sg.map(esc).join(', ')}</div>`:''}
-            <div class="di-g">
-                <div><div class="nf-lbl">Restaurant préféré</div><input class="form-input" list="diResto" data-di="${esc(nom)}" data-k="restaurant" placeholder="Ex : Ciboulette" value="${esc(f.restaurant||'')}"></div>
-                <div><div class="nf-lbl">Ce qu’il prend d’habitude</div>${inp(nom,'habitudes','Ex : plat du jour, eau pétillante')}</div>
-                <div><div class="nf-lbl">À éviter</div>${inp(nom,'evite','Ex : pas de fromage')}</div>
-                <div><div class="nf-lbl">Petit-déjeuner / pauses</div>${inp(nom,'petitdej','Ex : café noir, pas de viennoiseries')}</div>
-                <div><div class="nf-lbl">Taxi préféré</div><input class="form-input" list="diTaxi" data-di="${esc(nom)}" data-k="taxi" placeholder="Ex : G7" value="${esc(f.taxi||'')}"></div>
-                <div><div class="nf-lbl">Adresse habituelle</div>${inp(nom,'adresse','Ex : domicile, gare…')}</div>
-                <div><div class="nf-lbl">Hôtel préféré</div>${inp(nom,'hotel','Ex : Evergreen à Levallois')}</div>
-            </div>
-            <div class="nf-lbl" style="margin-top:10px;">Régime</div>
-            <div class="nf-row">${REGIMES.map(r=>`<button type="button" class="nf-chip ${(f.regimes||[]).includes(r)?'on':''}" data-di-rg="${esc(nom)}" data-v="${esc(r)}">${esc(r)}</button>`).join('')}</div>
-            <div class="nf-lbl" style="margin-top:10px;">À savoir</div>${inp(nom,'remarques','Ex : toujours prévoir une bouteille d’eau pétillante',true)}
-        </div></details>`; };
-    const G=state.dirInfo.guide;
-    const L2=(l,h)=>`<div><div class="nf-lbl">${l}</div>${h}</div>`;
-    const gl=(g,i)=>`<div class="di-gu">
-        ${L2('Occasion',`<input class="form-input" data-gu="${i}" data-k="titre" placeholder="Ex : Réunion 10 pers. à midi" value="${esc(g.titre||'')}">`)}
-        ${L2('Type de repas',`<select class="form-select" data-gu="${i}" data-k="type"><option value="">Tous</option>${P_TYPES.map(x=>`<option ${g.type===x?'selected':''}>${esc(x)}</option>`).join('')}</select>`)}
-        ${L2('Personnes',`<div style="display:flex;gap:6px;"><input class="form-input" data-gu="${i}" data-k="nbMin" type="number" min="0" placeholder="min" value="${esc(g.nbMin||'')}"><input class="form-input" data-gu="${i}" data-k="nbMax" type="number" min="0" placeholder="max" value="${esc(g.nbMax||'')}"></div>`)}
-        ${L2('Prestataire',`<input class="form-input" list="diResto" data-gu="${i}" data-k="presta" placeholder="Ex : Cojean" value="${esc(g.presta||'')}">`)}
-        ${L2('Prix par personne (€)',`<input class="form-input" data-gu="${i}" data-k="prix" placeholder="Ex : 15" value="${esc(g.prix||'')}">`)}
-        ${L2('Délai',`<input class="form-input" data-gu="${i}" data-k="delai" placeholder="Ex : la veille avant 16h" value="${esc(g.delai||'')}">`)}
-        <div style="grid-column:span 2;">${L2('Conseil',`<input class="form-input" data-gu="${i}" data-k="texte" placeholder="Ex : plateaux variés, prévoir 1 végétarien" value="${esc(g.texte||'')}">`)}</div>
-        <div style="grid-column:1/-1;text-align:right;"><button type="button" class="btn-sm" data-gu-del="${i}">${icon('trash',13)} Supprimer ce conseil</button></div></div>`;
-    return `<datalist id="diResto">${P_REPAS.map(p=>`<option value="${esc(p)}">`).join('')}</datalist><datalist id="diTaxi">${P_TAXI.map(p=>`<option value="${esc(p)}">`).join('')}</datalist>
-    <div class="settings-section">${secHead('users','Préférences des directeurs','Visibles par les assistantes rattachées, au moment de faire une demande. Le formulaire se pré-remplit avec le restaurant, le taxi ou l’hôtel préféré.')}
-        ${D.length?D.map(fiche).join(''):'<div class="empty-note">Ajoutez d’abord les directeurs dans Équipe & accès.</div>'}</div>
-    <div class="settings-section">${secHead('utensils','Que commander ?','Conseils affichés aux assistantes selon le type de repas et le nombre de personnes.')}
-        ${G.map(gl).join('')}<button type="button" class="btn-sm" data-gu-add style="margin-top:8px;">${icon('plus',13)} Ajouter un conseil</button></div>`;
-}
-document.addEventListener('input',e=>{ const el=e.target;
-    if(el.matches&&el.matches('[data-di]')){ const nom=el.getAttribute('data-di'), k=el.getAttribute('data-k'); const F=state.dirInfo.fiches; F[nom]={...(F[nom]||{}),[k]:el.value.trim()}; dirSave(); }
-    else if(el.matches&&el.matches('[data-gu]')){ const i=+el.getAttribute('data-gu'); state.dirInfo.guide[i]={...state.dirInfo.guide[i],[el.getAttribute('data-k')]:el.value.trim()}; dirSave(); }
-});
-document.addEventListener('toggle',e=>{ const d=e.target; if(d.matches&&d.matches('details[data-di-open]')){ if(d.open) state.diOpen=d.getAttribute('data-di-open'); else if(state.diOpen===d.getAttribute('data-di-open')) state.diOpen=null; } },true);
-document.addEventListener('change',e=>{ const el=e.target; if(el.matches&&el.matches('select[data-gu]')){ const i=+el.getAttribute('data-gu'); state.dirInfo.guide[i]={...state.dirInfo.guide[i],type:el.value}; dirSave(); } });
-document.addEventListener('click',e=>{
-    const a=e.target.closest('[data-di-as],[data-di-rg]');
-    if(a){ const as=a.hasAttribute('data-di-as'), nom=a.getAttribute(as?'data-di-as':'data-di-rg'), v=a.getAttribute('data-v'), k=as?'assistantes':'regimes'; const F=state.dirInfo.fiches, f={...(F[nom]||{})}; const L=f[k]||[]; f[k]=L.some(x=>_pn(x)===_pn(v))?L.filter(x=>_pn(x)!==_pn(v)):[...L,v]; F[nom]=f; dirSave(); render(); return; }
-    if(e.target.closest('[data-gu-add]')){ state.dirInfo.guide.push({}); dirSave(); render(); return; }
-    const d=e.target.closest('[data-gu-del]'); if(d){ state.dirInfo.guide.splice(+d.getAttribute('data-gu-del'),1); dirSave(); render(); }
 });
 
 /* Étapes côté assistante (« Suivre ma demande ») */
@@ -5470,7 +5360,6 @@ function renderSettings(){
         ['equipe','shield','Équipe & accès',`${adminList().length} admin${adminList().length>1?'s':''} · ${settings.assistantes.length} assistantes · ${(settings.directeurs||[]).length} directeurs`],
         ['prestataires','box','Prestataires',`${['prestatairesRepas','prestatairesTaxi','prestatairesCommande','prestatairesHotel'].reduce((n,k)=>n+(settings[k]||[]).length,0)} entrées`],
         ['emails','mail','Emails',`${['alerte','confirmation','copie','annulation'].filter(mailsOn).length} type${['alerte','confirmation','copie','annulation'].filter(mailsOn).length>1?'s':''} activé${['alerte','confirmation','copie','annulation'].filter(mailsOn).length>1?'s':''}`],
-        ['directeurs','users','Directeurs',`${Object.keys((state.dirInfo&&state.dirInfo.fiches)||{}).length} fiche(s) · que commander`],
         ['recurrents','calendar','Demandes récurrentes',`${((state.rec&&state.rec.regles)||[]).filter(r=>r.actif).length} active(s)`],
         ['apparence','sliders','Apparence','Nom, logo, couleurs'],
         ['donnees','grid','Données','Corbeille'],
@@ -5576,7 +5465,6 @@ function renderSettings(){
         <button data-agenda-resync style="width:100%;background:#fff;border:1.5px solid var(--border);border-radius:12px;padding:11px;font-size:14px;font-weight:600;color:var(--ink);cursor:pointer;">${icon('calendar',14)} Remettre l’agenda à jour</button>
     </div>`;
     else if(cur[0]==='recurrents') body=renderReglagesRecurrences(secHead);
-    else if(cur[0]==='directeurs') body=renderReglagesDirecteurs(secHead);
     else if(cur[0]==='apparence') body=renderApparence();
     else if(cur[0]==='prestataires') body=`
     ${renderPrestaModal()}
