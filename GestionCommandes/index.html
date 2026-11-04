@@ -2351,7 +2351,14 @@ function setSuivi(ids, patchFn){
     });
 }
 function itemsById(ids){ return state.data.filter(c=>ids.map(String).includes(String(c.id))); }
-function markCommande(ids){ const now=new Date().toISOString(), who=adminName(); setSuivi(ids,()=>({cmd:now,cmdBy:who,fait:null,faitBy:null})); _suiviChain=_suiviChain.then(()=>Promise.all([].concat(ids).map(id=>fetch(SB_URL+'/functions/v1/invitations-agenda',{method:'POST',headers:{'Content-Type':'application/json',apikey:SB_KEY,Authorization:'Bearer '+SB_KEY},body:JSON.stringify({type:'COMMANDE',record:{id}})}).catch(()=>{})))).catch(()=>{}); logAction('Commandée',itemsById(ids)); showToast('✓ Commande passée enregistrée'); }
+/* Appel de la fonction agenda (nom « invitations-agenda » ou « invitation-agenda » selon le déploiement) */
+async function appelAgenda(body,headers){ let last=null;
+    for(const nom of ['invitations-agenda','invitation-agenda']){
+        try{ const r=await fetch(SB_URL+'/functions/v1/'+nom,{method:'POST',headers:{'Content-Type':'application/json',...headers},body:JSON.stringify(body)}); if(r.status!==404) return r; last=r; }catch(e){ last=e; }
+    }
+    if(last instanceof Error) throw last; return last;
+}
+function markCommande(ids){ const now=new Date().toISOString(), who=adminName(); setSuivi(ids,()=>({cmd:now,cmdBy:who,fait:null,faitBy:null})); _suiviChain=_suiviChain.then(()=>Promise.all([].concat(ids).map(id=>appelAgenda({type:'COMMANDE',record:{id}},{apikey:SB_KEY,Authorization:'Bearer '+SB_KEY}).catch(()=>{})))).catch(()=>{}); logAction('Commandée',itemsById(ids)); showToast('✓ Commande passée enregistrée'); }
 function unmarkCommande(ids){ setSuivi(ids,()=>({cmd:null,cmdBy:null,fait:null,faitBy:null})); logAction('Commande annulée',itemsById(ids)); showToast('Remis dans « Reçue »'); }
 function markFait(ids){ const now=new Date().toISOString(), who=adminName(); setSuivi(ids,c=>({fait:now,faitBy:who,cmd:c.cmd||now,cmdBy:c.cmdBy||who})); logAction('Terminée',itemsById(ids)); showToast('✓ Terminé'); }
 function unmarkFait(ids){ setSuivi(ids,()=>({fait:null,faitBy:null})); showToast('Remis en cours'); }
@@ -2717,9 +2724,9 @@ function ficheInfos(d){
 document.addEventListener('click',async e=>{ const b=e.target.closest('[data-agenda-resync]'); if(!b||!isAdmin()) return;
     if(!confirm('Remettre l’agenda à jour ?\n\nLes rappels des demandes à venir vont être renvoyés au nouveau format, et ceux des saisies directes et des récurrents retirés. Vous allez recevoir une série de mails, une seule fois.')) return;
     b.disabled=true; b.textContent='Envoi en cours… (1 à 2 minutes)';
-    try{ await sbPret(); const r=await fetch(SB_URL+'/functions/v1/invitations-agenda',{method:'POST',headers:{...sbH(),'Content-Type':'application/json'},body:JSON.stringify({type:'RESYNC'})}); const j=await r.json().catch(()=>({}));
+    try{ await sbPret(); const r=await appelAgenda({type:'RESYNC'},sbH()); const j=await r.json().catch(()=>({error:'Réponse illisible (code '+r.status+')'}));
         if(j.ok) showToast(`✓ Agenda remis à jour : ${j.renvoyes||0} rappel(s) renvoyé(s), ${j.retires||0} retiré(s)`); else showToast(`${icon('alert',13)} ${j.error||j.skipped||'Échec'} : la fonction agenda est-elle bien redéployée sur Supabase ?`);
-    }catch(err){ showToast(`${icon('alert',13)} Échec de la remise à jour`); }
+    }catch(err){ console.error('Agenda :',err); showToast(`${icon('alert',13)} Échec : la fonction agenda ne répond pas (${String(err&&err.message||err).slice(0,60)})`); }
     b.disabled=false; b.textContent='Remettre l’agenda à jour';
 });
 
