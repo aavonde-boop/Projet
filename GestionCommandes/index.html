@@ -525,6 +525,14 @@
 .lv-p{ grid-template-rows:auto auto auto auto minmax(0,1fr) auto; } .lv-p{ overflow:hidden; } .lv-p .lv-stats{ min-height:0; overflow:hidden; } .lv-list{ overflow:hidden; min-height:0; } .lv-ev{ overflow:hidden; box-sizing:border-box; } .lv-tl-b.c2 .lv-ev span+span{ display:none; } .lv-tl-b.c1 .lv-ev span{ display:none; } .lv-tl-b.c1 .lv-ev b{ -webkit-line-clamp:1; }
         .hf{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:14px; } .hf-p{ flex-basis:100%; display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:10px; background:#fff; border:1px solid var(--border); border-radius:10px; padding:12px; }
         .hf-f span{ display:block; font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.05em; color:#8b93a1; margin-bottom:4px; } @media(max-width:700px){ .hf-p{ grid-template-columns:1fr 1fr; } }
+        .d4{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; } @media(max-width:860px){ .d4{ grid-template-columns:minmax(0,1fr); } .d4-c{ min-height:0; } .d4-k b{ font-size:20px; } }
+        .d4-c{ min-width:0; background:#fff; border:1px solid var(--border); border-top:3px solid var(--c); border-radius:12px; padding:16px 18px; display:flex; flex-direction:column; gap:14px; min-height:300px; }
+        .d4-hd{ display:flex; align-items:center; gap:10px; background:none; border:none; padding:0; cursor:pointer; font:inherit; color:var(--ink); text-align:left; } .d4-hd b{ font-size:16px; flex:1; }
+        .d4-ic{ width:34px; height:34px; border-radius:10px; display:flex; align-items:center; justify-content:center; color:var(--c); background:color-mix(in srgb,var(--c) 12%,#fff); } .d4-go{ color:#9ca3af; }
+        .d4-ks{ display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; } .d4-k b{ display:block; font:700 24px var(--ft); letter-spacing:-.02em; color:var(--ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; } .d4-k span{ display:block; font-size:12px; color:#6b7280; margin-top:2px; }
+        .d4-ls{ flex:1; display:flex; flex-direction:column; gap:6px; } .d4-l{ display:flex; align-items:center; gap:10px; padding:7px 10px; border-radius:8px; background:#f8fafc; cursor:pointer; font-size:13px; } .d4-l:hover{ background:#eef2f7; }
+        .d4-h{ color:#6b7280; font-size:12px; white-space:nowrap; min-width:70px; } .d4-t{ flex:1; min-width:0; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; } .d4-v{ color:#8b93a1; font-size:13px; padding:8px 0; }
+        .d4-ft{ align-self:flex-start; background:none; border:none; padding:0; color:var(--c); font:600 13px var(--fb); cursor:pointer; }
         .fi{ display:grid; grid-template-columns:repeat(auto-fill,minmax(190px,1fr)); gap:14px 20px; background:#fff; border:1px solid var(--border); border-radius:10px; padding:18px 20px; margin-bottom:2px; }
         .fi-f{ min-width:0; } .fi-f span,.fi-com span{ display:block; font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.05em; color:#8b93a1; margin-bottom:3px; }
         .fi-f b{ display:block; font-size:15px; font-weight:600; color:var(--ink); overflow-wrap:anywhere; } .fi-f b a{ color:var(--accent); }
@@ -2928,7 +2936,43 @@ function notifBannerHtml(){
         ${bloque||help?`<button data-notif-banner-off style="background:none;border:none;color:#8b93a1;cursor:pointer;padding:4px;display:flex;" aria-label="Fermer">${icon('x',16)}</button>`:''}
     </div>`;
 }
-function renderDashboard(total,attente,m){
+/* Tableau de bord : 4 carreaux de résumé (Suivi, Agenda, Historique, Statistiques) */
+function renderDash4(m){
+    const now=new Date(), todayK=isoDay(now), tom=new Date(now); tom.setDate(now.getDate()+1);
+    const ev=eventsByDay(), auj=(ev[todayK]||[]).slice().sort(byDateAsc), dem=(ev[isoDay(tom)]||[]);
+    const n=countStages(), recues=n.avalider+n.acommander;
+    const aTraiter=state.data.filter(c=>['avalider','acommander'].includes(stageOf(c))&&!recPlusTard(c)).sort(byDateAsc);
+    const urg=aTraiter.filter(c=>{ const j=daysLeft(c.date); return j!==null&&j<=1; }).length;
+    const mo=now.getMonth(), y=now.getFullYear(), dansMois=(c,mm,yy)=>{ const d=parseDate(c.date); return d&&d.getMonth()===mm&&d.getFullYear()===yy; };
+    const pm=new Date(y,mo-1,1), D=state.data.filter(c=>c.pris!=='Annulé');
+    const mois=D.filter(c=>dansMois(c,mo,y)), moisP=D.filter(c=>dansMois(c,pm.getMonth(),pm.getFullYear()));
+    const tot=L=>L.reduce((a,c)=>a+(+c.prix||0),0), tM=tot(mois), tP=tot(moisP), delta=tP?Math.round((tM-tP)/tP*100):null;
+    const tops=(()=>{ const k={}; mois.forEach(c=>{ if(!c.presta) return; const x=k[c.presta]=k[c.presta]||{n:0,e:0}; x.n++; x.e+=(+c.prix||0); }); return Object.entries(k).sort((a,b)=>b[1].n-a[1].n); })(), top=tops[0];
+    const sansPrix=prixASaisir().length, annulM=state.data.filter(c=>c.pris==='Annulé'&&dansMois(c,mo,y)).length;
+    const recents=state.data.slice().sort((a,b)=>(new Date(b.createdAt||0))-(new Date(a.createdAt||0))||(b.id-a.id)).slice(0,3);
+    const eur=v=>Math.round(v).toLocaleString('fr-FR')+' €';
+    const ligne=(c,gauche)=>`<div class="d4-l" data-open-detail='${JSON.stringify(c).replace(/'/g,"&apos;")}'><span class="d4-h">${gauche}</span><span class="d4-t">${typeIc(c.type,13)} ${esc(titreDe(c))}</span>${stagePill(stageOf(c))}</div>`;
+    const kpi=(v,l,col)=>`<div class="d4-k"><b style="${col?`color:${col}`:''}">${v}</b><span>${l}</span></div>`;
+    const carte=(tab,ic,col,titre,kpis,liste,vide,pied)=>`<div class="d4-c" style="--c:${col};">
+        <button class="d4-hd" data-admin-tab="${tab}"><span class="d4-ic">${icon(ic,18)}</span><b>${titre}</b><span class="d4-go">${icon('arrow',15)}</span></button>
+        <div class="d4-ks">${kpis.join('')}</div>
+        <div class="d4-ls">${liste.length?liste.join(''):`<div class="d4-v">${vide}</div>`}</div>
+        <button class="d4-ft" data-admin-tab="${tab}">${pied} →</button></div>`;
+    return `<div style="max-width:1200px;margin:0 auto;padding:${m?'0':'24px 28px'};">
+        <div style="margin-bottom:${m?'12px':'18px'};">${m?'':`<h1 style="font-family:var(--ft);font-weight:650;letter-spacing:-.01em;font-size:24px;margin:0;">Tableau de bord</h1>`}
+            <div style="font-size:13px;color:#8b93a1;margin-top:3px;text-transform:capitalize;">${dateLongue(now)} ${y}</div></div>
+        <div class="d4">
+        ${carte('suivi','clipboard','#b45309','Suivi des demandes',[kpi(recues,'reçues à traiter','#b45309'),kpi(n.commandee,'commandées','#1d4ed8'),kpi(urg,'pour aujourd’hui ou demain',urg?'#b91c1c':'')],
+            aTraiter.slice(0,4).map(c=>ligne(c,`${dateCourte(c)}${c.heure?' · '+esc(c.heure):''}`)),'Rien à traiter ✓','Ouvrir le suivi')}
+        ${carte('calendrier','calendar','#1d4ed8','Agenda · aujourd’hui',[kpi(auj.length,'prestations aujourd’hui'),kpi(dem.length,'demain')],
+            auj.slice(0,4).map(c=>ligne(c,esc(c.heure||'—'))),'Rien de prévu aujourd’hui','Ouvrir l’agenda')}
+        ${carte('activite','grid','#475569','Historique',[kpi(mois.length,'demandes ce mois'),kpi(sansPrix,'prix à saisir',sansPrix?'#b45309':''),kpi(annulM,'annulées ce mois')],
+            recents.map(c=>ligne(c,dateCourte(c))),'Aucune demande','Ouvrir l’historique')}
+        ${carte('stats','chart','#15803d','Statistiques · ce mois',[kpi(eur(tM),'dépensés','#15803d'),kpi(delta===null?'—':`${delta>0?'+':''}${delta} %`,'vs mois dernier',delta>0?'#b91c1c':delta<0?'#15803d':''),kpi(top?esc(top[0]):'—','prestataire n°1')],
+            tops.slice(0,4).map(([p,x])=>`<div class="d4-l" data-admin-tab="stats"><span class="d4-t">${esc(p)}</span><span class="d4-h" style="min-width:0;">${x.n} commande${x.n>1?'s':''}${x.e?' · '+eur(x.e):''}</span></div>`),`Aucune commande ce mois · ${eur(tP)} le mois dernier`,'Voir les statistiques')}
+        </div></div>`;
+}
+function renderDashboard(total,attente,m){ return renderDash4(m);
     const now=new Date(), todayK=isoDay(now), tom=new Date(now); tom.setDate(now.getDate()+1); const tomK=isoDay(tom);
     const n=countStages();
     const ev=eventsByDay();
