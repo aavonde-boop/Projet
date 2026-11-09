@@ -3,8 +3,8 @@
 //
 //  Appelée par un « Database Webhook » Supabase sur la table 'commandes'
 //  (INSERT + UPDATE). Pour chaque nouvelle demande, envoie aux emails admin
-//  (Réglages › Notifications › Emails admin) deux invitations Outlook :
-//    1. « Commander »      : le jour même à 9h (la veille à 16h avant 11h ou pour un hôtel)
+//  (Réglages › Notifications › Emails admin) une invitation Outlook :
+//    (le rappel « Commander » n’est plus envoyé : il est seulement retiré des agendas)
 //    2. « Mise en place »  : 30 min avant (15 min pour un taxi), avec lieu et infos
 //  Outlook les place tout seul dans l'agenda (comme une invitation de réunion).
 //  Pas d'invitation pour les saisies directes (Julia / Arnaud), pas de mise à jour
@@ -221,14 +221,17 @@ async function resync(req: Request, now: Wall) {
     if (row.pris === "Annulé" || passee(row, now)) continue;
     const s = suivi[String(row.id)] || {};
     const sans = !!(s.direct || s.recurrent || /^repas r[ée]current$/i.test(String(row.comment || "")));
-    let evs = rappels(row, now);
-    const method = sans ? "CANCEL" : "REQUEST";
-    if (!sans && s.cmd) evs = evs.map((e) => e.uid.includes("-commande@") ? { ...e, title: ("✅ " + String(e.title)), desc: ("Commande passée.\n\n" + String(e.desc)), sansAlarme: true } : e);
-    for (const ev of evs) {
+    // Plus de rappel « commander » : on le retire partout ; on garde seulement la mise en place (✅ si commandée)
+    const evs = rappels(row, now).map((e) => {
+      const cmdEv = e.uid.includes("-commande@");
+      const m: "REQUEST" | "CANCEL" = (sans || cmdEv) ? "CANCEL" : "REQUEST";
+      return { ev: (!cmdEv && s.cmd ? { ...e, title: ("✅ " + String(e.title)), desc: ("Commande passée.\n\n" + String(e.desc)) } : e), m };
+    });
+    for (const { ev, m: method } of evs) {
       await transport.sendMail({
         from: ("\"Gestion des services\" <" + String(user) + ">"), to,
         subject: method === "CANCEL" ? ("Retiré : " + String(ev.title)) : ev.title,
-        text: method === "CANCEL" ? "Rappel retiré de votre agenda (saisie directe ou repas récurrent)." : ev.desc,
+        text: method === "CANCEL" ? "Rappel retiré de votre agenda." : ev.desc,
         icalEvent: { method, filename: "invitation.ics", content: ics(ev, method, user, to, seq) },
       });
       mails++;
@@ -263,7 +266,9 @@ Deno.serve(async (req) => {
     if (!to.length) return new Response(JSON.stringify({ ok: false, error: "Aucun email admin dans les réglages" }), { status: 200 });
 
     let evs = rappels(row, now);
-    if (p.type === "COMMANDE") evs = evs.filter((e) => e.uid.includes("-commande@")).map((e) => ({ ...e, title: ("✅ " + String(e.title)), desc: ("Commande passée.\n\n" + String(e.desc)), sansAlarme: true }));
+    // Plus de rappel « commander » : seule la mise en place est envoyée (l'annulation retire aussi les anciens rappels « commander »)
+    if (method === "REQUEST") evs = evs.filter((e) => !e.uid.includes("-commande@"));
+    if (p.type === "COMMANDE") evs = evs.map((e) => ({ ...e, title: ("✅ " + String(e.title)), desc: ("Commande passée.\n\n" + String(e.desc)) }));
     const seq = Math.floor(Date.now() / 1000) - 1760000000; // croissant : chaque mise à jour remplace la précédente
     // Port 465 (SSL) : les ports 25 et 587 sont bloqués dans les Edge Functions Supabase
     const transport = nodemailer.createTransport({ host: "smtp-relay.brevo.com", port: 465, secure: true, auth: { user: login, pass: key } });
