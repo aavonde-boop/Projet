@@ -3690,7 +3690,7 @@ function anomalies(){
         if(al) out.push({niv:3,ic:'clock',titre:'Délai du prestataire dépassé',detail:`${titreDe(c)} · ${dateCourte(c)} : ${c.presta} demande ${al.h} h, il reste ${Math.max(0,Math.round(al.reste))} h`,c});
         else if(j===0||(j===1&&now.getHours()>=16)) out.push({niv:3,ic:'box',titre:j===0?'Pas commandé, c’est aujourd’hui':'Pas encore commandé pour demain',detail:`${titreDe(c)} · ${c.heure||''} · ${c.presta||'prestataire ?'} · ${demNom(c)}`,c}); });
     // En attente trop longtemps
-    actives.filter(c=>c.pris==='En attente'||c.pris==='En cours').forEach(c=>{ const p=pendingSince(c); if(p&&Date.now()-p>24*36e5) out.push({niv:2,ic:'hourglass',titre:'En attente depuis plus de 24 h',detail:`${titreDe(c)} · ${demNom(c)} · reçue le ${new Date(p).toLocaleDateString('fr-FR')}`,c}); });
+    // (« En attente depuis plus de 24 h » retiré des notifications à la demande d'Arnaud)
     // Taxi gare / aéroport sans n° de vol
     futur.filter(c=>c.type==='taxi'&&!c.vol&&/(a[ée]roport|orly|cdg|roissy|beauvais|gare)/i.test(`${c.depart} ${c.arrivee}`)).forEach(c=>out.push({niv:1,ic:'plane',titre:'N° de vol ou de train manquant',detail:`${titreDe(c)} · ${dateCourte(c)} ${c.heure||''}`,c}));
     // Informations manquantes
