@@ -9,6 +9,7 @@
 --   • visiteurs sans compte (page publique)   : déposent / suivent / annulent une demande avec son code,
 --                                               lisent seulement les listes publiques (assistantes, prestataires…)
 --   • adresses email de l'équipe              : seulement pour les personnes connectées
+--   • connexion obligatoire activée            : plus rien n'est possible sans compte (ni dépôt, ni suivi, ni annulation)
 -- Le serveur (fonctions, déclencheurs) n'est pas concerné.
 
 -- ── Outils ────────────────────────────────────────────────────────────
@@ -92,6 +93,7 @@ create or replace function public.gs_nouvelle_demande(r jsonb) returns jsonb
 language plpgsql security definer set search_path = public as $$
 declare cols text; nouveau jsonb;
 begin
+  if public.gs_login_obligatoire() and public.gs_email() = '' then raise exception 'Connexion requise'; end if;
   if jsonb_typeof(r) <> 'object' then raise exception 'demande invalide'; end if;
   r := r || jsonb_build_object('pris', 'En attente');
   select string_agg(quote_ident(k), ', ') into cols
@@ -107,13 +109,15 @@ end $$;
 create or replace function public.gs_suivre(p_code text) returns jsonb
 language sql stable security definer set search_path = public as $$
   select to_jsonb(c) - 'tel' - 'pour_qui' - 'comment' - 'vol' - 'prix' - 'paie' - 'yooz'
-    from public.commandes c where upper(c.code) = upper(trim(p_code)) and coalesce(trim(p_code), '') <> '' limit 1
+    from public.commandes c where upper(c.code) = upper(trim(p_code)) and coalesce(trim(p_code), '') <> ''
+     and (not public.gs_login_obligatoire() or public.gs_email() <> '') limit 1
 $$;
 
 -- Annuler sa demande (avec son code, tant qu'elle est en attente)
 create or replace function public.gs_annuler(p_id text, p_code text) returns boolean
 language plpgsql security definer set search_path = public as $$
 begin
+  if public.gs_login_obligatoire() and public.gs_email() = '' then raise exception 'Connexion requise'; end if;
   update public.commandes set pris = 'Annulé'
    where id::text = p_id and upper(code) = upper(trim(p_code)) and coalesce(trim(p_code), '') <> '' and pris = 'En attente';
   return found;
@@ -124,6 +128,7 @@ create or replace function public.gs_suivi_maj(p_id text, p_patch jsonb) returns
 language plpgsql security definer set search_path = public as $$
 declare s jsonb; cur jsonb; k text; v jsonb;
 begin
+  if public.gs_login_obligatoire() and public.gs_email() = '' then raise exception 'Connexion requise'; end if;
   if not exists (select 1 from public.commandes where id::text = p_id) then return; end if;
   perform 1 from public.parametres where cle = 'suivi' for update;
   s := coalesce(public.gs_param('suivi'), '{}'::jsonb);
@@ -142,6 +147,7 @@ create or replace function public.gs_journal(p_entrees jsonb) returns void
 language plpgsql security definer set search_path = public as $$
 declare j jsonb; n jsonb;
 begin
+  if public.gs_login_obligatoire() and public.gs_email() = '' then raise exception 'Connexion requise'; end if;
   if jsonb_typeof(p_entrees) <> 'array' or jsonb_array_length(p_entrees) > 20 then return; end if;
   perform 1 from public.parametres where cle = 'journal' for update;
   j := coalesce(public.gs_param('journal'), '[]'::jsonb);

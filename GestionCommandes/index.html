@@ -554,6 +554,7 @@
         .sv-lk{ display:block; width:100%; background:none; border:none; border-top:1px solid #f1f5f9; padding:10px; font:700 12.5px var(--fb); color:#2563eb; cursor:pointer; } .sv-note{ padding:9px; font-size:12px; color:#94a3b8; text-align:center; border-top:1px solid #f1f5f9; }
         .sv-tabs{ display:grid; grid-template-columns:repeat(4,1fr); gap:4px; background:#e9edf2; border-radius:10px; padding:4px; margin-bottom:12px; } .sv-tabs button{ border:none; border-radius:8px; padding:7px 2px; background:transparent; font:600 10.5px var(--fb); color:#475569; cursor:pointer; } .sv-tabs button b{ display:block; font-size:17px; color:var(--c); } .sv-tabs button.on{ background:#fff; box-shadow:0 1px 3px rgba(0,0,0,.08); }
         @media(max-width:1100px){ .sv-grid{ grid-template-columns:1fr 1fr; } .sv-ar{ display:none; } }
+        .lu-bg{ position:fixed; inset:0; background:rgba(2,6,23,.75); display:flex; align-items:center; justify-content:center; z-index:99999; } .lu{ background:#fff; color:#0f172a; border-radius:16px; padding:26px; width:min(380px,92vw); text-align:center; } .lu b{ display:block; font-size:18px; margin:6px 0; } .lu p{ font-size:13px; color:#64748b; margin:0 0 14px; } .lu-err{ color:#b91c1c; font-size:13px; margin-top:8px; }
         .sec-l{ display:flex; gap:12px; align-items:flex-start; padding:10px 0; border-bottom:1px solid #f1f5f9; } .sec-l > span{ width:24px; height:24px; border-radius:50%; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:12px; background:#e5e7eb; color:#64748b; }
         .sec-l.ok > span{ background:#dcfce7; color:#15803d; } .sec-l.ko > span{ background:#fee2e2; color:#b91c1c; } .sec-l b{ display:block; font-size:14px; } .sec-l small{ display:block; font-size:12.5px; color:#64748b; margin-top:1px; }
         .sec-bilan{ border-radius:10px; padding:12px 14px; font-weight:700; font-size:14px; margin-bottom:6px; } .sec-bilan small{ display:block; font-weight:500; font-size:12px; margin-top:2px; opacity:.8; } .sec-bilan.ok{ background:#ecfdf5; color:#047857; } .sec-bilan.ko{ background:#fef2f2; color:#b91c1c; }
@@ -1451,7 +1452,10 @@ async function authCall(path, body, method='POST'){
 }
 const sessionFrom = j => ({ access_token:j.access_token, refresh_token:j.refresh_token, expires_at: Date.now()+(j.expires_in||3600)*1000, user:j.user });
 async function authLogin(email, pw){ authSave(sessionFrom(await authCall('token?grant_type=password', { email, password: pw }))); }
+function domainesAutorises(){ const L=[...Object.values(settings.emails||{}),...(settings.adminEmails||[])].map(e=>String(e||'').toLowerCase().split('@')[1]).filter(Boolean); return [...new Set(L)].filter(d=>!/^(gmail|hotmail|outlook|live|yahoo|icloud|orange|free|sfr|laposte|wanadoo)\./.test(d)); }
 async function authSignup(email, pw, nom){
+    const dom=String(email||'').toLowerCase().split('@')[1]||'', ok=domainesAutorises();
+    if(ok.length&&!ok.includes(dom)) throw new Error(`Utilisez votre adresse professionnelle (@${ok.join(', @')})`);
     const j = await authCall('signup', { email, password: pw, data: { nom } });
     if (!j.access_token) throw new Error('Compte créé mais pas encore actif : la confirmation par email doit être désactivée dans Supabase');
     authSave(sessionFrom(j));
@@ -1824,7 +1828,7 @@ function render(){
     if(AUTH&&!state.loading&&isAdmin()&&!window._eqMig&&!(settings.equipe&&settings.equipe.v>=3)){ window._eqMig=true; setTimeout(()=>migrerEquipe().then(()=>render()).catch(e=>console.error('Équipe',e)),0); }
     if(state.authMode==='reset') html=renderLogin();
     else if(state.express) html=isAdmin()?renderExpress():(AUTH?renderPasAdmin():renderLogin());
-    else if(state.vue==="admin") html=state.authed?(state.live?renderLive():renderAdminView(m)):(AUTH?renderPasAdmin():renderLogin());
+    else if(state.vue==="admin") html=state.authed?(state.live?renderLive()+liveUnlockHtml():renderAdminView(m)):(AUTH?renderPasAdmin():renderLogin());
     else if(state.loginScreen || (settings.loginObligatoire && !AUTH)) html=renderLogin();
     else if(state.trackMode) html=renderTrackCode(m);
     else html=renderHome(m);
@@ -1835,6 +1839,7 @@ function render(){
     attachEvents();
     initAutocomplete();
     if(keep){ const n=document.getElementById(keep.id); if(n&&document.activeElement!==n){ try{ n.focus({preventScroll:true}); if(keep.s!=null&&n.setSelectionRange) n.setSelectionRange(keep.s,keep.e); n.scrollLeft=keep.sc; }catch(e){} } }
+    if(state.liveUnlock){ const lp=document.getElementById('luPass'); if(lp&&document.activeElement!==lp){ lp.focus(); lp.setSelectionRange(lp.value.length,lp.value.length); } }
     if(state.live&&document.getElementById('lvClock')){ if(!_liveTimer) _liveTimer=setInterval(liveTick,1000); liveAnimateCounters(); }
 }
 
@@ -2884,7 +2889,7 @@ function mobileNavHtml(){
 
 const AF_KEYS={afDem:'dem',afDate:'date',afDateDepart:'dateDepart',afHeure:'heure',afDesc:'desc',afLieu:'lieu',afNb:'nb',afPresta:'presta',afDe:'de',afVers:'vers',afTel:'tel',afVol:'vol',afCom:'com',afPrix:'prix',afPaie:'paie',afPqAutre:'pourQuiAutre'};
 ['input','change'].forEach(ev=>document.addEventListener(ev,e=>{ const k=AF_KEYS[e.target&&e.target.id]; if(k&&state.adminForm) state.adminForm[k]=e.target.value; }));
-document.addEventListener('keydown',e=>{ if(e.key==='Escape'&&state.live){ document.querySelector('[data-live-exit]')?.click(); } });
+document.addEventListener('keydown',e=>{ if(e.key==='Escape'&&state.live&&!state.liveUnlock){ document.querySelector('[data-live-exit]')?.click(); } });
 /* Clics délégués (installés une seule fois) */
 document.addEventListener('click', async e=>{
     const nav=e.target.closest('[data-nav]');
@@ -3790,6 +3795,10 @@ function renderReglagesSecurite(secHead){
             <li>Revenez ici et cliquez « Vérifier à nouveau ».</li></ol>
             <small>Le script peut être relancé sans risque. Il ne supprime aucune donnée.</small></div>`:''}
     </div>
+    <div class="settings-section">${secHead('save','Sauvegarde','Copie complète des demandes et des réglages. Une sauvegarde automatique part aussi chaque lundi matin par email à Julia et vous (une fois la fonction « sauvegarde-hebdo » installée).')}
+        <button class="btn-sm" data-sauvegarde>${icon('save',13)} Télécharger une sauvegarde maintenant</button>
+        ${lsGet('derniere_sauvegarde')?`<div style="font-size:12px;color:#64748b;margin-top:8px;">Dernière sauvegarde téléchargée sur ce poste : ${new Date(lsGet('derniere_sauvegarde')).toLocaleString('fr-FR',{dateStyle:'short',timeStyle:'short'})}</div>`:''}
+    </div>
     <div class="settings-section">${secHead('shield','Côté Supabase, à vérifier une fois','Réglages du compte Supabase (Authentication › Sign In / Providers).')}
         <div class="sec-how" style="margin-top:0;"><ol>
             <li><b>Confirm email</b> doit rester <b>désactivé</b> : c’est ce qui permet aux assistantes de créer leur compte à leur première connexion. Seules les adresses listées dans Réglages › Équipe ont accès aux demandes.</li>
@@ -3799,6 +3808,18 @@ function renderReglagesSecurite(secHead){
     </div>`;
 }
 document.addEventListener('click',e=>{ if(e.target.closest('[data-sec-verif]')){ state.secCheck=null; render(); } });
+async function telechargerSauvegarde(){
+    if(!isAdmin()) return; await sbPret();
+    try{
+        const get=u=>fetch(`${SB_URL}/rest/v1/${u}`,{headers:sbH()}).then(r=>{ if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); });
+        const [cmd,par]=await Promise.all([get('commandes?select=*&order=id'),get('parametres?select=cle,valeur')]);
+        const data={app:'Gestion des services',date:new Date().toISOString(),par:userEmail(),commandes:cmd,parametres:par};
+        const blob=new Blob([JSON.stringify(data,null,1)],{type:'application/json'}), a=document.createElement('a');
+        a.href=URL.createObjectURL(blob); a.download=`sauvegarde-gestion-services-${isoDay(new Date())}.json`; document.body.appendChild(a); a.click(); setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); },1000);
+        lsSet('derniere_sauvegarde',new Date().toISOString()); showToast(`✓ Sauvegarde téléchargée : ${cmd.length} demandes, ${par.length} réglages`); render();
+    }catch(e){ showToast(`${icon('alert',13)} Sauvegarde impossible : ${String(e.message||e).slice(0,60)}`); }
+}
+document.addEventListener('click',e=>{ if(e.target.closest('[data-sauvegarde]')) telechargerSauvegarde(); });
 
 function renderReglagesRecurrences(secHead){
     const R=(state.rec&&state.rec.regles)||[]; const J=['dim.','lun.','mar.','mer.','jeu.','ven.','sam.'];
@@ -3920,6 +3941,23 @@ function recuInfo(s){ if(!s.recu) return ''; const t=new Date(s.recu).toLocaleTi
    ÉCRAN LIVE (PC / TV)
 ══════════════════════════════════════ */
 let _liveTimer=null;
+/* Écran live sur une TV (#live) : verrouillé. Pour revenir à l'administration, il faut le mot de passe. */
+function liveUnlockHtml(){
+    if(!state.liveUnlock) return '';
+    return `<div class="lu-bg"><div class="lu"><div style="font-size:30px;">🔒</div><b>Écran verrouillé</b><p>Pour quitter l’écran live et accéder à l’administration, saisissez le mot de passe de ${esc(userEmail())}.</p>
+        <input id="luPass" type="password" class="form-input" placeholder="Mot de passe" autocomplete="current-password" value="${esc(window._luPw||'')}">
+        ${state.luErr?`<div class="lu-err">${esc(state.luErr)}</div>`:''}
+        <div style="display:flex;gap:8px;margin-top:12px;"><button class="btn-sm" data-lu="non" style="flex:1;">Rester sur l’écran</button><button class="btn-primary" data-lu="ok" style="flex:1;">Déverrouiller</button></div></div></div>`;
+}
+async function liveDeverrouiller(){
+    const pw=document.getElementById('luPass')?.value||window._luPw||''; if(!pw){ return; }
+    try{ await authLogin(userEmail(),pw); window._luPw=''; lsSet('live_kiosk',''); state.liveUnlocked=true; state.liveUnlock=false; state.luErr=''; history.replaceState(null,'',location.pathname); render(); document.querySelector('[data-live-exit]')?.click(); }
+    catch(e){ setState({luErr:'Mot de passe incorrect'}); setTimeout(()=>document.getElementById('luPass')?.focus(),50); }
+}
+document.addEventListener('click',e=>{ const b=e.target.closest('[data-lu]'); if(!b) return; if(b.getAttribute('data-lu')==='ok') liveDeverrouiller(); else { window._luPw=''; setState({liveUnlock:false,luErr:''}); } });
+document.addEventListener('input',e=>{ if(e.target&&e.target.id==='luPass') window._luPw=e.target.value; });
+document.addEventListener('keydown',e=>{ if(e.key==='Enter'&&e.target&&e.target.id==='luPass') liveDeverrouiller(); });
+
 function renderLive(){
     if(!sessionValid()) return `<div class="lv" style="display:flex;align-items:center;justify-content:center;"><div style="text-align:center;max-width:520px;padding:40px;border:1px solid rgba(255,255,255,.12);border-radius:16px;background:rgba(255,255,255,.04);">
         <div style="font-size:34px;margin-bottom:10px;">🔒</div><div style="font-size:22px;font-weight:700;color:#fff;margin-bottom:8px;">Session expirée</div>
@@ -6541,7 +6579,7 @@ function attachEvents(){
     if(sb)sb.onclick=_submitForm;
     // ── Écran live / vue express / bien reçu ──
     document.querySelectorAll('[data-live-open]').forEach(el=>el.onclick=()=>{ state.live=true; render(); try{ document.documentElement.requestFullscreen?.(); }catch(e){} });
-    document.querySelectorAll('[data-live-exit]').forEach(el=>el.onclick=()=>{ state.live=false; if(!sessionValid()){ state.loginScreen=true; state.vue='select'; } clearInterval(_liveTimer); _liveTimer=null; try{ if(document.fullscreenElement) document.exitFullscreen(); }catch(e){} if(location.hash==='#live') history.replaceState(null,'',location.pathname); render(); });
+    document.querySelectorAll('[data-live-exit]').forEach(el=>el.onclick=()=>{ if(lsGet('live_kiosk')==='1'&&sessionValid()&&!state.liveUnlocked){ setState({liveUnlock:true}); setTimeout(()=>document.getElementById('luPass')?.focus(),50); return; } state.liveUnlocked=false; state.live=false; if(!sessionValid()){ state.loginScreen=true; state.vue='select'; } clearInterval(_liveTimer); _liveTimer=null; try{ if(document.fullscreenElement) document.exitFullscreen(); }catch(e){} if(location.hash==='#live') history.replaceState(null,'',location.pathname); render(); });
     document.querySelectorAll('[data-express-go]').forEach(el=>el.onclick=()=>{ let nav={}; try{ nav=JSON.parse(el.getAttribute('data-express-go')); }catch(e){} history.replaceState(null,'',location.pathname); setState({express:false,vue:'admin',authed:isAdmin(),...nav}); });
     document.querySelectorAll('[data-recu]').forEach(el=>el.onclick=e=>{ e.stopPropagation(); confirmerReception(el.getAttribute('data-recu')); });
     // ── Email collé ──
@@ -6902,7 +6940,8 @@ if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.
         }
     }catch(e){ console.error('Lien de connexion:',e); }
     if(location.hash==='#express') state.express=true;
-    if(location.hash==='#live'){ state.live=true; state.vue='admin'; }
+    if(location.hash==='#live') lsSet('live_kiosk','1');
+    if(location.hash==='#live'||lsGet('live_kiosk')==='1'){ state.live=true; state.vue='admin'; }
     if(AUTH && AUTH.expires_at < Date.now()+60000) await authRefresh();
     setInterval(()=>{ if(AUTH && AUTH.expires_at < Date.now()+5*60000) authRefresh(); }, 10*60000);
     render(); // affiche l'écran de chargement
