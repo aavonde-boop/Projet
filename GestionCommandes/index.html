@@ -581,6 +581,10 @@
         .sv-t th{ text-align:left; font-size:10.5px; font-weight:800; letter-spacing:.07em; text-transform:uppercase; color:#94a3b8; padding:9px 10px; background:#f8fafc; border-bottom:1px solid #e2e8f0; }
         .sv-t td{ padding:10px; border-bottom:1px solid #f1f5f9; vertical-align:middle; font-size:13px; } .sv-t tr:last-child td{ border-bottom:none; } .sv-t td[data-open-detail]{ cursor:pointer; } .sv-t tr:hover td{ background:#fafbfd; }
         .sv-q{ white-space:nowrap; width:62px; } .sv-q b{ display:block; font-weight:700; color:#0f172a; } .sv-q b.sv-auj{ color:#2563eb; } .sv-q small{ display:block; font-size:11.5px; color:#64748b; font-weight:600; }
+        .plogo{ display:inline-flex; align-items:center; justify-content:center; font-weight:800; letter-spacing:.02em; line-height:1; vertical-align:middle; overflow:hidden; }
+        .plogo.img{ background:#fff; border:1px solid #e2e8f0; } .plogo.img img{ width:100%; height:100%; object-fit:contain; padding:12%; }
+        .sv-dl{ display:flex; gap:9px; align-items:center; } .sv-d span.plogo{ display:inline-flex; margin-top:0; } .sv-d span.plogo:not([style*='color']){ color:inherit; } .sv-dl > div{ min-width:0; }
+        .nf-chip .plogo{ margin:-2px 2px -2px -6px; }
         .sv-d b{ display:block; font-size:13.5px; font-weight:700; } .sv-d span{ display:block; font-size:12px; color:#64748b; margin-top:1px; }
         .sv-a{ white-space:nowrap; text-align:right; } .sv-b{ border:none; border-radius:8px; padding:7px 11px; font:700 12.5px var(--fb); color:#fff; background:var(--c); cursor:pointer; }
         .sv-px{ display:inline-flex; align-items:center; gap:4px; font-weight:700; color:#475569; } .sv-px input{ width:64px; border:1.5px solid #fcd34d; border-radius:7px; padding:6px 7px; text-align:right; font-size:12.5px; } .sv-ok{ padding:6px 9px; }
@@ -2194,7 +2198,7 @@ function renderInlineForm(m){
         det=lbl('Type de repas')+`<div class="nf-tiles">${P_TYPES.map(t=>`<button type="button" data-nf="set" data-k="desc" data-v="${esc(t)}" class="nf-tile ${f.desc===t?'on':''}">${icon(nfIcRepas(t),20)}<span>${esc(t)}</span></button>`).join('')}</div>`
             +`<div class="nf-step-row"><div><b>Nombre de personnes</b><span>participants compris</span></div>
                 <div class="nf-stepper"><button type="button" data-nf="nb" data-v="-1">${icon('minus',16)}</button><b>${esc(f.nb||'1')}</b><button type="button" data-nf="nb" data-v="1">${icon('plus',16)}</button></div></div>`
-            +lbl('Restaurant / prestataire *')+`<div class="nf-row">${P_REPAS.map(p=>chip('set','presta',p,esc(p),f.presta===p)).join('')}</div>${(()=>{ const al=pDelaiAlerte(f.presta,f.date,f.heure); return al?`<div class="nf-warn">${icon('clock',14)} <span><b>${esc(f.presta)}</b> demande au moins ${al.h} h de délai. Cette demande risque d’arriver trop tard : choisissez une autre date ou un autre prestataire, ou prévenez l’administration en commentaire.</span></div>`:''; })()}`+`<div style="height:16px"></div>`+lbl('Régimes et allergies','optionnel')+`<div class="rg-row">${REGIMES.map(k=>{ const n=(f.regimes||{})[k]||0; return n?`<div class="rg on"><button type="button" data-nf="rg" data-k="toggle" data-v="${k}">${icon('check',13)} ${k}</button><span class="rg-n"><button type="button" data-nf="rg" data-k="-1" data-v="${k}">${icon('minus',12)}</button><b>${n}</b><button type="button" data-nf="rg" data-k="1" data-v="${k}">${icon('plus',12)}</button></span></div>`:`<div class="rg"><button type="button" data-nf="rg" data-k="toggle" data-v="${k}">${k}</button></div>`; }).join('')}</div>
+            +lbl('Restaurant / prestataire *')+`<div class="nf-row">${P_REPAS.map(p=>chip('set','presta',p,prestaLogo(p,20)+' '+esc(p),f.presta===p)).join('')}</div>${(()=>{ const al=pDelaiAlerte(f.presta,f.date,f.heure); return al?`<div class="nf-warn">${icon('clock',14)} <span><b>${esc(f.presta)}</b> demande au moins ${al.h} h de délai. Cette demande risque d’arriver trop tard : choisissez une autre date ou un autre prestataire, ou prévenez l’administration en commentaire.</span></div>`:''; })()}`+`<div style="height:16px"></div>`+lbl('Régimes et allergies','optionnel')+`<div class="rg-row">${REGIMES.map(k=>{ const n=(f.regimes||{})[k]||0; return n?`<div class="rg on"><button type="button" data-nf="rg" data-k="toggle" data-v="${k}">${icon('check',13)} ${k}</button><span class="rg-n"><button type="button" data-nf="rg" data-k="-1" data-v="${k}">${icon('minus',12)}</button><b>${n}</b><button type="button" data-nf="rg" data-k="1" data-v="${k}">${icon('plus',12)}</button></span></div>`:`<div class="rg"><button type="button" data-nf="rg" data-k="toggle" data-v="${k}">${k}</button></div>`; }).join('')}</div>
                 <input id="formAllergies" type="text" class="form-input nf-in" style="margin-top:8px;" value="${esc(f.allergies||'')}" placeholder="Allergies (arachides, fruits à coque…)">`
             ;
         lieuRepas=lbl('Lieu de livraison *')+`<input id="formLieu" type="text" class="form-input nf-in" value="${esc(f.lieu||'')}" placeholder="Bureau, salle, adresse…">`+recents(nfRecents('repas','lieu'),'lieu');
@@ -2204,7 +2208,7 @@ function renderInlineForm(m){
             +`<div style="height:14px"></div>`+lbl('Adresse d’arrivée *')+`<input id="formVers" type="text" class="form-input nf-in" value="${esc(f.vers||'')}" placeholder="Saisissez la destination…" autocomplete="off">`+recents(nfRecents('taxi','arrivee',3),'vers')
             +`<div class="nf-grid2" style="margin-top:14px;"><div>${lbl('Téléphone du passager *')}<input id="formTel" type="tel" class="form-input nf-in" value="${esc(f.tel||'')}" placeholder="06 12 34 56 78"></div>
                <div>${lbl('N° de vol / train','si gare ou aéroport')}<input id="formVol" type="text" class="form-input nf-in" value="${esc(f.vol||'')}" placeholder="Ex : AF1234, TGV 6201"></div></div>`
-            +`<div style="height:14px"></div>`+lbl('Prestataire')+`<div class="nf-row">${P_TAXI.map(p=>chip('set','presta',p,esc(p),f.presta===p)).join('')}</div>${(()=>{ const al=pDelaiAlerte(f.presta,f.date,f.heure); return al?`<div class="nf-warn">${icon('clock',14)} <span><b>${esc(f.presta)}</b> demande au moins ${al.h} h de délai. Cette demande risque d’arriver trop tard : choisissez une autre date ou un autre prestataire, ou prévenez l’administration en commentaire.</span></div>`:''; })()}`;
+            +`<div style="height:14px"></div>`+lbl('Prestataire')+`<div class="nf-row">${P_TAXI.map(p=>chip('set','presta',p,prestaLogo(p,20)+' '+esc(p),f.presta===p)).join('')}</div>${(()=>{ const al=pDelaiAlerte(f.presta,f.date,f.heure); return al?`<div class="nf-warn">${icon('clock',14)} <span><b>${esc(f.presta)}</b> demande au moins ${al.h} h de délai. Cette demande risque d’arriver trop tard : choisissez une autre date ou un autre prestataire, ou prévenez l’administration en commentaire.</span></div>`:''; })()}`;
     } else if(T==='coursier'){
         detTitre='La course'; detIc='send';
         det=lbl('Objet à livrer *')+`<input id="formDesc" type="text" class="form-input nf-in" value="${esc(f.desc||'')}" placeholder="Ex : pli à signer, dossier, colis…">`
@@ -2215,13 +2219,13 @@ function renderInlineForm(m){
     } else {
         detTitre='Hôtel'; detIc='bed';
         const autreH=f.presta&&!P_HOTEL.includes(f.presta)||f.hotelAutre;
-        det=`<div class="nf-row">${P_HOTEL.map(p=>chip('set','presta',p,esc(p),f.presta===p)).join('')}${chip('hotelautre','','','Autre…',autreH)}</div>`
+        det=`<div class="nf-row">${P_HOTEL.map(p=>chip('set','presta',p,prestaLogo(p,20)+' '+esc(p),f.presta===p)).join('')}${chip('hotelautre','','','Autre…',autreH)}</div>`
             +(autreH?`<input id="formHotel" type="text" class="form-input nf-in" style="margin-top:8px;" placeholder="Nom de l’hôtel" value="${esc(P_HOTEL.includes(f.presta)?'':(f.presta||''))}">`:'');
         if(false) det=`<div class="nf-grid2"><div>${lbl('Voyageur(s)')}<input id="formDesc" type="text" class="form-input nf-in" value="${esc(f.desc||'')}" placeholder="Ex : Jean Dupont"></div>
                <div>${lbl('Ville *')}<input id="formLieu" type="text" class="form-input nf-in" value="${esc(f.lieu||'')}" placeholder="Ex : Lyon"></div></div>`+recents(nfRecents('hotel','lieu',3),'lieu')
             +`<div class="nf-step-row"><div><b>Nombre de personnes</b><span>&nbsp;</span></div>
                 <div class="nf-stepper"><button type="button" data-nf="nb" data-v="-1">${icon('minus',16)}</button><b>${esc(f.nb||'1')}</b><button type="button" data-nf="nb" data-v="1">${icon('plus',16)}</button></div></div>`
-            +lbl('Hôtel')+`<div class="nf-row">${P_HOTEL.map(p=>chip('set','presta',p,esc(p),f.presta===p)).join('')}</div>`;
+            +lbl('Hôtel')+`<div class="nf-row">${P_HOTEL.map(p=>chip('set','presta',p,prestaLogo(p,20)+' '+esc(p),f.presta===p)).join('')}</div>`;
     }
     const secDet=sec(detIc,detTitre,det);
     const secPlus=sec(T==='repas'?'pin':'message',T==='repas'?'Livraison':'Précisions',(T==='repas'?lieuRepas+`<div style="height:16px"></div>`:'')+lbl('Commentaire','optionnel')+`<textarea id="formCom" class="form-input nf-in" style="min-height:70px;resize:vertical;" placeholder="Allergies, consignes, informations utiles…">${esc(f.com||'')}</textarea>`
@@ -2729,7 +2733,7 @@ function renderSuivi(m){
         const A=window._svArrive;
         if(!anim&&A&&A.id===id&&k&&k!==A.from){ if(!A.at) A.at=now0; if(now0-A.at<1600){ cl='sv-arrive'; st=`--d:-${now0-A.at}ms`; } }
         else if(!anim&&k==='nouvelle'){ if(window._svVus&&!window._svVus.has(id)&&!NEW[id]) NEW[id]=now0; if(NEW[id]&&now0-NEW[id]<4800){ cl='sv-new'; st=`--d:-${now0-NEW[id]}ms`; if(now0-NEW[id]<800) nouveaux++; } }
-        return `<tr class="${cl}" style="${st}" data-row="${esc(id)}"><td class="sv-q" ${op(c)}>${quand(c)}</td><td class="sv-d" ${op(c)}><b>${titre(c)}</b><span>${sous(c)}</span></td>${extra!==undefined?`<td class="sv-a">${extra}</td>`:''}</tr>`; };
+        return `<tr class="${cl}" style="${st}" data-row="${esc(id)}"><td class="sv-q" ${op(c)}>${quand(c)}</td><td class="sv-d" ${op(c)}><div class="sv-dl">${prestaLogo(c.presta,26,c.type)}<div><b>${titre(c)}</b><span>${sous(c)}</span></div></div></td>${extra!==undefined?`<td class="sv-a">${extra}</td>`:''}</tr>`; };
     const vide=t=>`<div class="sv-vide">${t}</div>`;
     const col=([k,lbl,sub,coul],i)=>{ const Lk=L[k];
         const thx=k==='nouvelle'?'<th></th>':k==='prix'?'<th>Prix</th>':k==='fin'?'<th style="text-align:right">Prix</th>':'';
@@ -2917,7 +2921,7 @@ function ficheInfos(d){
     if(T==='repas') f('Personnes',`${d.nb||1} pers.`);
     if(T==='hotel'&&d.nb) f('Personnes',`${d.nb}`);
     if(!(T==='repas'&&(suiviCat(d)==='nouvelle'||suiviCat(d)==='prise'))) f(T==='repas'?'Participants':'Pour qui',esc(d.pourQui||''));
-    f(T==='commande'?'Fournisseur':T==='hotel'?'Hôtel':'Prestataire',esc(d.presta||'')||'<i style="color:#b45309;font-style:normal;">à choisir</i>');
+    f(T==='commande'?'Fournisseur':T==='hotel'?'Hôtel':'Prestataire',d.presta?`<span style="display:inline-flex;align-items:center;gap:8px;">${prestaLogo(d.presta,24)}${esc(d.presta)}</span>`:'<i style="color:#b45309;font-style:normal;">à choisir</i>');
     if(T==='repas'||T==='commande') f(T==='repas'?'Type de repas':'Ce qui est commandé',esc(d.desc||''));
     f('Téléphone',d.tel?`<a href="tel:${esc(d.tel)}">${esc(d.tel)}</a>`:'');
     f('Vol / train',esc(d.vol||''));
@@ -3383,6 +3387,27 @@ function renderStats(m){
    FICHES PRESTATAIRES
 ══════════════════════════════════════ */
 function pInfo(nom){ if(!nom) return {}; const M=settings.prestaInfo||{}; const k=Object.keys(M).find(x=>x.toLowerCase()===String(nom).trim().toLowerCase()); return k?M[k]:{}; }
+/* Logo d'un prestataire : image déposée dans sa fiche, sinon icône de son site, sinon initiales colorées */
+const LOGO_COUL=['#2563eb','#0d9488','#d97706','#7c3aed','#db2777','#0891b2','#65a30d','#dc2626','#475569'];
+function prestaLogo(nom,sz=28,type){
+    const n=String(nom||'').trim();
+    const box=`width:${sz}px;height:${sz}px;border-radius:${Math.round(sz*.28)}px;flex-shrink:0;`;
+    if(!n){ const ic={repas:'utensils',taxi:'car',coursier:'send',hotel:'bed',commande:'box'}[type]||'clipboard'; return `<span class="plogo" style="${box}background:#f1f5f9;color:#64748b;">${icon(ic,Math.round(sz*.55))}</span>`; }
+    let h=0; for(const ch of n.toLowerCase()) h=(h*31+ch.charCodeAt(0))>>>0; const coul=LOGO_COUL[h%LOGO_COUL.length];
+    const mots=n.replace(/[^\p{L}\p{N} ]/gu,' ').split(/\s+/).filter(Boolean), ini=(mots.length>1?mots[0][0]+mots[1][0]:n.slice(0,2)).toUpperCase();
+    const mono=`<span class="plogo" style="${box}background:${coul};color:#fff;font-size:${Math.round(sz*.4)}px;">${esc(ini)}</span>`;
+    const P=pInfo(n); let src=P.logo||'';
+    if(!src&&P.url){ try{ const u=new URL(/^https?:/i.test(P.url)?P.url:'https://'+P.url); src=`https://www.google.com/s2/favicons?domain=${encodeURIComponent(u.hostname)}&sz=64`; }catch(e){} }
+    if(!src) return mono;
+    return `<span class="plogo img" style="${box}" title="${esc(n)}"><img src="${esc(src)}" alt="" loading="lazy" onerror="this.parentNode.outerHTML=this.parentNode.getAttribute('data-mono')"></span>`.replace('class="plogo img"',`class="plogo img" data-mono="${esc(mono)}"`);
+}
+async function logoDepuisFichier(file){
+    const url=await new Promise((ok,ko)=>{ const r=new FileReader(); r.onload=()=>ok(r.result); r.onerror=ko; r.readAsDataURL(file); });
+    const img=await new Promise((ok,ko)=>{ const i=new Image(); i.onload=()=>ok(i); i.onerror=ko; i.src=url; });
+    const S=96, c=document.createElement('canvas'); c.width=S; c.height=S; const x=c.getContext('2d');
+    x.fillStyle='#fff'; x.fillRect(0,0,S,S); const k=Math.min(S/img.width,S/img.height), w=img.width*k, h=img.height*k; x.drawImage(img,(S-w)/2,(S-h)/2,w,h);
+    return c.toDataURL('image/png');
+}
 function pContactHtml(c,{grand=false}={}){
     const P=pInfo(c.presta); if(!P.tel&&!P.email&&!P.url) return '';
     const st=grand?'padding:9px 13px;font-size:13px;border-radius:10px;':'padding:5px 10px;font-size:12px;border-radius:8px;';
@@ -3404,6 +3429,11 @@ function renderPrestaModal(){
         <div class="modal-handle"></div>
         <div style="padding:20px 22px;overflow-y:auto;">
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;"><div><div style="font-size:12px;color:var(--ink-soft);">Fiche prestataire</div><div style="font-size:19px;font-weight:650;">${esc(nom)}</div></div><button data-presta-close style="background:none;border:none;cursor:pointer;color:var(--ink-soft);">${icon('x',20)}</button></div>
+            ${(()=>{ const lg=state.piLogo!==undefined?state.piLogo:(P.logo||''); return `<div class="form-group"><label class="form-label">Logo</label><div style="display:flex;align-items:center;gap:12px;">
+                ${lg?`<span class="plogo img" style="width:52px;height:52px;border-radius:14px;"><img src="${esc(lg)}" alt=""></span>`:prestaLogo(nom,52)}
+                <label class="btn-sm" style="padding:9px 14px;cursor:pointer;">${icon('download',14)} Choisir une image<input id="piLogoFile" type="file" accept="image/*" style="display:none"></label>
+                ${lg?`<button type="button" id="piLogoRm" class="btn-sm" style="padding:9px 12px;">Retirer</button>`:''}</div>
+                <div style="font-size:12px;color:var(--ink-soft);margin-top:6px;">Sans image, l’icône du site est utilisée si le lien est renseigné, sinon les initiales.</div></div>`; })()}
             <div class="form-row-2">${f('piTel','Téléphone',P.tel,'01 23 45 67 89','tel')}${f('piEmail','Email de commande',P.email,'commande@exemple.fr','email')}</div>
             ${f('piUrl','Site / lien de commande',P.url,'https://…')}
             <div class="form-row-2">${f('piDelai','Délai minimum (heures)',P.delai,'Ex : 24','number')}${f('piContact','Contact',P.contact,'Nom de l’interlocuteur')}</div>
@@ -5893,7 +5923,7 @@ function renderSettings(){
             <div class="settings-item">
                 <div style="display:flex;align-items:center;gap:8px;">
                     ${s.badge?`<span class="badge-${s.badge}">${s.badge==='assistant'?'Assistante':'Directeur'}</span>`:''}
-                    <span style="font-size:14px;">${item}</span>
+                    ${s.key.startsWith('prestataires')?prestaLogo(item,26):''}<span style="font-size:14px;">${item}</span>
                     ${s.key.startsWith('prestataires')?(()=>{ const P=pInfo(item); return `<span class="pi-mini">${P.tel?icon('phone',12):''}${P.email?icon('mail',12):''}${P.url?icon('arrow',12):''}${P.delai?`<span style="font-size:11px;">${P.delai} h</span>`:''}</span><button data-presta-fiche="${esc(item)}" class="btn-sm" style="padding:3px 9px;font-size:11.5px;margin-left:4px;">${icon('edit',11)} Fiche</button>`; })():''}
                 </div>
                 ${state.confirmRm&&state.confirmRm.attr===s.rm&&state.confirmRm.idx===i?`
@@ -6842,10 +6872,13 @@ function attachEvents(){
     document.querySelectorAll('[data-mq-reset]').forEach(el=>el.onclick=()=>{ if(!confirm('Revenir au nom, au logo et aux couleurs d’origine pour tout le monde ?')) return; settings.marque=(settings.marque&&settings.marque.rgpd)?{rgpd:settings.marque.rgpd}:{}; state.mqDraft=null; saveSettings(settings); showToast('✓ Style d’origine rétabli'); });
     document.getElementById('mqSave')?.addEventListener('click',()=>{ const d=mq(); const M={...(settings.marque||{}),...d}; Object.keys(M).forEach(k=>{ if(!M[k]) delete M[k]; }); settings.marque=M; state.mqDraft=null; saveSettings(settings); showToast('✓ Apparence enregistrée pour tout le monde'); });
     // ── Fiches prestataires ──
-    document.querySelectorAll('[data-presta-fiche]').forEach(el=>el.onclick=()=>setState({prestaEdit:el.getAttribute('data-presta-fiche')}));
-    document.querySelectorAll('[data-presta-close]').forEach(el=>el.onclick=()=>setState({prestaEdit:null}));
+    document.querySelectorAll('[data-presta-fiche]').forEach(el=>el.onclick=()=>{ state.piLogo=undefined; setState({prestaEdit:el.getAttribute('data-presta-fiche')}); });
+    document.querySelectorAll('[data-presta-close]').forEach(el=>el.onclick=()=>{ state.piLogo=undefined; setState({prestaEdit:null}); });
+    const _pv=()=>{ const g=id=>document.getElementById(id); return ['piTel','piEmail','piUrl','piDelai','piContact','piNote'].reduce((o,k)=>(g(k)&&(o[k]=g(k).value),o),{}); }, _pr=v=>{ Object.entries(v).forEach(([k,x])=>{ const e=document.getElementById(k); if(e) e.value=x; }); };
+    document.getElementById('piLogoFile')?.addEventListener('change',async e=>{ const fl=e.target.files&&e.target.files[0]; if(!fl) return; try{ const v=_pv(); state.piLogo=await logoDepuisFichier(fl); render(); _pr(v); }catch(err){ showToast(`${icon('alert',13)} Image illisible`); } });
+    document.getElementById('piLogoRm')?.addEventListener('click',()=>{ const v=_pv(); state.piLogo=''; render(); _pr(v); });
     document.getElementById('piSave')?.addEventListener('click',()=>{ const g=id=>(document.getElementById(id)?.value||'').trim(); const nom=state.prestaEdit; if(!nom) return;
-        const info={tel:g('piTel'),email:g('piEmail'),url:g('piUrl'),delai:g('piDelai'),contact:g('piContact'),note:g('piNote')}; Object.keys(info).forEach(k=>{ if(!info[k]) delete info[k]; });
+        const info={tel:g('piTel'),email:g('piEmail'),url:g('piUrl'),delai:g('piDelai'),contact:g('piContact'),note:g('piNote'),logo:state.piLogo!==undefined?state.piLogo:(pInfo(nom).logo||'')}; Object.keys(info).forEach(k=>{ if(!info[k]) delete info[k]; }); state.piLogo=undefined;
         settings.prestaInfo={...(settings.prestaInfo||{})}; if(Object.keys(info).length) settings.prestaInfo[nom]=info; else delete settings.prestaInfo[nom];
         saveSettings(settings); state.prestaEdit=null; showToast('✓ Fiche enregistrée'); });
     // ── Nouveau formulaire : pastilles, saisie, envoi ──
