@@ -338,6 +338,8 @@
         .nf-seg button.on{ background:#fff; color:var(--side); box-shadow:0 1px 3px rgba(0,0,0,.2); }
         .nf-main{ margin-top:-24px; padding-bottom:48px; }
         .nf-col{ min-width:0; }
+        .sv-t.sv-auto{ max-height:calc(100vh - 250px); overflow-y:auto; scrollbar-width:thin; transition:opacity .45s; }
+        .sv-t.sv-auto th{ position:sticky; top:0; z-index:1; }
         .nf-wz{ max-width:860px; margin:0 auto; } .nf-wz > .nf-card{ margin-bottom:0; }
         .nf-prog{ display:flex; gap:8px; margin:4px 0 16px; } .nf-pg{ flex:1; min-width:0; display:flex; flex-direction:column; gap:6px; background:none; border:none; padding:0; text-align:left; font:600 12px var(--fb); color:#9aa3b0; cursor:default; }
         .nf-pg i{ display:block; height:5px; border-radius:3px; background:#e3e7ee; } .nf-pg span{ white-space:nowrap; overflow:hidden; text-overflow:ellipsis; display:flex; align-items:center; gap:3px; }
@@ -2701,7 +2703,7 @@ function renderSuivi(m){
         const thx=k==='nouvelle'?'<th></th>':k==='prix'?'<th>Prix</th>':k==='fin'?'<th style="text-align:right">Prix</th>':'';
         const rows=k==='nouvelle'?Lk.map(c=>ligne(c,`<button class="sv-b" data-suivi-act="pec" data-id="${c.id}">Bien reçu ✓</button>`))
             :k==='prix'?Lk.map(c=>{ const e=prixSuggere(c); return ligne(c,`<span class="sv-px"><input id="px-${c.id}" type="text" inputmode="decimal" placeholder="0,00" value="${e?String(e.prix).replace('.',','):''}" data-px-id="${c.id}" class="${e?'est':''}" title="${e?'Estimation : '+esc(e.base)+' · corrigez avec la facture':''}"> €<button class="sv-b sv-ok" data-suivi-act="pxrow" data-id="${c.id}" title="Enregistrer">✓</button></span>${e?`<small class="sv-est">estimé · ${esc(e.base)}</small>`:''}`); })
-            :k==='fin'?Lk.slice(0,8).map(c=>ligne(c,`<span class="sv-eur">${$m(+c.prix||0)}</span>`))
+            :k==='fin'?(m?Lk.slice(0,8):Lk).map(c=>ligne(c,`<span class="sv-eur">${$m(+c.prix||0)}</span>`))
             :Lk.map(c=>ligne(c));
         const fin=k==='fin'?`<button class="sv-lk" data-nav='{"adminTab":"activite"}'>Base des demandes →</button>`:k==='prise'&&recCaches?`<div class="sv-note">🔁 + ${recCaches} repas récurrent${recCaches>1?'s':''} les jours suivants</div>`:'';
         const vides={nouvelle:'Aucune nouvelle demande',prise:'Aucune prestation planifiée',prix:'Toutes les factures sont saisies',fin:'Aucune demande clôturée'};
@@ -2709,7 +2711,7 @@ function renderSuivi(m){
             <div class="sv-hd"><span class="sv-n">${Lk.length}</span><div><b>${lbl}</b><span>${sub}</span></div>${k==='nouvelle'?`<div class="sv-add"><button id="fabAdminMain" class="sv-plus" title="Saisie directe : ajouter une demande (aucun email)" aria-label="Saisie directe">${icon('plus',16)}</button>
                 <div id="fabAdminMenu" class="drop-menu" style="display:none;"><div class="drop-note"><b>Saisie directe</b>La demande est ajoutée et prise en charge directement. Aucun email n’est envoyé.</div>
                 ${[["repas","utensils","Repas"],["taxi","car","Taxi"],["commande","box","Commande"],["hotel","bed","Hôtel"]].map(([t,ic,l])=>`<button data-saisie-type="${t}">${icon(ic,15)} ${l}</button>`).join('')}</div></div>`:''}${i<3&&!m?'<i class="sv-ar">›</i>':''}</div>
-            <div class="sv-t">${Lk.length?`<table><tr><th>Quand</th><th>Demande</th>${thx}</tr>${rows.join('')}</table>`:vide(vides[k])}${fin}</div></div>`; };
+            <div class="sv-t ${m?'':'sv-auto'}" data-svk="${k}">${Lk.length?`<table><tr><th>Quand</th><th>Demande</th>${thx}</tr>${rows.join('')}</table>`:vide(vides[k])}${fin}</div></div>`; };
     const cur=state.suiviCat&&L[state.suiviCat]?state.suiviCat:(L.nouvelle.length?'nouvelle':L.prix.length?'prix':'prise');
     return `<div>
     <div class="sv-top"><div><div class="sv-ttl">Suivi des demandes</div><div class="sv-sub">${dateLongue(now)} · ${nAct?`${nAct} action${nAct>1?'s':''} en attente`:'aucune action en attente'}</div></div>
@@ -2719,6 +2721,24 @@ function renderSuivi(m){
       :`<div class="sv-grid">${SUIVI_CATS.map(col).join('')}</div>`}
     </div>`;
 }
+/* Défilement automatique des colonnes du suivi : la liste descend doucement,
+   s'arrête en bas, revient en haut, recommence. Pause dès que la souris est dessus. */
+const SV_DEF={}; let _svT=0;
+function svDefile(ts){
+    const dt=_svT?Math.min(100,ts-_svT):16; _svT=ts;
+    document.querySelectorAll('.sv-auto').forEach(el=>{
+        const k=el.getAttribute('data-svk'), st=SV_DEF[k]||(SV_DEF[k]={pos:0,pause:ts+4000,haut:false});
+        const max=el.scrollHeight-el.clientHeight; if(max<=4){ st.pos=0; return; }
+        if(el.matches(':hover')||el.contains(document.activeElement)){ st.pos=el.scrollTop; st.pause=ts+2500; return; }
+        if(Math.abs(el.scrollTop-st.pos)>2&&!st.haut) el.scrollTop=st.pos;   // rétablit la position après un rafraîchissement
+        if(ts<st.pause) return;
+        if(st.haut){ st.haut=false; st.pos=0; el.scrollTop=0; el.style.opacity=''; st.pause=ts+4000; return; }
+        st.pos=Math.min(max,st.pos+dt*0.025); el.scrollTop=st.pos;   // ≈ 25 px par seconde
+        if(st.pos>=max){ st.pause=ts+3500; st.haut=true; setTimeout(()=>{ el.style.opacity='.15'; },3000); }
+    });
+    requestAnimationFrame(svDefile);
+}
+if(!(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches)) requestAnimationFrame(svDefile);
 document.addEventListener('keydown',e=>{ const el=e.target; if(e.key==='Enter'&&el.matches&&el.matches('[data-px-id]')){ e.preventDefault(); const c=state.data.find(x=>String(x.id)===el.getAttribute('data-px-id')); if(c) saisirPrix(c,el.value); } });
 
 /* ══════════════════════════════════════
