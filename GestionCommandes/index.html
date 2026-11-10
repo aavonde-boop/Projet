@@ -554,6 +554,12 @@
         .sv-lk{ display:block; width:100%; background:none; border:none; border-top:1px solid #f1f5f9; padding:10px; font:700 12.5px var(--fb); color:#2563eb; cursor:pointer; } .sv-note{ padding:9px; font-size:12px; color:#94a3b8; text-align:center; border-top:1px solid #f1f5f9; }
         .sv-tabs{ display:grid; grid-template-columns:repeat(4,1fr); gap:4px; background:#e9edf2; border-radius:10px; padding:4px; margin-bottom:12px; } .sv-tabs button{ border:none; border-radius:8px; padding:7px 2px; background:transparent; font:600 10.5px var(--fb); color:#475569; cursor:pointer; } .sv-tabs button b{ display:block; font-size:17px; color:var(--c); } .sv-tabs button.on{ background:#fff; box-shadow:0 1px 3px rgba(0,0,0,.08); }
         @media(max-width:1100px){ .sv-grid{ grid-template-columns:1fr 1fr; } .sv-ar{ display:none; } }
+        .rg-bg{ position:fixed; inset:0; background:rgba(15,23,42,.55); display:flex; align-items:flex-start; justify-content:center; z-index:9999; overflow:auto; padding:24px 12px; }
+        .rgp{ background:#fff; color:#1f2937; border-radius:14px; width:min(760px,100%); padding:26px 28px; font-size:13.5px; line-height:1.6; box-shadow:0 20px 50px rgba(0,0,0,.25); position:relative; }
+        .rgp h2{ font:650 20px var(--ft); margin:0 0 4px; color:var(--ink); } .rgp h3{ font:650 14px var(--fb); margin:18px 0 4px; color:var(--ink); } .rgp ul{ margin:4px 0; padding-left:20px; } .rgp p{ margin:4px 0; }
+        .rg-x{ position:absolute; top:14px; right:14px; width:34px; height:34px; border-radius:8px; border:1px solid var(--border); background:#fff; cursor:pointer; display:flex; align-items:center; justify-content:center; }
+        .rg-foot{ text-align:center; padding:18px 12px 26px; } .rg-foot button{ background:none; border:none; color:#8b93a1; font-size:12px; cursor:pointer; text-decoration:underline; }
+        .rg-tab{ width:100%; border-collapse:collapse; font-size:12.5px; } .rg-tab td,.rg-tab th{ border-bottom:1px solid var(--border); padding:6px 8px; text-align:left; vertical-align:top; } .rg-tab th{ color:#6b7280; font-weight:600; }
         .lu-bg{ position:fixed; inset:0; background:rgba(2,6,23,.75); display:flex; align-items:center; justify-content:center; z-index:99999; } .lu{ background:#fff; color:#0f172a; border-radius:16px; padding:26px; width:min(380px,92vw); text-align:center; } .lu b{ display:block; font-size:18px; margin:6px 0; } .lu p{ font-size:13px; color:#64748b; margin:0 0 14px; } .lu-err{ color:#b91c1c; font-size:13px; margin-top:8px; }
         .sec-l{ display:flex; gap:12px; align-items:flex-start; padding:10px 0; border-bottom:1px solid #f1f5f9; } .sec-l > span{ width:24px; height:24px; border-radius:50%; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:12px; background:#e5e7eb; color:#64748b; }
         .sec-l.ok > span{ background:#dcfce7; color:#15803d; } .sec-l.ko > span{ background:#fee2e2; color:#b91c1c; } .sec-l b{ display:block; font-size:14px; } .sec-l small{ display:block; font-size:12.5px; color:#64748b; margin-top:1px; }
@@ -1832,6 +1838,8 @@ function render(){
     else if(state.loginScreen || (settings.loginObligatoire && !AUTH)) html=renderLogin();
     else if(state.trackMode) html=renderTrackCode(m);
     else html=renderHome(m);
+    if(state.vue!=='admin'&&!state.express&&state.authMode!=='reset'&&!state.loginScreen&&!(settings.loginObligatoire&&!AUTH)) html+=`<div class="rg-foot"><button data-rgpd>Données personnelles</button></div>`;
+    if(state.rgpd) html+=rgpdHtml();
     // Garder le focus et le curseur dans le champ en cours de saisie (barres de recherche…)
     const ae=document.activeElement, keep=ae&&ae.id&&/^(INPUT|TEXTAREA)$/.test(ae.tagName)&&!/^(checkbox|radio|file|button|submit)$/i.test(ae.type||'')?{id:ae.id,s:ae.selectionStart,e:ae.selectionEnd,sc:ae.scrollLeft}:null;
     app.innerHTML=`<div class="desktop-app">${html}</div>`;
@@ -2208,6 +2216,7 @@ function renderLogin(){
             <div style="font-family:var(--ft);font-weight:650;letter-spacing:-.01em;font-size:24px;margin-bottom:6px;">${titre}</div>
             <div style="color:#8b93a1;margin-bottom:20px;font-size:14px;">${sous}</div>
             ${err}${info}${corps}${sortie}
+            <button data-rgpd style="background:none;border:none;color:#a0a7b3;font-size:11.5px;cursor:pointer;margin-top:6px;text-decoration:underline;">Données personnelles</button>
         </div>
     </div>`;
 }
@@ -3808,6 +3817,159 @@ function renderReglagesSecurite(secHead){
     </div>`;
 }
 document.addEventListener('click',e=>{ if(e.target.closest('[data-sec-verif]')){ state.secCheck=null; render(); } });
+/* ══════════ RGPD ══════════ */
+const ANON='Anonymisé';
+function rgpdCfg(){ return Object.assign({ans:0,entreprise:'',contact:'',dpo:''},(settings.marque||{}).rgpd||{}); }
+async function rgpdEnregistrer(patch){
+    const M={...(settings.marque||{})}; M.rgpd={...rgpdCfg(),...patch}; settings.marque=M;
+    try{ localStorage.setItem('settings_marque',JSON.stringify(M)); }catch(e){}
+    await paramSet('marque',M);
+}
+function rgpdNorm(s){ return String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().replace(/\s+/g,' ').trim(); }
+function rgpdParts(s){ return String(s||'').split(/\s*[,;\n\/]\s*|\s+et\s+|\s+&\s+/i).filter(x=>x.trim()); }
+function rgpdLimite(ans){ const d=new Date(); d.setFullYear(d.getFullYear()-ans); return d; }
+async function rgpdToutes(){ await sbPret(); const r=await fetch(`${SB_TABLE}?select=*&order=id`,{headers:sbH()}); if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); }
+function rgpdAnciennes(rows,ans){ const lim=rgpdLimite(ans); return rows.filter(r=>{ const d=parseDate(r.date); return d&&d<lim&&!(r.demandeur===ANON&&!r.pour_qui&&!r.tel&&!r.comment); }); }
+const RG_ANON_ROW={demandeur:ANON,pour_qui:'',tel:null,vol:null,comment:'',depart:'',arrivee:''};
+async function rgpdPatch(ids,row){
+    for(let i=0;i<ids.length;i+=150){ const part=ids.slice(i,i+150);
+        const r=await fetch(`${SB_TABLE}?id=in.(${part.join(',')})`,{method:'PATCH',headers:{...sbH(),'Prefer':'return=minimal'},body:JSON.stringify(row)});
+        if(!r.ok) throw new Error('HTTP '+r.status); }
+}
+// Anonymise les demandes dont la prestation date de plus de « ans » années (garde type, date, prestataire, prix, nb pour les statistiques)
+async function purgeAnciennes(force){
+    const ans=+rgpdCfg().ans; if(!ans||!isAdmin()) return 0;
+    const jour=isoDay(new Date()); if(!force&&lsGet('rgpd_purge_jour')===jour) return 0;
+    const rows=await rgpdToutes(); const vieilles=rgpdAnciennes(rows,ans); lsSet('rgpd_purge_jour',jour);
+    if(vieilles.length){
+        const ids=vieilles.map(r=>r.id); await rgpdPatch(ids,RG_ANON_ROW);
+        const set=new Set(ids.map(String));
+        state.data=(state.data||[]).map(c=>set.has(String(c.id))?{...c,demandeur:ANON,pourQui:'',tel:'',vol:'',comment:'',depart:'',arrivee:''}:c);
+    }
+    // journal : on ne garde pas d'entrées plus anciennes que la durée choisie
+    try{ const lim=rgpdLimite(ans).getTime(); const j=(await paramGet('journal'))||[]; const k=j.filter(e=>!e.t||new Date(e.t).getTime()>=lim); if(k.length!==j.length){ await paramSet('journal',k); state.journal=k; } }catch(e){}
+    lsSet('rgpd_derniere',new Date().toISOString()+'|'+vieilles.length);
+    return vieilles.length;
+}
+// Droits d'une personne : retrouver, exporter, anonymiser
+function rgpdConcerne(r,nom){ const n=rgpdNorm(nom); if(!n) return false; return rgpdNorm(r.demandeur)===n||rgpdParts(r.pour_qui).some(x=>rgpdNorm(x).includes(n)); }
+async function rgpdChercher(nom){
+    nom=String(nom||'').trim(); if(nom.length<3){ showToast(`${icon('alert',13)} Saisissez au moins 3 lettres du nom`); return; }
+    setState({rgRes:{nom,charge:true},rgConfirm:false});
+    try{ const rows=(await rgpdToutes()).filter(r=>rgpdConcerne(r,nom));
+        const j=((await paramGet('journal'))||[]).filter(e=>rgpdNorm(e.qui)===rgpdNorm(nom));
+        setState({rgRes:{nom,rows,journal:j}}); }
+    catch(e){ setState({rgRes:null}); showToast(`${icon('alert',13)} Recherche impossible : ${esc(e.message)}`); }
+}
+function rgpdExporter(){
+    const R=state.rgRes; if(!R||!R.rows) return;
+    if(typeof XLSX==='undefined'){ showToast(`${icon('alert',13)} Export non disponible`); return; }
+    const wb=XLSX.utils.book_new();
+    const lignes=R.rows.map(r=>({'Code':r.code||'','Date':r.date||'','Heure':r.heure||'','Type':TYPE_LABEL[r.type]||r.type||'','Demandeur':r.demandeur||'','Pour qui':r.pour_qui||'','Titre':r.descr||'','Lieu':r.lieu||'','Départ':r.depart||'','Arrivée':r.arrivee||'','Vol':r.vol||'','Téléphone':r.tel||'','Prestataire':r.presta||'','Personnes':r.nb||'','Commentaire':r.comment||'','Statut':r.pris||''}));
+    XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(lignes.length?lignes:[{'Aucune demande':''}]),'Demandes');
+    XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(R.journal.length?R.journal.map(e=>({'Date':e.t,'Action':e.action,'Demande':e.code||'','Détail':e.detail||''})):[{'Aucune action':''}]),'Journal');
+    XLSX.writeFile(wb,`Donnees_${R.nom.replace(/[^\wÀ-ſ-]+/g,'_')}_${isoDay(new Date())}.xlsx`);
+    logAction('Export RGPD',[{id:'',code:'',type:'',desc:R.nom}],`${R.rows.length} demande(s)`);
+}
+async function rgpdAnonymiser(){
+    const R=state.rgRes; if(!R||!R.rows) return; const n=rgpdNorm(R.nom);
+    try{
+        for(const r of R.rows){
+            const row={};
+            if(rgpdNorm(r.demandeur)===n){ row.demandeur=ANON; row.tel=null; }
+            const parts=rgpdParts(r.pour_qui); if(parts.some(x=>rgpdNorm(x).includes(n))) row.pour_qui=parts.map(x=>rgpdNorm(x).includes(n)?'ANONYMISÉ':x).join(', ');
+            if(Object.keys(row).length) await rgpdPatch([r.id],row);
+            state.data=(state.data||[]).map(c=>String(c.id)===String(r.id)?{...c,...(row.demandeur?{demandeur:ANON,tel:''}:{}),...(row.pour_qui!==undefined?{pourQui:row.pour_qui}:{})}:c);
+        }
+        if(R.journal.length){ const j=((await paramGet('journal'))||[]).map(e=>rgpdNorm(e.qui)===n?{...e,qui:ANON}:e); await paramSet('journal',j); state.journal=j; }
+        logAction('Anonymisation RGPD',[{id:'',code:'',type:'',desc:'Personne anonymisée'}],`${R.rows.length} demande(s)`);
+        setState({rgRes:null,rgConfirm:false}); showToast(`✓ ${R.rows.length} demande(s) anonymisée(s)`);
+    }catch(e){ showToast(`${icon('alert',13)} Échec : ${esc(e.message)}`); }
+}
+function rgpdNomsConnus(){
+    const s=new Set([...(settings.assistantes||[]),...(settings.directeurs||[])]);
+    (state.data||[]).forEach(c=>{ if(c.demandeur&&c.demandeur!==ANON) s.add(c.demandeur); rgpdParts(c.pourQui).forEach(x=>{ if(x.length>2&&!/anonymis/i.test(x)) s.add(x.trim()); }); });
+    return [...s].sort((a,b)=>a.localeCompare(b,'fr'));
+}
+function rgpdReglagesHtml(secHead){
+    const C=rgpdCfg(), R=state.rgRes, der=(lsGet('rgpd_derniere')||'').split('|');
+    const opt=[[0,'Désactivée'],[1,'1 an'],[2,'2 ans'],[3,'3 ans (recommandé)'],[5,'5 ans'],[10,'10 ans']];
+    return `<div class="settings-section">
+        ${secHead('shield','Données personnelles (RGPD)','Informations affichées dans la notice « Données personnelles », accessible depuis la page de demande et la connexion.')}
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;">
+            <label style="font-size:12px;color:#6b7280;">Société (responsable du traitement)<input id="rgEnt" class="form-input" value="${esc(C.entreprise)}" placeholder="Nom de la société"></label>
+            <label style="font-size:12px;color:#6b7280;">Contact pour les demandes RGPD<input id="rgCon" class="form-input" value="${esc(C.contact)}" placeholder="Prénom NOM – email"></label>
+            <label style="font-size:12px;color:#6b7280;">Délégué à la protection des données (si existant)<input id="rgDpo" class="form-input" value="${esc(C.dpo)}" placeholder="email du DPO"></label>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;"><button data-rg="infos" class="btn-sm pri" style="padding:9px 14px;">${icon('save',14)} Enregistrer</button><button data-rgpd class="btn-sm" style="padding:9px 14px;">Voir la notice</button></div>
+    </div>
+    <div class="settings-section">
+        ${secHead('calendar','Durée de conservation','Passé ce délai après la date de la prestation, les noms, téléphones, vols, adresses et commentaires sont effacés automatiquement. Le type, la date, le prestataire et le prix restent pour les statistiques et la comptabilité.')}
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+            <select id="rgAns" class="form-input" style="width:auto;">${opt.map(([v,l])=>`<option value="${v}" ${+C.ans===v?'selected':''}>${l}</option>`).join('')}</select>
+            <button data-rg="ans" class="btn-sm pri" style="padding:9px 14px;">Appliquer</button>
+            ${+C.ans?`<button data-rg="purge" class="btn-sm" style="padding:9px 14px;">Vérifier maintenant</button>`:''}
+        </div>
+        ${state.rgPurgeApercu!=null?`<div style="margin-top:10px;background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:10px 12px;font-size:13px;">
+            <b>${state.rgPurgeApercu.n} demande(s)</b> antérieure(s) au ${state.rgPurgeApercu.lim} seront anonymisées dès maintenant, puis chaque jour celles qui dépassent ${state.rgPurgeApercu.ans} an(s). C’est définitif : pensez à télécharger une sauvegarde avant (Réglages › Sécurité).
+            <div style="display:flex;gap:8px;margin-top:8px;"><button data-rg="ans-ok" class="btn-sm" style="background:#b45309;color:#fff;border-color:#b45309;">Confirmer</button><button data-rg="ans-non" class="btn-sm">Annuler</button></div></div>`:''}
+        <div style="font-size:12px;color:#8b93a1;margin-top:8px;">${+C.ans?`Active : ${C.ans} an${C.ans>1?'s':''}.`:'Non activée : les données sont conservées sans limite.'}${der[0]?` Dernière vérification : ${new Date(der[0]).toLocaleString('fr-FR')} (${der[1]||0} anonymisée(s)).`:''} Corbeille : vidée après ${TRASH_DAYS} jours.</div>
+    </div>
+    <div class="settings-section">
+        ${secHead('user','Droits d’une personne','Une personne demande à voir ses données, ou à ce qu’elles soient effacées (départ de l’entreprise…).')}
+        <div style="display:flex;gap:8px;flex-wrap:wrap;"><input id="rgPers" class="form-input" list="rgPersList" placeholder="Nom de la personne" value="${esc(R?R.nom:'')}" style="flex:1;min-width:200px;"><datalist id="rgPersList">${rgpdNomsConnus().map(n=>`<option value="${esc(n)}">`).join('')}</datalist>
+        <button data-rg="cherche" class="btn-sm pri" style="padding:9px 14px;">${icon('search',14)} Rechercher</button></div>
+        ${R?(R.charge?`<div style="margin-top:10px;font-size:13px;color:#6b7280;">Recherche…</div>`:`<div style="margin-top:12px;">
+            <div style="font-size:13px;margin-bottom:8px;"><b>${R.rows.length} demande(s)</b> et <b>${R.journal.length} action(s)</b> du journal concernent « ${esc(R.nom)} ».</div>
+            ${R.rows.length?`<table class="rg-tab"><tr><th>Date</th><th>Demande</th><th>Demandeur</th><th>Pour qui</th></tr>${R.rows.slice(0,6).map(r=>`<tr><td>${esc(r.date||'')}</td><td>${esc(r.descr||'')}</td><td>${esc(r.demandeur||'')}</td><td>${esc(r.pour_qui||'')}</td></tr>`).join('')}${R.rows.length>6?`<tr><td colspan="4" style="color:#8b93a1;">+ ${R.rows.length-6} autre(s)</td></tr>`:''}</table>`:''}
+            <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;">
+                <button data-rg="export" class="btn-sm" style="padding:9px 14px;">${icon('download',14)} Exporter ses données (Excel)</button>
+                ${R.rows.length||R.journal.length?(state.rgConfirm?`<button data-rg="anon-ok" class="btn-sm" style="padding:9px 14px;background:#b91c1c;color:#fff;border-color:#b91c1c;">Confirmer l’anonymisation (définitif)</button><button data-rg="anon-non" class="btn-sm" style="padding:9px 14px;">Annuler</button>`:`<button data-rg="anon" class="btn-sm" style="padding:9px 14px;color:#b91c1c;">Anonymiser ses données</button>`):''}
+            </div>
+            <div style="font-size:12px;color:#8b93a1;margin-top:8px;">L’anonymisation remplace son nom par « Anonymisé » et efface son téléphone ; les prix restent pour la comptabilité. Pensez aussi à retirer la personne de Réglages › Équipe et, si elle avait un compte, dans Supabase › Authentication › Users.</div>
+        </div>`):''}
+    </div>`;
+}
+function rgpdHtml(){
+    const C=rgpdCfg(), soc=C.entreprise?esc(C.entreprise):'l’entreprise', nom=esc(marqueNom());
+    const contact=C.contact?esc(C.contact):'le responsable de site (administrateur de l’application)';
+    return `<div class="rg-bg" data-rgpd-fond><div class="rgp" role="dialog" aria-label="Données personnelles"><button class="rg-x" data-rgpd-x title="Fermer">${icon('x',16)}</button>
+        <h2>Données personnelles</h2><div style="color:#6b7280;">Comment « ${nom} » utilise vos informations</div>
+        <h3>Qui est responsable ?</h3><p>${soc}, pour l’organisation interne de ses services. Contact : ${contact}.${C.dpo?` Délégué à la protection des données : ${esc(C.dpo)}.`:''}</p>
+        <h3>À quoi servent vos données ?</h3><p>À organiser les repas, taxis, coursiers, hôtels et commandes demandés pour la direction, à en suivre l’avancement et à les facturer.</p>
+        <h3>Quelles données ?</h3><ul>
+            <li>Assistantes et administrateurs : nom, email professionnel, dates de connexion (180 derniers jours), actions effectuées (journal).</li>
+            <li>Personnes concernées par une demande : nom, et selon la prestation : lieu, adresses de départ et d’arrivée, numéro de vol, téléphone, nombre de personnes, commentaires.</li></ul>
+        <p style="background:#f8fafc;border-radius:8px;padding:8px 10px;margin-top:6px;">Merci de n’indiquer que le nécessaire : pour un repas, écrivez « végétarien » ou « sans gluten » sans en préciser la raison (santé, religion…).</p>
+        <h3>Sur quelle base ?</h3><p>L’intérêt légitime de ${soc} à organiser ses services (article 6.1.f du RGPD).</p>
+        <h3>Qui peut les voir ?</h3><ul>
+            <li>Les administrateurs de l’application ; chaque assistante voit ses propres demandes.</li>
+            <li>Le prestataire choisi, pour les seules informations nécessaires à la prestation.</li>
+            <li>Nos sous-traitants techniques : Supabase (base de données), Brevo (emails et invitations d’agenda), EmailJS (emails de confirmation), GitHub Pages (hébergement de l’application, sans les données).</li></ul>
+        <h3>Combien de temps ?</h3><p>${+C.ans?`${C.ans} an${C.ans>1?'s':''} après la date de la prestation. Ensuite, les noms et coordonnées sont effacés ; seuls restent le type, la date, le prestataire et le prix, pour la comptabilité.`:'Le temps nécessaire à l’organisation et à la comptabilité des prestations.'} Les demandes supprimées restent ${TRASH_DAYS} jours dans la corbeille.</p>
+        <h3>Vos droits</h3><p>Vous pouvez demander à accéder à vos données, les corriger, les effacer, vous opposer à leur utilisation ou en limiter l’usage, en écrivant à ${contact}. Si vous estimez que vos droits ne sont pas respectés, vous pouvez saisir la CNIL (cnil.fr).</p>
+        <h3>Cookies</h3><p>Aucun cookie publicitaire ni mesure d’audience. L’application garde seulement sur votre appareil votre connexion et vos préférences d’affichage.</p>
+        <h3>Sécurité</h3><p>Accès par compte et mot de passe, échanges chiffrés (HTTPS), règles d’accès par personne, sauvegardes régulières.</p>
+        <div style="text-align:right;margin-top:16px;"><button class="btn-primary" data-rgpd-x style="padding:10px 20px;">Fermer</button></div>
+    </div></div>`;
+}
+document.addEventListener('click',e=>{
+    if(e.target.closest('[data-rgpd]')){ setState({rgpd:true}); return; }
+    if(e.target.closest('[data-rgpd-x]')||(e.target.matches&&e.target.matches('[data-rgpd-fond]'))){ setState({rgpd:false}); return; }
+    const b=e.target.closest('[data-rg]'); if(!b) return; const a=b.getAttribute('data-rg'), v=id=>(document.getElementById(id)||{}).value||'';
+    if(a==='infos') rgpdEnregistrer({entreprise:v('rgEnt').trim(),contact:v('rgCon').trim(),dpo:v('rgDpo').trim()}).then(()=>showToast('✓ Informations RGPD enregistrées')).catch(err=>showToast(`${icon('alert',13)} ${esc(err.message)}`));
+    else if(a==='ans'){ const ans=+v('rgAns'); if(!ans){ rgpdEnregistrer({ans:0}).then(()=>setState({rgPurgeApercu:null})).then(()=>showToast('Conservation sans limite')); return; }
+        rgpdToutes().then(rows=>setState({rgPurgeApercu:{ans,n:rgpdAnciennes(rows,ans).length,lim:rgpdLimite(ans).toLocaleDateString('fr-FR')}})).catch(err=>showToast(`${icon('alert',13)} ${esc(err.message)}`)); }
+    else if(a==='ans-ok'){ const ans=state.rgPurgeApercu.ans; rgpdEnregistrer({ans}).then(()=>purgeAnciennes(true)).then(n=>{ state.rgPurgeApercu=null; showToast(`✓ Conservation ${ans} an${ans>1?'s':''} activée · ${n} demande(s) anonymisée(s)`); }).catch(err=>showToast(`${icon('alert',13)} ${esc(err.message)}`)); }
+    else if(a==='ans-non') setState({rgPurgeApercu:null});
+    else if(a==='purge') purgeAnciennes(true).then(n=>showToast(`✓ Vérification faite · ${n} demande(s) anonymisée(s)`)).catch(err=>showToast(`${icon('alert',13)} ${esc(err.message)}`));
+    else if(a==='cherche') rgpdChercher(v('rgPers'));
+    else if(a==='export') rgpdExporter();
+    else if(a==='anon') setState({rgConfirm:true});
+    else if(a==='anon-non') setState({rgConfirm:false});
+    else if(a==='anon-ok') rgpdAnonymiser();
+});
+document.addEventListener('keydown',e=>{ if(e.key==='Escape'&&state.rgpd) setState({rgpd:false}); if(e.key==='Enter'&&e.target&&e.target.id==='rgPers') rgpdChercher(e.target.value); });
 async function telechargerSauvegarde(){
     if(!isAdmin()) return; await sbPret();
     try{
@@ -5673,7 +5835,7 @@ function renderSettings(){
         ['securite','lock','Sécurité',state.secCheck?(state.secCheck.ok?'Protections actives':'À installer'):'Vérifier les protections'],
         ['recurrents','calendar','Demandes récurrentes',`${((state.rec&&state.rec.regles)||[]).filter(r=>r.actif).length} active(s)`],
         ['apparence','sliders','Apparence','Nom, logo, couleurs'],
-        ['donnees','grid','Données','Corbeille'],
+        ['donnees','grid','Données & RGPD','Corbeille, conservation, droits'],
     ];
     const cur=TABS.find(t=>t[0]===tab)||TABS[0];
     let body='';
@@ -5783,7 +5945,7 @@ function renderSettings(){
     ${section(secs.slice(1))}
     
 `;
-    else body=`
+    else body=rgpdReglagesHtml(secHead)+`
     <div class="settings-section">
         ${secHead("trash","Corbeille",`${(state.deletedData||[]).length} élément${(state.deletedData||[]).length>1?'s':''} · effacés définitivement après ${TRASH_DAYS} jours`)}
         <button data-goto-trash style="width:100%;background:#fff;border:1.5px solid var(--border);border-radius:12px;padding:11px;font-size:14px;font-weight:600;color:var(--ink);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;">Ouvrir la corbeille ${icon('arrow',14)}</button>
@@ -6598,7 +6760,7 @@ function attachEvents(){
     document.querySelectorAll('[data-mq-color]').forEach(el=>el.onchange=()=>{ mq()[el.getAttribute('data-mq-color')]=el.value; render(); });
     document.getElementById('mqLogo')?.addEventListener('change',e=>{ const file=e.target.files&&e.target.files[0]; if(!file) return; const rd=new FileReader();
         rd.onload=()=>{ const img=new Image(); img.onload=()=>{ const S=160, k=Math.min(1,S/Math.max(img.width,img.height)); const cv=document.createElement('canvas'); cv.width=Math.round(img.width*k); cv.height=Math.round(img.height*k); cv.getContext('2d').drawImage(img,0,0,cv.width,cv.height); mq().logo=cv.toDataURL('image/png'); render(); }; img.src=rd.result; }; rd.readAsDataURL(file); });
-    document.querySelectorAll('[data-mq-reset]').forEach(el=>el.onclick=()=>{ if(!confirm('Revenir au nom, au logo et aux couleurs d’origine pour tout le monde ?')) return; settings.marque={}; state.mqDraft=null; saveSettings(settings); showToast('✓ Style d’origine rétabli'); });
+    document.querySelectorAll('[data-mq-reset]').forEach(el=>el.onclick=()=>{ if(!confirm('Revenir au nom, au logo et aux couleurs d’origine pour tout le monde ?')) return; settings.marque=(settings.marque&&settings.marque.rgpd)?{rgpd:settings.marque.rgpd}:{}; state.mqDraft=null; saveSettings(settings); showToast('✓ Style d’origine rétabli'); });
     document.getElementById('mqSave')?.addEventListener('click',()=>{ const d=mq(); const M={...(settings.marque||{}),...d}; Object.keys(M).forEach(k=>{ if(!M[k]) delete M[k]; }); settings.marque=M; state.mqDraft=null; saveSettings(settings); showToast('✓ Apparence enregistrée pour tout le monde'); });
     // ── Fiches prestataires ──
     document.querySelectorAll('[data-presta-fiche]').forEach(el=>el.onclick=()=>setState({prestaEdit:el.getAttribute('data-presta-fiche')}));
@@ -6958,6 +7120,7 @@ if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.
         await Promise.all([loadTrash(), loadJournal(), loadStock(), loadParking(), loadNotifsVues(), /avonde/i.test(`${userEmail()} ${userName()}`)?loadMe():null]);
         if (lsGet('last_vue') === 'admin' || state.live) { state.vue = 'admin'; state.authed = true; state.adminTab = 'dashboard'; }
         setTimeout(()=>genRecurrences(true),1500);
+        setTimeout(()=>purgeAnciennes().then(n=>{ if(n){ showToast(`✓ RGPD : ${n} ancienne(s) demande(s) anonymisée(s)`); } }).catch(e=>console.error('RGPD',e)),6000);
     }
     state.loading = false;
     render();
