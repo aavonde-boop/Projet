@@ -550,7 +550,7 @@
         .sv-d b{ display:block; font-size:13.5px; font-weight:700; } .sv-d span{ display:block; font-size:12px; color:#64748b; margin-top:1px; }
         .sv-a{ white-space:nowrap; text-align:right; } .sv-b{ border:none; border-radius:8px; padding:7px 11px; font:700 12.5px var(--fb); color:#fff; background:var(--c); cursor:pointer; }
         .sv-px{ display:inline-flex; align-items:center; gap:4px; font-weight:700; color:#475569; } .sv-px input{ width:64px; border:1.5px solid #fcd34d; border-radius:7px; padding:6px 7px; text-align:right; font-size:12.5px; } .sv-ok{ padding:6px 9px; }
-        .sv-eur{ font-weight:800; color:#0f172a; } .sv-vide{ padding:18px 14px; font-size:12.5px; color:#94a3b8; text-align:center; }
+        .sv-px input.est{ color:#92400e; font-style:italic; background:#fffbeb; } .sv-est{ display:block; font-size:10.5px; color:#b45309; margin-top:3px; white-space:normal; text-align:right; max-width:150px; margin-left:auto; } .sv-eur{ font-weight:800; color:#0f172a; } .sv-vide{ padding:18px 14px; font-size:12.5px; color:#94a3b8; text-align:center; }
         .sv-lk{ display:block; width:100%; background:none; border:none; border-top:1px solid #f1f5f9; padding:10px; font:700 12.5px var(--fb); color:#2563eb; cursor:pointer; } .sv-note{ padding:9px; font-size:12px; color:#94a3b8; text-align:center; border-top:1px solid #f1f5f9; }
         .sv-tabs{ display:grid; grid-template-columns:repeat(4,1fr); gap:4px; background:#e9edf2; border-radius:10px; padding:4px; margin-bottom:12px; } .sv-tabs button{ border:none; border-radius:8px; padding:7px 2px; background:transparent; font:600 10.5px var(--fb); color:#475569; cursor:pointer; } .sv-tabs button b{ display:block; font-size:17px; color:var(--c); } .sv-tabs button.on{ background:#fff; box-shadow:0 1px 3px rgba(0,0,0,.08); }
         @media(max-width:1100px){ .sv-grid{ grid-template-columns:1fr 1fr; } .sv-ar{ display:none; } }
@@ -2582,9 +2582,30 @@ function renderSuiviAncien(m){
 /* ══ Suivi des demandes : 4 étapes côte à côte
    Nouvelles → Prises en charge → Prix à saisir → Terminées
    « Bien reçu » = prise en charge (accusé + commande) ; une demande n'est terminée qu'avec son prix. ══ */
+/* Prestation terminée : 1 h après l'heure prévue (30 min pour un taxi ou un coursier), le lendemain si pas d'heure, après le départ pour un hôtel */
+function prestationPassee(c){
+    const j=daysLeft(c.type==='hotel'&&c.dateDepart?c.dateDepart:c.date); if(j===null) return false;
+    if(j<0) return true; if(j>0||c.type==='hotel') return false;
+    const hp=heurePrevue(c); if(!hp) return false;
+    return Date.now()>hp.getTime()+((c.type==='taxi'||c.type==='coursier')?30:60)*60000;
+}
+/* Prix proposé pour une demande sans prix, d'après les commandes déjà payées */
+function prixSuggere(c){
+    const n=s=>sansAccent(String(s||'')).toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
+    const ref=(state.data||[]).filter(x=>x.type===c.type&&x.pris!=='Annulé'&&+x.prix>0&&!suiviOf(x).prixEst&&x.id!==c.id);
+    const moy=(f,parPers)=>{ const L=ref.filter(f); if(!L.length) return null; if(!parPers) return L.reduce((a,x)=>a+(+x.prix),0)/L.length; const k=L.reduce((a,x)=>a+Math.max(1,parseInt(x.nb)||1),0); return L.reduce((a,x)=>a+(+x.prix),0)/k; };
+    if(c.type==='repas'){ const nb=Math.max(1,parseInt(c.nb)||1), kd=x=>n(x.desc), kp=x=>n(x.presta);
+        for(const [f,base] of [[x=>kp(x)===kp(c)&&kd(x)===kd(c),'même restaurant, même repas'],[x=>kp(x)===kp(c),'même restaurant'],[x=>kd(x)===kd(c),'même type de repas'],[()=>true,'moyenne des repas']]){ const pp=moy(f,true); if(pp!=null) return {prix:Math.round(pp*nb),base:`${base} · ${Math.round(pp)} €/pers.`}; }
+        return null; }
+    if(c.type==='taxi'){ const lieu=s=>{ const x=n(s); return /orly/.test(x)?'orly':/(cdg|roissy|charles de gaulle)/.test(x)?'cdg':/beauvais/.test(x)?'beauvais':/gare de lyon/.test(x)?'gare de lyon':/gare du nord/.test(x)?'gare du nord':/montparnasse/.test(x)?'montparnasse':/lazare/.test(x)?'saint lazare':/gare de l est/.test(x)?'gare de l est':x.split(' ').slice(-2).join(' '); };
+        const traj=x=>[lieu(x.depart),lieu(x.arrivee)].sort().join('|');
+        for(const [f,base] of [[x=>traj(x)===traj(c),'même trajet'],[x=>lieu(x.arrivee)===lieu(c.arrivee)||lieu(x.depart)===lieu(c.arrivee),'même destination'],[x=>n(x.presta)===n(c.presta),'même compagnie'],[()=>true,'moyenne des taxis']]){ const p=moy(f); if(p!=null) return {prix:Math.round(p),base}; }
+        return null; }
+    const p=moy(x=>n(x.presta)===n(c.presta)); return p!=null?{prix:Math.round(p),base:'même prestataire'}:null;
+}
 function suiviCat(c){
     if(c.pris==='Annulé') return 'annulee';
-    const s=suiviOf(c), j=daysLeft(c.date), passe=j!==null&&j<0;
+    const s=suiviOf(c), passe=prestationPassee(c);
     if((c.pris==='En attente'||(c.pris==='En cours'&&estRecurrent(c)))&&!s.accuse&&!s.cmd&&!passe) return 'nouvelle';
     if(!passe) return 'prise';
     return (+c.prix>0)?'fin':'prix';
@@ -2628,7 +2649,7 @@ function renderSuivi(m){
     const col=([k,lbl,sub,coul],i)=>{ const Lk=L[k];
         const thx=k==='nouvelle'?'<th></th>':k==='prix'?'<th>Prix</th>':k==='fin'?'<th style="text-align:right">Prix</th>':'';
         const rows=k==='nouvelle'?Lk.map(c=>ligne(c,`<button class="sv-b" data-suivi-act="pec" data-id="${c.id}">Bien reçu ✓</button>`))
-            :k==='prix'?Lk.map(c=>ligne(c,`<span class="sv-px"><input id="px-${c.id}" type="text" inputmode="decimal" placeholder="0,00" data-px-id="${c.id}"> €<button class="sv-b sv-ok" data-suivi-act="pxrow" data-id="${c.id}" title="Enregistrer">✓</button></span>`))
+            :k==='prix'?Lk.map(c=>{ const e=prixSuggere(c); return ligne(c,`<span class="sv-px"><input id="px-${c.id}" type="text" inputmode="decimal" placeholder="0,00" value="${e?String(e.prix).replace('.',','):''}" data-px-id="${c.id}" class="${e?'est':''}" title="${e?'Estimation : '+esc(e.base)+' · corrigez avec la facture':''}"> €<button class="sv-b sv-ok" data-suivi-act="pxrow" data-id="${c.id}" title="Enregistrer">✓</button></span>${e?`<small class="sv-est">estimé · ${esc(e.base)}</small>`:''}`); })
             :k==='fin'?Lk.slice(0,8).map(c=>ligne(c,`<span class="sv-eur">${$m(+c.prix||0)}</span>`))
             :Lk.map(c=>ligne(c));
         const fin=k==='fin'?`<button class="sv-lk" data-nav='{"adminTab":"activite"}'>Base des demandes →</button>`:k==='prise'&&recCaches?`<div class="sv-note">🔁 + ${recCaches} repas récurrent${recCaches>1?'s':''} les jours suivants</div>`:'';
@@ -2788,7 +2809,7 @@ function ficheActions(d){
         const l1=pec?ligne(1,'Prise en charge',s.cmd?`Le ${fd(s.cmd)}${s.cmdBy&&s.cmdBy!=='Admin'?' par '+esc(s.cmdBy):''}${s.accuse?' · accusé envoyé':''}`:(s.accuse?`Accusé envoyé le ${fd(s.accuse)}`:'Saisie directe'),'',true)
             : ligne(1,'Prise en charge',peutAccuser(d)?`${esc(demNom(d))} reçoit l’accusé de réception`:'Aucun email (saisie directe ou pas d’email)',B('pec','Bien reçu ✓','g'),false);
         const pv=+d.prix>0?d.prix.toLocaleString('fr-FR',{minimumFractionDigits:2,maximumFractionDigits:2}):'';
-        const l2=ligne(2,'Prix',pv?`${pv} €${d.paie?' · '+esc(d.paie):''} · demande ${cat==='fin'?'clôturée':'à clôturer après la prestation'}`:'Obligatoire pour clôturer la demande',`<span class="fa-px"><input id="fichePrix" type="text" inputmode="decimal" value="${pv}" placeholder="0,00"> €</span>${B('prix','Enregistrer','p')}`,!!pv);
+        const l2=ligne(2,'Prix',pv?`${pv} €${d.paie?' · '+esc(d.paie):''} · demande ${cat==='fin'?'clôturée':'à clôturer après la prestation'}`:'Obligatoire pour clôturer la demande',`<span class="fa-px"><input id="fichePrix" type="text" inputmode="decimal" value="${pv||(()=>{ const e=prixSuggere(d); return e?String(e.prix):''; })()}" placeholder="0,00"> €</span>${B('prix','Enregistrer','p')}${!pv&&prixSuggere(d)?`<small style="display:block;width:100%;font-size:11px;color:#b45309;">Montant estimé (${esc(prixSuggere(d).base)}) : corrigez avec la facture.</small>`:''}`,!!pv);
         const l3=ligne(3,'Annuler',`${mailsOn('annulation')&&!s.direct?`${esc(demNom(d))} reçoit l’email d’annulation`:'Aucun email envoyé'} · prix remis à 0 €`,B('annuler','Annuler la demande','r'),false);
         actions=l1+l2+l3;
     }
