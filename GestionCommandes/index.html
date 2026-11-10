@@ -536,6 +536,8 @@
         .sv-top{ display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:18px; } .sv-ttl{ font:700 22px var(--ft); letter-spacing:-.01em; } .sv-sub{ font-size:13px; color:#64748b; margin-top:3px; }
         .sv-tools{ display:flex; gap:6px; align-items:center; flex-wrap:wrap; } .sv-srch{ width:220px; font-size:13px; padding:8px 12px; border-radius:9px; border:1px solid #e2e8f0; background:#fff; }
         .sv-chip{ font-size:12.5px; font-weight:600; padding:7px 11px; border-radius:9px; border:1px solid #e2e8f0; background:#fff; color:#475569; cursor:pointer; } .sv-chip.on{ background:#0f172a; border-color:#0f172a; color:#fff; }
+        .sv-add{ position:relative; margin-left:auto; } .sv-plus{ width:34px; height:34px; border-radius:10px; border:none; background:var(--c); color:#fff; display:flex; align-items:center; justify-content:center; cursor:pointer; } .sv-plus:hover{ filter:brightness(1.1); }
+        .sv-add .drop-menu{ right:0; left:auto; top:40px; z-index:30; }
         .sv-grid{ display:grid; grid-template-columns:1.15fr 1fr 1.15fr .95fr; gap:22px; align-items:start; }
         .sv-hd{ position:relative; display:flex; align-items:center; gap:12px; background:#fff; border:1px solid #e2e8f0; border-top:4px solid var(--c); border-radius:14px; padding:12px 14px; margin-bottom:12px; }
         .sv-hd b{ display:block; font-size:15px; color:#0f172a; } .sv-hd span:not(.sv-n){ font-size:12px; color:#64748b; }
@@ -2282,7 +2284,7 @@ function renderAdminView(m){
             <div class="side-grp"><h6 class="side-lbl">Analyses</h6>
                 ${item('stats','chart','Statistiques')}</div>
         </div>
-        <div style="padding:6px 10px;border-top:1px solid rgba(255,255,255,.06);">${item('settings','sliders','Réglages')}</div>
+        <div style="padding:6px 10px;border-top:1px solid rgba(255,255,255,.06);"><button data-live-open class="side-it" title="Écran live (plein écran, pour un PC ou une TV)">${icon('dashboard',17)}<span class="side-lbl">Écran live</span></button>${item('settings','sliders','Réglages')}</div>
         <div class="side-user">
             <span class="side-av">${esc(init||'AD')}</span>
             <div class="side-lbl" style="min-width:0;flex:1;"><b>${esc(nom)}</b><span>${esc(monRole())}</span></div>
@@ -2294,15 +2296,7 @@ function renderAdminView(m){
             <button data-back-home class="btn-sm" title="Ouvrir la page de demande des assistantes">${icon('home',15)} Page de demande</button>
             <div class="crumb">${state.adminTab==='me'||state.adminTab==='me-memo'?'Personnel 🔒':String(state.adminTab).startsWith('me')?'Bâtiment 🔒':['suivi','calendrier','activite','stock'].includes(state.adminTab)?'Commandes':state.adminTab==='parking'?'Site':['stats','analyse'].includes(state.adminTab)?'Analyses':'Administration'} / <b>${state.saisieDirecte?'Saisie directe':TITRES[state.adminTab]||''}</b></div>
             <div style="margin-left:auto;display:flex;gap:8px;align-items:center;">
-                <button data-live-open class="btn-sm" title="Écran live (plein écran, pour un PC ou une TV)">${icon('dashboard',15)} Écran live</button>
-                <button data-admin-tab="notifs" class="nt-bell ${state.adminTab==='notifs'?'on':''} ${ntCount()?'has':''}" title="Notifications">${icon('bell',17)}<span>Notifications</span>${ntCount()?`<span class="nt-badge">${ntCount()}</span>`:''}</button>
-                <div style="position:relative;display:inline-block;">
-                    <button id="fabAdminMain" class="btn-sm pri" title="Ajouter une commande directement (aucun email)">${icon('plus',13)} Saisie directe</button>
-                    <div id="fabAdminMenu" class="drop-menu" style="display:none;">
-                        <div class="drop-note"><b>Saisie directe</b>La commande est ajoutée à la base des demandes et au suivi, déjà validée. Aucun email n’est envoyé.</div>
-                        ${[["repas","utensils","Repas"],["taxi","car","Taxi"],["commande","box","Commande"],["hotel","bed","Hôtel"]].map(([t,ic,l])=>`<button data-saisie-type="${t}">${icon(ic,15)} ${l}</button>`).join('')}
-                    </div>
-                </div>
+                <button data-admin-tab="notifs" class="nt-bell ${state.adminTab==='notifs'?'on':''} ${ntCount()?'has':''}" title="Notifications" aria-label="Notifications">${icon('bell',18)}${ntCount()?`<span class="nt-badge">${ntCount()}</span>`:''}</button>
             </div>
         </header>
         ${state.adminTab==='activite'?`<div class="subtabs">${activiteSubTabs}</div>`:''}
@@ -2636,7 +2630,9 @@ function renderSuivi(m){
         const fin=k==='fin'?`<button class="sv-lk" data-nav='{"adminTab":"activite"}'>Base des demandes →</button>`:k==='prise'&&recCaches?`<div class="sv-note">🔁 + ${recCaches} repas récurrent${recCaches>1?'s':''} les jours suivants</div>`:'';
         const vides={nouvelle:'Aucune nouvelle demande',prise:'Aucune prestation planifiée',prix:'Toutes les factures sont saisies',fin:'Aucune demande clôturée'};
         return `<div class="sv-col" style="--c:${coul}">
-            <div class="sv-hd"><span class="sv-n">${Lk.length}</span><div><b>${lbl}</b><span>${sub}</span></div>${i<3&&!m?'<i class="sv-ar">›</i>':''}</div>
+            <div class="sv-hd"><span class="sv-n">${Lk.length}</span><div><b>${lbl}</b><span>${sub}</span></div>${k==='nouvelle'?`<div class="sv-add"><button id="fabAdminMain" class="sv-plus" title="Saisie directe : ajouter une demande (aucun email)" aria-label="Saisie directe">${icon('plus',16)}</button>
+                <div id="fabAdminMenu" class="drop-menu" style="display:none;"><div class="drop-note"><b>Saisie directe</b>La demande est ajoutée et prise en charge directement. Aucun email n’est envoyé.</div>
+                ${[["repas","utensils","Repas"],["taxi","car","Taxi"],["commande","box","Commande"],["hotel","bed","Hôtel"]].map(([t,ic,l])=>`<button data-saisie-type="${t}">${icon(ic,15)} ${l}</button>`).join('')}</div></div>`:''}${i<3&&!m?'<i class="sv-ar">›</i>':''}</div>
             <div class="sv-t">${Lk.length?`<table><tr><th>Quand</th><th>Demande</th>${thx}</tr>${rows.join('')}</table>`:vide(vides[k])}${fin}</div></div>`; };
     const cur=state.suiviCat&&L[state.suiviCat]?state.suiviCat:(L.nouvelle.length?'nouvelle':L.prix.length?'prix':'prise');
     return `<div>
