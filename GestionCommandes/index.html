@@ -554,6 +554,10 @@
         .sv-lk{ display:block; width:100%; background:none; border:none; border-top:1px solid #f1f5f9; padding:10px; font:700 12.5px var(--fb); color:#2563eb; cursor:pointer; } .sv-note{ padding:9px; font-size:12px; color:#94a3b8; text-align:center; border-top:1px solid #f1f5f9; }
         .sv-tabs{ display:grid; grid-template-columns:repeat(4,1fr); gap:4px; background:#e9edf2; border-radius:10px; padding:4px; margin-bottom:12px; } .sv-tabs button{ border:none; border-radius:8px; padding:7px 2px; background:transparent; font:600 10.5px var(--fb); color:#475569; cursor:pointer; } .sv-tabs button b{ display:block; font-size:17px; color:var(--c); } .sv-tabs button.on{ background:#fff; box-shadow:0 1px 3px rgba(0,0,0,.08); }
         @media(max-width:1100px){ .sv-grid{ grid-template-columns:1fr 1fr; } .sv-ar{ display:none; } }
+        .sec-l{ display:flex; gap:12px; align-items:flex-start; padding:10px 0; border-bottom:1px solid #f1f5f9; } .sec-l > span{ width:24px; height:24px; border-radius:50%; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:12px; background:#e5e7eb; color:#64748b; }
+        .sec-l.ok > span{ background:#dcfce7; color:#15803d; } .sec-l.ko > span{ background:#fee2e2; color:#b91c1c; } .sec-l b{ display:block; font-size:14px; } .sec-l small{ display:block; font-size:12.5px; color:#64748b; margin-top:1px; }
+        .sec-bilan{ border-radius:10px; padding:12px 14px; font-weight:700; font-size:14px; margin-bottom:6px; } .sec-bilan small{ display:block; font-weight:500; font-size:12px; margin-top:2px; opacity:.8; } .sec-bilan.ok{ background:#ecfdf5; color:#047857; } .sec-bilan.ko{ background:#fef2f2; color:#b91c1c; }
+        .sec-how{ margin-top:14px; background:#f8fafc; border:1px solid var(--border); border-radius:10px; padding:12px 14px; font-size:13.5px; line-height:1.55; } .sec-how ol{ margin:6px 0 4px 18px; padding:0; } .sec-how small{ color:#64748b; }
         .rec-ed{ display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; padding:12px 14px 16px; background:#f8fafc; border:1px solid var(--border); border-radius:10px; margin:-4px 0 10px; }
         .rec-ed label span,.rec-l{ display:block; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:#8b93a1; margin-bottom:4px; }
         .fi-pa{ grid-column:1/-1; } .fi-pa > span{ display:block; font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.05em; color:#8b93a1; margin-bottom:4px; } .fi-pa > div{ display:flex; gap:8px; } .fi-pa input{ flex:1; } .fi-pa small{ display:block; font-size:11.5px; color:#8b93a1; margin-top:4px; }
@@ -3734,6 +3738,46 @@ async function majRecurrence(r,patch){
         state.data=state.data.map(x=>x.id===c.id?{...x,...p}:x); await dbUpdate(c.id,p); n++; }
     showToast(`✓ Récurrence modifiée${n?` · ${n} jour${n>1?'s':''} déjà créé${n>1?'s':''} mis à jour`:''}`); state.recEdit=null; render();
 }
+/* ══ Sécurité : vérification en direct des protections Supabase ══ */
+async function verifierSecurite(){
+    const anon=path=>fetch(`${SB_URL}/rest/v1/${path}`,{headers:SB_HDR}).then(r=>r.ok?r.json():[]).catch(()=>null);
+    const res={};
+    try{ const x=await sbRpc('gs_est_admin',{}); res.regles=!x.absente; res.admin=x.val===true; }catch(e){ res.regles=false; }
+    const c=await anon('commandes?select=id&limit=1'); res.demandes=Array.isArray(c)&&c.length===0;
+    const j=await anon('parametres?select=cle&cle=in.(journal,suivi,connexions,recurrences)'); res.params=Array.isArray(j)&&j.length===0;
+    const e=await anon('parametres?select=cle&cle=in.(emails,adminEmails)'); res.emails=Array.isArray(e)&&(e.length===0||!settings.loginObligatoire);
+    res.login=!!settings.loginObligatoire; res.admins=(settings.adminEmails||[]).length>0;
+    res.ok=res.regles&&res.demandes&&res.params&&res.emails&&res.login&&res.admins; res.quand=new Date();
+    state.secCheck=res; render();
+}
+function renderReglagesSecurite(secHead){
+    const S=state.secCheck; if(!S&&!state.secRun){ state.secRun=true; verifierSecurite().finally(()=>{ state.secRun=false; }); }
+    const L=(ok,titre,detail)=>`<div class="sec-l ${ok===undefined?'':ok?'ok':'ko'}"><span>${ok===undefined?'…':ok?'✓':'✕'}</span><div><b>${titre}</b><small>${detail}</small></div></div>`;
+    const lien='https://raw.githubusercontent.com/aavonde-boop/Projet/main/supabase/securite-acces.sql';
+    return `<div class="settings-section">${secHead('lock','Sécurité des données','Vérification en direct, depuis ce poste, de ce qu’une personne sans compte peut voir.')}
+        ${S?`<div class="sec-bilan ${S.ok?'ok':'ko'}">${S.ok?'🔒 Toutes les protections sont actives':'⚠️ Des protections manquent : voir ci-dessous'}<small>Vérifié à ${S.quand.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})}</small></div>`:''}
+        ${L(S&&S.regles,'Règles d’accès installées sur Supabase',S&&!S.regles?'Le script de sécurité n’a pas encore été lancé (étapes ci-dessous).':'Chaque personne n’accède qu’à ce qui la concerne.')}
+        ${L(S&&S.demandes,'Demandes invisibles sans connexion',S&&!S.demandes?'Quelqu’un qui a le lien de l’appli peut lire toutes les demandes.':'Sans compte, aucune demande n’est lisible.')}
+        ${L(S&&S.params,'Journal, suivi et statistiques protégés',S&&!S.params?'Lisibles sans connexion.':'Réservés à Julia et vous.')}
+        ${L(S&&S.emails,'Adresses email de l’équipe protégées',S&&!S.emails?'Lisibles sans connexion.':'Visibles seulement une fois connecté.')}
+        ${L(S&&S.login,'Connexion obligatoire pour les assistantes',S&&!S.login?'À activer dans Réglages › Équipe & accès.':'Chaque assistante se connecte avec son compte.')}
+        ${L(S&&S.admins,'Administrateurs définis',S&&!S.admins?'Aucun administrateur : tout compte connecté est administrateur.':`${(settings.adminEmails||[]).length} administrateur(s) : ${esc((settings.adminEmails||[]).join(', '))}`)}
+        <div style="display:flex;gap:8px;margin-top:12px;"><button class="btn-sm" data-sec-verif>↻ Vérifier à nouveau</button></div>
+        ${S&&!S.ok?`<div class="sec-how"><b>Installer les protections (2 minutes, une seule fois)</b><ol>
+            <li>Sur votre PC, ouvrez <a href="${lien}" target="_blank" rel="noopener">ce lien</a> et copiez tout le texte (Ctrl + A, Ctrl + C).</li>
+            <li>Dans Supabase : <b>SQL Editor › New query</b>, collez, puis <b>Run</b>. Le message « OK : accès sécurisés » doit s’afficher.</li>
+            <li>Revenez ici et cliquez « Vérifier à nouveau ».</li></ol>
+            <small>Le script peut être relancé sans risque. Il ne supprime aucune donnée.</small></div>`:''}
+    </div>
+    <div class="settings-section">${secHead('shield','Côté Supabase, à vérifier une fois','Réglages du compte Supabase (Authentication › Sign In / Providers).')}
+        <div class="sec-how" style="margin-top:0;"><ol>
+            <li><b>Confirm email</b> activé : personne ne peut se créer un compte avec l’adresse de quelqu’un d’autre.</li>
+            <li><b>Leaked password protection</b> activé si disponible : refuse les mots de passe déjà piratés.</li>
+            <li>Ne communiquez jamais la clé <b>service_role</b> : elle donne tous les droits. La clé « anon » présente dans l’appli, elle, est faite pour être publique.</li></ol></div>
+    </div>`;
+}
+document.addEventListener('click',e=>{ if(e.target.closest('[data-sec-verif]')){ state.secCheck=null; render(); } });
+
 function renderReglagesRecurrences(secHead){
     const R=(state.rec&&state.rec.regles)||[]; const J=['dim.','lun.','mar.','mer.','jeu.','ven.','sam.'];
     if(!state.rec){ loadRecurrences().then(render); return '<div class="empty-note" style="padding:30px;">Chargement…</div>'; }
@@ -5566,6 +5610,7 @@ function renderSettings(){
         ['equipe','shield','Équipe & accès',`${adminList().length} admin${adminList().length>1?'s':''} · ${settings.assistantes.length} assistantes · ${(settings.directeurs||[]).length} directeurs`],
         ['prestataires','box','Prestataires',`${['prestatairesRepas','prestatairesTaxi','prestatairesCommande','prestatairesHotel'].reduce((n,k)=>n+(settings[k]||[]).length,0)} entrées`],
         ['emails','mail','Emails',`${['alerte','confirmation','copie','annulation'].filter(mailsOn).length} type${['alerte','confirmation','copie','annulation'].filter(mailsOn).length>1?'s':''} activé${['alerte','confirmation','copie','annulation'].filter(mailsOn).length>1?'s':''}`],
+        ['securite','lock','Sécurité',state.secCheck?(state.secCheck.ok?'Protections actives':'À installer'):'Vérifier les protections'],
         ['recurrents','calendar','Demandes récurrentes',`${((state.rec&&state.rec.regles)||[]).filter(r=>r.actif).length} active(s)`],
         ['apparence','sliders','Apparence','Nom, logo, couleurs'],
         ['donnees','grid','Données','Corbeille'],
@@ -5671,6 +5716,7 @@ function renderSettings(){
         <button data-agenda-resync style="width:100%;background:#fff;border:1.5px solid var(--border);border-radius:12px;padding:11px;font-size:14px;font-weight:600;color:var(--ink);cursor:pointer;">${icon('calendar',14)} Remettre l’agenda à jour</button>
     </div>`;
     else if(cur[0]==='recurrents') body=renderReglagesRecurrences(secHead);
+    else if(cur[0]==='securite') body=renderReglagesSecurite(secHead);
     else if(cur[0]==='apparence') body=renderApparence();
     else if(cur[0]==='prestataires') body=`
     ${renderPrestaModal()}

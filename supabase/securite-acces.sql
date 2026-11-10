@@ -8,6 +8,7 @@
 --   • assistantes connectées                  : lisent les demandes, agissent via des fonctions contrôlées
 --   • visiteurs sans compte (page publique)   : déposent / suivent / annulent une demande avec son code,
 --                                               lisent seulement les listes publiques (assistantes, prestataires…)
+--   • adresses email de l'équipe              : seulement pour les personnes connectées
 -- Le serveur (fonctions, déclencheurs) n'est pas concerné.
 
 -- ── Outils ────────────────────────────────────────────────────────────
@@ -47,6 +48,11 @@ language sql stable security definer set search_path = public as $$
     where lower(trim(e.value)) = public.gs_email()))
 $$;
 
+create or replace function public.gs_login_obligatoire() returns boolean
+language sql stable security definer set search_path = public as $$
+  select coalesce(public.gs_param('loginObligatoire')::text, 'false') in ('true', '"true"')
+$$;
+
 -- ── Règles d'accès ────────────────────────────────────────────────────
 alter table public.commandes  enable row level security;
 alter table public.parametres enable row level security;
@@ -64,7 +70,12 @@ create policy gs_commandes_equipe_lecture on public.commandes for select to auth
 
 create policy gs_parametres_publics on public.parametres for select to anon, authenticated
   using (cle in ('assistantes','directeurs','prestatairesRepas','typesRepas','prestatairesTaxi','prestatairesCommande',
-                 'prestatairesHotel','emails','adminEmails','yoozMap','loginObligatoire','prestaInfo','marque','equipe','mails'));
+                 'prestatairesHotel','yoozMap','loginObligatoire','prestaInfo','marque','equipe','mails'));
+-- adresses email de l'équipe : seulement pour les personnes connectées
+-- (ou pour la page publique si la connexion n'est pas obligatoire, pour l'email de confirmation)
+create policy gs_parametres_emails on public.parametres for select to anon, authenticated
+  using (cle in ('emails','adminEmails') and (public.gs_email() <> ''
+         or not (select public.gs_login_obligatoire())));
 create policy gs_parametres_equipe_suivi on public.parametres for select to authenticated
   using (cle = 'suivi' and (select public.gs_est_equipe()));
 create policy gs_parametres_admin on public.parametres for all to authenticated
@@ -172,7 +183,7 @@ begin
 end $$;
 
 revoke all on function public.gs_param(text), public.gs_param_ecrire(text, jsonb) from public, anon, authenticated;
-grant execute on function public.gs_email(), public.gs_est_admin(), public.gs_est_equipe(),
+grant execute on function public.gs_email(), public.gs_est_admin(), public.gs_est_equipe(), public.gs_login_obligatoire(),
   public.gs_nouvelle_demande(jsonb), public.gs_suivre(text), public.gs_annuler(text, text),
   public.gs_suivi_maj(text, jsonb), public.gs_journal(jsonb), public.gs_connexion(text), public.gs_via(text)
   to anon, authenticated;
