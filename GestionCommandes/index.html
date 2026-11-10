@@ -3792,7 +3792,8 @@ function renderReglagesSecurite(secHead){
     </div>
     <div class="settings-section">${secHead('shield','Côté Supabase, à vérifier une fois','Réglages du compte Supabase (Authentication › Sign In / Providers).')}
         <div class="sec-how" style="margin-top:0;"><ol>
-            <li><b>Confirm email</b> activé : personne ne peut se créer un compte avec l’adresse de quelqu’un d’autre.</li>
+            <li><b>Confirm email</b> doit rester <b>désactivé</b> : c’est ce qui permet aux assistantes de créer leur compte à leur première connexion. Seules les adresses listées dans Réglages › Équipe ont accès aux demandes.</li>
+            <li>Un compte qui ne devrait pas exister (départ, erreur) : supprimez-le dans <b>Authentication › Users</b>.</li>
             <li><b>Leaked password protection</b> activé si disponible : refuse les mots de passe déjà piratés.</li>
             <li>Ne communiquez jamais la clé <b>service_role</b> : elle donne tous les droits. La clé « anon » présente dans l’appli, elle, est faite pour être publique.</li></ol></div>
     </div>`;
