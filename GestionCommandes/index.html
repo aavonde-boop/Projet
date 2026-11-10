@@ -552,6 +552,9 @@
         .sv-lk{ display:block; width:100%; background:none; border:none; border-top:1px solid #f1f5f9; padding:10px; font:700 12.5px var(--fb); color:#2563eb; cursor:pointer; } .sv-note{ padding:9px; font-size:12px; color:#94a3b8; text-align:center; border-top:1px solid #f1f5f9; }
         .sv-tabs{ display:grid; grid-template-columns:repeat(4,1fr); gap:4px; background:#e9edf2; border-radius:10px; padding:4px; margin-bottom:12px; } .sv-tabs button{ border:none; border-radius:8px; padding:7px 2px; background:transparent; font:600 10.5px var(--fb); color:#475569; cursor:pointer; } .sv-tabs button b{ display:block; font-size:17px; color:var(--c); } .sv-tabs button.on{ background:#fff; box-shadow:0 1px 3px rgba(0,0,0,.08); }
         @media(max-width:1100px){ .sv-grid{ grid-template-columns:1fr 1fr; } .sv-ar{ display:none; } }
+        .rec-ed{ display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; padding:12px 14px 16px; background:#f8fafc; border:1px solid var(--border); border-radius:10px; margin:-4px 0 10px; }
+        .rec-ed label span,.rec-l{ display:block; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:#8b93a1; margin-bottom:4px; }
+        .fi-pa{ grid-column:1/-1; } .fi-pa > span{ display:block; font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.05em; color:#8b93a1; margin-bottom:4px; } .fi-pa > div{ display:flex; gap:8px; } .fi-pa input{ flex:1; } .fi-pa small{ display:block; font-size:11.5px; color:#8b93a1; margin-top:4px; }
         .fi{ display:grid; grid-template-columns:repeat(auto-fill,minmax(190px,1fr)); gap:14px 20px; background:#fff; border:1px solid var(--border); border-radius:10px; padding:18px 20px; margin-bottom:2px; }
         .fi-f{ min-width:0; } .fi-f span,.fi-com span{ display:block; font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.05em; color:#8b93a1; margin-bottom:3px; }
         .fi-f b{ display:block; font-size:15px; font-weight:600; color:var(--ink); overflow-wrap:anywhere; } .fi-f b a{ color:var(--accent); }
@@ -2357,7 +2360,7 @@ function stagePill(st){ const S=STAGES[st]; return `<span style="display:inline-
 function estRecurrent(c){ return !!(suiviOf(c).recurrent||/^repas r[ée]current$/i.test(c.comment||'')); }
 function recPlusTard(c){ const j=daysLeft(c.date); return estRecurrent(c)&&j!==null&&j>1&&['avalider','acommander'].includes(stageOf(c)); }
 function countStages(list){ const n={avalider:0,acommander:0,commandee:0,fait:0,refusee:0}; (list||state.data).forEach(c=>{ if(!recPlusTard(c)) n[stageOf(c)]++; }); return n; }
-function aFaireCount(){ return state.data.filter(c=>{ const k=suiviCat(c); return k==='nouvelle'||k==='prix'; }).length; }
+function aFaireCount(){ return state.data.filter(c=>{ const k=suiviCat(c); return (k==='nouvelle'||k==='prix')&&!recPlusTard(c); }).length; }
 
 async function loadSuivi(){ try{ state.suivi=(await paramGet('suivi'))||{}; }catch(e){ console.error('Suivi load:',e); } }
 let _suiviChain=Promise.resolve();
@@ -2584,7 +2587,7 @@ function renderSuiviAncien(m){
 function suiviCat(c){
     if(c.pris==='Annulé') return 'annulee';
     const s=suiviOf(c), j=daysLeft(c.date), passe=j!==null&&j<0;
-    if(c.pris==='En attente'&&!s.accuse&&!s.cmd&&!passe) return 'nouvelle';
+    if((c.pris==='En attente'||(c.pris==='En cours'&&estRecurrent(c)))&&!s.accuse&&!s.cmd&&!passe) return 'nouvelle';
     if(!passe) return 'prise';
     return (+c.prix>0)?'fin':'prix';
 }
@@ -2612,7 +2615,7 @@ function renderSuivi(m){
     const lim=new Date(); lim.setHours(0,0,0,0); lim.setDate(lim.getDate()-14);
     const all=filtreSuivi(state.data), L={nouvelle:[],prise:[],prix:[],fin:[]};
     all.forEach(c=>{ const k=suiviCat(c); if(L[k]) L[k].push(c); });
-    const recCaches=L.prise.filter(recPlusTard).length; L.prise=L.prise.filter(c=>!recPlusTard(c));
+    const recCaches=[...L.prise,...L.nouvelle].filter(recPlusTard).length; L.prise=L.prise.filter(c=>!recPlusTard(c)); L.nouvelle=L.nouvelle.filter(c=>!recPlusTard(c));
     L.fin=L.fin.filter(c=>(parseDate(c.date)||0)>=lim).sort((a,b)=>byDateAsc(b,a));
     L.nouvelle.sort(byDateAsc); L.prise.sort(byDateAsc); L.prix.sort((a,b)=>byDateAsc(b,a));
     const now=new Date(), nAct=L.nouvelle.length+L.prix.length;
@@ -2803,7 +2806,7 @@ function ficheInfos(d){
     else f(T==='hotel'?'Ville':T==='commande'?'Livraison':'Lieu / salle',esc(d.lieu||''));
     if(T==='repas') f('Personnes',`${d.nb||1} pers.`);
     if(T==='hotel'&&d.nb) f('Personnes',`${d.nb}`);
-    f(T==='repas'?'Participants':'Pour qui',esc(d.pourQui||''));
+    if(!(T==='repas'&&(suiviCat(d)==='nouvelle'||suiviCat(d)==='prise'))) f(T==='repas'?'Participants':'Pour qui',esc(d.pourQui||''));
     f(T==='commande'?'Fournisseur':T==='hotel'?'Hôtel':'Prestataire',esc(d.presta||'')||'<i style="color:#b45309;font-style:normal;">à choisir</i>');
     if(T==='repas'||T==='commande') f(T==='repas'?'Type de repas':'Ce qui est commandé',esc(d.desc||''));
     f('Téléphone',d.tel?`<a href="tel:${esc(d.tel)}">${esc(d.tel)}</a>`:'');
@@ -2811,9 +2814,11 @@ function ficheInfos(d){
     f('Demandé par',demHtml(d));
     f('Code',d.code?`<span style="font-family:monospace;">${esc(d.code)}</span>`:'');
     if(+d.prix>0) f('Prix',`${d.prix.toLocaleString('fr-FR',{minimumFractionDigits:2,maximumFractionDigits:2})} €${d.paie?' · '+esc(d.paie):''}`);
+    const kc=suiviCat(d), editP=T==='repas'&&(kc==='nouvelle'||kc==='prise');
+    const partEd=editP?`<div class="fi-pa"><span>Participants${estRecurrent(d)?' du jour':''}</span><div><input id="fiPart" class="form-input" value="${esc(d.pourQui||'')}" placeholder="Noms séparés par des virgules"><button class="fa-b p" data-fi-part="${d.id}">Enregistrer</button></div><small>Le nombre de personnes se met à jour tout seul.</small></div>`:'';
     const com=d.comment?`<div class="fi-com"><span>Commentaire</span><div>${esc(d.comment).replace(/\n/g,'<br>')}</div></div>`:'';
     const ct=pContactHtml(d,{grand:true});
-    return `<div class="fi">${F.join('')}${com}${ct?`<div class="fi-ct">${ct}</div>`:''}</div>`;
+    return `<div class="fi">${F.join('')}${partEd}${com}${ct?`<div class="fi-ct">${ct}</div>`:''}</div>`;
 }
 
 document.addEventListener('click',async e=>{ const b=e.target.closest('[data-agenda-resync]'); if(!b||!isAdmin()) return;
@@ -3716,24 +3721,57 @@ async function genRecurrences(force){
         if(crees){ try{ logAction('Demandes récurrentes créées',[{id:null,desc:`${crees} repas récurrent${crees>1?'s':''}`}]); }catch(e){} render(); }
     }catch(e){ console.error('Récurrences :',e); } finally{ _recEnCours=false; }
 }
+document.addEventListener('click',async e=>{ const b=e.target.closest('[data-fi-part]'); if(!b) return;
+    const c=state.data.find(x=>String(x.id)===b.getAttribute('data-fi-part')); if(!c) return;
+    const v=(document.getElementById('fiPart')?.value||'').trim(); if(!v){ showToast(`${icon('alert',13)} Indiquez au moins un nom`); return; }
+    const nb=Math.max(compteNoms(v),1), patch={pourQui:v,nb:Math.max(nb,c.type==='repas'&&compteNoms(c.pourQui)<(+c.nb||0)?(+c.nb||0)-compteNoms(c.pourQui)+nb:nb)};
+    state.data=state.data.map(x=>x.id===c.id?{...x,...patch}:x); if(state.detail&&state.detail.id===c.id) state.detail={...state.detail,...patch};
+    await dbUpdate(c.id,patch); logAction('Participants',{...c,...patch},`${c.pourQui||'—'} → ${v}`); showToast(`✓ Participants enregistrés · ${patch.nb} pers.`); render();
+});
+/* Modifier une règle récurrente : s'applique aussi aux jours déjà créés et pas encore pris en charge */
+async function majRecurrence(r,patch){
+    const avant={...r}; Object.assign(r,patch); await paramSet('recurrences',state.rec);
+    const auj=isoDay(new Date()); let n=0, N=x=>sansAccent(String(x??'')).toUpperCase().trim();
+    for(const c of state.data.filter(c=>(suiviOf(c).recurrent===r.id||(estRecurrent(c)&&!suiviOf(c).recurrent&&N(c.presta)===N(avant.presta)))&&String(c.date).slice(0,10)>=auj&&suiviCat(c)==='nouvelle')){
+        const p={}; ['pourQui','presta','heure','lieu','nb','desc'].forEach(k=>{ if(N(c[k])===N(avant[k])&&N(r[k])!==N(avant[k])) p[k]=r[k]; }); // un jour modifié à la main garde ses changements
+        if(!Object.keys(p).length) continue;
+        state.data=state.data.map(x=>x.id===c.id?{...x,...p}:x); await dbUpdate(c.id,p); n++; }
+    showToast(`✓ Récurrence modifiée${n?` · ${n} jour${n>1?'s':''} déjà créé${n>1?'s':''} mis à jour`:''}`); state.recEdit=null; render();
+}
 function renderReglagesRecurrences(secHead){
     const R=(state.rec&&state.rec.regles)||[]; const J=['dim.','lun.','mar.','mer.','jeu.','ven.','sam.'];
     if(!state.rec){ loadRecurrences().then(render); return '<div class="empty-note" style="padding:30px;">Chargement…</div>'; }
-    return `<div class="settings-section">${secHead('calendar','Demandes récurrentes',`Créées automatiquement ${REC_HORIZON} jours à l’avance, jours ouvrés hors jours fériés. Chaque jour arrive dans « Reçue » : « Refuser » annule seulement ce jour-là.`)}
+    return `<div class="settings-section">${secHead('calendar','Demandes récurrentes',`Créées automatiquement ${REC_HORIZON} jours à l’avance, jours ouvrés hors jours fériés. Chaque jour arrive dans « Nouvelles » : « Bien reçu » le valide, « Annuler » n’annule que ce jour-là. Les participants peuvent être changés pour un jour précis depuis sa fiche.`)}
     ${R.length?R.map(r=>`<div class="settings-item" style="align-items:flex-start;gap:12px;">
         <div style="flex:1;min-width:0;"><b style="font-size:14px;">${esc(TYPE_LABEL[r.type]||'')} · ${esc(r.pourQui)}</b>
             <div style="font-size:12.5px;color:var(--ink-soft);margin-top:2px;">${esc(r.presta)} · ${esc(r.heure)} · ${esc(r.lieu||'')} · ${r.nb||1} pers. · demandeur ${esc(r.demandeur)}</div>
             <div style="font-size:12.5px;color:var(--ink-soft);">${(r.jours||[]).map(j=>J[j]).join(' ')}${r.actif?'':' · <b style="color:#b45309;">en pause</b>'}</div></div>
+        <button class="btn-sm" data-rec="edit" data-id="${esc(r.id)}">${icon('edit',13)} Modifier</button>
         <button class="btn-sm" data-rec="pause" data-id="${esc(r.id)}">${r.actif?'Mettre en pause':'Reprendre'}</button>
-        <button class="btn-sm" style="color:#b91c1c;" data-rec="del" data-id="${esc(r.id)}">${icon('trash',13)} Supprimer</button></div>`).join(''):'<div class="empty-note" style="padding:20px;">Aucune demande récurrente.</div>'}
+        <button class="btn-sm" style="color:#b91c1c;" data-rec="del" data-id="${esc(r.id)}">${icon('trash',13)} Supprimer</button></div>${state.recEdit===r.id?`<div class="rec-ed">
+            <label style="grid-column:1/-1;"><span>Participants</span><input class="form-input" id="re-pourQui" value="${esc(r.pourQui)}" placeholder="Noms séparés par des virgules"></label>
+            <label><span>Restaurant</span><input class="form-input" id="re-presta" list="reResto" value="${esc(r.presta)}"></label>
+            <label><span>Type de repas</span><select class="form-select" id="re-desc">${P_TYPES.map(x=>`<option ${sansAccent(x).toLowerCase()===sansAccent(r.desc||'').toLowerCase()?'selected':''}>${esc(x)}</option>`).join('')}</select></label>
+            <label><span>Heure</span><input class="form-input" id="re-heure" value="${esc(r.heure)}" placeholder="12h00"></label>
+            <label><span>Lieu</span><input class="form-input" id="re-lieu" value="${esc(r.lieu||'')}"></label>
+            <label><span>Personnes</span><input class="form-input" id="re-nb" type="number" min="1" value="${r.nb||1}"></label>
+            <div style="grid-column:1/-1;"><span class="rec-l">Jours</span><div class="nf-row">${[1,2,3,4,5].map(j=>`<button type="button" class="nf-chip ${(r.jours||[]).includes(j)?'on':''}" data-rec-j="${j}" data-id="${esc(r.id)}">${J[j]}</button>`).join('')}</div></div>
+            <div style="grid-column:1/-1;display:flex;gap:8px;justify-content:flex-end;"><button class="btn-sm" data-rec="cancel" data-id="${esc(r.id)}">Annuler</button><button class="btn-sm pri" data-rec="save" data-id="${esc(r.id)}">Enregistrer</button></div>
+            <datalist id="reResto">${P_REPAS.map(p=>`<option value="${esc(p)}">`).join('')}</datalist></div>`:''}`).join(''):'<div class="empty-note" style="padding:20px;">Aucune demande récurrente.</div>'}
     </div>`;
 }
 document.addEventListener('click',async e=>{ const b=e.target.closest('[data-rec]'); if(!b||!state.rec||!isAdmin()) return;
     const r=state.rec.regles.find(x=>x.id===b.getAttribute('data-id')); if(!r) return;
-    if(b.getAttribute('data-rec')==='pause'){ r.actif=!r.actif; }
+    const ac=b.getAttribute('data-rec');
+    if(ac==='edit'){ state.recEdit=state.recEdit===r.id?null:r.id; state.recJours=[...(r.jours||[1,2,3,4,5])]; render(); return; }
+    if(ac==='cancel'){ state.recEdit=null; render(); return; }
+    if(ac==='save'){ const g=id=>(document.getElementById(id)?.value||'').trim(); const pq=g('re-pourQui'); if(!pq){ showToast(`${icon('alert',13)} Indiquez au moins un participant`); return; }
+        await majRecurrence(r,{pourQui:pq,presta:g('re-presta'),desc:g('re-desc'),heure:g('re-heure'),lieu:g('re-lieu'),nb:Math.max(+g('re-nb')||1,compteNoms(pq)),jours:(state.recJours||r.jours).slice().sort()}); return; }
+    if(ac==='pause'){ r.actif=!r.actif; }
     else { if(!confirm(`Supprimer la récurrence « ${r.pourQui} · ${r.presta} » ?\n\nLes demandes déjà créées restent dans le suivi.`)) return; state.rec.regles=state.rec.regles.filter(x=>x!==r); }
     await paramSet('recurrences',state.rec).catch(()=>showToast(`${icon('alert',13)} Non enregistré (réseau)`)); render(); if(r.actif) genRecurrences(true);
 });
+document.addEventListener('click',e=>{ const b=e.target.closest('[data-rec-j]'); if(!b) return; const j=+b.getAttribute('data-rec-j'); const L=state.recJours||[]; state.recJours=L.includes(j)?L.filter(x=>x!==j):[...L,j]; b.classList.toggle('on'); });
 function renderStock(m){
     if(!state.stockLoaded){ loadStock().then(render); return `<div class="empty-note" style="padding:60px;">Chargement du stock…</div>`; }
     const I=state.stock.items, A=stockAlerte(), C=I.filter(x=>x.st==='cmd');
