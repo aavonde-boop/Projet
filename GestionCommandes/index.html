@@ -582,7 +582,7 @@
         .sv-t td{ padding:10px; border-bottom:1px solid #f1f5f9; vertical-align:middle; font-size:13px; } .sv-t tr:last-child td{ border-bottom:none; } .sv-t td[data-open-detail]{ cursor:pointer; } .sv-t tr:hover td{ background:#fafbfd; }
         .sv-q{ white-space:nowrap; width:62px; } .sv-q b{ display:block; font-weight:700; color:#0f172a; } .sv-q b.sv-auj{ color:#2563eb; } .sv-q small{ display:block; font-size:11.5px; color:#64748b; font-weight:600; }
         .plogo{ display:inline-flex; align-items:center; justify-content:center; font-weight:800; letter-spacing:.02em; line-height:1; vertical-align:middle; overflow:hidden; }
-        .plogo.img{ background:#fff; border:1px solid #e2e8f0; } .plogo.img img{ width:100%; height:100%; object-fit:contain; padding:12%; }
+        .plogo.img{ background:#fff; border:1px solid #e2e8f0; } .plogo.img img{ width:100%; height:100%; object-fit:contain; padding:6%; } .plogo.img.fav img{ padding:0; object-fit:cover; }
         .sv-dl{ display:flex; gap:9px; align-items:center; } .sv-d span.plogo{ display:inline-flex; margin-top:0; } .sv-d span.plogo:not([style*='color']){ color:inherit; } .sv-dl > div{ min-width:0; }
         .nf-chip .plogo{ margin:-2px 2px -2px -6px; }
         .sv-d b{ display:block; font-size:13.5px; font-weight:700; } .sv-d span{ display:block; font-size:12px; color:#64748b; margin-top:1px; }
@@ -778,7 +778,7 @@ const DEFAULT_DIRECTEURS  = ["Sylvain LEMERCIER","Sara RIBEIRO","Marc RIPOTOT","
 const DEFAULT_PREPAS      = ["Delicity","Uber eat","Deliveroo","Mimma","Mycarter","Le Cercle","Ciboulette","Polpo","La Boite","La famille","Ensuite","11h59","My carter"];
 const DEFAULT_TYPES_REPAS = ["Petit-déjeuner","Déjeuner","Goûter","Dîner","Cocktail","Plateau repas","Autre"];
 const DEFAULT_PTAXI       = ["Allocab","G7","Uber"];
-const DEFAULT_PCMD        = ["Nespresso","Monoprix","Lyreco","Bruneau","Kusme Tea","Carrefour","Amazon","Lavazza","Ups","Vinci"];
+const DEFAULT_PCMD        = ["Nespresso","Monoprix","Lyreco","Bruneau","Kusmi Tea","Carrefour","Amazon","Lavazza","Ups","Vinci"];
 const DEFAULT_PHOTEL       = ["Booking.com","Ibis","Novotel","Mercure","B&B Hotels"];
 // Emails des assistantes — clé = nom exact, valeur = adresse email
 const DEFAULT_EMAILS = {
@@ -3385,7 +3385,39 @@ function renderStats(m){
 /* ══════════════════════════════════════
    FICHES PRESTATAIRES
 ══════════════════════════════════════ */
-function pInfo(nom){ if(!nom) return {}; const M=settings.prestaInfo||{}; const k=Object.keys(M).find(x=>x.toLowerCase()===String(nom).trim().toLowerCase()); return k?M[k]:{}; }
+/* Fiches par défaut (recherche internet du 12/11/2026) : complètent la fiche saisie, qui reste prioritaire */
+const LV='92300 Levallois-Perret';
+const PRESTA_DEFAUT={
+    'ciboulette':{tel:'06 15 05 36 97',note:'6 rue Marcel Cerdan, '+LV},
+    'mimma':{tel:'01 47 48 09 09',url:'https://mimma.fr',note:'17 place Georges Pompidou, '+LV},
+    'compose (salade)':{url:'https://composeparis.fr',note:'17 rue Marcel Cerdan, '+LV},
+    'compose':{url:'https://composeparis.fr',note:'17 rue Marcel Cerdan, '+LV},
+    'deyou':{tel:'01 47 48 98 00',note:'Japonais · 29 avenue André Malraux, '+LV},
+    'sushi shop':{url:'https://www.sushishop.fr'},
+    'paul':{url:'https://www.paul.fr'},
+    'subway':{url:'https://www.subway.com/fr-FR'},
+    'pret a manger':{url:'https://www.pret.fr'},
+    'la boite':{url:'https://www.lblaboite.fr',tel:'01 45 27 77 42',email:'commande@lblaboite.fr',note:'LB La Boîte · plateaux-repas livrés en boîtes, Paris et Hauts-de-Seine'},
+    'my carter':{url:'https://www.mycater.fr',note:'MyCater · plateforme de commande de traiteurs pour entreprises'},
+    'mycarter':{url:'https://www.mycater.fr',note:'MyCater · plateforme de commande de traiteurs pour entreprises'},
+    'la fabrique de pates':{url:'https://www.ubereats.com/fr',note:'Commande via Uber Eats'},
+    'la fabrique a pates':{url:'https://www.ubereats.com/fr',note:'Commande via Uber Eats'},
+    'evergreen':{tel:'01 47 58 88 99',note:'Evergreen Laurel Hotel · 8 place Georges Pompidou, '+LV},
+    'nespresso':{url:'https://www.nespresso.com/pro/fr/fr'},
+    'monoprix':{url:'https://www.monoprix.fr'},
+    'lyreco':{url:'https://www.lyreco.com/fr'},
+    'bruneau':{url:'https://www.bruneau.fr'},
+    'kusmi tea':{url:'https://www.kusmitea.com'},
+    'kusme tea':{url:'https://www.kusmitea.com'},
+    'carrefour':{url:'https://www.carrefour.fr'},
+    'amazon':{url:'https://www.amazon.fr'},
+    'lavazza':{url:'https://www.lavazza.fr'},
+    'ups':{url:'https://www.ups.com/fr'},
+    'vinci':{url:'https://www.vinci-facilities.com',note:'VINCI Facilities'},
+};
+function pCle(s){ return String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().replace(/\s+/g,' ').trim(); }
+function pInfo(nom){ if(!nom) return {}; const M=settings.prestaInfo||{}, n=pCle(nom); const k=Object.keys(M).find(x=>pCle(x)===n);
+    const u=k?M[k]:{}, d=PRESTA_DEFAUT[n]||{}, r={...d}; Object.keys(u).forEach(x=>{ if(u[x]) r[x]=u[x]; }); return r; }
 /* Logo d'un prestataire : image déposée dans sa fiche, sinon icône de son site, sinon initiales colorées */
 const LOGO_COUL=['#2563eb','#0d9488','#d97706','#7c3aed','#db2777','#0891b2','#65a30d','#dc2626','#475569'];
 function prestaLogo(nom,sz=28,type){
@@ -3396,9 +3428,17 @@ function prestaLogo(nom,sz=28,type){
     const mots=n.replace(/[^\p{L}\p{N} ]/gu,' ').split(/\s+/).filter(Boolean), ini=(mots.length>1?mots[0][0]+mots[1][0]:n.slice(0,2)).toUpperCase();
     const mono=`<span class="plogo" style="${box}background:${coul};color:#fff;font-size:${Math.round(sz*.4)}px;">${esc(ini)}</span>`;
     const P=pInfo(n); let src=P.logo||'';
-    if(!src&&P.url){ try{ const u=new URL(/^https?:/i.test(P.url)?P.url:'https://'+P.url); src=`https://www.google.com/s2/favicons?domain=${encodeURIComponent(u.hostname)}&sz=64`; }catch(e){} }
+    if(!src&&P.url){ try{ const u=new URL(/^https?:/i.test(P.url)?P.url:'https://'+P.url); src=`https://www.google.com/s2/favicons?domain=${encodeURIComponent(u.hostname)}&sz=128`; }catch(e){} }
     if(!src) return mono;
-    return `<span class="plogo img" style="${box}" title="${esc(n)}"><img src="${esc(src)}" alt="" loading="lazy" onerror="this.parentNode.outerHTML=this.parentNode.getAttribute('data-mono')"></span>`.replace('class="plogo img"',`class="plogo img" data-mono="${esc(mono)}"`);
+    return `<span class="plogo img ${P.logo?'':'fav'}" style="${box}" title="${esc(n)}" data-mono="${esc(mono)}"><img src="${esc(src)}" alt="" loading="lazy" onload="if(this.naturalWidth&&this.naturalWidth<=16)this.onerror()" onerror="this.onerror=null;this.parentNode.outerHTML=this.parentNode.getAttribute('data-mono')"></span>`;
+}
+/* Renomme un prestataire partout (liste des réglages + demandes existantes), une seule fois */
+async function renommerPresta(ancien,nouveau){
+    if(!isAdmin()) return; const cle='renomme_'+pCle(ancien); if(lsGet(cle)==='1') return;
+    let chg=false; ['prestatairesRepas','prestatairesTaxi','prestatairesCommande','prestatairesHotel'].forEach(k=>{ const L=settings[k]||[]; const i=L.findIndex(x=>pCle(x)===pCle(ancien)); if(i>=0){ L[i]=nouveau; if(L.filter(x=>pCle(x)===pCle(nouveau)).length>1) L.splice(i,1); chg=true; } });
+    if(chg) saveSettings(settings);
+    await sbPret(); const r=await fetch(`${SB_TABLE}?presta=eq.${encodeURIComponent(ancien)}`,{method:'PATCH',headers:{...sbH(),'Prefer':'return=minimal'},body:JSON.stringify({presta:nouveau})});
+    if(!r.ok) return; (state.data||[]).forEach(c=>{ if(c.presta===ancien) c.presta=nouveau; }); lsSet(cle,'1'); if(chg) render();
 }
 async function logoDepuisFichier(file){
     const url=await new Promise((ok,ko)=>{ const r=new FileReader(); r.onload=()=>ok(r.result); r.onerror=ko; r.readAsDataURL(file); });
@@ -3527,7 +3567,7 @@ async function retirerEstimations(){
 /* Commandes faites (ou passées) sans prix : à compléter à réception de la facture */
 document.addEventListener('click',e=>{ if(e.target.closest('[data-prix-estimer]')){ const L=estimerPrixRepas(); if(L.length&&confirm(`Mettre un prix approximatif sur ${L.length} repas passés sans prix ?\n\nCalcul : prix moyen par personne constaté (même restaurant et même repas si possible) × nombre de personnes. Total ≈ ${$m(L.reduce((a,x)=>a+x.prix,0))}.`)) appliquerEstimations(L); } else if(e.target.closest('[data-prix-retirer]')) retirerEstimations(); });
 /* ══ STOCK (simple : OK / Bientôt vide / Vide) ══ */
-const STOCK_DEF=[['Capsules café','Nespresso'],['Thé','Kusme Tea'],['Papier A4','Lyreco'],['Sucre',''],['Gobelets',''],['Essuie-tout','']];
+const STOCK_DEF=[['Capsules café','Nespresso'],['Thé','Kusmi Tea'],['Papier A4','Lyreco'],['Sucre',''],['Gobelets',''],['Essuie-tout','']];
 const STOCK_ST=[['ok','OK','#166534','#dcfce7'],['bas','Bientôt vide','#92400e','#fef3c7'],['vide','Vide','#b91c1c','#fee2e2']];
 async function loadStock(){ try{ state.stock=await paramGet('stock'); }catch(e){} if(!state.stock||!Array.isArray(state.stock.items)) state.stock={items:STOCK_DEF.map(([nom,presta],i)=>({id:Date.now()+i,nom,presta,st:'ok'}))}; state.stockLoaded=true; }
 let _stockT=null;
@@ -7237,6 +7277,7 @@ if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.
         await Promise.all([loadTrash(), loadJournal(), loadStock(), loadParking(), loadNotifsVues(), /avonde/i.test(`${userEmail()} ${userName()}`)?loadMe():null]);
         if (lsGet('last_vue') === 'admin' || state.live) { state.vue = 'admin'; state.authed = true; state.adminTab = 'dashboard'; }
         setTimeout(()=>genRecurrences(true),1500);
+        setTimeout(()=>renommerPresta('Kusme Tea','Kusmi Tea').catch(e=>console.error('renommage',e)),5000);
         setTimeout(()=>purgeAnciennes().then(n=>{ if(n){ showToast(`✓ RGPD : ${n} ancienne(s) demande(s) anonymisée(s)`); } }).catch(e=>console.error('RGPD',e)),6000);
     }
     state.loading = false;
