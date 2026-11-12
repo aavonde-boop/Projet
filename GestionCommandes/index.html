@@ -3428,9 +3428,19 @@ function prestaLogo(nom,sz=28,type){
     const mots=n.replace(/[^\p{L}\p{N} ]/gu,' ').split(/\s+/).filter(Boolean), ini=(mots.length>1?mots[0][0]+mots[1][0]:n.slice(0,2)).toUpperCase();
     const mono=`<span class="plogo" style="${box}background:${coul};color:#fff;font-size:${Math.round(sz*.4)}px;">${esc(ini)}</span>`;
     const P=pInfo(n); let src=P.logo||'';
-    if(!src&&P.url){ try{ const u=new URL(/^https?:/i.test(P.url)?P.url:'https://'+P.url); src=`https://www.google.com/s2/favicons?domain=${encodeURIComponent(u.hostname)}&sz=128`; }catch(e){} }
-    if(!src) return mono;
-    return `<span class="plogo img ${P.logo?'':'fav'}" style="${box}" title="${esc(n)}" data-mono="${esc(mono)}"><img src="${esc(src)}" alt="" loading="lazy" onload="if(this.naturalWidth&&this.naturalWidth<=16)this.onerror()" onerror="this.onerror=null;this.parentNode.outerHTML=this.parentNode.getAttribute('data-mono')"></span>`;
+    let srcs=src?[src]:[];
+    if(!src&&P.url){ try{ const u=new URL(/^https?:/i.test(P.url)?P.url:'https://'+P.url), h=u.hostname, nu=h.replace(/^www\./,'');
+        srcs=[`https://${h}/apple-touch-icon.png`,`https://www.google.com/s2/favicons?domain=${encodeURIComponent(h)}&sz=128`,`https://icons.duckduckgo.com/ip3/${encodeURIComponent(nu)}.ico`]; }catch(e){} }
+    if(!srcs.length) return mono;
+    const memo=lsGet('logo_ok_'+pCle(n)); if(!P.logo&&memo&&srcs.includes(memo)) srcs=[memo,...srcs.filter(x=>x!==memo)];
+    return `<span class="plogo img ${P.logo?'':'fav'}" style="${box}" title="${esc(n)}" data-mono="${esc(mono)}" data-nom="${esc(pCle(n))}"><img src="${esc(srcs[0])}" data-srcs="${esc(JSON.stringify(srcs))}" alt="" loading="lazy" onload="logoCharge(this,true)" onerror="logoCharge(this,false)"></span>`;
+}
+/* Essaie les sources de logo l'une après l'autre : icône haute définition du site, puis Google, puis DuckDuckGo, sinon initiales */
+function logoCharge(img,ok){
+    const L=JSON.parse(img.getAttribute('data-srcs')||'[]'), i=+(img.getAttribute('data-i')||0), dernier=i>=L.length-1;
+    if(ok&&(img.naturalWidth>16||(dernier&&img.naturalWidth>0))){ const s=img.parentNode; if(s&&s.getAttribute('data-nom')&&s.classList.contains('fav')) lsSet('logo_ok_'+s.getAttribute('data-nom'),L[i]); return; }
+    if(!dernier){ img.setAttribute('data-i',i+1); img.src=L[i+1]; return; }
+    img.onload=img.onerror=null; const s=img.parentNode; if(s) s.outerHTML=s.getAttribute('data-mono');
 }
 /* Renomme un prestataire partout (liste des réglages + demandes existantes), une seule fois */
 async function renommerPresta(ancien,nouveau){
