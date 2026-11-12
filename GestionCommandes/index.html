@@ -3388,7 +3388,7 @@ function renderStats(m){
 /* Fiches par défaut (recherche internet du 12/11/2026) : complètent la fiche saisie, qui reste prioritaire */
 const LV='92300 Levallois-Perret';
 const PRESTA_DEFAUT={
-    'ciboulette':{tel:'06 15 05 36 97',note:'6 rue Marcel Cerdan, '+LV},
+    'ciboulette':{tel:'06 15 05 36 97',url:'https://ciboulette-92.fr/',note:'6 rue Marcel Cerdan, '+LV},
     'mimma':{tel:'01 47 48 09 09',url:'https://mimma.fr',note:'17 place Georges Pompidou, '+LV},
     'compose (salade)':{url:'https://composeparis.fr',note:'17 rue Marcel Cerdan, '+LV},
     'compose':{url:'https://composeparis.fr',note:'17 rue Marcel Cerdan, '+LV},
@@ -3396,13 +3396,14 @@ const PRESTA_DEFAUT={
     'sushi shop':{url:'https://www.sushishop.fr'},
     'paul':{url:'https://www.paul.fr'},
     'subway':{url:'https://www.subway.com/fr-FR'},
-    'pret a manger':{url:'https://www.pret.fr'},
+    'pret a manger':{url:'https://www.pretamanger.fr/fr-FR'},
     'la boite':{url:'https://www.lblaboite.fr',tel:'01 45 27 77 42',email:'commande@lblaboite.fr',note:'LB La Boîte · plateaux-repas livrés en boîtes, Paris et Hauts-de-Seine'},
     'my carter':{url:'https://www.mycater.fr',note:'MyCater · plateforme de commande de traiteurs pour entreprises'},
     'mycarter':{url:'https://www.mycater.fr',note:'MyCater · plateforme de commande de traiteurs pour entreprises'},
     'la fabrique de pates':{url:'https://www.ubereats.com/fr',note:'Commande via Uber Eats'},
     'la fabrique a pates':{url:'https://www.ubereats.com/fr',note:'Commande via Uber Eats'},
-    'evergreen':{tel:'01 47 58 88 99',note:'Evergreen Laurel Hotel · 8 place Georges Pompidou, '+LV},
+    'occidental paris levallois':{tel:'01 47 58 88 99',url:'https://www.barcelo.com/fr-fr/occidental-paris-levallois/',note:'Ex-Evergreen Laurel (groupe Barceló) · 8 place Georges Pompidou, '+LV},
+    'evergreen':{tel:'01 47 58 88 99',url:'https://www.barcelo.com/fr-fr/occidental-paris-levallois/',note:'Devenu Occidental Paris Levallois · 8 place Georges Pompidou, '+LV},
     'nespresso':{url:'https://www.nespresso.com/pro/fr/fr'},
     'monoprix':{url:'https://www.monoprix.fr'},
     'lyreco':{url:'https://www.lyreco.com/fr'},
@@ -3446,6 +3447,8 @@ function logoCharge(img,ok){
 async function renommerPresta(ancien,nouveau){
     if(!isAdmin()) return; const cle='renomme_'+pCle(ancien); if(lsGet(cle)==='1') return;
     let chg=false; ['prestatairesRepas','prestatairesTaxi','prestatairesCommande','prestatairesHotel'].forEach(k=>{ const L=settings[k]||[]; const i=L.findIndex(x=>pCle(x)===pCle(ancien)); if(i>=0){ L[i]=nouveau; if(L.filter(x=>pCle(x)===pCle(nouveau)).length>1) L.splice(i,1); chg=true; } });
+    const PI=settings.prestaInfo||{}, kOld=Object.keys(PI).find(x=>pCle(x)===pCle(ancien));
+    if(kOld){ PI[nouveau]={...(PI[kOld]||{}),...(PI[nouveau]||{})}; delete PI[kOld]; settings.prestaInfo=PI; chg=true; }
     if(chg) saveSettings(settings);
     await sbPret(); const r=await fetch(`${SB_TABLE}?presta=eq.${encodeURIComponent(ancien)}`,{method:'PATCH',headers:{...sbH(),'Prefer':'return=minimal'},body:JSON.stringify({presta:nouveau})});
     if(!r.ok) return; (state.data||[]).forEach(c=>{ if(c.presta===ancien) c.presta=nouveau; }); lsSet(cle,'1'); if(chg) render();
@@ -7287,7 +7290,7 @@ if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.
         await Promise.all([loadTrash(), loadJournal(), loadStock(), loadParking(), loadNotifsVues(), /avonde/i.test(`${userEmail()} ${userName()}`)?loadMe():null]);
         if (lsGet('last_vue') === 'admin' || state.live) { state.vue = 'admin'; state.authed = true; state.adminTab = 'dashboard'; }
         setTimeout(()=>genRecurrences(true),1500);
-        setTimeout(()=>renommerPresta('Kusme Tea','Kusmi Tea').catch(e=>console.error('renommage',e)),5000);
+        setTimeout(()=>renommerPresta('Kusme Tea','Kusmi Tea').then(()=>renommerPresta('Evergreen','Occidental Paris Levallois')).catch(e=>console.error('renommage',e)),5000);
         setTimeout(()=>purgeAnciennes().then(n=>{ if(n){ showToast(`✓ RGPD : ${n} ancienne(s) demande(s) anonymisée(s)`); } }).catch(e=>console.error('RGPD',e)),6000);
     }
     state.loading = false;
