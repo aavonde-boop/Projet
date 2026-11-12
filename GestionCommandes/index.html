@@ -3388,7 +3388,7 @@ function renderStats(m){
 /* Fiches par défaut (recherche internet du 12/11/2026) : complètent la fiche saisie, qui reste prioritaire */
 const LV='92300 Levallois-Perret';
 const PRESTA_DEFAUT={
-    'ciboulette':{tel:'06 15 05 36 97',url:'https://ciboulette-92.fr/',note:'6 rue Marcel Cerdan, '+LV},
+    'ciboulette':{tel:'06 15 05 36 97',url:'https://ciboulette-92.fr/',logo:'https://ciboulette-92.fr/wp-content/uploads/2023/10/logoCiboulette-gigapixel-standard-scale-10_00x-removebg-preview-gigapixel-standard-scale-10_00x.png',note:'6 rue Marcel Cerdan, '+LV},
     'mimma':{tel:'01 47 48 09 09',url:'https://mimma.fr',note:'17 place Georges Pompidou, '+LV},
     'compose (salade)':{url:'https://composeparis.fr',note:'17 rue Marcel Cerdan, '+LV},
     'compose':{url:'https://composeparis.fr',note:'17 rue Marcel Cerdan, '+LV},
@@ -3430,8 +3430,8 @@ function prestaLogo(nom,sz=28,type){
     const mono=`<span class="plogo" style="${box}background:${coul};color:#fff;font-size:${Math.round(sz*.4)}px;">${esc(ini)}</span>`;
     const P=pInfo(n); let src=P.logo||'';
     let srcs=src?[src]:[];
-    if(!src&&P.url){ try{ const u=new URL(/^https?:/i.test(P.url)?P.url:'https://'+P.url), h=u.hostname, nu=h.replace(/^www\./,'');
-        srcs=[`https://${h}/apple-touch-icon.png`,`https://www.google.com/s2/favicons?domain=${encodeURIComponent(h)}&sz=128`,`https://icons.duckduckgo.com/ip3/${encodeURIComponent(nu)}.ico`]; }catch(e){} }
+    if((!src||!/^data:/.test(src))&&P.url){ try{ const u=new URL(/^https?:/i.test(P.url)?P.url:'https://'+P.url), h=u.hostname, nu=h.replace(/^www\./,'');
+        srcs=[...srcs,`https://${h}/apple-touch-icon.png`,`https://www.google.com/s2/favicons?domain=${encodeURIComponent(h)}&sz=128`,`https://icons.duckduckgo.com/ip3/${encodeURIComponent(nu)}.ico`]; }catch(e){} }
     if(!srcs.length) return mono;
     const memo=lsGet('logo_ok_'+pCle(n)); if(!P.logo&&memo&&srcs.includes(memo)) srcs=[memo,...srcs.filter(x=>x!==memo)];
     return `<span class="plogo img ${P.logo?'':'fav'}" style="${box}" title="${esc(n)}" data-mono="${esc(mono)}" data-nom="${esc(pCle(n))}"><img src="${esc(srcs[0])}" data-srcs="${esc(JSON.stringify(srcs))}" alt="" loading="lazy" onload="logoCharge(this,true)" onerror="logoCharge(this,false)"></span>`;
