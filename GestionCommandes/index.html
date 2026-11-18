@@ -2982,13 +2982,15 @@ function ficheBonHtml(d){
             <button class="btn-sm" data-bon-voir="${d.id}" style="margin-left:auto;">Voir</button><label class="btn-sm" style="cursor:pointer;">Remplacer<input type="file" data-bon-file="${d.id}" accept="application/pdf,image/png,image/jpeg" style="display:none"></label>`
             :`${icon('download',15)} <span><b>Glissez ici la pièce jointe</b> depuis l’email de l’hôtel, ou collez-la (Ctrl+V) · PDF ou photo, 10 Mo max.</span><label class="btn-sm pri" style="cursor:pointer;margin-left:auto;">Choisir le fichier<input type="file" data-bon-file="${d.id}" accept="application/pdf,image/png,image/jpeg" style="display:none"></label>`}</div>
         ${state.bonCharge===d.id?`<div style="font-size:12px;color:#6b7280;margin-top:8px;">Envoi en cours…</div>`:''}
+        ${state.bonErr?`<div style="margin-top:8px;background:#fef2f2;color:#b91c1c;border-radius:8px;padding:8px 10px;font-size:12.5px;display:flex;gap:6px;align-items:flex-start;">${icon('alert',13)} <span>${esc(state.bonErr)}</span></div>`:''}
         <div class="bon-to">${D.map(x=>`<label><input type="checkbox" data-bon-to="${esc(x.em)}" ${F.off[x.em]?'':'checked'}> ${esc(x.nom)} <span style="color:#8b93a1;">${esc(x.em)}</span></label>`).join('')||'<span style="font-size:12px;color:#8b93a1;">Aucune adresse connue pour le demandeur ou le voyageur : saisissez-la ci-dessous.</span>'}</div>
         <input id="bonAutre" class="form-input" placeholder="Autre(s) adresse(s), séparées par des virgules" value="${esc(F.autre)}">
         <textarea id="bonMsg" class="form-input" rows="2" style="margin-top:8px;" placeholder="Message (facultatif) : ex. petit-déjeuner inclus, arrivée après 22 h…">${esc(F.msg)}</textarea>
-        <div style="display:flex;justify-content:flex-end;margin-top:10px;"><button class="fa-b p" data-bon-envoyer="${d.id}" ${B&&state.bonCharge!==d.id?'':'disabled style="opacity:.5;"'}>${icon('mail',14)} ${s.bonEnvoi?'Renvoyer':'Envoyer'} le bon</button></div>
+        <div style="display:flex;justify-content:flex-end;margin-top:10px;"><button class="fa-b p" data-bon-envoyer="${d.id}" ${state.bonCharge!==d.id?'':'disabled style="opacity:.5;"'}>${icon('mail',14)} ${s.bonEnvoi?'Renvoyer':'Envoyer'} le bon</button></div>
         ${s.bonEnvoi?`<div class="bon-ok">${icon('check',12)} Envoyé le ${fd(s.bonEnvoi.at)} à ${esc((s.bonEnvoi.to||[]).join(', '))}</div>`:''}
     </div>`;
 }
+function bonAlerte(msg){ state.bonErr=msg; render(); showToast(`${icon('alert',13)} ${esc(msg)}`); }
 function bonForm(id){ if(!state.bonForm||state.bonForm.id!==id) state.bonForm={id,off:{},autre:'',msg:''}; return state.bonForm; }
 document.addEventListener('input',e=>{ const id=e.target&&e.target.id; if((id==='bonAutre'||id==='bonMsg')&&state.detail){ const F=bonForm(state.detail.id); if(id==='bonAutre') F.autre=e.target.value; else F.msg=e.target.value; } });
 document.addEventListener('change',async e=>{
@@ -3000,7 +3002,7 @@ document.addEventListener('change',async e=>{
 async function bonDeposer(c,fl){
     if(!/pdf|png|jpe?g/i.test((fl.type||'')+' '+(fl.name||''))){ showToast(`${icon('alert',13)} Format non accepté : PDF, PNG ou JPG`); return; }
     if(fl.size>10485760){ showToast(`${icon('alert',13)} Fichier trop lourd (10 Mo maximum)`); return; }
-    state.bonCharge=c.id; render();
+    state.bonCharge=c.id; state.bonErr=''; render();
     try{ await sbPret();
         const nom=fl.name.replace(/[^\w.\-]+/g,'_'), path=`${c.id}/${Date.now()}-${nom}`;
         const r=await fetch(`${SB_URL}/storage/v1/object/bons/${path}`,{method:'POST',headers:{...sbH(),'Content-Type':fl.type||'application/pdf','x-upsert':'true'},body:fl});
@@ -3009,7 +3011,7 @@ async function bonDeposer(c,fl){
         if(old&&old.path&&old.path!==path) fetch(`${SB_URL}/storage/v1/object/bons/${old.path}`,{method:'DELETE',headers:sbH()}).catch(()=>{});
         try{ logAction('Bon de réservation déposé',[c],fl.name); }catch(_){}
         showToast(`✓ Bon de réservation enregistré`);
-    }catch(err){ showToast(`${icon('alert',13)} Dépôt impossible : ${esc(err.message)}`); }
+    }catch(err){ state.bonCharge=null; bonAlerte('Dépôt impossible : '+err.message); return; }
     state.bonCharge=null; render();
 }
 // Glisser-déposer depuis Outlook / l'explorateur, ou coller (Ctrl+V) un fichier, sur le cadre du bon
@@ -3029,9 +3031,10 @@ document.addEventListener('click',async e=>{
         try{ const {blob}=await bonFichier(c); const u=URL.createObjectURL(blob); if(w) w.location=u; else location.href=u; }catch(err){ if(w) w.close(); showToast(`${icon('alert',13)} ${esc(err.message)}`); } return; }
     const s=e.target.closest('[data-bon-envoyer]'); if(!s) return;
     const c=state.data.find(x=>String(x.id)===s.getAttribute('data-bon-envoyer')); if(!c) return;
+    if(!(suiviOf(c)||{}).bon){ bonAlerte('Déposez d’abord le bon de l’hôtel dans le cadre au-dessus (glisser la pièce jointe ou « Choisir le fichier »).'); return; }
     const F=bonForm(c.id), to=[...bonDestinataires(c).filter(x=>!F.off[x.em]).map(x=>x.em),...String(document.getElementById('bonAutre')?.value||'').split(/[\s,;]+/).filter(x=>/@/.test(x))];
     if(!to.length){ showToast(`${icon('alert',13)} Choisissez au moins un destinataire`); return; }
-    state.bonCharge=c.id; render();
+    state.bonCharge=c.id; state.bonErr=''; render();
     try{ const {B,blob}=await bonFichier(c);
         const b64=await new Promise((ok,ko)=>{ const rd=new FileReader(); rd.onload=()=>ok(String(rd.result).split(',')[1]||''); rd.onerror=ko; rd.readAsDataURL(blob); });
         const r=await fetch(`${SB_URL}/functions/v1/envoi-bon`,{method:'POST',headers:{...sbH(),'Content-Type':'application/json'},body:JSON.stringify({id:c.id,to,message:document.getElementById('bonMsg')?.value||'',fichier:{nom:B.nom,type:B.type,base64:b64}})});
@@ -3041,7 +3044,7 @@ document.addEventListener('click',async e=>{
         setSuivi([c.id],()=>({bonEnvoi:{at:new Date().toISOString(),to,par:userName()}}));
         try{ logAction('Bon de réservation envoyé',[c],to.join(', ')); }catch(_){}
         state.bonForm=null; showToast(`${icon('mail',13)} Bon envoyé à ${to.length} destinataire${to.length>1?'s':''}`);
-    }catch(err){ showToast(`${icon('alert',13)} Envoi impossible : ${esc(err.message)}`); }
+    }catch(err){ state.bonCharge=null; bonAlerte('Envoi impossible : '+err.message); return; }
     state.bonCharge=null; render();
 });
 /* Fiche : toutes les informations de la commande, lisibles d'un coup d'œil */
