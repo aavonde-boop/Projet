@@ -4400,7 +4400,7 @@ function anomalies(){
     futur.forEach(c=>{ const k=[c.type,c.date,norm(c.heure),c.type==='taxi'?norm(c.depart)+'>'+norm(c.arrivee):norm(c.lieu)].join('|'); (vus[k]=vus[k]||[]).push(c); });
     Object.values(vus).filter(l=>l.length>1).forEach(l=>out.push({niv:2,ic:'grid',titre:'Doublon possible',detail:`${l.length} demandes identiques : ${titreDe(l[0])} · ${dateCourte(l[0])}${l[0].heure?' '+l[0].heure:''} · ${l.map(x=>x.demandeur).filter(Boolean).join(', ')}`,c:l[0]}));
     // Pas encore commandé à temps
-    futur.filter(c=>stageOf(c)==='acommander').forEach(c=>{ const d=parseDate(c.date); const j=Math.round((d-t0)/864e5); const al=pDelaiAlerte(c.presta,c.date,c.heure);
+    futur.filter(c=>suiviCat(c)==='nouvelle'&&!recPlusTard(c)).forEach(c=>{ /* seulement les demandes pas encore prises en charge */ const d=parseDate(c.date); const j=Math.round((d-t0)/864e5); const al=pDelaiAlerte(c.presta,c.date,c.heure);
         if(al) out.push({niv:3,ic:'clock',titre:'Délai du prestataire dépassé',detail:`${titreDe(c)} · ${dateCourte(c)} : ${c.presta} demande ${al.h} h, il reste ${Math.max(0,Math.round(al.reste))} h`,c});
         else if(j===0||(j===1&&now.getHours()>=16)) out.push({niv:3,ic:'box',titre:j===0?'Pas commandé, c’est aujourd’hui':'Pas encore commandé pour demain',detail:`${titreDe(c)} · ${c.heure||''} · ${c.presta||'prestataire ?'} · ${demNom(c)}`,c}); });
     // En attente trop longtemps
