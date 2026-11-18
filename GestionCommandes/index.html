@@ -613,6 +613,10 @@
         .fi-com{ grid-column:1/-1; background:#fffbeb; border-radius:8px; padding:10px 12px; } .fi-com div{ font-size:14px; color:#4b3b0a; line-height:1.45; }
         .fi-ct{ grid-column:1/-1; display:flex; gap:8px; flex-wrap:wrap; }
         @media(max-width:520px){ .fi{ grid-template-columns:1fr 1fr; padding:14px; gap:12px 14px; } .fi-f.big{ grid-column:1/-1; } .fi-f b{ font-size:14px; } }
+        .bon{ margin-top:12px; border:1px solid var(--border); border-radius:12px; background:#fff; padding:16px 18px; } .bon h4{ margin:0 0 10px; font:650 15px var(--fb); display:flex; align-items:center; gap:8px; }
+        .bon-f{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; background:#f8fafc; border:1px dashed #cbd5e1; border-radius:10px; padding:10px 12px; font-size:13px; }
+        .bon-to{ display:flex; flex-wrap:wrap; gap:8px; margin:12px 0 8px; } .bon-to label{ display:inline-flex; align-items:center; gap:6px; border:1px solid var(--border); border-radius:999px; padding:5px 12px; font-size:13px; cursor:pointer; }
+        .bon-ok{ font-size:12px; color:#047857; margin-top:8px; }
         .fa{ display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; margin-top:12px; }
         .fa-row{ display:grid; grid-template-columns:26px minmax(0,1fr); grid-template-rows:auto 1fr; column-gap:10px; row-gap:12px; padding:12px; border:1px solid var(--border); border-radius:10px; background:#fff; min-width:0; }
         .fa-row .fa-r{ grid-column:1 / -1; align-self:end; display:flex; flex-wrap:wrap; gap:8px; }
@@ -2923,6 +2927,72 @@ function ficheActions(d){
     }
     return actions?`<div class="fa">${actions}</div>`:'';
 }
+/* Bon de réservation d'hôtel : PDF de l'hôtel gardé dans Supabase (stockage « bons ») et envoyé par Brevo (fonction « envoi-bon ») */
+function bonDestinataires(d){
+    const L=[], add=(nom,em)=>{ if(em&&!L.some(x=>x.em.toLowerCase()===em.toLowerCase())) L.push({nom,em}); };
+    const r=personne(d.demandeur).role; if(!['responsable','polyvalente'].includes(r)) add(demNom(d),personne(d.demandeur).role==='invite'?(suiviOf(d)||{}).email:emailDemandeur(d));
+    String(d.pourQui||'').split(/\s*[,;\/]\s*|\s+et\s+/i).filter(Boolean).forEach(n=>add(n,emailDemandeur({demandeur:n})));
+    return L;
+}
+function ficheBonHtml(d){
+    if(d.type!=='hotel'||!isAdmin()) return '';
+    const s=suiviOf(d)||{}, B=s.bon, F=(state.bonForm&&state.bonForm.id===d.id)?state.bonForm:{id:d.id,off:{},autre:'',msg:''};
+    const fd=x=>new Date(x).toLocaleString('fr-FR',{dateStyle:'short',timeStyle:'short'}), ko=n=>n>1048576?(n/1048576).toFixed(1)+' Mo':Math.max(1,Math.round(n/1024))+' Ko';
+    const D=bonDestinataires(d);
+    return `<div class="bon"><h4>${icon('bed',16)} Bon de réservation</h4>
+        <div class="bon-f">${B?`${icon('clipboard',15)} <b>${esc(B.nom)}</b> <span style="color:#8b93a1;">${ko(B.taille||0)} · déposé le ${fd(B.at)}</span>
+            <button class="btn-sm" data-bon-voir="${d.id}" style="margin-left:auto;">Voir</button><label class="btn-sm" style="cursor:pointer;">Remplacer<input type="file" data-bon-file="${d.id}" accept="application/pdf,image/png,image/jpeg" style="display:none"></label>`
+            :`${icon('download',15)} <span>Déposez ici le bon reçu de l’hôtel (PDF ou photo, 10 Mo max.)</span><label class="btn-sm pri" style="cursor:pointer;margin-left:auto;">Choisir le fichier<input type="file" data-bon-file="${d.id}" accept="application/pdf,image/png,image/jpeg" style="display:none"></label>`}</div>
+        ${state.bonCharge===d.id?`<div style="font-size:12px;color:#6b7280;margin-top:8px;">Envoi en cours…</div>`:''}
+        <div class="bon-to">${D.map(x=>`<label><input type="checkbox" data-bon-to="${esc(x.em)}" ${F.off[x.em]?'':'checked'}> ${esc(x.nom)} <span style="color:#8b93a1;">${esc(x.em)}</span></label>`).join('')||'<span style="font-size:12px;color:#8b93a1;">Aucune adresse connue pour le demandeur ou le voyageur : saisissez-la ci-dessous.</span>'}</div>
+        <input id="bonAutre" class="form-input" placeholder="Autre(s) adresse(s), séparées par des virgules" value="${esc(F.autre)}">
+        <textarea id="bonMsg" class="form-input" rows="2" style="margin-top:8px;" placeholder="Message (facultatif) : ex. petit-déjeuner inclus, arrivée après 22 h…">${esc(F.msg)}</textarea>
+        <div style="display:flex;justify-content:flex-end;margin-top:10px;"><button class="fa-b p" data-bon-envoyer="${d.id}" ${B&&state.bonCharge!==d.id?'':'disabled style="opacity:.5;"'}>${icon('mail',14)} ${s.bonEnvoi?'Renvoyer':'Envoyer'} le bon</button></div>
+        ${s.bonEnvoi?`<div class="bon-ok">${icon('check',12)} Envoyé le ${fd(s.bonEnvoi.at)} à ${esc((s.bonEnvoi.to||[]).join(', '))}</div>`:''}
+    </div>`;
+}
+function bonForm(id){ if(!state.bonForm||state.bonForm.id!==id) state.bonForm={id,off:{},autre:'',msg:''}; return state.bonForm; }
+document.addEventListener('input',e=>{ const id=e.target&&e.target.id; if((id==='bonAutre'||id==='bonMsg')&&state.detail){ const F=bonForm(state.detail.id); if(id==='bonAutre') F.autre=e.target.value; else F.msg=e.target.value; } });
+document.addEventListener('change',async e=>{
+    const cb=e.target.closest&&e.target.closest('[data-bon-to]'); if(cb&&state.detail){ bonForm(state.detail.id).off[cb.getAttribute('data-bon-to')]=!cb.checked; return; }
+    const inp=e.target.closest&&e.target.closest('[data-bon-file]'); if(!inp) return;
+    const fl=inp.files&&inp.files[0]; const c=state.data.find(x=>String(x.id)===inp.getAttribute('data-bon-file')); if(!fl||!c) return;
+    if(fl.size>10485760){ showToast(`${icon('alert',13)} Fichier trop lourd (10 Mo maximum)`); return; }
+    state.bonCharge=c.id; render();
+    try{ await sbPret();
+        const nom=fl.name.replace(/[^\w.\-]+/g,'_'), path=`${c.id}/${Date.now()}-${nom}`;
+        const r=await fetch(`${SB_URL}/storage/v1/object/bons/${path}`,{method:'POST',headers:{...sbH(),'Content-Type':fl.type||'application/pdf','x-upsert':'true'},body:fl});
+        if(!r.ok){ const j=await r.json().catch(()=>({})); throw new Error(r.status===404||/bucket/i.test(j.message||j.error||'')?'espace de stockage « bons » pas encore créé sur Supabase':(j.message||j.error||'HTTP '+r.status)); }
+        const old=(suiviOf(c)||{}).bon; setSuivi([c.id],()=>({bon:{path,nom:fl.name,taille:fl.size,type:fl.type||'application/pdf',at:new Date().toISOString(),par:userName()}}));
+        if(old&&old.path&&old.path!==path) fetch(`${SB_URL}/storage/v1/object/bons/${old.path}`,{method:'DELETE',headers:sbH()}).catch(()=>{});
+        try{ logAction('Bon de réservation déposé',[c],fl.name); }catch(_){}
+        showToast(`✓ Bon de réservation enregistré`);
+    }catch(err){ showToast(`${icon('alert',13)} Dépôt impossible : ${esc(err.message)}`); }
+    state.bonCharge=null; render();
+});
+async function bonFichier(c){ const B=(suiviOf(c)||{}).bon; if(!B) throw new Error('aucun bon déposé'); await sbPret();
+    const r=await fetch(`${SB_URL}/storage/v1/object/bons/${B.path}`,{headers:sbH()}); if(!r.ok) throw new Error('fichier introuvable ('+r.status+')'); return {B,blob:await r.blob()}; }
+document.addEventListener('click',async e=>{
+    const v=e.target.closest('[data-bon-voir]');
+    if(v){ const c=state.data.find(x=>String(x.id)===v.getAttribute('data-bon-voir')); if(!c) return; const w=window.open('','_blank');
+        try{ const {blob}=await bonFichier(c); const u=URL.createObjectURL(blob); if(w) w.location=u; else location.href=u; }catch(err){ if(w) w.close(); showToast(`${icon('alert',13)} ${esc(err.message)}`); } return; }
+    const s=e.target.closest('[data-bon-envoyer]'); if(!s) return;
+    const c=state.data.find(x=>String(x.id)===s.getAttribute('data-bon-envoyer')); if(!c) return;
+    const F=bonForm(c.id), to=[...bonDestinataires(c).filter(x=>!F.off[x.em]).map(x=>x.em),...String(document.getElementById('bonAutre')?.value||'').split(/[\s,;]+/).filter(x=>/@/.test(x))];
+    if(!to.length){ showToast(`${icon('alert',13)} Choisissez au moins un destinataire`); return; }
+    state.bonCharge=c.id; render();
+    try{ const {B,blob}=await bonFichier(c);
+        const b64=await new Promise((ok,ko)=>{ const rd=new FileReader(); rd.onload=()=>ok(String(rd.result).split(',')[1]||''); rd.onerror=ko; rd.readAsDataURL(blob); });
+        const r=await fetch(`${SB_URL}/functions/v1/envoi-bon`,{method:'POST',headers:{...sbH(),'Content-Type':'application/json'},body:JSON.stringify({id:c.id,to,message:document.getElementById('bonMsg')?.value||'',fichier:{nom:B.nom,type:B.type,base64:b64}})});
+        if(r.status===404) throw new Error('la fonction « envoi-bon » n’est pas encore installée sur Supabase');
+        const j=await r.json().catch(()=>({ok:false,error:'réponse illisible ('+r.status+')'}));
+        if(!j.ok) throw new Error(j.error||'échec');
+        setSuivi([c.id],()=>({bonEnvoi:{at:new Date().toISOString(),to,par:userName()}}));
+        try{ logAction('Bon de réservation envoyé',[c],to.join(', ')); }catch(_){}
+        state.bonForm=null; showToast(`${icon('mail',13)} Bon envoyé à ${to.length} destinataire${to.length>1?'s':''}`);
+    }catch(err){ showToast(`${icon('alert',13)} Envoi impossible : ${esc(err.message)}`); }
+    state.bonCharge=null; render();
+});
 /* Fiche : toutes les informations de la commande, lisibles d'un coup d'œil */
 function ficheInfos(d){
     const s=suiviOf(d), T=d.type, dt=parseDate(d.date), df=parseDate(d.dateDepart);
@@ -3129,6 +3199,7 @@ function renderDetail(d,m){
 
     ${ficheInfos(d)}
     ${ficheActions(d)}
+    ${ficheBonHtml(d)}
     <div style="height:14px"></div>
     ${suiviBlock(d)}
 
