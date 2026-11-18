@@ -1866,7 +1866,6 @@ function render(){
     if(AUTH&&!state.loading&&isAdmin()&&!window._prixEstT&&lsGet('prix_estimes_taxi_v1')!=='1'&&(state.data||[]).length){ window._prixEstT=true; setTimeout(async()=>{ const L=estimerPrixTaxis(); lsSet('prix_estimes_taxi_v1','1'); if(L.length){ await appliquerEstimations(L,{silent:true}); showToast(`✓ ${L.length} prix de taxi estimés (≈) · voir Dépenses & prix`); } },2500); }
     if(AUTH&&!state.loading&&isAdmin()&&!window._eqMig&&!(settings.equipe&&settings.equipe.v>=3)){ window._eqMig=true; setTimeout(()=>migrerEquipe().then(()=>render()).catch(e=>console.error('Équipe',e)),0); }
     if(state.authMode==='reset') html=renderLogin();
-    else if(state.express) html=isAdmin()?renderExpress():(AUTH?renderPasAdmin():renderLogin());
     else if(state.vue==="admin") html=state.authed?(state.live?renderLive()+liveUnlockHtml():renderAdminView(m)):(AUTH?renderPasAdmin():renderLogin());
     else if(state.loginScreen || (settings.loginObligatoire && !AUTH)) html=renderLogin();
     else if(state.trackMode) html=renderTrackCode(m);
@@ -3349,6 +3348,19 @@ function pInfo(nom){ if(!nom) return {}; const M=settings.prestaInfo||{}, n=pCle
     const u=k?M[k]:{}, d=PRESTA_DEFAUT[n]||{}, r={...d}; Object.keys(u).forEach(x=>{ if(u[x]) r[x]=u[x]; }); return r; }
 /* Logo d'un prestataire : image déposée dans sa fiche, sinon icône de son site, sinon initiales colorées */
 const LOGO_COUL=['#2563eb','#0d9488','#d97706','#7c3aed','#db2777','#0891b2','#65a30d','#dc2626','#475569'];
+/* Site officiel des grandes chaînes (hôtels surtout) : sert à trouver le logo quand aucun site n'est renseigné */
+const LOGO_CHAINES=[
+ [/ibis/i,'ibis.accor.com'],[/novotel/i,'novotel.accor.com'],[/mercure/i,'mercure.accor.com'],[/pullman/i,'pullman.accor.com'],[/sofitel/i,'sofitel.accor.com'],[/mgallery/i,'mgallery.accor.com'],[/swiss[oô]tel/i,'swissotel.com'],[/adagio/i,'adagio-city.com'],[/mama shelter/i,'mamashelter.com'],[/hotel f1|hôtel f1|formule 1/i,'hotelf1.accor.com'],[/accor/i,'all.accor.com'],
+ [/b ?& ?b|b and b|\bb&b\b/i,'hotel-bb.com'],[/campanile/i,'campanile.com'],[/kyriad/i,'kyriad.com'],[/premi[eè]re classe/i,'premiereclasse.com'],[/golden tulip/i,'goldentulip.com'],[/tulip inn/i,'tulipinn.com'],
+ [/holiday inn|crowne plaza|intercontinental|indigo|\bihg\b/i,'ihg.com'],[/hilton|hampton|doubletree|garden inn/i,'hilton.com'],
+ [/marriott|courtyard|residence inn|moxy|westin|sheraton|m[ée]ridien|renaissance|aloft|ac hotel/i,'marriott.com'],[/best western/i,'bestwestern.fr'],
+ [/radisson|park inn/i,'radissonhotels.com'],[/occidental|barcel[oó]/i,'barcelo.com'],[/hyatt/i,'hyatt.com'],[/citadines/i,'discoverasr.com'],[/okko/i,'okkohotels.com'],
+ [/appart'? ?city/i,'appartcity.com'],[/\blogis\b/i,'logishotels.com'],[/brit ?hotel/i,'brithotel.fr'],[/the originals/i,'theoriginalshotels.com'],[/zenitude/i,'zenitude-hotel-residences.com'],
+ [/mob hotel/i,'mobhotel.com'],[/citizenm/i,'citizenm.com'],[/\bmeli[aá]\b/i,'melia.com'],[/nh hotel|\bnh\b/i,'nh-hotels.com'],[/staycity/i,'staycity.com'],[/odalys/i,'odalys-vacances.com'],[/pierre ?& ?vacances/i,'pierreetvacances.com'],
+ [/booking/i,'booking.com'],[/expedia/i,'expedia.fr'],[/airbnb/i,'airbnb.fr']
+];
+function estHotel(n){ const k=pCle(n); return (settings.prestatairesHotel||[]).some(h=>pCle(typeof h==='string'?h:(h&&h.nom))===k); }
+function logoDomaine(n,type){ if(type!=='hotel'&&!estHotel(n)) return ''; const x=String(n||''); const m=LOGO_CHAINES.find(([re])=>re.test(x)); return m?m[1]:''; }
 function prestaLogo(nom,sz=28,type){
     const n=String(nom||'').trim();
     const box=`width:${sz}px;height:${sz}px;border-radius:${Math.round(sz*.28)}px;flex-shrink:0;`;
@@ -3356,7 +3368,7 @@ function prestaLogo(nom,sz=28,type){
     let h=0; for(const ch of n.toLowerCase()) h=(h*31+ch.charCodeAt(0))>>>0; const coul=LOGO_COUL[h%LOGO_COUL.length];
     const mots=n.replace(/[^\p{L}\p{N} ]/gu,' ').split(/\s+/).filter(Boolean), ini=(mots.length>1?mots[0][0]+mots[1][0]:n.slice(0,2)).toUpperCase();
     const mono=`<span class="plogo" style="${box}background:${coul};color:#fff;font-size:${Math.round(sz*.4)}px;">${esc(ini)}</span>`;
-    const P=pInfo(n); let src=P.logo||'';
+    const P={...pInfo(n)}; if(!P.url&&!P.logo){ const d=logoDomaine(n,type); if(d) P.url=d; } let src=P.logo||'';
     let srcs=src?[src]:[];
     if((!src||!/^data:/.test(src))&&P.url){ try{ const u=new URL(/^https?:/i.test(P.url)?P.url:'https://'+P.url), h=u.hostname, nu=h.replace(/^www\./,'');
         srcs=[...srcs,`https://${h}/apple-touch-icon.png`,`https://www.google.com/s2/favicons?domain=${encodeURIComponent(h)}&sz=128`,`https://icons.duckduckgo.com/ip3/${encodeURIComponent(nu)}.ico`]; }catch(e){} }
@@ -4416,27 +4428,7 @@ function liveAnimateCounters(){
 /* ══════════════════════════════════════
    VUE EXPRESS (façon widget iPhone)
 ══════════════════════════════════════ */
-function renderExpress(){
-    const now=new Date(), ev=eventsByDay(), today=(ev[isoDay(now)]||[]); const tom=new Date(now); tom.setDate(now.getDate()+1); const demain=(ev[isoDay(tom)]||[]);
-    const D=(state.data||[]).filter(c=>!recPlusTard(c)), nN=D.filter(c=>suiviCat(c)==='nouvelle').length, nP=D.filter(c=>suiviCat(c)==='prise').length, ano=anomalies().filter(a=>a.niv>=2).length;
-    const prochaines=[...today.filter(c=>{ const hp=heurePrevue(c); return !hp||hp>=new Date(now.getTime()-30*60000); }),...demain].slice(0,5);
-    const tile=(v,l,col,nav)=>`<button class="ex-tile" data-express-go='${nav}' style="--c:${col};"><b>${v}</b><span>${l}</span></button>`;
-    return `<div class="ex">
-        <div class="ex-top"><div><span>${dateLongue(now)}</span><b>${esc(marqueNom())}</b></div><span class="ex-maj">Mis à jour ${now.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})}</span></div>
-        <div class="ex-grid">
-            ${tile(nN,'nouvelles','#3b82f6','{"adminTab":"suivi","suiviCat":"nouvelle"}')}
-            ${tile(nP,'prises en charge','#14b8a6','{"adminTab":"suivi","suiviCat":"prise"}')}
-            ${tile(today.length,'aujourd’hui','#8b5cf6','{"adminTab":"calendrier"}')}
-            ${tile(ano,'à ne pas oublier','#ef4444','{"adminTab":"notifs"}')}
-        </div>
-        <div class="ex-card"><div class="ex-card-h">Prochaines prestations</div>
-            ${prochaines.length?prochaines.map(c=>{ const d=parseDate(c.date); const auj=isoDay(d)===isoDay(now);
-                return `<div class="ex-row"><span class="ex-h"><b>${esc(c.heure||'—')}</b><span>${auj?'auj.':'demain'}</span></span><div style="flex:1;min-width:0;"><b>${esc(titreDe(c))}${c.type==='repas'?` · ${c.nb||1} p.`:''}</b><span>${esc(c.type==='taxi'?(c.arrivee||''):(c.lieu||''))}${c.presta?' · '+esc(c.presta):''}</span></div>${catPill(c)}</div>`; }).join('')
-            :'<div class="ex-empty">Rien de prévu d’ici demain</div>'}
-        </div>
-        <button class="ex-open" data-express-go='{"adminTab":"suivi"}'>Ouvrir l’application ${icon('arrow',16)}</button>
-    </div>`;
-}
+
 
 /* ══════════════════════════════════════
    MARQUE (nom, logo, couleurs)
@@ -5688,10 +5680,6 @@ function renderSettings(){
             <li>Le chiffre et les alertes se mettent à jour quand l’appli est ouverte ou réduite. Appli fermée, ce sont les emails admin qui préviennent.</li>
         </ul>
     </div>
-    <div class="settings-section">
-        ${secHead("phone","Vue express (iPhone)","Une vue « widget » à épingler sur l’écran d’accueil de l’iPhone.")}
-        <a href="express.html" target="_blank" class="btn-sm" style="text-decoration:none;padding:9px 14px;">${icon('phone',14)} Installer la vue express</a>
-    </div>
         <div style="font-size:12px;color:#8b93a1;margin-top:8px;">Écran live sur une TV : ouvrez l’adresse de l’appli suivie de <b>#live</b> et connectez-vous une fois.</div>
     </div>
 `;
@@ -6939,7 +6927,7 @@ if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.
             state.loginScreen=true; history.replaceState(null,'',location.pathname+location.search);
         }
     }catch(e){ console.error('Lien de connexion:',e); }
-    if(location.hash==='#express') state.express=true;
+    if(location.hash==='#express'){ try{ history.replaceState(null,'',location.pathname); }catch(e){} } // ancienne vue express : ouvre l'application
     if(location.hash==='#live') lsSet('live_kiosk','1');
     if(location.hash==='#live'||lsGet('live_kiosk')==='1'){ state.live=true; state.vue='admin'; }
     if(AUTH && AUTH.expires_at < Date.now()+60000) await authRefresh();
