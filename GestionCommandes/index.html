@@ -1531,7 +1531,7 @@ function sessionEnd(){ const tok=AUTH&&AUTH.access_token; pushUnsubscribe(tok); 
 const adminName = () => (AUTH ? userName() : '') || 'Admin';
 
 /* ── Journal des modifications ── */
-const JOURNAL_MAX = 500;
+const JOURNAL_MAX = 2000;
 let _journalChain = Promise.resolve();
 function logAction(action, items, detail) {
     const list = Array.isArray(items) ? items : [items];
@@ -1539,7 +1539,7 @@ function logAction(action, items, detail) {
     const qui = AUTH ? userName() : (state.vue === 'admin' ? adminName() : 'Demandeur');
     const entries = list.filter(Boolean).map(c => ({
         t, qui, action,
-        id: c.id, code: c.code || '', type: c.type || '', desc: c.desc || '',
+        id: c.id, code: c.code || '', type: c.type || '', desc: c.desc || [c.presta, c.pourQui].filter(Boolean).join(' · '),
         detail: typeof detail === 'function' ? detail(c) : (detail || '')
     }));
     if (!entries.length) return;
@@ -2310,7 +2310,7 @@ function renderAdminView(m){
     const attente=state.data.filter(c=>c.pris==="En attente"||c.pris==="En cours");
     if(state.detail) return renderDetail(state.detail,m);
 
-    const activiteSubTabs=[['tout','grid','Toutes'],['reservations','utensils','Repas, taxis, coursiers'],['commandes','box','Fournitures'],['hotels','bed','Hôtels'],['journal','edit','Journal'],['corbeille','trash','Corbeille']].map(([k,ic,label])=>{
+    const activiteSubTabs=[['tout','grid','Toutes'],['repas','utensils','Repas'],['taxis','car','Taxis'],['coursiers','send','Coursiers'],['commandes','box','Fournitures'],['hotels','bed','Hôtels']].map(([k,ic,label])=>{
         const active=(state.activiteTab||'tout')===k;
         return `<button data-activite-tab="${k}" class="subtab ${active?'on':''}">${icon(ic,15)} ${label}</button>`;
     }).join('');
@@ -2319,6 +2319,8 @@ function renderAdminView(m){
     if(state.saisieDirecte)                  main=renderSaisieDirecte(m);
     else if(state.adminTab==='settings')        main=renderSettings();
     else if(state.adminTab==='activite')     main=renderActivite(m);
+    else if(state.adminTab==='journal')      main=renderJournal(m);
+    else if(state.adminTab==='corbeille')    main=renderCorbeille(m);
     else if(state.adminTab==='stats'||state.adminTab==='analyse') main=renderStatsPage(m);
     else if(String(state.adminTab).startsWith('me')) main=meOk()?renderMe(m):renderDashboard(total,attente,m);
     else if(state.adminTab==='suivi')        main=renderSuivi(m);
@@ -2328,7 +2330,7 @@ function renderAdminView(m){
 
     else main=meOk()?renderMe(m):renderDashboard(total,attente,m);
 
-    const TITRES={notifs:'Notifications',parking:'Parking & véhicules',stock:'Stock',dashboard:'Tableau de bord',suivi:'Suivi des demandes',calendrier:'Agenda',activite:'Base des demandes',stats:'Statistiques',analyse:'Statistiques',me:'Mon écran','me-bat':'Signalements du bâtiment','me-stat':'Actions et stats','me-memo':'Mémo perso',settings:'Réglages'};
+    const TITRES={notifs:'Notifications',parking:'Parking & véhicules',stock:'Stock',dashboard:'Tableau de bord',suivi:'Suivi des demandes',calendrier:'Agenda',activite:'Base des demandes',journal:'Journal',corbeille:'Corbeille',stats:'Statistiques',analyse:'Statistiques',me:'Mon écran','me-bat':'Signalements du bâtiment','me-stat':'Actions et stats','me-memo':'Mémo perso',settings:'Réglages'};
     if(m) return `
     <div class="mobile-header">
         <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
@@ -2369,7 +2371,7 @@ function renderAdminView(m){
             <div class="side-grp" style="padding-top:12px;">
                 ${item('dashboard','dashboard','Tableau de bord')}${meOk()?`<div class="perso">${item('me-memo','edit','Mémo perso')}</div>`:''}</div>
             <div class="side-grp"><h6 class="side-lbl">Commandes</h6>
-                ${item('suivi','clipboard','Suivi des demandes')}${item('calendrier','calendar','Agenda')}${item('activite','grid','Base des demandes')}</div>
+                ${item('suivi','clipboard','Suivi des demandes')}${item('calendrier','calendar','Agenda')}${item('activite','grid','Base des demandes')}${item('journal','edit','Journal')}${item('corbeille','trash','Corbeille')}</div>
             ${meOk()?`<div class="side-grp perso"><h6 class="side-lbl">Bâtiment ${icon('lock',10)}</h6>${item('me-bat','tool','Signalements')}${item('me-stat','check','Actions et stats')}</div>`:''}
             <div class="side-grp"><h6 class="side-lbl">Analyses</h6>
                 ${item('stats','chart','Statistiques')}</div>
@@ -2695,6 +2697,7 @@ function suiviCat(c){
     if((c.pris==='En attente'||(c.pris==='En cours'&&estRecurrent(c)))&&!s.accuse&&!s.cmd&&!passe) return 'nouvelle';
     if(!passe) return 'prise';
     if(+c.prix>0&&!suiviOf(c).prixEst) return 'fin';
+    if(!(+c.prix>0)) return 'prix';
     // Prix estimé automatiquement : à confirmer pour les prestations récentes (30 jours), sinon on le garde
     if(+c.prix>0){ const d=parseDate(c.date); return d&&(Date.now()-d.getTime())<30*864e5?'prix':'fin'; }
     return 'prix';
@@ -2977,7 +2980,7 @@ function mobileNavHtml(){
     </div></nav>
     ${state.moreOpen?`<div data-nav='{"moreOpen":false}' style="position:fixed;inset:0;background:rgba(15,23,42,.35);z-index:9500;display:flex;align-items:flex-end;">
         <div style="background:#fff;width:100%;border-radius:20px 20px 0 0;padding:14px 14px calc(14px + env(safe-area-inset-bottom,0px));">
-            ${[...(meOk()?[["me-memo","edit","Mémo perso"],["me-bat","tool","Signalements du bâtiment"],["me-stat","check","Actions et stats"]]:[]),["stats","chart","Statistiques"]].map(([t,ic,l])=>`<button data-admin-tab="${t}" style="display:flex;align-items:center;gap:12px;width:100%;background:none;border:none;padding:14px 8px;font-size:15px;font-weight:600;color:var(--ink);cursor:pointer;border-bottom:1px solid #f0f1f4;">${icon(ic,18)} ${l}</button>`).join('')}
+            ${[...(meOk()?[["me-memo","edit","Mémo perso"],["me-bat","tool","Signalements du bâtiment"],["me-stat","check","Actions et stats"]]:[]),["journal","edit","Journal"],["corbeille","trash","Corbeille"],["stats","chart","Statistiques"]].map(([t,ic,l])=>`<button data-admin-tab="${t}" style="display:flex;align-items:center;gap:12px;width:100%;background:none;border:none;padding:14px 8px;font-size:15px;font-weight:600;color:var(--ink);cursor:pointer;border-bottom:1px solid #f0f1f4;">${icon(ic,18)} ${l}</button>`).join('')}
             <button data-back-home style="display:flex;align-items:center;gap:12px;width:100%;background:none;border:none;padding:14px 8px;font-size:15px;font-weight:600;color:var(--ink);cursor:pointer;border-bottom:1px solid #f0f1f4;">${icon('home',18)} Page de demande</button>
             <button data-admin-logout style="display:flex;align-items:center;gap:12px;width:100%;background:none;border:none;padding:14px 8px;font-size:15px;font-weight:600;color:#b91c1c;cursor:pointer;">${icon('logout',18)} Se déconnecter</button>
         </div></div>`:''}`;
@@ -3845,7 +3848,7 @@ document.addEventListener('click',e=>{
     if(a==='vdel'){ const v=state.pk.vehicules.find(x=>x.id===state.vhEdit); if(!v||!confirm(`Supprimer le véhicule ${v.plaque} ?`)) return; state.pk.vehicules=state.pk.vehicules.filter(x=>x!==v); state.vhEdit=null; pkSave(); render(); return; }
 });
 /* ══ NOTIFICATIONS (onglet) : ce qui s'est passé, à marquer « vu » ══ */
-const NT_CATS=[['all','Toutes'],['dem','Demandes'],['equipe','Équipe'],['att','Points d’attention'],['bat','Bâtiment']];
+const NT_CATS=[['all','Toutes'],['dem','Demandes'],['att','Points d’attention'],['bat','Bâtiment']];
 async function loadNotifsVues(){ try{ const all=(await paramGet('notifsVues'))||{}; const me=all[userEmail()]||null; state.nv=me||{depuis:new Date(Date.now()-7*864e5).toISOString(),vus:{}}; if(!me) ntSave(); }catch(e){ state.nv=state.nv||{depuis:new Date(Date.now()-7*864e5).toISOString(),vus:{}}; } state.nvLoaded=true; }
 let _ntT=null;
 function ntSave(){ clearTimeout(_ntT); _ntT=setTimeout(async()=>{ try{ const e=userEmail(); if(!e||!state.nv) return; const lim=Date.now()-90*864e5; Object.entries(state.nv.vus||{}).forEach(([k,v])=>{ if(+new Date(v)<lim) delete state.nv.vus[k]; }); const all=(await paramGet('notifsVues'))||{}; all[e]=state.nv; await paramSet('notifsVues',all); }catch(err){ console.error('Notifications :',err); } },500); }
@@ -3857,7 +3860,8 @@ function ntListe(){
     (state.journal||[]).forEach(e=>{
         const t=+new Date(e.t); if(!(t>depuis)||!e.qui||e.qui===me||e.qui==='Admin'&&!AUTH) return;
         const dem=!estAdmin(e.qui)||e.qui==='Demandeur';
-        if(dem&&!/nouvelle demande|statut|modif/i.test(e.action)) return;
+        if(!dem) return; // les actions de Julia / Arnaud sont dans le Journal, plus dans les notifications
+        if(!/nouvelle demande|statut|modif/i.test(e.action)) return;
         const annul=/annulé \(par/i.test(e.detail||'');
         const quoi=[TYPE_LABEL[e.type]||'',e.desc||'',e.code||''].filter(Boolean).join(' · ');
         L.push({key:'j'+ntH(e.t+e.action+e.id+e.detail),cat:dem?'dem':'equipe',t,ic:annul?'x':dem?'clipboard':'user',ton:annul?'#b91c1c':dem?'#b45309':'#2c5f85',
@@ -4221,7 +4225,9 @@ document.addEventListener('click',e=>{ const b=e.target.closest('[data-stk]'); i
         state.adminForm={dem,pourQui:[],pourQuiAutre:'',vol:'',date:today(),dateDepart:'',heure:'12h00',lieu:'',de:'',vers:'',presta:p,desc:L.map(i=>i.nom).join(', '),nb:'1',com:'',step:1};
         setState({saisieType:'commande',saisieDirecte:false,fabOpen:false}); }
 });
-function prixASaisir(){ return (state.data||[]).filter(c=>suiviCat(c)==='prix'); }
+function prixASaisir(){ const t1=new Date(); t1.setHours(23,59,59,999);
+    return (state.data||[]).filter(c=>{ if(c.pris==='Annulé') return false; const d=parseDate(c.type==='hotel'&&c.dateDepart?c.dateDepart:c.date); if(!d||d>t1) return false;
+        if(!(+c.prix>0)) return true; return !!suiviOf(c).prixEst&&(Date.now()-d.getTime())<30*864e5; }); }
 function anomalies(){
     const out=[], now=new Date(), t0=new Date(); t0.setHours(0,0,0,0);
     const actives=state.data.filter(c=>c.pris!=='Annulé');
@@ -5279,8 +5285,12 @@ function renderAnalyse(m){
 ══════════════════════════════════════ */
 function renderJournal(m){
     const q=(state.journalSearch||'').toLowerCase();
-    const all=(state.journal||[]).filter(e=>!q||`${e.qui} ${e.action} ${e.code} ${e.desc} ${e.detail}`.toLowerCase().includes(q));
-    const list=all.slice(0,300);
+    // Journal complet : actions enregistrées + création de chaque demande de la base (même celles d'avant le journal)
+    const J=state.journal||[], vus=new Set(J.filter(e=>/cr[ée]ation|nouvelle demande|ajout/i.test(e.action)).map(e=>String(e.id)));
+    const crees=(state.data||[]).filter(c=>c.createdAt&&!vus.has(String(c.id))).map(c=>({t:c.createdAt,qui:demNom(c)||c.demandeur||'—',action:'Demande créée',id:c.id,code:c.code||'',type:c.type||'',desc:c.desc||[c.presta,c.pourQui].filter(Boolean).join(' · '),detail:[c.presta,$d(c.date),c.heure].filter(Boolean).join(' · ')}));
+    const tous=[...J,...crees].filter(e=>e&&e.t&&!isNaN(new Date(e.t))).sort((a,b)=>new Date(b.t)-new Date(a.t));
+    const all=tous.filter(e=>!q||`${e.qui} ${e.action} ${e.code} ${e.desc} ${e.detail}`.toLowerCase().includes(q));
+    const list=all.slice(0,state.journalN||300);
     const COL={'Statut':['#eff6ff','#1e40af'],'Prix':['#f0fdf4','#15803d'],'Modification':['#f5f3ff','#6d28d9'],'Suppression':['#fef2f2','#b91c1c'],'Restauration':['#ecfeff','#0e7490'],'Création':['#fff7ed','#c2410c'],'Corbeille vidée':['#fef2f2','#b91c1c'],'Complété':['#f0fdf4','#15803d'],'Commandée':['#eff6ff','#1d4ed8'],'Commande annulée':['#f1f5f9','#5a6a85'],'Terminée':['#f0fdf4','#15803d'],'Rappel agenda':['#f5f3ff','#6d28d9']};
     let lastDay='';
     const rows=list.map(e=>{
@@ -5304,7 +5314,7 @@ function renderJournal(m){
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:10px;">
         <div>
             <div style="font-family:var(--ft);font-weight:650;letter-spacing:-.01em;font-size:${m?'18px':'22px'};display:flex;align-items:center;gap:8px;">${icon('edit',m?16:19)} Journal des actions</div>
-            <div style="font-size:12px;color:#8b93a1;margin-top:3px;">Qui a modifié quoi, et quand · ${JOURNAL_MAX} dernières actions conservées</div>
+            <div style="font-size:12px;color:#8b93a1;margin-top:3px;">Tout ce qui a été saisi ou modifié dans l’application, par qui et quand · ${tous.length} événements</div>
         </div>
         <button id="journalRefresh" style="background:#f1f2f4;border:none;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:600;color:#4b5563;cursor:pointer;">Actualiser</button>
     </div>
@@ -5312,7 +5322,7 @@ function renderJournal(m){
     <div style="background:#fff;border-radius:8px;border:1px solid #e4e7ec;overflow:hidden;">
         ${rows||`<div style="text-align:center;padding:40px;color:#8b93a1;font-size:14px;">${q?'Aucun résultat':'Aucune action enregistrée pour l’instant.<br><span style="font-size:12px;">Les validations, annulations, changements de prix et suppressions apparaîtront ici.</span>'}</div>`}
     </div>
-    ${all.length>list.length?`<div style="text-align:center;font-size:12px;color:#8b93a1;margin-top:8px;">${all.length-list.length} actions plus anciennes masquées : affinez la recherche.</div>`:''}
+    ${all.length>list.length?`<div style="text-align:center;margin-top:10px;"><button class="btn-sm" data-nav='{"journalN":${(state.journalN||300)+500}}'>Afficher ${Math.min(500,all.length-list.length)} de plus (${all.length-list.length} restants)</button></div>`:''}
     </div>`;
 }
 
@@ -5445,9 +5455,10 @@ function renderActiviteTout(m){
    codé (Réservations, Commandes, Historique + export Excel, Corbeille) mais
    qui n'étaient reliés à aucune navigation avant cette mise à jour. */
 function renderActivite(m){
-    if(state.activiteTab==='historique') state.activiteTab='tout';
+    if(['historique','reservations'].includes(state.activiteTab)) state.activiteTab='tout';
+    if(state.activiteTab==='journal'||state.activiteTab==='corbeille'){ state.adminTab=state.activiteTab; state.activiteTab='tout'; return state.adminTab==='journal'?renderJournal(m):renderCorbeille(m); }
     const tab=state.activiteTab||'tout';
-    const TABS=[['tout','grid','Toutes'],['reservations','utensils','Repas, taxis, coursiers'],['commandes','box','Fournitures'],['hotels','bed','Hôtels'],['journal','edit','Journal'],['corbeille','trash','Corbeille']];
+    const TABS=[['tout','grid','Toutes'],['repas','utensils','Repas'],['taxis','car','Taxis'],['coursiers','send','Coursiers'],['commandes','box','Fournitures'],['hotels','bed','Hôtels']];
     const subNav=`<div style="display:flex;gap:4px;flex-wrap:wrap;background:var(--border-light);padding:4px;border-radius:6px;width:fit-content;margin-bottom:10px;">
         ${TABS.map(([k,ic,l])=>`<button data-activite-tab="${k}" style="display:flex;align-items:center;gap:6px;padding:6px 13px;border:none;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;white-space:nowrap;background:${tab===k?'var(--white)':'transparent'};color:${tab===k?'var(--ink)':'var(--ink-soft)'};box-shadow:${tab===k?'0 1px 3px rgba(0,0,0,0.08)':'none'};transition:all 0.15s;">${icon(ic,14)} ${l}</button>`).join('')}
     </div>`;
@@ -5459,9 +5470,9 @@ function renderActivite(m){
     else if(tab==='journal') body=renderJournal(m);
     else {
         // Même tableau pour toutes les vues, filtré par type
-        const TY={tout:null,reservations:['repas','taxi','coursier'],commandes:['commande'],hotels:['hotel']}[tab]||null;
-        const TI={tout:'Toutes les demandes',reservations:'Repas, taxis, coursiers',commandes:'Fournitures',hotels:'Hôtels'}[tab]||'Toutes les demandes';
-        const IC={tout:'grid',reservations:'utensils',commandes:'box',hotels:'bed'}[tab]||'grid';
+        const TY={tout:null,repas:['repas'],taxis:['taxi'],coursiers:['coursier'],commandes:['commande'],hotels:['hotel']}[tab]||null;
+        const TI={tout:'Toutes les demandes',repas:'Repas',taxis:'Taxis',coursiers:'Coursiers',commandes:'Fournitures',hotels:'Hôtels'}[tab]||'Toutes les demandes';
+        const IC={tout:'grid',repas:'utensils',taxis:'car',coursiers:'send',commandes:'box',hotels:'bed'}[tab]||'grid';
         if(TY) state.data=state.data.filter(c=>TY.includes(c.type||'repas'));
         body=renderHistorique(m,{titre:TI,ic:IC});
     }
@@ -5837,7 +5848,8 @@ function renderHistorique(m,opt={}){
     const PAGE=30;
     const page=state.histPage||0;
     const sansPrix=prixASaisir();
-    const allSorted=[...(state.histPrix?sansPrix:state.data)].sort((a,b)=>{
+    const allSorted=[...(state.histPrix?sansPrix:state.data)].sort((a,b)=>{ const s=_histCmp(a,b); return state.histAsc?-s:s; });
+    function _histCmp(a,b){
         const k=state.histSort||'date';
         if(k==='date'){
             const da=parseDate(a.date)||new Date(0);
@@ -5847,8 +5859,10 @@ function renderHistorique(m,opt={}){
         const parDate=()=>((parseDate(b.date)||new Date(0))-(parseDate(a.date)||new Date(0)));
         if(k==='prix') return (b.prix||0)-(a.prix||0)||parDate();
         if(k==='type'){ const O=['repas','taxi','coursier','hotel','commande']; const ia=O.indexOf(a.type||'repas'), ib=O.indexOf(b.type||'repas'); return ((ia<0?9:ia)-(ib<0?9:ib))||parDate(); }
+        if(k==='statut'){ const O=['recue','commandee','fait','refusee']; return (O.indexOf(etape(a))-O.indexOf(etape(b)))||parDate(); }
+        if(k==='demandeur') return String(demNom(a)||'').localeCompare(String(demNom(b)||''),'fr',{sensitivity:'base'})||parDate();
         return String(a[k]||'').localeCompare(String(b[k]||''),'fr',{sensitivity:'base'})||parDate();
-    });
+    }
     const sorted=allSorted.slice(page*PAGE,(page+1)*PAGE);
     const totalPages=Math.ceil(allSorted.length/PAGE);
 
@@ -5864,15 +5878,6 @@ function renderHistorique(m,opt={}){
         
     </div>
 
-    <!-- Filtres tri -->
-    <div style="background:#fff;border-radius:8px;padding:9px 14px;margin-bottom:10px;border:1px solid #e4e7ec;box-shadow:0 1px 2px rgba(0,0,0,0.04);">
-        <div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;">
-            <span style="font-size:12px;color:#7f8c9b;font-weight:500;margin-right:4px;">Trier par</span>
-            ${[['date','Date'],['demandeur','Demandeur'],['desc','Titre'],['prix','Prix'],['type','Type']].map(([k,l])=>`
-            <button data-hist-sort="${k}" style="display:inline-flex;align-items:center;gap:5px;padding:6px 14px;background:${(state.histSort||'date')===k?'var(--accent)':'#f1f5f9'};color:${(state.histSort||'date')===k?'#fff':'#5a6a85'};border:1px solid ${(state.histSort||'date')===k?'transparent':'transparent'};border-radius:6px;font-size:12px;font-weight:500;cursor:pointer;transition:all 0.15s;">${l}${(state.histSort||'date')===k?' ↓':''}</button>`).join('')}
-        </div>
-    </div>
-
     <!-- Tableau moderne -->
     <div style="background:#fff;border-radius:8px;border:1px solid #e4e7ec;overflow:hidden;box-shadow:0 1px 2px rgba(0,0,0,0.04);">
         <div style="overflow:auto;max-height:max(340px, calc(100vh - 290px));">
@@ -5882,7 +5887,8 @@ function renderHistorique(m,opt={}){
                         ${(state.colOrder||["date","code","type","desc","demandeur","pourQui","statut","prix"]).map(col=>{
                             const labels={date:'Date',code:'Code',type:'Type',desc:'Description',demandeur:'Demandeur',pourQui:'Pour qui',statut:'Statut',prix:'Montant'};
                             const align=col==='prix'?'right':col==='statut'?'center':'left';
-                            return `<th data-col="${col}" style="text-align:${align};padding:9px 12px;font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#64748b;border-bottom:2px solid #e2e8f0;cursor:grab;user-select:none;" title="Glisser pour réorganiser">${labels[col]||col}</th>`;
+                            const sk={date:'date',code:'code',type:'type',desc:'desc',demandeur:'demandeur',pourQui:'pourQui',statut:'statut',prix:'prix'}[col], on=(state.histSort||'date')===sk, fl=on?(state.histAsc?' ↑':' ↓'):'';
+                            return `<th data-col="${col}" data-hist-sort="${sk}" style="text-align:${align};padding:9px 12px;font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:${on?'var(--accent)':'#64748b'};border-bottom:2px solid ${on?'var(--accent)':'#e2e8f0'};cursor:pointer;user-select:none;white-space:nowrap;" title="Cliquer pour trier · glisser pour déplacer la colonne">${labels[col]||col}${fl}</th>`;
                         }).join('')}
                     </tr>
                 </thead>
@@ -6692,7 +6698,7 @@ function attachEvents(){
     }
 
     document.querySelectorAll('[data-hist-sort]').forEach(btn=>{
-        btn.onclick=()=>setState({histSort:btn.getAttribute('data-hist-sort'),histPage:0});
+        btn.onclick=()=>{ const k=btn.getAttribute('data-hist-sort'); setState({histAsc:(state.histSort||'date')===k?!state.histAsc:false,histSort:k,histPage:0}); };
     });
         document.querySelectorAll('[data-filtre]').forEach(el=>el.onclick=()=>setState({filtre:el.getAttribute('data-filtre')}));
 
@@ -7178,7 +7184,7 @@ function attachEvents(){
         settings.loginObligatoire=!!e.target.checked; saveSettings(settings);
         showToast(settings.loginObligatoire?'✓ Connexion obligatoire activée':'Connexion obligatoire désactivée'); render();
     });
-    document.querySelectorAll('[data-goto-trash]').forEach(el=>el.onclick=()=>setState({adminTab:'activite',activiteTab:'corbeille',sel:[]}));
+    document.querySelectorAll('[data-goto-trash]').forEach(el=>el.onclick=()=>setState({adminTab:'corbeille',sel:[]}));
     document.getElementById('saveAdminEmails')?.addEventListener('click',()=>{
         const inputs=document.querySelectorAll('.admin-email-input');
         settings.adminEmails=[...inputs].map(i=>i.value.trim()).filter(Boolean);
