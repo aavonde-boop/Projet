@@ -1762,7 +1762,7 @@ function bulkBarHtml() {
     const b = (act, bg, bd, col, ic, label) => `<button data-bulk="${act}" style="display:flex;align-items:center;gap:5px;background:${bg};border:1px solid ${bd};color:${col};border-radius:8px;padding:7px ${m?'10px':'14px'};font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;">${icon(ic,14)}${m?'':' '+label}</button>`;
     return `<div style="position:fixed;left:50%;transform:translateX(-50%);bottom:${m?'calc(84px + env(safe-area-inset-bottom,0px))':'24px'};z-index:9000;background:#1a1f36;color:#fff;border-radius:6px;padding:8px 10px 8px 18px;display:flex;align-items:center;gap:8px;box-shadow:0 10px 30px rgba(0,0,0,.25);max-width:calc(100vw - 24px);">
         <span style="font-size:13px;font-weight:600;white-space:nowrap;">${n} sélectionnée${n>1?'s':''}</span>
-        ${b('OUI','#eff6ff','#bfdbfe','#1d4ed8','check','Commande passée')}
+        ${b('OUI','#eff6ff','#bfdbfe','#1d4ed8','check','Prise en charge')}
         ${b('Annulé','#fff7ed','#fed7aa','#c2410c','x','Refuser')}
         ${b('delete','#fef2f2','#fecaca','#b91c1c','trash','Supprimer')}
         <button data-bulk="clear" title="Désélectionner" style="background:none;border:none;color:rgba(255,255,255,.6);cursor:pointer;padding:6px;display:flex;">${icon('x',16)}</button>
@@ -1788,7 +1788,7 @@ function bindBulkBar() {
             return;
         }
         const enAtt = state.data.filter(c => ids.includes(c.id) && (c.pris==='En attente'||c.pris==='En cours')).length;
-        if (act === 'OUI') { if (!confirm(`Commande passée pour ${ids.length} demande${ids.length>1?'s':''} ?\n\nAucun email ne sera envoyé.`)) return; }
+        if (act === 'OUI') { if (!confirm(`Prendre en charge ${ids.length} demande${ids.length>1?'s':''} ?\n\nAucun email ne sera envoyé.`)) return; }
         else if (!confirm(`Refuser ${ids.length} demande${ids.length>1?'s':''} ?\n\n${mailsOn('annulation')?'Un email d’annulation partira pour chacune.':'Aucun email ne sera envoyé.'}`)) return;
         state.sel = [];
         await applyStatus(ids, act, { silent: true });
@@ -1837,7 +1837,7 @@ function showToast(msg){ state.toast=msg; render(); setTimeout(()=>{ if(state.to
 ══════════════════════════════════════ */
 function avatar(name,size=40){ return `<div class="avatar" style="width:${size}px;height:${size}px;min-width:${size}px;background:${$col(name)};font-size:${Math.floor(size*.35)}px;">${$ini(name)}</div>`; }
 function chip(s){ const c=ST[s]||ST["En attente"]; return `<span class="chip" style="background:${c.bg};color:${c.tx};"><span style="width:7px;height:7px;border-radius:50%;background:${c.dot};display:inline-block;"></span>${c.label}</span>`; }
-function typeTag(t){ return `<span style="font-size:11px;font-weight:600;color:#9ca3af;">${TYPE_ICON[t]||"•"} ${TYPE_LABEL[t]||t}</span>`; }
+
 
 /* ══════════════════════════════════════
    RENDER
@@ -1890,7 +1890,6 @@ function render(){
 ══════════════════════════════════════ */
 function renderTrackCode(m){
     const result = state.trackResult;
-    const ST_LABEL={'OUI':icon('check',13)+' Validée','En attente':icon('hourglass',13)+' En attente','En cours':icon('clock',13)+' En cours','Annulé':icon('x',13)+' Annulée','Reçu':icon('check',13)+' Reçue'};
     const typeIcon=t=>icon(t==='taxi'?'car':t==='coursier'?'send':t==='repas'?'utensils':t==='hotel'?'bed':'box',14);
 
     let resultHtml='';
@@ -1965,18 +1964,19 @@ function installHintHtml(){
     </div>`;
 }
 
-const CLIENT_LBL={avalider:['Reçue','hourglass','avalider'],acommander:['Reçue','hourglass','avalider'],commandee:['Commandée','check','commandee'],fait:['Faite','check','fait'],refusee:['Annulée','x','refusee']};
-function clientPill(st){ const [l,ic,k]=CLIENT_LBL[st]; const S=STAGES[k]; return `<span style="display:inline-flex;align-items:center;gap:4px;background:${S.bg};color:${S.color};border:1px solid ${S.border};border-radius:8px;padding:2px 9px;font-size:11px;font-weight:700;white-space:nowrap;">${icon(ic,11)} ${l}</span>`; }
+/* Statuts vus par les assistantes : Envoyée → Prise en charge → Terminée (ou Annulée) */
+const CLIENT_CAT={nouvelle:['Envoyée','hourglass','#1d4ed8','#eff6ff'],prise:['Prise en charge','check','#0f766e','#f0fdfa'],prix:['Terminée','check','#475569','#f1f5f9'],fin:['Terminée','check','#475569','#f1f5f9'],annulee:['Annulée','x','#b91c1c','#fef2f2']};
+function clientPill(c){ const [l,ic,col,bg]=CLIENT_CAT[suiviCat(c)]||CLIENT_CAT.prise; return `<span style="display:inline-flex;align-items:center;gap:4px;background:${bg};color:${col};border:1px solid ${col}33;border-radius:8px;padding:2px 9px;font-size:11px;font-weight:700;white-space:nowrap;">${icon(ic,11)} ${l}</span>`; }
 function mesDemandesHtml(m){
     const moi=assistanteName()||userName();
     const today=new Date(); today.setHours(0,0,0,0);
     const toutes=state.data.filter(c=>String(c.demandeur||'').toLowerCase()===String(moi).toLowerCase()||demNom(c)===personne(moi).nom);
     const aVenir=toutes.filter(c=>{ const d=parseDate(c.date); return d&&d>=today; }).sort(byDateAsc);
     const passees=toutes.filter(c=>{ const d=parseDate(c.date); return !d||d<today; }).sort((a,b)=>byDateAsc(b,a)).slice(0,state.mesPasseesAll?50:5);
-    const ligne=c=>{ const st=stageOf(c);
-        return `<div style="background:#fff;border:1px solid var(--border);border-left:3px solid ${STAGES[CLIENT_LBL[st][2]].color};border-radius:8px;padding:12px 14px;">
+    const ligne=c=>{
+        return `<div style="background:#fff;border:1px solid var(--border);border-left:3px solid ${(CLIENT_CAT[suiviCat(c)]||CLIENT_CAT.prise)[2]};border-radius:8px;padding:12px 14px;">
             <div style="display:flex;align-items:center;gap:8px;"><span style="color:var(--ink-mid);">${typeIc(c.type,14)}</span>
-                <span style="font-weight:700;font-size:14px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(titreDe(c))}</span>${clientPill(st)}</div>
+                <span style="font-weight:700;font-size:14px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(titreDe(c))}</span>${clientPill(c)}</div>
             <div style="font-size:12px;color:#4b5563;margin-top:3px;">${dateCourte(c)}${c.heure?' · '+esc(c.heure):''}${c.lieu?' · '+esc(c.lieu):''}${c.type==='repas'?` · ${c.nb||1} pers.`:''}${c.code?` · <span style="font-family:monospace;color:#8b93a1;">${esc(c.code)}</span>`:''}</div>
             <div style="margin-top:8px;">${trackSteps(c)}</div>
             ${peutConfirmer(c)?`<button class="recu-btn" data-recu="${c.id}">${icon('check',14)} Bien reçu</button> `:''}${suiviOf(c).recu?`<div style="font-size:12px;color:#15803d;margin-top:6px;">${icon('check',12)} ${recuInfo(suiviOf(c))}</div>`:''}
@@ -1990,7 +1990,7 @@ function mesDemandesHtml(m){
         </div>
         ${aVenir.length?`<div style="display:grid;grid-template-columns:${m?'1fr':'1fr 1fr'};gap:10px;">${aVenir.map(ligne).join('')}</div>`:`<div style="text-align:center;color:#9ca3af;font-size:13px;padding:18px;border:1.5px dashed var(--border);border-radius:8px;">Aucune demande à venir</div>`}
         ${passees.length?`<div style="font-size:12px;font-weight:700;color:#8b93a1;text-transform:uppercase;letter-spacing:.05em;margin:18px 0 8px;">Passées</div>
-        <div style="display:flex;flex-direction:column;gap:6px;">${passees.map(c=>`<div style="display:flex;align-items:center;gap:8px;font-size:13px;color:#4b5563;padding:8px 12px;background:#fafbfc;border-radius:10px;"><span>${typeIc(c.type,13)}</span><span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(titreDe(c))}</span><span style="color:#8b93a1;">${dateCourte(c)}</span>${clientPill(stageOf(c))}</div>`).join('')}</div>
+        <div style="display:flex;flex-direction:column;gap:6px;">${passees.map(c=>`<div style="display:flex;align-items:center;gap:8px;font-size:13px;color:#4b5563;padding:8px 12px;background:#fafbfc;border-radius:10px;"><span>${typeIc(c.type,13)}</span><span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(titreDe(c))}</span><span style="color:#8b93a1;">${dateCourte(c)}</span>${clientPill(c)}</div>`).join('')}</div>
         ${!state.mesPasseesAll&&toutes.length-aVenir.length>5?`<button data-nav='{"mesPasseesAll":true}' style="background:none;border:none;color:var(--accent);font-size:12px;font-weight:700;cursor:pointer;margin-top:8px;">Voir plus</button>`:''}`:''}
     </div>`;
 }
@@ -2315,13 +2315,13 @@ function renderAdminView(m){
     else if(state.adminTab==='journal')      main=renderJournal(m);
     else if(state.adminTab==='corbeille')    main=renderCorbeille(m);
     else if(state.adminTab==='stats'||state.adminTab==='analyse') main=renderStatsPage(m);
-    else if(String(state.adminTab).startsWith('me')) main=meOk()?renderMe(m):renderDashboard(total,attente,m);
+    else if(String(state.adminTab).startsWith('me')) main=meOk()?renderMe(m):renderSuivi(m);
     else if(state.adminTab==='suivi')        main=renderSuivi(m);
     else if(state.adminTab==='calendrier')   main=renderCalendrier(m);
     else if(state.adminTab==='parking')      main=renderParking(m);
     else if(state.adminTab==='notifs')       main=renderNotifs(m);
 
-    else main=meOk()?renderMe(m):renderDashboard(total,attente,m);
+    else main=meOk()?renderMe(m):renderSuivi(m);
 
     const TITRES={notifs:'Notifications',parking:'Parking & véhicules',stock:'Stock',dashboard:'Tableau de bord',suivi:'Suivi des demandes',calendrier:'Agenda',activite:'Base des demandes',journal:'Journal',corbeille:'Corbeille',stats:'Statistiques',analyse:'Statistiques',me:'Mon écran','me-bat':'Signalements du bâtiment','me-stat':'Actions et stats','me-memo':'Mémo perso',settings:'Réglages'};
     if(m) return `
@@ -2389,16 +2389,7 @@ function renderAdminView(m){
    parametres (clé « suivi ») : aucune colonne à ajouter, aucun email
    supplémentaire. Valider / refuser passent par applyStatus (emails inchangés).
 ══════════════════════════════════════ */
-const STAGES = {
-    recue:      { label:'Reçue',       court:'Reçue',      color:'#b45309', bg:'#fffbeb', border:'#fde68a', icon:'hourglass' },
-    avalider:   { label:'Reçue',       court:'Reçue',      color:'#b45309', bg:'#fffbeb', border:'#fde68a', icon:'hourglass' },
-    acommander: { label:'Reçue',       court:'Reçue',      color:'#b45309', bg:'#fffbeb', border:'#fde68a', icon:'hourglass' },
-    commandee:  { label:'Commandée',   court:'Commandée',  color:'#1d4ed8', bg:'#eff6ff', border:'#bfdbfe', icon:'box' },
-    fait:       { label:'Faite',       court:'Faite',      color:'#15803d', bg:'#f0fdf4', border:'#bbf7d0', icon:'check' },
-    refusee:    { label:'Annulée',     court:'Annulée',     color:'#b91c1c', bg:'#fef2f2', border:'#fecaca', icon:'x' },
-};
-const STAGE_ORDER = ['recue','commandee','fait'];
-const etape = c => { const s=stageOf(c); return s==='avalider'||s==='acommander'?'recue':s; };
+const etape = c => ({nouvelle:'recue',prise:'commandee',prix:'fait',fin:'fait',annulee:'refusee'})[suiviCat(c)];
 const etapeLabel = c => ({nouvelle:'Nouvelle',prise:'Prise en charge',prix:'Prix à saisir',fin:'Terminée',annulee:'Annulée'})[suiviCat(c)];
 const JOURS = ['dimanche','lundi','mardi','mercredi','jeudi','vendredi','samedi'];
 const JOURS_C = ['dim.','lun.','mar.','mer.','jeu.','ven.','sam.'];
@@ -2411,26 +2402,15 @@ function dateCourte(c){ const d=parseDate(c.date); if(!d) return '—'; return `
 function dateLongue(d){ const j=JOURS[d.getDay()]; return `${j[0].toUpperCase()+j.slice(1)} ${d.getDate()} ${MOIS[d.getMonth()]}`; }
 const moisAn=(mo,y)=>`${MOIS[mo][0].toUpperCase()+MOIS[mo].slice(1)} ${y}`;
 function suiviOf(c){ return (state.suivi||{})[c.id]||{}; }
-function stageOf(c){
-    if(c.pris==='Annulé') return 'refusee';
-    if(c.pris==='En attente'||c.pris==='En cours') return 'avalider';
-    const s=suiviOf(c), j=daysLeft(c.date);
-    if(s.fait) return 'fait';
-    if(s.cmd) return (j!==null&&j<0)?'fait':'commandee';
-    if(c.pris==='Reçu') return 'fait';
-    if(j!==null&&j<0) return 'fait';          // prestations passées : historique
-    return 'acommander';
-}
 function titreDe(c){ return c.type==='commande' ? ([c.desc,c.presta].filter(Boolean).join(' · ')||'Commande') : (c.desc||TYPE_LABEL[c.type]||'—'); }
 function typeIc(t,s=14){ return icon(t==='taxi'?'car':t==='coursier'?'send':t==='repas'?'utensils':t==='hotel'?'bed':'box',s); }
 const CAT_STYLE={nouvelle:['Nouvelle','#1d4ed8','#eff6ff'],prise:['Prise en charge','#0f766e','#f0fdfa'],prix:['Prix à saisir','#b45309','#fffbeb'],fin:['Terminée','#475569','#f1f5f9'],annulee:['Annulée','#b91c1c','#fef2f2']};
 function catSt(c){ const [label,color,bg]=CAT_STYLE[suiviCat(c)]||CAT_STYLE.prise; return {label,court:label,color,bg}; }
 function catPill(c){ const [l,col,bg]=CAT_STYLE[suiviCat(c)]; return `<span style="display:inline-flex;align-items:center;background:${bg};color:${col};border-radius:20px;padding:3px 9px;font-size:11.5px;font-weight:700;white-space:nowrap;">${l}</span>`; }
-function stagePill(st){ const S=STAGES[st]; return `<span style="display:inline-flex;align-items:center;gap:5px;background:${S.bg};color:${S.color};border-radius:5px;padding:3px 8px;font-size:11.5px;font-weight:600;white-space:nowrap;">${S.court}</span>`; }
+
 /* Repas récurrents au-delà de demain : pas encore à traiter (masqués du suivi et des compteurs) */
 function estRecurrent(c){ return !!(suiviOf(c).recurrent||/^repas r[ée]current$/i.test(c.comment||'')); }
-function recPlusTard(c){ const j=daysLeft(c.date); return estRecurrent(c)&&j!==null&&j>1&&['avalider','acommander'].includes(stageOf(c)); }
-function countStages(list){ const n={avalider:0,acommander:0,commandee:0,fait:0,refusee:0}; (list||state.data).forEach(c=>{ if(!recPlusTard(c)) n[stageOf(c)]++; }); return n; }
+function recPlusTard(c){ const j=daysLeft(c.date), s=suiviOf(c); return estRecurrent(c)&&j!==null&&j>1&&(c.pris==='En attente'||c.pris==='En cours'||(c.pris==='OUI'&&!s.cmd&&!s.fait)); }
 function aFaireCount(){ return state.data.filter(c=>{ const k=suiviCat(c); return (k==='nouvelle'||k==='prix')&&!recPlusTard(c); }).length; }
 
 async function loadSuivi(){ try{ state.suivi=(await paramGet('suivi'))||{}; }catch(e){ console.error('Suivi load:',e); } }
@@ -2463,7 +2443,7 @@ async function appelAgenda(body,headers){ let last=null;
     }
     if(last instanceof Error) throw last; return last;
 }
-function markCommande(ids){ const now=new Date().toISOString(), who=adminName(); setSuivi(ids,()=>({cmd:now,cmdBy:who,fait:null,faitBy:null})); _suiviChain=_suiviChain.then(()=>Promise.all([].concat(ids).map(id=>appelAgenda({type:'COMMANDE',record:{id}},{apikey:SB_KEY,Authorization:'Bearer '+SB_KEY}).catch(()=>{})))).catch(()=>{}); logAction('Commandée',itemsById(ids)); showToast('✓ Commande passée enregistrée'); }
+function markCommande(ids){ const now=new Date().toISOString(), who=adminName(); setSuivi(ids,()=>({cmd:now,cmdBy:who,fait:null,faitBy:null})); _suiviChain=_suiviChain.then(()=>Promise.all([].concat(ids).map(id=>appelAgenda({type:'COMMANDE',record:{id}},{apikey:SB_KEY,Authorization:'Bearer '+SB_KEY}).catch(()=>{})))).catch(()=>{}); logAction('Commandée',itemsById(ids)); showToast('✓ Demande prise en charge'); }
 function unmarkCommande(ids){ setSuivi(ids,()=>({cmd:null,cmdBy:null,fait:null,faitBy:null})); logAction('Commande annulée',itemsById(ids)); showToast('Remis dans « Reçue »'); }
 function markFait(ids){ const now=new Date().toISOString(), who=adminName(); setSuivi(ids,c=>({fait:now,faitBy:who,cmd:c.cmd||now,cmdBy:c.cmdBy||who})); logAction('Terminée',itemsById(ids)); showToast('✓ Terminé'); }
 function unmarkFait(ids){ setSuivi(ids,()=>({fait:null,faitBy:null})); showToast('Remis en cours'); }
@@ -2568,7 +2548,7 @@ function downloadRappels(c, which){
 
 /* Carte d'une demande, avec les actions de son étape */
 function suiviCard(c,{compact=false,showStage=false,select=false}={}){
-    const st=stageOf(c), s=suiviOf(c), j=daysLeft(c.date), rec=s.recurrent||/^repas r[ée]current$/i.test(c.comment||'');
+    const k=suiviCat(c), st={nouvelle:'avalider',prise:'commandee',annulee:'refusee'}[k]||'fait', s=suiviOf(c), j=daysLeft(c.date), rec=s.recurrent||/^repas r[ée]current$/i.test(c.comment||'');
     const urg=(st==='avalider'||st==='acommander')&&j!==null&&j<=2?badgeColor(j):null;
     const meta=[`${dateCourte(c)}${c.heure?' · '+c.heure:''}`]; if(rec) meta.push('🔁 récurrent');
     if(c.type==='repas'){ if(c.lieu) meta.push(esc(c.lieu)); meta.push(`${c.nb||1} pers.`); }
@@ -2585,11 +2565,12 @@ function suiviCard(c,{compact=false,showStage=false,select=false}={}){
         fait:    `<button data-suivi-act="fait" data-id="${c.id}" title="À cocher une fois la prestation réalisée" style="display:inline-flex;align-items:center;gap:6px;border-radius:10px;padding:5px 10px 5px 7px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;background:#fff;border:1.5px dashed #a5f3fc;color:#0e7490;"><span style="width:14px;height:14px;border:1.5px solid #0e7490;border-radius:4px;display:inline-block;"></span> Prestation terminée</button>`,
     };
     let actions='', info='';
-    if(st==='avalider'||st==='acommander'){ actions=(peutAccuser(c)?B.accuse:'')+pContactHtml(c); if(s.accuse) info=`${icon('check',12)} Réception accusée${s.accuseBy?' par '+esc(String(s.accuseBy).split(' ')[0]):''} le ${new Date(s.accuse).toLocaleString('fr-FR',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}`; }
-    else if(st==='commandee'){ actions=(peutConfirmer(c)?`<button data-recu="${c.id}" style="display:inline-flex;align-items:center;gap:5px;border-radius:8px;padding:6px 10px;font-size:12px;font-weight:700;cursor:pointer;background:#15803d;border:1px solid #15803d;color:#fff;">${icon('check',12)} Bien reçu</button>`:''); info=`${icon('check',11)} Commande passée le ${new Date(s.cmd).toLocaleDateString('fr-FR')}${s.cmdBy&&s.cmdBy!=='Admin'?' par '+esc(s.cmdBy):''} · <a href="#" data-suivi-act="uncommande" data-id="${c.id}" style="color:#8b93a1;">décocher</a>`; }
+    if(st==='avalider'||st==='acommander'){ actions=`<button class="sv-b" data-suivi-act="pec" data-id="${c.id}" style="--c:#2563eb;">Bien reçu ${icon('check',12)}</button>`+pContactHtml(c); if(s.accuse) info=`${icon('check',12)} Réception accusée${s.accuseBy?' par '+esc(String(s.accuseBy).split(' ')[0]):''} le ${new Date(s.accuse).toLocaleString('fr-FR',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}`; }
+    else if(st==='commandee'){ actions=(peutConfirmer(c)?`<button data-recu="${c.id}" style="display:inline-flex;align-items:center;gap:5px;border-radius:8px;padding:6px 10px;font-size:12px;font-weight:700;cursor:pointer;background:#15803d;border:1px solid #15803d;color:#fff;">${icon('check',12)} Bien reçu</button>`:''); info=`${icon('check',11)} Prise en charge${s.cmd?' le '+new Date(s.cmd).toLocaleDateString('fr-FR'):''}${s.cmdBy&&s.cmdBy!=='Admin'?' par '+esc(s.cmdBy):''}`; }
+    else if(k==='prix'){ info=`${icon('wallet',12)} Prix à saisir`; }
     else if(st==='fait'){ info=s.recu?recuInfo(s):s.fait?`Terminé le ${new Date(s.fait).toLocaleDateString('fr-FR')}${s.cmd?'':''} · <a href="#" data-suivi-act="unfait" data-id="${c.id}" style="color:#8b93a1;">rouvrir</a>`:'Prestation passée'; }
     const sel=select?`<input type="checkbox" class="sel-box" data-sel-id="${c.id}" ${(state.sel||[]).includes(c.id)?'checked':''} style="width:16px;height:16px;accent-color:var(--accent);cursor:pointer;flex-shrink:0;margin-top:3px;">`:'';
-    return `<div class="suivi-card${state.flashId===c.id?' flash':''}" style="background:#fff;border:1px solid var(--border);border-left:3px solid ${STAGES[st].color};border-radius:8px;padding:${compact?'10px 12px':'12px 14px'};display:flex;gap:10px;align-items:flex-start;">
+    return `<div class="suivi-card${state.flashId===c.id?' flash':''}" style="background:#fff;border:1px solid var(--border);border-left:3px solid ${(CAT_STYLE[k]||CAT_STYLE.prise)[1]};border-radius:8px;padding:${compact?'10px 12px':'12px 14px'};display:flex;gap:10px;align-items:flex-start;">
         ${sel}
         <div style="flex:1;min-width:0;">
             <div data-open-detail='${JSON.stringify(c).replace(/'/g,"&apos;")}' style="cursor:pointer;">
@@ -2760,22 +2741,7 @@ function calState(){
     const [y,mo]=(state.calMonth||`${t.getFullYear()}-${t.getMonth()}`).split('-').map(Number);
     return {y,mo,sel:state.calDay||isoDay(t),today:isoDay(t)};
 }
-function miniCalendar(){
-    const {y,mo,today}=calState(), ev=eventsByDay(), days=monthGrid(y,mo);
-    return `<div>
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
-            <button data-cal-nav="-1" style="background:none;border:none;cursor:pointer;color:#6b7280;font-size:16px;padding:2px 8px;">‹</button>
-            <span style="font-weight:700;font-size:13px;">${moisAn(mo,y)}</span>
-            <button data-cal-nav="1" style="background:none;border:none;cursor:pointer;color:#6b7280;font-size:16px;padding:2px 8px;">›</button>
-        </div>
-        <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;text-align:center;">
-            ${['L','M','M','J','V','S','D'].map(d=>`<div style="font-size:10px;color:#9ca3af;font-weight:700;padding:2px 0;">${d}</div>`).join('')}
-            ${days.map(d=>{ const k=isoDay(d), l=ev[k]||[], out=d.getMonth()!==mo, isT=k===today;
-                const dots=[...new Set(l.map(stageOf))].slice(0,3).map(st=>`<span style="width:5px;height:5px;border-radius:50%;background:${STAGES[st].color};display:inline-block;"></span>`).join('');
-                return `<button data-cal-day="${k}" data-goto-cal="1" style="border:none;background:${isT?'var(--accent)':'transparent'};color:${isT?'#fff':out?'#cfcac2':'var(--ink)'};border-radius:8px;padding:4px 0 3px;cursor:pointer;font-size:12px;font-weight:${l.length?700:400};">
-                    ${d.getDate()}<div style="height:6px;display:flex;gap:2px;justify-content:center;margin-top:1px;">${dots}</div></button>`; }).join('')}
-        </div></div>`;
-}
+
 function renderCalendrier(m){
     const {y,mo,sel,today}=calState(), ev=eventsByDay(), days=monthGrid(y,mo);
     const inMonth=Object.entries(ev).filter(([k])=>k.startsWith(`${y}-${String(mo+1).padStart(2,'0')}`)).reduce((n,[,l])=>n+l.length,0);
@@ -2821,7 +2787,7 @@ function renderCalendrier(m){
 /* Feuille du jour imprimable */
 function printDay(day){
     const d=parseDate(day), list=(eventsByDay()[day]||[]);
-    const rows=list.map(c=>`<tr><td>${esc(c.heure||'')}</td><td>${TYPE_LABEL[c.type]||''}</td><td><b>${esc(titreDe(c))}</b><br><small>${c.type==='taxi'?esc((c.depart||'')+' → '+(c.arrivee||'')):esc(c.lieu||'')}</small></td><td>${c.type==='repas'||c.type==='hotel'?(c.nb||1):''}</td><td>${esc(demNom(c))}<br><small>${esc(c.pourQui||'')}</small></td><td>${esc(c.presta||'')}</td><td>${STAGES[stageOf(c)].label}</td><td>${esc(c.comment||'')}${suiviOf(c).note?`<br><small>Note : ${esc(suiviOf(c).note)}</small>`:''}</td></tr>`).join('');
+    const rows=list.map(c=>`<tr><td>${esc(c.heure||'')}</td><td>${TYPE_LABEL[c.type]||''}</td><td><b>${esc(titreDe(c))}</b><br><small>${c.type==='taxi'?esc((c.depart||'')+' → '+(c.arrivee||'')):esc(c.lieu||'')}</small></td><td>${c.type==='repas'||c.type==='hotel'?(c.nb||1):''}</td><td>${esc(demNom(c))}<br><small>${esc(c.pourQui||'')}</small></td><td>${esc(c.presta||'')}</td><td>${catSt(c).label}</td><td>${esc(c.comment||'')}${suiviOf(c).note?`<br><small>Note : ${esc(suiviOf(c).note)}</small>`:''}</td></tr>`).join('');
     const html=`<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>Feuille du ${day}</title><style>
         body{font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:#1a1f36;margin:28px;} h1{font-size:20px;margin:0 0 2px;} p{color:#6b7280;margin:0 0 16px;font-size:12px;}
         table{width:100%;border-collapse:collapse;font-size:12px;} th{text-align:left;border-bottom:2px solid #2c5f85;padding:6px;color:#2c5f85;font-size:11px;text-transform:uppercase;} td{border-bottom:1px solid #e6e8ec;padding:7px 6px;vertical-align:top;} small{color:#6b7280;}
@@ -2835,15 +2801,7 @@ function printDay(day){
 
 /* Bloc de suivi dans la fiche détail */
 function suiviBlock(d){
-    const st=stageOf(d), s=suiviOf(d);
-    const _k=suiviCat(d); const steps=[['Reçue',true],['Prise en charge',_k!=='nouvelle'],['Prix saisi',_k==='fin'||(+d.prix>0)],['Terminée',_k==='fin']];
-    const stepper=st==='refusee'
-        ? `<div style="background:#fef2f2;color:#b91c1c;border-radius:12px;padding:10px 12px;font-weight:700;font-size:13px;">${icon('x',13)} Demande refusée / annulée</div>`
-        : `<div style="display:flex;align-items:center;gap:0;">${steps.map(([l,ok],i)=>`<div style="display:flex;align-items:center;${i<steps.length-1?'flex:1;':''}">
-            <div style="display:flex;flex-direction:column;align-items:center;gap:4px;min-width:62px;">
-                <span style="width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:${ok?STAGES.fait.color:'#fff'};border:2px solid ${ok?STAGES.fait.color:'#d9d4cc'};color:#fff;">${ok?icon('check',13):''}</span>
-                <span style="font-size:11px;font-weight:${ok?700:500};color:${ok?'var(--ink)':'#8b93a1'};">${l}</span></div>
-            ${i<steps.length-1?`<div style="flex:1;height:2px;background:${steps[i+1][1]?STAGES.fait.color:'#e4e0d9'};margin:0 2px 18px;"></div>`:''}</div>`).join('')}</div>`;
+    const s=suiviOf(d);
     const btn=(act,label,ic,style)=>`<button data-suivi-act="${act}" data-id="${d.id}" style="display:inline-flex;align-items:center;gap:6px;border-radius:12px;padding:10px 14px;font-size:13px;font-weight:700;cursor:pointer;${style}">${icon(ic,14)} ${label}</button>`;
     const histo=[s.cmd?`Pris en charge le ${new Date(s.cmd).toLocaleString('fr-FR',{dateStyle:'short',timeStyle:'short'})}${s.cmdBy&&s.cmdBy!=='Admin'?' par '+esc(s.cmdBy):''}`:'', s.fait?`Terminé le ${new Date(s.fait).toLocaleString('fr-FR',{dateStyle:'short',timeStyle:'short'})}${s.faitBy&&s.faitBy!=='Admin'?' par '+esc(s.faitBy):''}`:'', s.recu?recuInfo(s):''].filter(Boolean).join(' · ');
     return `<div style="background:#fff;border:1px solid var(--border);border-radius:8px;padding:16px;margin-bottom:14px;">
@@ -2862,7 +2820,7 @@ document.addEventListener('change',e=>{ const el=e.target; if(!el||!el.closest||
 document.addEventListener('click',e=>{ if(window._pqPend&&!(e.target.closest&&e.target.closest('#editPqWrapper'))){ window._pqPend=false; document.getElementById('saveEdit')?.click(); } },true);
 /* Fiche : les 4 étapes (Bien reçu, Commande passée, Prix, Annuler) */
 function ficheActions(d){
-    const st=stageOf(d), s=suiviOf(d);
+    const st=suiviCat(d)==='annulee'?'refusee':'', s=suiviOf(d);
     const fd=x=>new Date(x).toLocaleString('fr-FR',{dateStyle:'short',timeStyle:'short'});
     const ligne=(n,titre,etat,droite,fait)=>`<div class="fa-row ${fait?'ok':''}"><span class="fa-n">${fait?icon('check',13):n}</span><div class="fa-t"><b>${titre}</b>${etat?`<span>${etat}</span>`:''}</div><div class="fa-r">${droite}</div></div>`;
     const B=(act,label,cls)=>`<button data-suivi-act="${act}" data-id="${d.id}" class="fa-b ${cls||''}">${label}</button>`;
@@ -3051,9 +3009,9 @@ document.addEventListener('click',async e=>{ const b=e.target.closest('[data-age
 
 /* Étapes côté assistante (« Suivre ma demande ») */
 function trackSteps(c){
-    const st=stageOf(c);
-    if(st==='refusee') return `<div style="background:#fef2f2;color:#b91c1c;border-radius:12px;padding:10px 12px;font-weight:700;font-size:13px;margin:4px 0 12px;">${icon('x',13)} Demande annulée</div>`;
-    const steps=[['Reçue',true],['Commandée',st==='commandee'||st==='fait'],['Faite',st==='fait']];
+    const k=suiviCat(c);
+    if(k==='annulee') return `<div style="background:#fef2f2;color:#b91c1c;border-radius:12px;padding:10px 12px;font-weight:700;font-size:13px;margin:4px 0 12px;">${icon('x',13)} Demande annulée</div>`;
+    const steps=[['Envoyée',true],['Prise en charge',k!=='nouvelle'],['Terminée',k==='prix'||k==='fin']];
     return `<div style="display:flex;align-items:center;margin:4px 0 14px;">${steps.map(([l,ok],i)=>`<div style="display:flex;align-items:center;${i<steps.length-1?'flex:1;':''}">
         <div style="display:flex;flex-direction:column;align-items:center;gap:3px;min-width:56px;">
             <span style="width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:${ok?'#15803d':'#fff'};border:2px solid ${ok?'#15803d':'#d9d4cc'};color:#fff;">${ok?icon('check',11):''}</span>
@@ -3107,8 +3065,8 @@ document.addEventListener('click', async e=>{
     else if(act==='accuse'){ accuserReception(c); }
     else if(act==='pec'){ await priseEnCharge(c); }
     else if(act==='pxrow'){ await saisirPrix(c,document.getElementById('px-'+c.id)?.value); }
-    else if(act==='annuler'){ if(confirm(`Annuler « ${titreDe(c)} » du ${dateCourte(c)} ?\n\n• ${mailsOn('annulation')&&!suiviOf(c).direct?`${demNom(c)} recevra l’email d’annulation.`:`Aucun email ne sera envoyé à ${demNom(c)}.`}\n• Les rappels seront retirés de vos agendas.${stageOf(c)==='commandee'?`\n• Pensez à prévenir ${c.presta||'le prestataire'} : la commande avait été passée.`:''}`)){ await applyStatus([c.id],'Annulé'); showToast('Demande annulée'); } }
-    else if(act==='refuser'){ const am=mailsOn('annulation')&&!suiviOf(c).direct; if(confirm(`Refuser « ${titreDe(c)} » ?\n\n${am?`${demNom(c)} recevra l’email d’annulation.`:`Aucun email ne sera envoyé : pensez à prévenir ${demNom(c)} si besoin.`}${stageOf(c)==='commandee'?`\nPensez aussi à prévenir ${c.presta||'le prestataire'}.`:''}`)) await applyStatus([c.id],'Annulé'); }
+    else if(act==='annuler'){ if(confirm(`Annuler « ${titreDe(c)} » du ${dateCourte(c)} ?\n\n• ${mailsOn('annulation')&&!suiviOf(c).direct?`${demNom(c)} recevra l’email d’annulation.`:`Aucun email ne sera envoyé à ${demNom(c)}.`}\n• Les rappels seront retirés de vos agendas.${suiviCat(c)==='prise'?`\n• Pensez à prévenir ${c.presta||'le prestataire'} : la commande avait été passée.`:''}`)){ await applyStatus([c.id],'Annulé'); showToast('Demande annulée'); } }
+    else if(act==='refuser'){ const am=mailsOn('annulation')&&!suiviOf(c).direct; if(confirm(`Refuser « ${titreDe(c)} » ?\n\n${am?`${demNom(c)} recevra l’email d’annulation.`:`Aucun email ne sera envoyé : pensez à prévenir ${demNom(c)} si besoin.`}${suiviCat(c)==='prise'?`\nPensez aussi à prévenir ${c.presta||'le prestataire'}.`:''}`)) await applyStatus([c.id],'Annulé'); }
     else if(act==='copier'){ const ok=await copyText(orderMessage(c)); showToast(ok?'✓ Message copié : collez-le dans votre email au prestataire':`${icon('alert',13)} Copie impossible`); }
     else if(act==='commande'){ const enAtt=c.pris==='En attente'||c.pris==='En cours';
         if(a.classList.contains('fa-b')||confirm(`Commande « ${titreDe(c)} » passée auprès de ${c.presta||'du prestataire'} ?\n\nAucun email ne sera envoyé.`)){ if(enAtt) await applyStatus([c.id],'OUI',{silent:true}); markCommande([c.id]); } }
@@ -3230,147 +3188,10 @@ function renderDetail(d,m){
 /* ══════════════════════════════════════
    DASHBOARD
 ══════════════════════════════════════ */
-function notifBannerHtml(){
-    const perm=('Notification' in window)?Notification.permission:'na';
-    if(perm==='na') return '';
-    if(perm==='granted' && !state.notifHelp) return '';
-    if(lsGet('notif_banner_off') && perm!=='granted') return '';
-    const help = state.notifHelp || (isIOS() && !isStandalone());
-    const bloque = perm==='denied';
-    const txt = bloque
-        ? 'Les notifications sont bloquées dans ce navigateur. Cliquez sur le cadenas à gauche de l’adresse › Notifications › Autoriser, puis rechargez.'
-        : help
-            ? 'Sur iPhone, installez d’abord l’appli : <b>Partager</b> ⬆︎ › <b>« Sur l’écran d’accueil »</b>, ouvrez-la depuis l’icône, puis touchez ce bouton.'
-            : 'Soyez prévenu à chaque nouvelle demande, avec le nombre en attente sur l’icône de l’appli.';
-    return `<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:12px 14px;margin-bottom:16px;">
-        <span style="width:36px;height:36px;border-radius:10px;background:#dbeafe;color:#1d4ed8;display:flex;align-items:center;justify-content:center;flex-shrink:0;">${icon('bell',18)}</span>
-        <div style="flex:1;min-width:200px;">
-            <div style="font-weight:700;font-size:14px;color:var(--ink);">Notifications et pastille</div>
-            <div style="font-size:12px;color:#4b5563;line-height:1.45;margin-top:2px;">${txt}</div>
-        </div>
-        ${bloque||help?'':`<button data-activate-notifs class="btn-primary" style="padding:10px 18px;font-size:14px;white-space:nowrap;display:flex;align-items:center;gap:7px;">${icon('bell',14)} Activer</button>`}
-        ${bloque||help?`<button data-notif-banner-off style="background:none;border:none;color:#8b93a1;cursor:pointer;padding:4px;display:flex;" aria-label="Fermer">${icon('x',16)}</button>`:''}
-    </div>`;
-}
+
 /* Tableau de bord : 4 carreaux de résumé (Suivi, Agenda, Historique, Statistiques) */
-function renderDash4(m){
-    const now=new Date(), todayK=isoDay(now), tom=new Date(now); tom.setDate(now.getDate()+1);
-    const ev=eventsByDay(), auj=(ev[todayK]||[]).slice().sort(byDateAsc), dem=(ev[isoDay(tom)]||[]);
-    const n=countStages(), recues=n.avalider+n.acommander;
-    const aTraiter=state.data.filter(c=>['avalider','acommander'].includes(stageOf(c))&&!recPlusTard(c)).sort(byDateAsc);
-    const urg=aTraiter.filter(c=>{ const j=daysLeft(c.date); return j!==null&&j<=1; }).length;
-    const mo=now.getMonth(), y=now.getFullYear(), dansMois=(c,mm,yy)=>{ const d=parseDate(c.date); return d&&d.getMonth()===mm&&d.getFullYear()===yy; };
-    const pm=new Date(y,mo-1,1), D=state.data.filter(c=>c.pris!=='Annulé');
-    const mois=D.filter(c=>dansMois(c,mo,y)), moisP=D.filter(c=>dansMois(c,pm.getMonth(),pm.getFullYear()));
-    const tot=L=>L.reduce((a,c)=>a+(+c.prix||0),0), tM=tot(mois), tP=tot(moisP), delta=tP?Math.round((tM-tP)/tP*100):null;
-    const tops=(()=>{ const k={}; mois.forEach(c=>{ if(!c.presta) return; const x=k[c.presta]=k[c.presta]||{n:0,e:0}; x.n++; x.e+=(+c.prix||0); }); return Object.entries(k).sort((a,b)=>b[1].n-a[1].n); })(), top=tops[0];
-    const sansPrix=prixASaisir().length, annulM=state.data.filter(c=>c.pris==='Annulé'&&dansMois(c,mo,y)).length;
-    const recents=state.data.slice().sort((a,b)=>(new Date(b.createdAt||0))-(new Date(a.createdAt||0))||(b.id-a.id)).slice(0,6);
-    const eur=v=>Math.round(v).toLocaleString('fr-FR')+' €';
-    const ligne=(c,gauche)=>`<div class="d4-l" data-open-detail='${JSON.stringify(c).replace(/'/g,"&apos;")}'><span class="d4-h">${gauche}</span><span class="d4-t">${typeIc(c.type,13)} ${esc(titreDe(c))}</span>${catPill(c)}</div>`;
-    const kpi=(v,l,col)=>`<div class="d4-k"><b style="${col?`color:${col}`:''}">${v}</b><span>${l}</span></div>`;
-    const carte=(tab,ic,col,titre,kpis,liste,vide,pied)=>`<div class="d4-c" style="--c:${col};">
-        <button class="d4-hd" data-admin-tab="${tab}"><span class="d4-ic">${icon(ic,18)}</span><b>${titre}</b><span class="d4-go">${icon('arrow',15)}</span></button>
-        <div class="d4-ks">${kpis.join('')}</div>
-        <div class="d4-ls">${liste.length?liste.join(''):`<div class="d4-v">${vide}</div>`}</div>
-        <button class="d4-ft" data-admin-tab="${tab}">${pied} →</button></div>`;
-    return `<div style="padding:${m?'0':'4px 0 0'};">
-        <div style="margin-bottom:${m?'12px':'18px'};">${m?'':`<h1 style="font-family:var(--ft);font-weight:650;letter-spacing:-.01em;font-size:24px;margin:0;">Tableau de bord</h1>`}
-            <div style="font-size:13px;color:#8b93a1;margin-top:3px;text-transform:capitalize;">${dateLongue(now)} ${y}</div></div>
-        <div class="d4">
-        ${(()=>{ const cn=k=>state.data.filter(c=>suiviCat(c)===k&&!recPlusTard(c)); const nv=cn('nouvelle').sort(byDateAsc), px=cn('prix'), pr=cn('prise');
-            return carte('suivi','clipboard','#2563eb','Suivi des demandes',[kpi(nv.length,'nouvelles','#2563eb'),kpi(pr.length,'prises en charge','#0d9488'),kpi(px.length,'prix à saisir',px.length?'#d97706':'')],
-            [...nv,...px].slice(0,6).map(c=>ligne(c,`${dateCourte(c)}${c.heure?' · '+esc(c.heure):''}`)),'Aucune action en attente ✓','Ouvrir le suivi'); })()}
-        ${carte('calendrier','calendar','#1d4ed8','Agenda · aujourd’hui',[kpi(auj.length,'prestations aujourd’hui'),kpi(dem.length,'demain')],
-            auj.slice(0,6).map(c=>ligne(c,esc(c.heure||'—'))),'Rien de prévu aujourd’hui','Ouvrir l’agenda')}
-        ${carte('activite','grid','#475569','Base des demandes',[kpi(mois.length,'demandes ce mois'),kpi(annulM,'annulées ce mois')],
-            recents.map(c=>ligne(c,dateCourte(c))),'Aucune demande','Ouvrir la base')}
-        ${carte('stats','chart','#15803d','Statistiques · ce mois',[kpi(eur(tM),'dépensés','#15803d'),kpi(delta===null?'—':`${delta>0?'+':''}${delta} %`,'vs mois dernier',delta>0?'#b91c1c':delta<0?'#15803d':''),kpi(top?esc(top[0]):'—','prestataire n°1')],
-            tops.slice(0,6).map(([p,x])=>`<div class="d4-l" data-admin-tab="stats"><span class="d4-t">${esc(p)}</span><span class="d4-h" style="min-width:0;">${x.n} commande${x.n>1?'s':''}${x.e?' · '+eur(x.e):''}</span></div>`),`Aucune commande ce mois · ${eur(tP)} le mois dernier`,'Voir les statistiques')}
-        </div></div>`;
-}
-function renderDashboard(total,attente,m){ return renderDash4(m);
-    const now=new Date(), todayK=isoDay(now), tom=new Date(now); tom.setDate(now.getDate()+1); const tomK=isoDay(tom);
-    const n=countStages();
-    const ev=eventsByDay();
-    const today=(ev[todayK]||[]), demain=(ev[tomK]||[]);
-    const prenom=(adminName()||'').split(' ')[0];
-    const h=now.getHours(), salut=h<18?'Bonjour':'Bonsoir';
-    const avalider=state.data.filter(c=>stageOf(c)==='avalider'&&!recPlusTard(c)).sort(byDateAsc);
-    const acommander=state.data.filter(c=>stageOf(c)==='acommander'&&!recPlusTard(c)).sort(byDateAsc);
-    const urgentCmd=acommander.filter(c=>{ const j=daysLeft(c.date); return j!==null&&j<=3; });
-    const aFaire=[...avalider,...acommander].sort(byDateAsc).slice(0,8);
-    const resteAFaire=avalider.length+acommander.length-aFaire.length;
-    const validesMois=state.data.filter(c=>{ if(c.pris!=='OUI') return false; const d=parseDate(c.date); return d&&d.getMonth()===now.getMonth()&&d.getFullYear()===now.getFullYear(); });
-    const totalMois=validesMois.reduce((a,b)=>a+(b.prix||0),0);
 
-    const phrase=[];
-    const nRec=n.avalider+n.acommander;
-    if(nRec) phrase.push(`<b>${nRec}</b> demande${nRec>1?'s':''} reçue${nRec>1?'s':''} à commander`);
-    phrase.push(today.length?`<b>${today.length}</b> prestation${today.length>1?'s':''} aujourd’hui`:'aucune prestation aujourd’hui');
 
-    const tile=(k,val,label,sub,navJson)=>{ const S=STAGES[k]||{color:'#15803d'};
-        return `<button data-nav='${navJson}' class="stat-card kpi">
-            <span class="kpi-l"><span>${label}</span><span class="dot" style="background:${S.color}"></span></span>
-            <span class="kpi-v">${val}</span>
-            <span class="kpi-s">${sub}</span></button>`; };
-
-    const where=c=>[(c.type==='taxi'||c.type==='coursier')?`${esc(c.depart||'—')} → ${esc(c.arrivee||'—')}`:esc(c.lieu||''), c.type==='repas'?`${c.nb||1} pers.`:'', c.presta&&c.type!=='commande'?esc(c.presta):''].filter(Boolean).join(' · ');
-    const timeline=(list,vide)=>list.length?`<div class="tl">${list.map(c=>{ const st=stageOf(c), S=STAGES[st];
-        return `<div class="tl-row" data-open-detail='${JSON.stringify(c).replace(/'/g,"&apos;")}'>
-            <div class="tl-h">${esc(c.heure||'—')}</div><span class="dot" style="background:${S.color};margin-top:5px;"></span>
-            <div style="min-width:0;"><div class="tl-t">${esc(titreDe(c))}</div><div class="tl-m">${[where(c),esc(demNom(c))].filter(Boolean).join(' · ')}</div></div>
-            ${stagePill(st)}</div>`; }).join('')}</div>`
-        :`<div class="empty-note">${vide}</div>`;
-
-    const card=(title,sub,body,extra='')=>`<div class="card">
-        <div class="card-h"><h3>${title}${sub?`<span class="sub">${sub}</span>`:''}</h3>${extra}</div>${body}</div>`;
-    const lien=(nav,txt)=>`<button data-nav='${nav}' class="card-link">${txt} →</button>`;
-
-    const urgTag=c=>{ const j=daysLeft(c.date); return j!==null&&j<=2?`<span class="urg" style="margin-left:0;">${badgeColor(j).label}</span>`:''; };
-    const actionsDe=c=>{ const st=stageOf(c);
-        if(st==='avalider'||st==='acommander') return `${peutAccuser(c)?`<button class="btn-sm" style="background:#15803d;border-color:#15803d;color:#fff;" data-suivi-act="accuse" data-id="${c.id}">${icon('mail',13)} Accuser réception</button>`:''}<button class="btn-sm" data-open-detail='${JSON.stringify(c).replace(/'/g,"&apos;")}'>Ouvrir</button>`;
-        return ''; };
-    const table=`<div class="tbl-wrap"><table class="pro-table"><thead><tr><th>Prestation</th><th>Date</th><th>Statut</th><th style="text-align:right;">Action</th></tr></thead><tbody>
-        ${aFaire.map(c=>`<tr>
-            <td data-open-detail='${JSON.stringify(c).replace(/'/g,"&apos;")}' style="cursor:pointer;white-space:normal;min-width:180px;"><div class="t"><span class="ty">${typeIc(c.type,14)}</span>${esc(titreDe(c))}</div><div class="m">${[where(c),esc(demNom(c))].filter(Boolean).join(' · ')||'&nbsp;'}</div></td>
-            <td><div>${dateCourte(c)}${c.heure?' · '+esc(c.heure):''}</div>${urgTag(c)?`<div style="margin-top:2px;">${urgTag(c)}</div>`:''}</td>
-            <td>${catPill(c)}</td>
-            <td><div class="row-act">${actionsDe(c)}</div></td></tr>`).join('')}
-        </tbody></table></div>`;
-    const vide=`<div style="text-align:center;padding:28px 0;"><div style="width:40px;height:40px;border-radius:50%;background:#ecf8f0;color:#15803d;display:flex;align-items:center;justify-content:center;margin:0 auto 8px;">${icon('check',20)}</div><div style="font-weight:650;font-size:14px;">Tout est à jour</div><div style="font-size:12px;color:var(--ink-soft);margin-top:2px;">Aucune demande en attente, rien d’urgent à commander.</div></div>`;
-    const left=card('À faire maintenant',aFaire.length?`${avalider.length+urgentCmd.length} demande${avalider.length+urgentCmd.length>1?'s':''}`:'',
-        aFaire.length?(m?`<div style="display:flex;flex-direction:column;gap:8px;padding:12px;">${aFaire.map(c=>suiviCard(c,{showStage:true})).join('')}</div>`:table)
-            +(resteAFaire>0?`<div style="padding:10px 16px;border-top:1px solid var(--border-light);">${lien('{"adminTab":"suivi"}',resteAFaire>1?`Voir les ${resteAFaire} autres demandes dans le suivi`:`Voir l’autre demande dans le suivi`)}</div>`:'')
-        :vide, lien('{"adminTab":"suivi"}','Tout le suivi'));
-    const right=card('Aujourd’hui',dateLongue(now),timeline(today,'Aucune prestation prévue aujourd’hui'),lien('{"adminTab":"calendrier"}','Agenda'))
-        +card('Demain',dateLongue(tom),timeline(demain,'Rien de prévu demain'))
-        +`<div class="card" style="padding:12px 16px;">${miniCalendar()}</div>`;
-
-    const large=!m&&window.innerWidth>=1200;
-    return `<div>
-    ${notifBannerHtml()}
-    <div class="page-head">
-        <div>
-            <h1>${m?`${salut}${prenom&&prenom!=='Admin'?' '+esc(prenom):''}`:'Tableau de bord'}</h1>
-            <p><span style="text-transform:capitalize;">${dateLongue(now)}</span> ${now.getFullYear()} · ${phrase.join(', ').replace(/, ([^,]*)$/,' et $1')}</p>
-        </div>
-        ${m?'':`<div class="page-actions">
-            <button class="btn-sm" data-print-day="${todayK}">${icon('download',14)} Feuille du jour</button>
-            <button class="btn-sm" data-nav='{"adminTab":"activite","activiteTab":"tout","histPrix":true,"histPage":0}'>${icon('wallet',14)} Prix à saisir</button>
-        </div>`}
-    </div>
-    <div class="kpis">
-        ${tile('avalider',n.avalider+n.acommander,'Reçues',n.avalider+n.acommander?(urgentCmd.length||avalider.filter(c=>{ const j=daysLeft(c.date); return j!==null&&j<=3; }).length?`<b style="color:#b91c1c;">${urgentCmd.length+avalider.filter(c=>{ const j=daysLeft(c.date); return j!==null&&j<=3; }).length}</b> dans les 3 jours`:'À commander'):'Rien en attente','{"adminTab":"suivi","suiviStage":"recue"}')}
-        ${tile('commandee',n.commandee,'Commandées',n.commandee?'En attente de prestation':'Aucune en cours','{"adminTab":"suivi","suiviStage":"commandee"}')}
-        ${tile('x-cal',$ms(totalMois),'Dépenses du mois',`${validesMois.length} commande${validesMois.length>1?'s':''}`,'{"adminTab":"stats","statsPeriod":"mois"}')}
-    </div>
-    ${anomaliesHtml(m)}
-    <div style="${large?'display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:16px;align-items:start;':''}">
-        <div>${left}</div><div>${right}</div>
-    </div>
-    </div>`;
-}
 
 /* ══════════════════════════════════════
    STATISTIQUES PAR PÉRIODE
@@ -4479,7 +4300,7 @@ function renderLive(){
     const rapp=P?P.memos.filter(x=>x.rappel&&!x.fait&&isoDay(new Date(x.rappel))<=todayK).sort((a,b)=>new Date(a.rappel)-new Date(b.rappel)):[];
     const hhmm=d=>new Date(d).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}).replace(':','h');
     const LS=P?liveStats(now):null;
-    const n=countStages(); const recus=today.filter(c=>suiviOf(c).recu||['prix','fin'].includes(suiviCat(c))).length;
+    const recus=today.filter(c=>suiviOf(c).recu||['prix','fin'].includes(suiviCat(c))).length;
     const aCmd=c=>suiviCat(c)==='nouvelle'&&!recPlusTard(c);
     const RAP=[...demain.filter(c=>c.type!=='hotel'||true).map(c=>({r:c,m:10*60,demain:true})),...today.filter(c=>aCmd(c)&&heureMin(c.heure)!==9999&&heureMin(c.heure)-60>now.getHours()*60+now.getMinutes()).map(c=>({r:c,m:Math.max(7*60,heureMin(c.heure)-60),demain:false}))];
     const HOT=today.filter(c=>c.type==='hotel'&&heureMin(c.heure)===9999).map(c=>({h:c,m:18*60}));
@@ -4497,7 +4318,7 @@ function renderLive(){
     const prochaines=today.filter(c=>{ const hp=heurePrevue(c); return !hp||hp>=new Date(now.getTime()-30*60000); }).slice(0,6);
     const cpt=(v,l,col,i)=>`<div class="lv-kpi" style="animation-delay:${i*120}ms;"><span class="lv-kpi-v" data-count="${v}" style="color:${col};">0</span><span class="lv-kpi-l">${l}</span></div>`;
     const ligne=c=>{ const st=suiviCat(c), s=suiviOf(c), hp=heurePrevue(c), bientot=hp&&hp-now<45*60000&&hp>now;
-        return `<div class="lv-item ${bientot?'pulse':''}" style="--c:${COL[st]};"><span class="lv-h">${esc(c.heure||'—')}</span><div style="min-width:0;flex:1;"><b>${esc(titreDe(c))}${c.type==='repas'?` · ${c.nb||1} pers.`:''}</b><span>${esc([c.type==='taxi'?`${c.depart||''} → ${c.arrivee||''}`:c.lieu,c.presta,c.demandeur].filter(Boolean).join(' · '))}</span></div><span class="lv-st">${s.recu?'Livré ✓':bientot?'Imminent':STAGES[st].court}</span></div>`; };
+        return `<div class="lv-item ${bientot?'pulse':''}" style="--c:${COL[st]};"><span class="lv-h">${esc(c.heure||'—')}</span><div style="min-width:0;flex:1;"><b>${esc(titreDe(c))}${c.type==='repas'?` · ${c.nb||1} pers.`:''}</b><span>${esc([c.type==='taxi'?`${c.depart||''} → ${c.arrivee||''}`:c.lieu,c.presta,c.demandeur].filter(Boolean).join(' · '))}</span></div><span class="lv-st">${s.recu?'Livré ✓':bientot?'Imminent':(CAT_STYLE[st]||CAT_STYLE.prise)[0]}</span></div>`; };
     const tkI=intsDem.map(s=>`<span>🔧 ${hhmm(s.interv)} ${esc(s.titre)} · ${esc(meZone(s))}</span>`).join('');
     const ticker=(demain.length||tkI)?tkI+demain.map(c=>`<span>${icon(c.type==='taxi'?'car':c.type==='coursier'?'send':c.type==='hotel'?'bed':'utensils',16)} ${esc(c.heure||'')} ${esc(titreDe(c))}${c.type==='repas'?` · ${c.nb||1} pers.`:''}${c.lieu?' · '+esc(c.lieu):''}</span>`).join(''):'<span>Rien de prévu demain pour l’instant</span>';
     return `<div class="lv ${P?'lv-p dense':''}">
@@ -4597,23 +4418,23 @@ function liveAnimateCounters(){
 ══════════════════════════════════════ */
 function renderExpress(){
     const now=new Date(), ev=eventsByDay(), today=(ev[isoDay(now)]||[]); const tom=new Date(now); tom.setDate(now.getDate()+1); const demain=(ev[isoDay(tom)]||[]);
-    const n=countStages(), ano=anomalies().filter(a=>a.niv>=2).length;
+    const D=(state.data||[]).filter(c=>!recPlusTard(c)), nN=D.filter(c=>suiviCat(c)==='nouvelle').length, nP=D.filter(c=>suiviCat(c)==='prise').length, ano=anomalies().filter(a=>a.niv>=2).length;
     const prochaines=[...today.filter(c=>{ const hp=heurePrevue(c); return !hp||hp>=new Date(now.getTime()-30*60000); }),...demain].slice(0,5);
     const tile=(v,l,col,nav)=>`<button class="ex-tile" data-express-go='${nav}' style="--c:${col};"><b>${v}</b><span>${l}</span></button>`;
     return `<div class="ex">
         <div class="ex-top"><div><span>${dateLongue(now)}</span><b>${esc(marqueNom())}</b></div><span class="ex-maj">Mis à jour ${now.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})}</span></div>
         <div class="ex-grid">
-            ${tile(n.avalider+n.acommander,'reçues','#f59e0b','{"adminTab":"suivi","suiviStage":"recue"}')}
-            ${tile(n.commandee,'commandées','#3b82f6','{"adminTab":"suivi","suiviStage":"commandee"}')}
-            ${tile(today.length,'aujourd’hui','#14b8a6','{"adminTab":"calendrier"}')}
-            ${tile(ano,'points d’attention','#ef4444','{"adminTab":"dashboard"}')}
+            ${tile(nN,'nouvelles','#3b82f6','{"adminTab":"suivi","suiviCat":"nouvelle"}')}
+            ${tile(nP,'prises en charge','#14b8a6','{"adminTab":"suivi","suiviCat":"prise"}')}
+            ${tile(today.length,'aujourd’hui','#8b5cf6','{"adminTab":"calendrier"}')}
+            ${tile(ano,'à ne pas oublier','#ef4444','{"adminTab":"notifs"}')}
         </div>
         <div class="ex-card"><div class="ex-card-h">Prochaines prestations</div>
-            ${prochaines.length?prochaines.map(c=>{ const st=stageOf(c), d=parseDate(c.date); const auj=isoDay(d)===isoDay(now);
+            ${prochaines.length?prochaines.map(c=>{ const d=parseDate(c.date); const auj=isoDay(d)===isoDay(now);
                 return `<div class="ex-row"><span class="ex-h"><b>${esc(c.heure||'—')}</b><span>${auj?'auj.':'demain'}</span></span><div style="flex:1;min-width:0;"><b>${esc(titreDe(c))}${c.type==='repas'?` · ${c.nb||1} p.`:''}</b><span>${esc(c.type==='taxi'?(c.arrivee||''):(c.lieu||''))}${c.presta?' · '+esc(c.presta):''}</span></div>${catPill(c)}</div>`; }).join('')
             :'<div class="ex-empty">Rien de prévu d’ici demain</div>'}
         </div>
-        <button class="ex-open" data-express-go='{"adminTab":"dashboard"}'>Ouvrir l’application ${icon('arrow',16)}</button>
+        <button class="ex-open" data-express-go='{"adminTab":"suivi"}'>Ouvrir l’application ${icon('arrow',16)}</button>
     </div>`;
 }
 
@@ -4837,7 +4658,7 @@ function renderMe(m){
     const rapAuj=S.memos.filter(x=>x.rappel&&!x.fait&&isoDay(new Date(x.rappel))<=isoDay(now)).length;
     const memosVus=[...S.memos.filter(x=>x.rappel&&!x.fait).sort((a,b)=>new Date(a.rappel)-new Date(b.rappel)),...S.memos.filter(x=>x.pin&&!(x.rappel&&!x.fait))].slice(0,4);
     // Commandes
-    const D=state.data||[], avalider=D.filter(c=>stageOf(c)==='avalider').sort(byDateAsc), acommander=D.filter(c=>stageOf(c)==='acommander').sort(byDateAsc);
+    const D=state.data||[], avalider=D.filter(c=>suiviCat(c)==='nouvelle'&&!recPlusTard(c)).sort(byDateAsc), acommander=[];
     const aTraiter=[...avalider,...acommander].sort(byDateAsc);
     const ev=eventsByDay();
     // Interventions bâtiment
@@ -4846,19 +4667,19 @@ function renderMe(m){
     const interv=enc.filter(s=>s.statut==='prevu'&&s.interv&&new Date(s.interv)>=t0).sort((a,b)=>new Date(a.interv)-new Date(b.interv));
     const hh=d=>{ const x=new Date(d); return x.getHours()||x.getMinutes()?`${String(x.getHours()).padStart(2,'0')}h${String(x.getMinutes()).padStart(2,'0')}`:'—'; };
     const where=c=>[(c.type==='taxi'||c.type==='coursier')?`${esc(c.depart||'—')} → ${esc(c.arrivee||'—')}`:esc(c.lieu||''),c.type==='repas'?`${c.nb||1} pers.`:'',c.presta&&c.type!=='commande'?esc(c.presta):''].filter(Boolean).join(' · ');
-    const jour=k=>{ const L=[...(ev[k]||[]).map(c=>({h:heureMin(c.heure),html:`<div class="tl-row" data-open-detail='${JSON.stringify(c).replace(/'/g,"&apos;")}'><div class="tl-h">${esc(c.heure||'—')}</div><span class="dot" style="background:${STAGES[stageOf(c)].color};margin-top:5px;"></span><div style="min-width:0;"><div class="tl-t">${typeIc(c.type,13)} ${esc(titreDe(c))}</div><div class="tl-m">${[where(c),esc(demNom(c))].filter(Boolean).join(' · ')}</div></div>${catPill(c)}</div>`})),
+    const jour=k=>{ const L=[...(ev[k]||[]).map(c=>({h:heureMin(c.heure),html:`<div class="tl-row" data-open-detail='${JSON.stringify(c).replace(/'/g,"&apos;")}'><div class="tl-h">${esc(c.heure||'—')}</div><span class="dot" style="background:${catSt(c).color};margin-top:5px;"></span><div style="min-width:0;"><div class="tl-t">${typeIc(c.type,13)} ${esc(titreDe(c))}</div><div class="tl-m">${[where(c),esc(demNom(c))].filter(Boolean).join(' · ')}</div></div>${catPill(c)}</div>`})),
         ...interv.filter(s=>isoDay(new Date(s.interv))===k).map(s=>({h:new Date(s.interv).getHours()*60+new Date(s.interv).getMinutes(),html:`<div class="tl-row" data-me="open" data-id="${s.id}"><div class="tl-h">${hh(s.interv)}</div><span class="dot" style="background:#5b21b6;margin-top:5px;"></span><div style="min-width:0;"><div class="tl-t">${icon('tool',13)} ${esc(s.titre)}</div><div class="tl-m">${esc(meZone(s))}${s.interv_par?` · ${esc(s.interv_par)}`:''}</div></div>${mePill(s)}</div>`}))].sort((a,b)=>a.h-b.h);
         return L.length?`<div class="tl">${L.map(x=>x.html).join('')}</div>`:''; };
     const auj=jour(todayK), dem=jour(tomK);
-    const act=c=>{ const st=stageOf(c); return (st==='avalider'||st==='acommander')?`<button class="btn-sm" data-suivi-act="refuser" data-id="${c.id}">Refuser</button>${peutAccuser(c)?`<button class="btn-sm" style="background:#15803d;border-color:#15803d;color:#fff;" data-suivi-act="accuse" data-id="${c.id}">${icon('mail',13)} Accuser réception</button>`:''}<button class="btn-sm pri" data-suivi-act="commande" data-id="${c.id}">${icon('check',13)} Commande passée</button>`:false?`<button class="btn-sm" data-suivi-act="refuser" data-id="${c.id}">Refuser</button><button class="btn-sm pri" data-suivi-act="valider" data-id="${c.id}">Valider</button>`:st==='acommander'?`<button class="btn-sm" data-suivi-act="commande" data-id="${c.id}">${icon('check',13)} Commande passée</button>`:''; };
-    const cmdRows=aTraiter.slice(0,6).map(c=>`<div class="me-act"><span class="me-act-k" style="color:${STAGES[stageOf(c)].color};border-color:${STAGES[stageOf(c)].color}33;background:${STAGES[stageOf(c)].color}0f;">${STAGES[stageOf(c)].label||stageOf(c)}</span><div class="me-act-t" data-open-detail='${JSON.stringify(c).replace(/'/g,"&apos;")}'><div class="t">${typeIc(c.type,14)}<b>${esc(titreDe(c))}</b></div><div class="m">${dateCourte(c)}${c.heure?' · '+esc(c.heure):''}${where(c)?' · '+where(c):''}${c.demandeur?' · '+demHtml(c):''}</div></div><div class="me-act-b">${act(c)}</div></div>`).join('');
+    const act=c=>{ const st=suiviCat(c)==='nouvelle'?'acommander':''; return st?`<button class="btn-sm" data-suivi-act="refuser" data-id="${c.id}">Refuser</button>${peutAccuser(c)?`<button class="btn-sm" style="background:#15803d;border-color:#15803d;color:#fff;" data-suivi-act="accuse" data-id="${c.id}">${icon('mail',13)} Accuser réception</button>`:''}<button class="btn-sm pri" data-suivi-act="commande" data-id="${c.id}">${icon('check',13)} Commande passée</button>`:false?`<button class="btn-sm" data-suivi-act="refuser" data-id="${c.id}">Refuser</button><button class="btn-sm pri" data-suivi-act="valider" data-id="${c.id}">Valider</button>`:st==='acommander'?`<button class="btn-sm" data-suivi-act="commande" data-id="${c.id}">${icon('check',13)} Commande passée</button>`:''; };
+    const cmdRows=aTraiter.slice(0,6).map(c=>`<div class="me-act"><span class="me-act-k" style="color:${catSt(c).color};border-color:${catSt(c).color}33;background:${catSt(c).color}0f;">${catSt(c).label}</span><div class="me-act-t" data-open-detail='${JSON.stringify(c).replace(/'/g,"&apos;")}'><div class="t">${typeIc(c.type,14)}<b>${esc(titreDe(c))}</b></div><div class="m">${dateCourte(c)}${c.heure?' · '+esc(c.heure):''}${where(c)?' · '+where(c):''}${c.demandeur?' · '+demHtml(c):''}</div></div><div class="me-act-b">${act(c)}</div></div>`).join('');
     const intRows=A.slice(0,6).map(({s,k,why,btns,group,list})=>`<div class="me-act"><span class="me-act-k" style="color:${KL[k][1]};border-color:${KL[k][1]}33;background:${KL[k][1]}0f;">${KL[k][0]}</span>${group?`<div class="me-act-t" data-nav='{"adminTab":"me-stat"}'><div class="t"><b>${esc(group)}</b></div><div class="m">${why}</div></div>`:`<div class="me-act-t" data-me="open" data-id="${s.id}"><div class="t">${meUrgDot(s)}<b>${esc(s.titre)}</b></div><div class="m">${esc(meZone(s))} · ${why}</div></div>`}<div class="me-act-b">${btns}</div></div>`).join('');
     const prenom=(adminName()||'').split(' ')[0], salut=now.getHours()<18?'Bonjour':'Bonsoir';
     return `<div>
     <div class="page-head"><div><h1>${salut}${prenom&&prenom!=='Admin'?' '+esc(prenom):''}</h1><p><span style="text-transform:capitalize;">${dateLongue(now)}</span> ${now.getFullYear()} · ${aTraiter.length} commande${aTraiter.length>1?'s':''} à traiter · ${A.length} action${A.length>1?'s':''} bâtiment${rapAuj?` · ${rapAuj} rappel${rapAuj>1?'s':''}`:''}</p></div>
     <div class="page-actions"><button class="btn-sm" data-me="newmemo">${icon('edit',14)} Mémo</button><button class="btn-sm" data-me="new">${icon('tool',14)} Nouveau signalement</button></div></div>
     <div class="kpis">
-        <button class="stat-card kpi" data-nav='{"adminTab":"suivi"}'><span class="kpi-l"><span>Commandes à traiter</span><span class="dot" style="background:${STAGES.avalider.color}"></span></span><span class="kpi-v">${aTraiter.length}</span><span class="kpi-s">${aTraiter.length} reçue${aTraiter.length>1?'s':''} · à commander</span></button>
+        <button class="stat-card kpi" data-nav='{"adminTab":"suivi"}'><span class="kpi-l"><span>Commandes à traiter</span><span class="dot" style="background:${CAT_STYLE.nouvelle[1]}"></span></span><span class="kpi-v">${aTraiter.length}</span><span class="kpi-s">${aTraiter.length} reçue${aTraiter.length>1?'s':''} · à commander</span></button>
         <button class="stat-card kpi" data-nav='{"adminTab":"calendrier"}'><span class="kpi-l"><span>Aujourd’hui</span><span class="dot" style="background:#2c5f85"></span></span><span class="kpi-v">${(ev[todayK]||[]).length}</span><span class="kpi-s">prestation${(ev[todayK]||[]).length>1?'s':''} · ${(ev[tomK]||[]).length} demain</span></button>
         <button class="stat-card kpi" data-nav='{"adminTab":"me-stat"}'><span class="kpi-l"><span>Interventions</span><span class="dot" style="background:#5b21b6"></span></span><span class="kpi-v">${A.length}</span><span class="kpi-s">actions · ${interv.length} intervention${interv.length>1?'s':''} à venir</span></button>
         <button class="stat-card kpi" data-nav='{"adminTab":"me-bat"}'><span class="kpi-l"><span>Signalements du bâtiment</span><span class="dot" style="background:#b91c1c"></span></span><span class="kpi-v">${enc.length}</span><span class="kpi-s">${urg?`<b style="color:#b91c1c">${urg}</b> urgent${urg>1?'s':''} · `:''}en cours</span></button>
@@ -5328,7 +5149,7 @@ function renderAnalyse(m){
     const parHeure=['Matin (avant 11h)','Midi (11h–14h)','Après-midi (14h–18h)','Soir (après 18h)'].map(k=>[k,scope.filter(c=>c.type!=='hotel'&&tranche(c)===k).length]);
     const parAnt=[['Le jour même',x=>x===0],['La veille',x=>x===1],['2 à 3 jours avant',x=>x>=2&&x<=3],['4 à 7 jours avant',x=>x>=4&&x<=7],['Plus d’une semaine avant',x=>x>7]].map(([l,f])=>[l,ants.filter(f).length]);
     const parDelai=[['Moins d’1 h',x=>x<36e5],['1 à 4 h',x=>x>=36e5&&x<4*36e5],['4 à 24 h',x=>x>=4*36e5&&x<864e5],['Plus de 24 h',x=>x>=864e5]].map(([l,f])=>[l,delais.filter(f).length]);
-    const parStatut=[['Reçues',scope.filter(c=>etape(c)==='recue').length,'#b45309'],['Commandées',scope.filter(c=>etape(c)==='commandee').length,'#1d4ed8'],['Faites',scope.filter(c=>etape(c)==='fait').length,'#15803d'],['Annulées',scope.filter(c=>c.pris==='Annulé').length,'#b91c1c']];
+    const parStatut=[['nouvelle','Nouvelles'],['prise','Prises en charge'],['prix','Prix à saisir'],['fin','Terminées'],['annulee','Annulées']].map(([k,l])=>[l,scope.filter(c=>suiviCat(c)===k).length,CAT_STYLE[k][1]]);
     const repas=scope.filter(c=>c.type==='repas'), repasV=repas.filter(isValide);
     const pers=repas.map(c=>+c.nb||0).filter(x=>x>0);
     const persPrix=repasV.filter(c=>c.prix>0&&c.nb>0);
@@ -6860,7 +6681,7 @@ function attachEvents(){
 
     document.querySelectorAll('[data-reset-form]').forEach(el=>el.onclick=()=>setState({form:{type:null,step:1,sent:false,dem:"",pourQui:[],pourQuiAutre:"",participants:"",vol:"",copyMail:false,date:today(),dateDepart:"",heure:"",lieu:"",de:"",vers:"",presta:"",desc:"",nb:"1",com:""}}));
     document.querySelectorAll('[data-back-admin-agenda]').forEach(el=>el.onclick=()=>{ const c=(state.data||[]).find(x=>x.code===state.form.code); const d=c&&parseDate(c.date); state.flashId=c&&c.id; setState({vue:'admin',authed:true,adminTab:'calendrier',saisieDirecte:false,calDay:d?isoDay(d):null,calMonth:d?`${d.getFullYear()}-${d.getMonth()}`:null,form:{type:null,step:1,sent:false,dem:"",pourQui:[],pourQuiAutre:"",participants:"",vol:"",copyMail:false,date:today(),dateDepart:"",heure:"",lieu:"",de:"",vers:"",presta:"",desc:"",nb:"1",com:""}}); });
-    document.querySelectorAll('[data-back-admin-suivi]').forEach(el=>el.onclick=()=>{ const c=(state.data||[]).find(x=>x.code===state.form.code); state.flashId=c&&c.id; if(c&&c.id!=null){ state.suiviStage=stageOf(c); state.suiviCat=suiviCat(c); state.suiviType="all"; state.search=""; window._svArrive={id:String(c.id),from:'__aucune__'}; setTimeout(()=>{ const r=document.querySelector(`tr[data-row="${CSS.escape(String(c.id))}"]`); if(r) r.scrollIntoView({block:'center',behavior:'smooth'}); },350); }
+    document.querySelectorAll('[data-back-admin-suivi]').forEach(el=>el.onclick=()=>{ const c=(state.data||[]).find(x=>x.code===state.form.code); state.flashId=c&&c.id; if(c&&c.id!=null){ state.suiviCat=suiviCat(c); state.suiviType="all"; state.search=""; window._svArrive={id:String(c.id),from:'__aucune__'}; setTimeout(()=>{ const r=document.querySelector(`tr[data-row="${CSS.escape(String(c.id))}"]`); if(r) r.scrollIntoView({block:'center',behavior:'smooth'}); },350); }
         setState({vue:'admin',authed:true,adminTab:'suivi',saisieDirecte:false,form:{type:null,step:1,sent:false,dem:"",pourQui:[],pourQuiAutre:"",participants:"",vol:"",copyMail:false,date:today(),dateDepart:"",heure:"",lieu:"",de:"",vers:"",presta:"",desc:"",nb:"1",com:""}});
         setTimeout(()=>{ const n=document.querySelector('.suivi-card.flash'); if(n) n.scrollIntoView({block:'center',behavior:'smooth'}); },150); });
 
