@@ -1321,9 +1321,13 @@ function nfSyncNb(f){ if(!f||f.type!=='repas') return; const k=compteNoms(f.part
 async function dbLoad() {
     await sbPret();
     try {
-        const r = await fetch(`${SB_TABLE}?order=date.desc&limit=1000`, { headers: sbH() });
-        if (!r.ok) throw new Error(await r.text());
-        const rows = await r.json();
+        // Tout charger, par pages de 1000 (avant : 1000 au maximum, triées comme du texte → des demandes récentes pouvaient manquer)
+        let rows = [];
+        for (let off = 0; off < 50000; off += 1000) {
+            const r = await fetch(`${SB_TABLE}?order=id.desc&limit=1000&offset=${off}`, { headers: sbH() });
+            if (!r.ok) throw new Error(await r.text());
+            const page = await r.json(); rows = rows.concat(page); if (page.length < 1000) break;
+        }
         if (!rows || rows.length === 0) return []; // plus d'import automatique des données de démonstration
         if (false) {
             // Table vide → importer les données initiales
@@ -3446,6 +3450,15 @@ function logoCharge(img,ok){
     img.onload=img.onerror=null; const s=img.parentNode; if(s) s.outerHTML=s.getAttribute('data-mono');
 }
 /* Renomme un prestataire partout (liste des réglages + demandes existantes), une seule fois */
+/* Remet au format AAAA-MM-JJ les dates saisies en JJ/MM/AAAA (ancien formulaire de saisie directe) */
+async function datesEnIso(){
+    if(!isAdmin()) return 0; const iso=s=>{ const m=String(s||'').match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/); return m?`${m[3]}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`:null; };
+    let n=0; await sbPret();
+    for(const c of (state.data||[])){ const d=iso(c.date), dd=iso(c.dateDepart); if(!d&&!dd) continue; const f={}; if(d) f.date=d; if(dd) f.date_depart=dd;
+        const r=await fetch(`${SB_TABLE}?id=eq.${encodeURIComponent(c.id)}`,{method:'PATCH',headers:{...sbH(),'Prefer':'return=minimal'},body:JSON.stringify(f)});
+        if(r.ok){ if(d) c.date=d; if(dd) c.dateDepart=dd; n++; } }
+    if(n){ console.log('Dates corrigées :',n); render(); } return n;
+}
 async function renommerPresta(ancien,nouveau){
     if(!isAdmin()) return; const cle='renomme_'+pCle(ancien); if(lsGet(cle)==='1') return;
     let chg=false; ['prestatairesRepas','prestatairesTaxi','prestatairesCommande','prestatairesHotel'].forEach(k=>{ const L=settings[k]||[]; const i=L.findIndex(x=>pCle(x)===pCle(ancien)); if(i>=0){ L[i]=nouveau; if(L.filter(x=>pCle(x)===pCle(nouveau)).length>1) L.splice(i,1); chg=true; } });
@@ -7071,9 +7084,9 @@ function attachEvents(){
         af.pourQuiAutre=document.getElementById('afPqAutre')?.value||'';
         const pourQuiLabel=af.pourQui.includes('__autre__')?(af.pourQuiAutre||'Autre'):af.pourQui.join(', ');
         const rawDate=document.getElementById('afDate')?.value||today();
-        const date=rawDate.includes('-')?rawDate.split('-').reverse().join('/'):rawDate;
+        const date=rawDate.includes('/')?rawDate.split('/').reverse().join('-'):rawDate;
         const rawDateDepart=document.getElementById('afDateDepart')?.value||'';
-        const dateDepart=rawDateDepart?(rawDateDepart.includes('-')?rawDateDepart.split('-').reverse().join('/'):rawDateDepart):'';
+        const dateDepart=rawDateDepart?(rawDateDepart.includes('/')?rawDateDepart.split('/').reverse().join('-'):rawDateDepart):'';
         const heure=document.getElementById('afHeure')?.value||'12h00';
         const com=document.getElementById('afCom')?.value||'';
         const prix=parseFloat(document.getElementById('afPrix')?.value)||0;
@@ -7295,6 +7308,7 @@ if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.
         await Promise.all([loadTrash(), loadJournal(), loadStock(), loadParking(), loadNotifsVues(), /avonde/i.test(`${userEmail()} ${userName()}`)?loadMe():null]);
         if (lsGet('last_vue') === 'admin' || state.live) { state.vue = 'admin'; state.authed = true; state.adminTab = 'dashboard'; }
         setTimeout(()=>genRecurrences(true),1500);
+        setTimeout(()=>datesEnIso().catch(e=>console.error('dates',e)),7000);
         setTimeout(()=>renommerPresta('Kusme Tea','Kusmi Tea').then(()=>renommerPresta('Evergreen','Occidental Paris Levallois')).catch(e=>console.error('renommage',e)),5000);
         setTimeout(()=>purgeAnciennes().then(n=>{ if(n){ showToast(`✓ RGPD : ${n} ancienne(s) demande(s) anonymisée(s)`); } }).catch(e=>console.error('RGPD',e)),6000);
     }
