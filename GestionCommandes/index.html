@@ -2357,7 +2357,7 @@ function renderAdminView(m){
                 <button data-admin-tab="notifs" class="nt-bell ${state.adminTab==='notifs'?'on':''} ${ntCount()?'has':''}" title="Notifications" aria-label="Notifications">${icon('bell',18)}${ntCount()?`<span class="nt-badge">${ntCount()}</span>`:''}</button>
             </div>
         </header>
-        ${state.adminTab==='activite'?`<div class="subtabs">${activiteSubTabs}</div>`:''}
+
         <div class="admin-grid"><div class="admin-main">${main}${state.saisieType?renderSaisieModal():''}</div></div>
     </div>
     </div>
@@ -2843,16 +2843,16 @@ function saisieRapideHtml(){
     const dems=[...new Set([moi,...(settings.assistantes||[])].filter(Boolean))];
     const four=settings.prestatairesCommande||[];
     return `<div class="qr" style="background:#fff;border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin:0 0 12px;">
-        <div style="font-size:12px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;display:flex;align-items:center;gap:6px;">${icon('plus',13)} Ajouter une commande</div>
-        <div style="display:grid;grid-template-columns:150px minmax(150px,1fr) minmax(200px,2fr) minmax(150px,1fr) 110px auto;gap:8px;align-items:center;" class="qr-g">
-            <input id="qrDate" type="date" class="form-input" value="${esc(Q.date||today())}" title="Date">
-            <input id="qrPresta" class="form-input" list="qrFour" placeholder="Fournisseur" value="${esc(Q.presta||'')}"><datalist id="qrFour">${four.map(x=>`<option value="${esc(x)}">`).join('')}</datalist>
+        <div style="font-size:12px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;display:flex;align-items:center;gap:6px;">${icon('plus',13)} Ajouter une fourniture</div>
+        <div style="display:grid;grid-template-columns:minmax(150px,1fr) minmax(220px,2.2fr) 100px minmax(140px,1fr) 145px auto;gap:8px;align-items:center;" class="qr-g">
+            <input id="qrPresta" class="form-input" autocomplete="off" list="qrFour" placeholder="Fournisseur" value="${esc(Q.presta||'')}"><datalist id="qrFour">${four.map(x=>`<option value="${esc(x)}">`).join('')}</datalist>
             <input id="qrDesc" class="form-input" placeholder="Ce qui est commandé (ex. ramettes A4 ×10)" value="${esc(Q.desc||'')}">
-            <select id="qrDem" class="form-input" title="Demandeur">${dems.map(n=>`<option value="${esc(n)}" ${(Q.dem||moi)===n?'selected':''}>${esc(personne(n).nom||n)}</option>`).join('')}</select>
             <input id="qrPrix" class="form-input" inputmode="decimal" placeholder="Prix €" value="${esc(Q.prix||'')}" style="text-align:right;">
+            <select id="qrDem" class="form-input" title="Demandeur">${dems.map(n=>`<option value="${esc(n)}" ${(Q.dem||moi)===n?'selected':''}>${esc(personne(n).nom||n)}</option>`).join('')}</select>
+            <input id="qrDate" type="date" class="form-input" value="${esc(Q.date||today())}" title="Date">
             <button class="fa-b p" data-qr-ajout style="white-space:nowrap;">${icon('check',14)} Ajouter</button>
         </div>
-        <div style="font-size:11.5px;color:#8b93a1;margin-top:6px;">Entrée pour valider · ajoutée directement, déjà prise en charge, sans email · le prix peut être saisi plus tard.</div>
+        <div style="font-size:11.5px;color:#8b93a1;margin-top:6px;">Entrée pour valider · le fournisseur, le demandeur et la date restent remplis pour enchaîner les articles · sans email · prix facultatif.</div>
     </div>`;
 }
 async function saisieRapideAjout(){
@@ -2867,9 +2867,9 @@ async function saisieRapideAjout(){
     state.data=[saved,...state.data.filter(c=>c.id!==it.id&&c.id!==saved.id)];
     try{ logAction('Création',saved,'saisie rapide'); }catch(_){}
     setSuivi([saved.id],()=>({direct:new Date().toISOString(),par:null}));
-    state.qr={date:Q.date,dem:Q.dem}; // on garde la date et le demandeur pour enchaîner
+    state.qr={date:Q.date,dem:Q.dem,presta:Q.presta}; // on garde fournisseur, date et demandeur pour enchaîner
     showToast(`✓ Commande ajoutée · ${esc(saved.code||'')}`); render();
-    setTimeout(()=>document.getElementById('qrPresta')?.focus(),50);
+    setTimeout(()=>document.getElementById('qrDesc')?.focus(),50);
 }
 document.addEventListener('click',e=>{ if(e.target.closest('[data-qr-ajout]')) saisieRapideAjout(); });
 document.addEventListener('keydown',e=>{ if(e.key==='Enter'&&e.target&&/^qr(Date|Presta|Desc|Dem|Prix)$/.test(e.target.id)){ e.preventDefault(); saisieRapideAjout(); } });
@@ -5416,7 +5416,7 @@ function prixEditCell(c){
 function renderActivite(m){
     if(['historique','reservations'].includes(state.activiteTab)) state.activiteTab='tout';
     if(state.activiteTab==='journal'||state.activiteTab==='corbeille'){ state.adminTab=state.activiteTab; state.activiteTab='tout'; return state.adminTab==='journal'?renderJournal(m):renderCorbeille(m); }
-    const tab=state.activiteTab||'tout';
+    state.activiteTab='tout'; const tab='tout';
     const TABS=[['tout','grid','Toutes'],['repas','utensils','Repas'],['taxis','car','Taxis'],['coursiers','send','Coursiers'],['commandes','box','Fournitures'],['hotels','bed','Hôtels']];
     const subNav=`<div style="display:flex;gap:4px;flex-wrap:wrap;background:var(--border-light);padding:4px;border-radius:6px;width:fit-content;margin-bottom:10px;">
         ${TABS.map(([k,ic,l])=>`<button data-activite-tab="${k}" style="display:flex;align-items:center;gap:6px;padding:6px 13px;border:none;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;white-space:nowrap;background:${tab===k?'var(--white)':'transparent'};color:${tab===k?'var(--ink)':'var(--ink-soft)'};box-shadow:${tab===k?'0 1px 3px rgba(0,0,0,0.08)':'none'};transition:all 0.15s;">${icon(ic,14)} ${l}</button>`).join('')}
@@ -5433,12 +5433,12 @@ function renderActivite(m){
         const TI={tout:'Toutes les demandes',repas:'Repas',taxis:'Taxis',coursiers:'Coursiers',commandes:'Fournitures',hotels:'Hôtels'}[tab]||'Toutes les demandes';
         const IC={tout:'grid',repas:'utensils',taxis:'car',coursiers:'send',commandes:'box',hotels:'bed'}[tab]||'grid';
         if(TY) state.data=state.data.filter(c=>TY.includes(c.type||'repas'));
-        body=renderHistorique(m,{titre:TI,ic:IC,rapide:tab==='commandes'});
+        body=renderHistorique(m,{titre:TI,ic:IC,rapide:true});
     }
     } finally { state.data=_full; }
     // Sur desktop, les icônes de sous-onglets sont déjà dans la barre du haut (voir renderAdminView) :
     // pas besoin de les répéter ici. Sur mobile, il n'y a pas de barre du haut équivalente.
-    return `<div>${m?subNav:''}${tab==='corbeille'||tab==='journal'?'':filtreBar}${body}</div>`;
+    return `<div>${tab==='corbeille'||tab==='journal'?'':filtreBar}${body}</div>`;
 }
 
 
