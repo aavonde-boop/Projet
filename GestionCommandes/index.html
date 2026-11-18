@@ -1375,10 +1375,12 @@ async function dbInsert(item) {
             headers: { ...sbH(), 'Prefer': 'return=representation' },
             body: JSON.stringify(appToRow(item))
         });
-        const rows = await r.json();
-        return rows[0] ? rowToApp(rows[0]) : item;
+        const rows = await r.json().catch(()=>null);
+        if(!r.ok){ const msg=(rows&&(rows.message||rows.hint||rows.details))||('HTTP '+r.status); console.error('Supabase insert refusé:', r.status, rows); const er=new Error(msg); er.refus=true; throw er; }
+        return rows && rows[0] ? rowToApp(rows[0]) : item;
     } catch(e) {
         console.error('Supabase insert:', e);
+        if(e.refus||isAdmin()) throw e;
         return item;
     }
 }
@@ -1676,7 +1678,7 @@ async function restoreFromTrash(idx) {
     const item = (state.deletedData || [])[idx];
     if (!item) return;
     const { deletedAt, deletedBy, ...clean } = item;
-    const saved = await dbInsert(clean);
+    let saved; try { saved = await dbInsert(clean); } catch(e){ showToast(`${icon('alert',13)} Restauration impossible : ${esc(e.message||'')}`); return; }
     state.data = [saved, ...state.data];
     state.deletedData = state.deletedData.filter((_, i) => i !== idx);
     try { await paramSet('corbeille', state.deletedData); } catch (e) { console.error(e); }
@@ -2730,7 +2732,7 @@ function renderSuivi(m){
     const now0=Date.now(), NEW=window._svNewAt||(window._svNewAt={});
     const ligne=(c,extra,k)=>{ const id=String(c.id); let cl='', st='';
         const A=window._svArrive;
-        if(!anim&&A&&A.id===id&&k&&k!==A.from){ if(!A.at) A.at=now0; if(now0-A.at<1600){ cl='sv-arrive'; st=`--d:-${now0-A.at}ms`; } }
+        if(A&&A.id===id&&k&&k!==A.from){ if(!A.at) A.at=now0; if(now0-A.at<1600){ cl='sv-arrive'; st=`--d:-${now0-A.at}ms`; } }
         else if(!anim&&k==='nouvelle'){ if(window._svVus&&!window._svVus.has(id)&&!NEW[id]) NEW[id]=now0; if(NEW[id]&&now0-NEW[id]<4800){ cl='sv-new'; st=`--d:-${now0-NEW[id]}ms`; if(now0-NEW[id]<800) nouveaux++; } }
         return `<tr class="${cl}" style="${st}" data-row="${esc(id)}"><td class="sv-q" ${op(c)}>${quand(c)}</td><td class="sv-d" ${op(c)}><div class="sv-dl">${prestaLogo(c.presta,26,c.type)}<div><b>${titre(c)}</b><span>${sous(c)}</span></div></div></td>${extra!==undefined?`<td class="sv-a">${extra}</td>`:''}</tr>`; };
     const vide=t=>`<div class="sv-vide">${t}</div>`;
@@ -3908,7 +3910,7 @@ async function genRecurrences(force){
                 const deja=(state.data||[]).some(c=>c.type===r.type&&String(c.date).slice(0,10)===k&&norm(c.presta)===norm(r.presta)&&norm(c.pourQui).includes(norm(r.pourQui)));
                 r.faits.push(k); change=true; if(deja) continue;
                 const it={id:Date.now()+i,code:genCode(r.type),pris:'En cours',demandeur:r.demandeur,pourQui:r.pourQui,date:k,dateDepart:'',desc:r.desc,lieu:r.lieu,heure:r.heure,presta:r.presta,prix:0,paie:'',nb:r.nb||1,comment:'Repas récurrent',type:r.type,depart:'',arrivee:'',vol:'',yooz:'',tel:''};
-                const saved=await dbInsert(it); state.data=[saved,...state.data.filter(c=>c.id!==it.id)];
+                let saved; try{ saved=await dbInsert(it); }catch(e){ r.faits=r.faits.filter(x=>x!==k); console.error('Récurrence non enregistrée',e); continue; } state.data=[saved,...state.data.filter(c=>c.id!==it.id)];
                 try{ setSuivi([saved.id||it.id],()=>({recurrent:r.id})); }catch(e){} crees++;
             }
             r.faits=r.faits.filter(k=>k>=isoDay(new Date(Date.now()-60*864e5)));
@@ -6878,7 +6880,10 @@ function attachEvents(){
         state.form.sent=true;state.form.code=code;state.form.admin=ADM;render();
         console.log('newItem code:', newItem.code, 'appToRow:', JSON.stringify(appToRow(newItem)));
         trackDemandeVia(newItem.code);
-        const saved=await dbInsert(newItem);
+        let saved;
+        try{ saved=await dbInsert(newItem); }
+        catch(e){ state.data=state.data.filter(c=>c.id!==newItem.id); state.form.sent=false; state.form.code=''; render();
+            showToast(`${icon('alert',13)} Demande NON enregistrée : ${esc(e.message||'connexion impossible')}. Vos informations sont conservées, réessayez.`); return; }
         if(saved.id!==newItem.id){state.data=state.data.map(c=>c.id===newItem.id?saved:c);}
         if(!ADM){ try{ logAction('Nouvelle demande', saved.id?saved:newItem); }catch(e){} }
         if(ADM){ try{ logAction('Ajoutée directement (admin)',newItem); }catch(e){} setSuivi([saved.id||newItem.id],()=>({direct:new Date().toISOString(),par:personne(newItem.demandeur).role==='invite'?userName():null})); return; } // Julia / Arnaud : ajout direct, pas d'email
@@ -7013,7 +7018,7 @@ function attachEvents(){
 
     document.querySelectorAll('[data-reset-form]').forEach(el=>el.onclick=()=>setState({form:{type:null,step:1,sent:false,dem:"",pourQui:[],pourQuiAutre:"",participants:"",vol:"",copyMail:false,date:today(),dateDepart:"",heure:"",lieu:"",de:"",vers:"",presta:"",desc:"",nb:"1",com:""}}));
     document.querySelectorAll('[data-back-admin-agenda]').forEach(el=>el.onclick=()=>{ const c=(state.data||[]).find(x=>x.code===state.form.code); const d=c&&parseDate(c.date); state.flashId=c&&c.id; setState({vue:'admin',authed:true,adminTab:'calendrier',saisieDirecte:false,calDay:d?isoDay(d):null,calMonth:d?`${d.getFullYear()}-${d.getMonth()}`:null,form:{type:null,step:1,sent:false,dem:"",pourQui:[],pourQuiAutre:"",participants:"",vol:"",copyMail:false,date:today(),dateDepart:"",heure:"",lieu:"",de:"",vers:"",presta:"",desc:"",nb:"1",com:""}}); });
-    document.querySelectorAll('[data-back-admin-suivi]').forEach(el=>el.onclick=()=>{ const c=(state.data||[]).find(x=>x.code===state.form.code); state.flashId=c&&c.id; if(c) state.suiviStage=stageOf(c);
+    document.querySelectorAll('[data-back-admin-suivi]').forEach(el=>el.onclick=()=>{ const c=(state.data||[]).find(x=>x.code===state.form.code); state.flashId=c&&c.id; if(c&&c.id!=null){ state.suiviStage=stageOf(c); state.suiviCat=suiviCat(c); state.suiviType="all"; state.search=""; window._svArrive={id:String(c.id),from:'__aucune__'}; setTimeout(()=>{ const r=document.querySelector(`tr[data-row="${CSS.escape(String(c.id))}"]`); if(r) r.scrollIntoView({block:'center',behavior:'smooth'}); },350); }
         setState({vue:'admin',authed:true,adminTab:'suivi',saisieDirecte:false,form:{type:null,step:1,sent:false,dem:"",pourQui:[],pourQuiAutre:"",participants:"",vol:"",copyMail:false,date:today(),dateDepart:"",heure:"",lieu:"",de:"",vers:"",presta:"",desc:"",nb:"1",com:""}});
         setTimeout(()=>{ const n=document.querySelector('.suivi-card.flash'); if(n) n.scrollIntoView({block:'center',behavior:'smooth'}); },150); });
 
@@ -7107,7 +7112,7 @@ function attachEvents(){
         showToast('✓ Commande ajoutée · aucun email envoyé');
         state.adminTab='activite';state.activiteTab='tout';state.resaFilter='all';state.resaSort='date';state.resaSortAsc=false;state.search='';
         render();
-        const savedCmd=await dbInsert(newCmd);
+        let savedCmd; try{ savedCmd=await dbInsert(newCmd); }catch(e){ state.data=state.data.filter(c=>c.id!==newCmd.id); render(); showToast(`${icon('alert',13)} Commande NON enregistrée : ${esc(e.message||'connexion impossible')}`); return; }
         if(savedCmd.id!==newCmd.id){state.data=state.data.map(c=>c.id===newCmd.id?savedCmd:c);}
         logAction('Création', savedCmd, 'saisie admin');
         setSuivi([savedCmd.id],()=>({direct:new Date().toISOString(),par:personne(savedCmd.demandeur).role==='invite'?userName():null}));
