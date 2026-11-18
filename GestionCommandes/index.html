@@ -1803,7 +1803,7 @@ let state = {
     search:"", filtre:"all", toast:"",
     saisieType:null, fabOpen:false, fabAdminOpen:false, trackMode:false, trackResult:null, trackCode:"" ,
     resaFilter:"all", cmdFilter:"all", hotelFilter:"all", resaSort:"date", resaSortAsc:false, cmdSort:"date", cmdSortAsc:false, hotelSort:"date", hotelSortAsc:false, histSortAsc:true,
-    activiteTab:"tout", histSort:"date", histPage:0, calMonth:null, colOrder:["date","code","type","desc","demandeur","pourQui","statut","prix"],
+    activiteTab:"tout", histSort:"date", histPage:0, calMonth:null, colOrder:["date","code","type","desc","presta","demandeur","pourQui","statut","prix"],
     deletedData:[], journal:[], sel:[], suivi:{}, suiviStage:null, suiviType:'all', moreOpen:false, calDay:null, statsPeriod:'annee', statsFrom:'', statsTo:'', journalSearch:'', confirmRm:null, confirmDelete:null, yoozMap:null, settingsTab:null, adminForm:null,
     form:{ type:null, step:1, sent:false, code:null,
         dem:"", pourQui:[], pourQuiAutre:"", participants:"", vol:"", tel:"", copyMail:false,
@@ -5516,6 +5516,7 @@ function renderCorbeille(m){
     </div>`;
 }
 
+function HIST_COLS(){ const o=state.colOrder||[]; const D=["date","code","type","desc","presta","demandeur","pourQui","statut","prix"]; return o.length&&o.includes('presta')?o:D; }
 function renderHistorique(m,opt={}){
     const typeIcon=t=>icon(t==='taxi'?'car':t==='coursier'?'send':t==='repas'?'utensils':t==='hotel'?'bed':'box',14);
     const typeLabel=t=>TYPE_LABEL[t]||'Commande';
@@ -5533,7 +5534,7 @@ function renderHistorique(m,opt={}){
     const PAGE=30;
     const page=state.histPage||0;
     const sansPrix=prixASaisir();
-    const allSorted=[...(state.histPrix?sansPrix:state.data)].sort((a,b)=>{ const s=_histCmp(a,b); return state.histAsc?-s:s; });
+    const allSorted=[...(state.histPrix?sansPrix:state.data)].sort((a,b)=>{ if(state.histSort==='presta'&&!a.presta!==!b.presta) return a.presta?-1:1; const s=_histCmp(a,b); return state.histAsc?-s:s; });
     function _histCmp(a,b){
         const k=state.histSort||'date';
         if(k==='date'){
@@ -5544,7 +5545,7 @@ function renderHistorique(m,opt={}){
         const parDate=()=>((parseDate(b.date)||new Date(0))-(parseDate(a.date)||new Date(0)));
         if(k==='prix') return (b.prix||0)-(a.prix||0)||parDate();
         if(k==='type'){ const O=['repas','taxi','coursier','hotel','commande']; const ia=O.indexOf(a.type||'repas'), ib=O.indexOf(b.type||'repas'); return ((ia<0?9:ia)-(ib<0?9:ib))||parDate(); }
-        if(k==='statut'){ const O=['recue','commandee','fait','refusee']; return (O.indexOf(etape(a))-O.indexOf(etape(b)))||parDate(); }
+        if(k==='statut'){ const O=['nouvelle','prise','prix','fin','annulee']; return (O.indexOf(suiviCat(a))-O.indexOf(suiviCat(b)))||parDate(); }
         if(k==='demandeur') return String(demNom(a)||'').localeCompare(String(demNom(b)||''),'fr',{sensitivity:'base'})||parDate();
         return String(a[k]||'').localeCompare(String(b[k]||''),'fr',{sensitivity:'base'})||parDate();
     }
@@ -5570,10 +5571,10 @@ function renderHistorique(m,opt={}){
             <table class="grid-table" style="width:100%;border-collapse:collapse;font-size:13px;min-width:700px;">
                 <thead id="histTableHead">
                     <tr style="background:#f8fafc;">
-                        ${(state.colOrder||["date","code","type","desc","demandeur","pourQui","statut","prix"]).map(col=>{
-                            const labels={date:'Date',code:'Code',type:'Type',desc:'Description',demandeur:'Demandeur',pourQui:'Pour qui',statut:'Statut',prix:'Montant'};
+                        ${HIST_COLS().map(col=>{
+                            const labels={date:'Date',code:'Code',type:'Type',desc:'Description',presta:'Fournisseur',demandeur:'Demandeur',pourQui:'Pour qui',statut:'Statut',prix:'Montant'};
                             const align=col==='prix'?'right':col==='statut'?'center':'left';
-                            const sk={date:'date',code:'code',type:'type',desc:'desc',demandeur:'demandeur',pourQui:'pourQui',statut:'statut',prix:'prix'}[col], on=(state.histSort||'date')===sk, fl=on?(state.histAsc?' ↑':' ↓'):'';
+                            const sk={date:'date',code:'code',type:'type',desc:'desc',presta:'presta',demandeur:'demandeur',pourQui:'pourQui',statut:'statut',prix:'prix'}[col], on=(state.histSort||'date')===sk, fl=on?(state.histAsc?' ↑':' ↓'):'';
                             return `<th data-col="${col}" data-hist-sort="${sk}" style="text-align:${align};padding:9px 12px;font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:${on?'var(--accent)':'#64748b'};border-bottom:2px solid ${on?'var(--accent)':'#e2e8f0'};cursor:pointer;user-select:none;white-space:nowrap;" title="Cliquer pour trier · glisser pour déplacer la colonne">${labels[col]||col}${fl}</th>`;
                         }).join('')}
                     </tr>
@@ -5588,18 +5589,19 @@ function renderHistorique(m,opt={}){
                             type:`<td style="padding:9px 12px;">${typeBadge(c.type)}</td>`,
                             desc:`<td style="padding:9px 12px;color:#1a1f36;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:500;">${c.desc||'—'}</td>`,
                             demandeur:`<td style="padding:9px 12px;font-weight:600;white-space:nowrap;color:#1a1f36;">${demHtml(c)}</td>`,
+                            presta:`<td style="padding:6px 12px;max-width:190px;">${c.presta?`<span style="display:inline-flex;align-items:center;gap:8px;max-width:100%;">${prestaLogo(c.presta,22,c.type)}<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#1a1f36;">${esc(c.presta)}</span></span>`:'<span style="color:#c0c6d0;">—</span>'}</td>`,
                             pourQui:`<td style="padding:9px 12px;color:#5a6a85;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${c.pourQui||'—'}</td>`,
                             statut:statusEditCell(c),
                             prix:prixEditCell(c),
                         };
                         return `<tr data-open-detail='${JSON.stringify(c).replace(/'/g,"&apos;")}' style="border-bottom:1px solid #f1f5f9;cursor:pointer;transition:background 0.15s;${urgent?'background:#fffbeb;border-left:3px solid #f59e0b;':''}" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='${urgent?'#fffbeb':''}'">
-                            ${(state.colOrder||["date","code","type","desc","demandeur","pourQui","statut","prix"]).map(col=>cellMap[col]||'').join('')}
+                            ${HIST_COLS().map(col=>cellMap[col]||'').join('')}
                         </tr>`;
                     }).join('')}
                 </tbody>
                 <tfoot>
                     <tr style="background:#f8fafc;border-top:2px solid #e2e8f0;">
-                        <td colspan="6" style="padding:9px 12px;font-weight:700;font-size:13px;color:#1a1f36;">Total</td>
+                        <td colspan="${HIST_COLS().length-1}" style="padding:9px 12px;font-weight:700;font-size:13px;color:#1a1f36;">Total</td>
                         <td style="padding:9px 12px;text-align:right;font-weight:800;font-size:15px;color:#16a34a;font-family:monospace;">
                             ${$ms(allSorted.filter(c=>c.pris==='OUI').reduce((a,b)=>a+(b.prix||0),0))}
                         </td>
