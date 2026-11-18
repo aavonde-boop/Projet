@@ -7118,7 +7118,7 @@ function attachEvents(){
         }
         yooz=document.getElementById('afYooz')?.value||YOOZ_MAP[presta]||'';
         if(!dem){showToast(`${icon('alert',13)} Choisir le demandeur`);return;}
-        const newCmd={id:Date.now(),pris:"OUI",demandeur:dem,pourQui:pourQuiLabel,date,dateDepart,desc,lieu,heure,presta,prix,paie,nb,comment:com,type:t,depart,arrivee,vol,yooz,tel};
+        const newCmd={id:Date.now(),code:genCode(t),pris:"OUI",demandeur:dem,pourQui:pourQuiLabel,date,dateDepart,desc,lieu,heure,presta,prix,paie,nb,comment:com,type:t,depart,arrivee,vol,yooz,tel};
         state.data=[newCmd,...state.data];
         state.saisieType=null;
         state.adminForm=null;
