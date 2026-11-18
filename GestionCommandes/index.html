@@ -597,6 +597,21 @@
         .rgp h2{ font:650 20px var(--ft); margin:0 0 4px; color:var(--ink); } .rgp h3{ font:650 14px var(--fb); margin:18px 0 4px; color:var(--ink); } .rgp ul{ margin:4px 0; padding-left:20px; } .rgp p{ margin:4px 0; }
         .rg-x{ position:absolute; top:14px; right:14px; width:34px; height:34px; border-radius:8px; border:1px solid var(--border); background:#fff; cursor:pointer; display:flex; align-items:center; justify-content:center; }
         .rg-foot{ text-align:center; padding:18px 12px 26px; }
+        .fi-edit{ background:#fff; border:1px solid var(--border); border-radius:8px; padding:16px; margin-bottom:14px; }
+        .fi-edit-h{ display:flex; justify-content:space-between; align-items:baseline; gap:8px; flex-wrap:wrap; margin-bottom:10px; } .fi-edit-h b{ font-size:13px; color:var(--ink); } .fi-edit-h span{ font-size:11.5px; color:#8b93a1; }
+        .fi-edit-g{ display:grid; grid-template-columns:repeat(auto-fill,minmax(230px,1fr)); gap:0 14px; }
+        .fi-edit-g .form-group{ margin-bottom:10px; }
+        .fi.fi-x{ border:none; padding:6px 0 0; margin:0; box-shadow:none; background:none; border-top:1px solid var(--border-light); border-radius:0; }
+        .sv-new{ display:inline-flex; align-items:center; gap:6px; padding:9px 14px; border-radius:10px; white-space:nowrap; }
+        .sv-al{ background:#fff; border:1px solid var(--border); border-radius:12px; padding:12px 14px; margin:0 0 14px; }
+        .sv-al-h{ display:flex; align-items:center; gap:8px; font-weight:700; font-size:13px; color:var(--ink); margin-bottom:8px; flex-wrap:wrap; }
+        .sv-al-n{ background:#fee2e2; color:#b91c1c; border-radius:20px; padding:1px 8px; font-size:11.5px; }
+        .sv-al-g{ display:grid; grid-template-columns:repeat(auto-fill,minmax(330px,1fr)); gap:8px; }
+        .sv-al-i{ display:flex; align-items:center; gap:10px; background:color-mix(in srgb,var(--t) 8%,#fff); border-radius:10px; padding:8px 10px; }
+        .sv-al-ic{ color:var(--t); display:flex; } .sv-al-t{ flex:1; min-width:0; } .sv-al-t b{ display:block; font-size:12.5px; color:var(--t); } .sv-al-t span{ display:block; font-size:11.5px; color:#475569; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .sv-al-vu{ border:none; background:none; color:#94a3b8; cursor:pointer; padding:4px; border-radius:6px; display:flex; } .sv-al-vu:hover{ background:#fff; color:#15803d; }
+                .sv-al-i{ min-width:0; }
+        @media(max-width:760px){ .sv-al-g{ grid-template-columns:minmax(0,1fr); } .sv-al-h .btn-sm{ font-size:11.5px; } .sv-new{ width:100%; justify-content:center; } }
         .lg-liens{ text-align:center; font-size:12px; color:#8b93a1; } .lg-liens button{ background:none; border:none; padding:0; color:inherit; font:inherit; cursor:pointer; text-decoration:underline; }
         .lg-side{ padding:6px 10px 2px; } .lg-side .lg-liens{ font-size:11px; color:#64748b; }
         .lg-ong{ border:none; background:transparent; color:#334155; border-radius:999px; padding:7px 14px; font-weight:700; font-size:13px; cursor:pointer; } .lg-ong.on{ background:var(--accent); color:#fff; }
@@ -1802,7 +1817,7 @@ function trackFirstSeen(data) {
 let state = {
     vue:"select", authed:false,
     data:[], loading:true,
-    detail:null, adminTab:"dashboard",
+    detail:null, adminTab:"suivi",
     search:"", filtre:"all", toast:"",
     saisieType:null, fabOpen:false, fabAdminOpen:false, trackMode:false, trackResult:null, trackCode:"" ,
     resaFilter:"all", cmdFilter:"all", hotelFilter:"all", resaSort:"date", resaSortAsc:false, cmdSort:"date", cmdSortAsc:false, hotelSort:"date", hotelSortAsc:false, histSortAsc:true,
@@ -2283,15 +2298,18 @@ function renderPasAdmin(){
 function renderAdminView(m){
     const total=state.data.filter(c=>c.pris==="OUI").reduce((a,b)=>a+(b.prix||0),0);
     const attente=state.data.filter(c=>c.pris==="En attente"||c.pris==="En cours");
-    if(state.detail) return renderDetail(state.detail,m);
+    if(state.detail&&m) return renderDetail(state.detail,m);
 
     const activiteSubTabs=[['tout','grid','Toutes'],['repas','utensils','Repas'],['taxis','car','Taxis'],['coursiers','send','Coursiers'],['commandes','box','Fournitures'],['hotels','bed','Hôtels']].map(([k,ic,label])=>{
         const active=(state.activiteTab||'tout')===k;
         return `<button data-activite-tab="${k}" class="subtab ${active?'on':''}">${icon(ic,15)} ${label}</button>`;
     }).join('');
 
+    // Rangement : le Suivi est la page d'accueil (tableau de bord et page Notifications retirés)
+    if(state.adminTab==='dashboard'||state.adminTab==='notifs'){ if(state.adminTab==='notifs') setTimeout(()=>document.getElementById('svAlertes')?.scrollIntoView({behavior:'smooth',block:'start'}),60); state.adminTab='suivi'; }
     let main='';
-    if(state.saisieDirecte)                  main=renderSaisieDirecte(m);
+    if(state.detail&&!state.saisieDirecte)   main=renderDetail(state.detail,m); // fiche dans l'application, pleine largeur
+    else if(state.saisieDirecte)             main=renderSaisieDirecte(m);
     else if(state.adminTab==='settings')        main=renderSettings();
     else if(state.adminTab==='activite')     main=renderActivite(m);
     else if(state.adminTab==='journal')      main=renderJournal(m);
@@ -2338,14 +2356,10 @@ function renderAdminView(m){
         <div class="side-brand">${logoHtml(16)}<div class="side-lbl"><b>${esc(marqueNom())}</b><span>Administration</span></div></div>
         <div class="side-scroll">
             <div class="side-grp" style="padding-top:12px;">
-                ${item('dashboard','dashboard','Tableau de bord')}<button data-saisie-nouvelle class="side-it ${state.saisieDirecte?'on':''}" title="Saisir une demande">${icon('plus',17)}<span class="side-lbl">Saisir une demande</span></button>${meOk()?`<div class="perso">${item('me-memo','edit','Mémo perso')}</div>`:''}</div>
-            <div class="side-grp"><h6 class="side-lbl">Commandes</h6>
-                ${item('suivi','clipboard','Suivi des demandes')}${item('calendrier','calendar','Agenda')}${item('activite','grid','Base des demandes')}${item('journal','edit','Journal')}${item('corbeille','trash','Corbeille')}</div>
+                ${item('suivi','clipboard','Suivi')}${item('calendrier','calendar','Agenda')}${item('activite','grid','Base des demandes')}${item('stats','chart','Statistiques')}${meOk()?`<div class="perso">${item('me-memo','edit','Mémo perso')}</div>`:''}</div>
             ${meOk()?`<div class="side-grp perso"><h6 class="side-lbl">Bâtiment ${icon('lock',10)}</h6>${item('me-bat','tool','Signalements')}${item('me-stat','check','Actions et stats')}</div>`:''}
-            <div class="side-grp"><h6 class="side-lbl">Analyses</h6>
-                ${item('stats','chart','Statistiques')}</div>
         </div>
-        <div style="padding:6px 10px;border-top:1px solid rgba(255,255,255,.06);"><button data-live-open class="side-it" title="Écran live (plein écran, pour un PC ou une TV)">${icon('dashboard',17)}<span class="side-lbl">Écran live</span></button>${item('settings','sliders','Réglages')}</div>
+        <div style="padding:6px 10px;border-top:1px solid rgba(255,255,255,.06);"><button data-admin-tab="settings" class="side-it ${['settings','journal','corbeille'].includes(state.adminTab)&&!state.saisieDirecte?'on':''}" title="Réglages">${icon('sliders',17)}<span class="side-lbl">Réglages</span></button></div>
         <div class="side-lbl lg-side">${legalLiens()}</div>
         <div class="side-user">
             <span class="side-av">${esc(init||'AD')}</span>
@@ -2658,6 +2672,23 @@ async function saisirPrix(c,raw){
     await dbUpdate(c.id,{prix:v}); if(suiviOf(c).prixEst) setSuivi([c.id],()=>({prixEst:null}));
     showToast(`✓ ${$m(v)} enregistré · demande terminée`); render(); return true;
 }
+/* Réglages › Outils : Journal, Corbeille, Écran live (rangés ici, hors du menu principal) */
+function outilsHtml(m){
+    const O=[['journal','edit','Journal','Qui a fait quoi'],['corbeille','trash','Corbeille',`Demandes supprimées · ${TRASH_DAYS} jours`],['live','dashboard','Écran live','Plein écran pour un PC ou une TV']];
+    const at=k=>k==='live'?'data-live-open':`data-admin-tab="${k}"`;
+    if(m) return O.filter(o=>o[0]!=='live').map(([k,ic,l])=>`<button ${at(k)} style="display:flex;align-items:center;gap:6px;flex-shrink:0;padding:8px 14px;border-radius:8px;border:1px dashed var(--border);background:#fff;color:var(--ink-soft);font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;">${icon(ic,14)} ${l}</button>`).join('');
+    return `<div style="font-size:10.5px;font-weight:700;letter-spacing:.06em;color:#94a3b8;text-transform:uppercase;padding:12px 12px 4px;">Outils</div>`+O.map(([k,ic,l,sub])=>`<button ${at(k)} style="display:flex;align-items:center;gap:11px;width:100%;text-align:left;padding:10px 12px;border:none;border-radius:12px;cursor:pointer;background:transparent;margin-bottom:2px;">
+        <span style="width:30px;height:30px;border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0;background:#f3f4f6;color:var(--ink-soft);">${icon(ic,15)}</span>
+        <span style="min-width:0;"><span style="display:block;font-size:14px;font-weight:600;color:var(--ink);">${l}</span><span style="display:block;font-size:11px;color:#8b93a1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${sub}</span></span></button>`).join('');
+}
+/* Suivi : bandeau « À ne pas oublier » (remplace la page Notifications) */
+function svAlertesHtml(){
+    if(!isAdmin()) return '';
+    if(!state.nvLoaded){ if(!window._nvLoading){ window._nvLoading=true; loadNotifsVues().then(()=>{ window._nvLoading=false; render(); }).catch(()=>{ window._nvLoading=false; }); } return ''; }
+    const L=ntListe(); if(!L.length) return '';
+    return `<div id="svAlertes" class="sv-al"><div class="sv-al-h">${icon('alert',15)} À ne pas oublier <span class="sv-al-n">${L.length}</span><span style="flex:1"></span>${!notifsReady()?`<button class="btn-sm" data-activate-notifs style="padding:5px 10px;">${icon('bell',13)} Alertes sur cet appareil</button>`:''}<button class="btn-sm" data-nt="tout" style="padding:5px 10px;">${icon('check',13)} Tout marquer comme vu</button></div>
+        <div class="sv-al-g">${L.map(n=>`<div class="sv-al-i" style="--t:${n.ton};"><span class="sv-al-ic">${icon(n.ic,15)}</span><div class="sv-al-t" ${n.id||n.nav||n.me?`data-nt="ouvrir" data-k="${n.key}" style="cursor:pointer;"`:''}><b>${esc(n.titre)}</b>${n.detail?`<span>${esc(n.detail)}</span>`:''}</div>${n.id||n.nav||n.me?`<button class="btn-sm" data-nt="ouvrir" data-k="${n.key}" style="padding:5px 10px;">Ouvrir</button>`:''}<button class="sv-al-vu" data-nt="vu" data-k="${n.key}" title="Vu">${icon('check',13)}</button></div>`).join('')}</div></div>`;
+}
 function renderSuivi(m){
     const lim=new Date(); lim.setHours(0,0,0,0); lim.setDate(lim.getDate()-14);
     const all=filtreSuivi(state.data), L={nouvelle:[],prise:[],prix:[],fin:[]};
@@ -2697,8 +2728,9 @@ function renderSuivi(m){
     const cur=state.suiviCat&&L[state.suiviCat]?state.suiviCat:(L.nouvelle.length?'nouvelle':L.prix.length?'prix':'prise');
     const html=`<div>
     <div class="sv-top"><div><div class="sv-ttl">Suivi des demandes</div><div class="sv-sub">${dateLongue(now)} · ${nAct?`${nAct} action${nAct>1?'s':''} en attente`:'aucune action en attente'}</div></div>
-        <div class="sv-tools"><input id="adminSearch" type="text" placeholder="🔍 Rechercher…" value="${esc(state.search||'')}" class="sv-srch">
+        <div class="sv-tools"><button data-saisie-nouvelle class="btn-primary sv-new">${icon('plus',15)} Saisir une demande</button><input id="adminSearch" type="text" placeholder="🔍 Rechercher…" value="${esc(state.search||'')}" class="sv-srch">
         ${types.map(([k,l])=>`<button data-nav='{"suiviType":"${k}"}' class="sv-chip ${(state.suiviType||'all')===k?'on':''}">${l}</button>`).join('')}</div></div>
+    ${svAlertesHtml()}
     ${m?`<div class="sv-tabs">${SUIVI_CATS.map(([k,l,,c])=>`<button data-nav='{"suiviCat":"${k}"}' class="${cur===k?'on':''}" style="--c:${c}"><b>${L[k].length}</b>${l}</button>`).join('')}</div>${col(SUIVI_CATS.find(x=>x[0]===cur),0)}`
       :`<div class="sv-grid">${SUIVI_CATS.map(col).join('')}</div>`}
     </div>`;
@@ -2820,6 +2852,14 @@ function suiviBlock(d){
     </div>`;
 }
 
+/* Fiche : enregistrement automatique des informations (sauf « Pour qui » : à la fermeture de la liste) */
+document.addEventListener('change',e=>{ const el=e.target; if(!el||!el.closest||!el.closest('.fi-edit-g')) return;
+    const FK={editDesc:'desc',editDate:'date',editDateDepart:'dateDepart',editHeure:'heure',editComment:'comment',editPaie:'paie',editLieu:'lieu',editPresta:'presta',editPresta2:'presta',editDe:'depart',editVers:'arrivee',editNb:'nb',editTel:'tel',editVol:'vol'};
+    window._feDirty=window._feDirty||new Set();
+    if(el.closest('#editPqWrapper')){ window._feDirty.add('pourQui'); window._pqPend=true; return; }
+    if(FK[el.id]) window._feDirty.add(FK[el.id]); else return;
+    clearTimeout(window._feT); window._feT=setTimeout(()=>document.getElementById('saveEdit')?.click(),250); });
+document.addEventListener('click',e=>{ if(window._pqPend&&!(e.target.closest&&e.target.closest('#editPqWrapper'))){ window._pqPend=false; document.getElementById('saveEdit')?.click(); } },true);
 /* Fiche : les 4 étapes (Bien reçu, Commande passée, Prix, Annuler) */
 function ficheActions(d){
     const st=stageOf(d), s=suiviOf(d);
@@ -2959,7 +2999,7 @@ document.addEventListener('click',async e=>{
     state.bonCharge=null; render();
 });
 /* Fiche : toutes les informations de la commande, lisibles d'un coup d'œil */
-function ficheInfos(d){
+function ficheInfos(d,opt){
     const s=suiviOf(d), T=d.type, dt=parseDate(d.date), df=parseDate(d.dateDepart);
     const quand=dt?`${dateLongue(dt)} ${dt.getFullYear()}${d.heure?' · '+esc(d.heure):''}`:'—';
     const F=[];
@@ -2985,6 +3025,7 @@ function ficheInfos(d){
     let demEd='';
     if(isAdmin()){ const L=[...new Set([d.demandeur,userName(),...(settings.assistantes||[])].filter(Boolean))];
         demEd=`<div class="fi-pa"><span>Demandé par</span><div style="flex-wrap:wrap;"><select id="fiDem" class="form-input" style="max-width:260px;">${L.map(n=>`<option value="${esc(n)}" ${n===d.demandeur?'selected':''}>${esc(personne(n).nom||n)}</option>`).join('')}</select><button class="fa-b p" data-fi-dem="${d.id}">Attribuer</button>${mailSuiviPossible(d.demandeur)?`<button class="fa-b" data-fi-mail="${d.id}">${icon('mail',13)} ${s.accuse?'Renvoyer':'Envoyer'} le suivi par email</button>`:''}</div></div>`; }
+    if(opt&&opt.extras) return `<div class="fi fi-x">${d.code?`<div class="fi-f"><span>Code</span><b><span style="font-family:monospace;">${esc(d.code)}</span></b></div>`:''}${demEd}${ct?`<div class="fi-ct">${ct}</div>`:''}</div>`;
     return `<div class="fi">${F.join('')}${demEd}${partEd}${com}${ct?`<div class="fi-ct">${ct}</div>`:''}</div>`;
 }
 document.addEventListener('click',async e=>{ const b=e.target.closest('[data-fi-dem]'); if(!b) return;
@@ -3022,19 +3063,18 @@ function trackSteps(c){
 
 /* Navigation mobile commune */
 function mobileNavHtml(){
-    const items=[["dashboard","dashboard","Accueil"],["suivi","clipboard","Suivi"],["calendrier","calendar","Agenda"],["activite","grid","Base"]];
+    const items=[["suivi","clipboard","Suivi"],["calendrier","calendar","Agenda"],["activite","grid","Base"],["stats","chart","Stats"]];
     const n=aFaireCount();
     return `<nav class="mobile-nav"><div class="mobile-nav-items">
         ${items.map(([tab,ic,label])=>`<button class="mobile-nav-btn ${state.adminTab===tab&&!state.detail?'active':''}" data-admin-tab="${tab}" style="position:relative;">
             <span class="nav-icon">${icon(ic,18)}</span><span>${label}</span><span class="nav-dot"></span>
             ${tab==='suivi'&&n?`<span style="position:absolute;top:2px;left:calc(50% + 6px);background:#ef4444;color:#fff;border-radius:10px;min-width:16px;height:16px;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0 4px;">${n}</span>`:''}
         </button>`).join('')}
-        <button class="mobile-nav-btn ${(state.adminTab==='stats'||state.adminTab==='analyse'||String(state.adminTab).startsWith('me'))&&!state.detail?'active':''}" data-nav='{"moreOpen":true}'><span class="nav-icon">${icon('menu',18)}</span><span>Plus</span><span class="nav-dot"></span></button>
+        <button class="mobile-nav-btn ${(['settings','journal','corbeille'].includes(state.adminTab)||String(state.adminTab).startsWith('me'))&&!state.detail?'active':''}" data-nav='{"moreOpen":true}'><span class="nav-icon">${icon('menu',18)}</span><span>Plus</span><span class="nav-dot"></span></button>
     </div></nav>
     ${state.moreOpen?`<div data-nav='{"moreOpen":false}' style="position:fixed;inset:0;background:rgba(15,23,42,.35);z-index:9500;display:flex;align-items:flex-end;">
         <div style="background:#fff;width:100%;border-radius:20px 20px 0 0;padding:14px 14px calc(14px + env(safe-area-inset-bottom,0px));">
-            ${[...(meOk()?[["me-memo","edit","Mémo perso"],["me-bat","tool","Signalements du bâtiment"],["me-stat","check","Actions et stats"]]:[]),["journal","edit","Journal"],["corbeille","trash","Corbeille"],["stats","chart","Statistiques"]].map(([t,ic,l])=>`<button data-admin-tab="${t}" style="display:flex;align-items:center;gap:12px;width:100%;background:none;border:none;padding:14px 8px;font-size:15px;font-weight:600;color:var(--ink);cursor:pointer;border-bottom:1px solid #f0f1f4;">${icon(ic,18)} ${l}</button>`).join('')}
-            <button data-saisie-nouvelle style="display:flex;align-items:center;gap:12px;width:100%;background:none;border:none;padding:14px 8px;font-size:15px;font-weight:600;color:var(--accent);cursor:pointer;border-bottom:1px solid #f0f1f4;">${icon('plus',18)} Saisir une demande</button>
+            ${[...(meOk()?[["me-memo","edit","Mémo perso"],["me-bat","tool","Signalements du bâtiment"],["me-stat","check","Actions et stats"]]:[]),["settings","sliders","Réglages"],["journal","edit","Journal"],["corbeille","trash","Corbeille"]].map(([t,ic,l])=>`<button data-admin-tab="${t}" style="display:flex;align-items:center;gap:12px;width:100%;background:none;border:none;padding:14px 8px;font-size:15px;font-weight:600;color:var(--ink);cursor:pointer;border-bottom:1px solid #f0f1f4;">${icon(ic,18)} ${l}</button>`).join('')}
             <button data-back-home style="display:flex;align-items:center;gap:12px;width:100%;background:none;border:none;padding:14px 8px;font-size:15px;font-weight:600;color:var(--ink);cursor:pointer;border-bottom:1px solid #f0f1f4;">${icon('home',18)} Page de demande</button>
             <button data-admin-logout style="display:flex;align-items:center;gap:12px;width:100%;background:none;border:none;padding:14px 8px;font-size:15px;font-weight:600;color:#b91c1c;cursor:pointer;">${icon('logout',18)} Se déconnecter</button>
             ${legalLiens('padding-top:10px;')}
@@ -3101,8 +3141,9 @@ function renderDetail(d,m){
         : '<label class="form-label">Pour qui</label><div style="position:relative;" id="editPqWrapper"><button type="button" id="editPqToggle" style="width:100%;border:1.5px solid var(--border);border-radius:8px;padding:12px 14px;font-size:14px;background:var(--white);text-align:left;cursor:pointer;display:flex;justify-content:space-between;align-items:center;font-family:var(--fb);color:var(--ink);"><span id="editPqLabel">'+(d.pourQui||'— Choisir —')+'</span><span style="font-size:11px;color:var(--ink-soft);">▼</span></button><div id="editPqDropdown" style="display:none;position:absolute;top:calc(100% + 4px);left:0;right:0;background:var(--white);border:1.5px solid var(--border);border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,0.10);z-index:999;overflow:hidden;max-height:220px;overflow-y:auto;">'+settings.directeurs.map(dir=>'<label style="display:flex;align-items:center;gap:12px;padding:11px 16px;cursor:pointer;border-bottom:1px solid var(--border-light);"><input type="checkbox" class="edit-pq-check" value="'+dir+'" '+((d.pourQui||'').toUpperCase().includes(dir.toUpperCase())?'checked':'')+' style="width:17px;height:17px;accent-color:var(--accent);cursor:pointer;flex-shrink:0;"><span style="font-size:14px;">'+dir+'</span></label>').join('')+'<div style="padding:10px 16px;border-top:1px solid var(--border-light);"><input id="editPqAutre" type="text" placeholder="Autre nom..." value="'+(settings.directeurs.some(d2=>(d.pourQui||'').toUpperCase().includes(d2.toUpperCase()))?'':d.pourQui||'')+'" class="form-input" style="font-size:13px;padding:7px 10px;"></div></div></div>';
 
     const editForm=`
-    <details class="fa-edit" style="background:#fafaf8;border-radius:8px;padding:12px 16px;margin-bottom:14px;">
-        <summary style="font-weight:700;font-size:13px;color:var(--ink-soft);cursor:pointer;">${icon('edit',13)} Modifier les informations</summary><div style="height:12px"></div>
+    <div class="fi-edit">
+        <div class="fi-edit-h"><b>Informations</b><span>modifiables directement · enregistrement automatique</span></div>
+        <div class="fi-edit-g">
 
         <div class="form-group"><label class="form-label">${isRepas?"Type de repas":"Description"}</label>
             ${isRepas
@@ -3133,7 +3174,7 @@ function renderDetail(d,m){
         <div class="form-group"><label class="form-label">${icon('bed',13)} Hôtel</label><select id="editPresta" class="form-select"><option value="">—</option>${d.presta&&!P_HOTEL.includes(d.presta)?`<option selected>${d.presta}</option>`:''}${P_HOTEL.map(p=>`<option ${d.presta===p?'selected':''}>${p}</option>`).join('')}</select></div>
         `:''}
 
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div style="display:contents;">
             <div class="form-group"><label class="form-label">${isHotel?icon('calendar',13)+' Arrivée':'Date'}</label><input id="editDate" type="date" value="${d.date&&d.date.includes('-')?d.date:d.date?d.date.split('/').reverse().join('-'):''}" class="form-input"></div>
             ${isHotel
                 ?`<div class="form-group"><label class="form-label">${icon('calendar',13)} Départ</label><input id="editDateDepart" type="date" value="${d.dateDepart&&d.dateDepart.includes('-')?d.dateDepart:d.dateDepart?d.dateDepart.split('/').reverse().join('-'):''}" class="form-input"></div>`
@@ -3141,16 +3182,17 @@ function renderDetail(d,m){
         </div>
 
         <div class="form-group">${pqHtml}</div>
-        ${d.type==='taxi'?`<div class="form-group"><label class="form-label">${icon('phone',13)} Téléphone passager</label><input id="editTel" type="tel" value="${d.tel||''}" class="form-input"></div>`:''}
-        <div class="form-group"><label class="form-label">Commentaire</label><textarea id="editComment" class="form-input" style="min-height:60px;resize:vertical;">${d.comment||''}</textarea></div>
+        ${d.type==='taxi'?`<div class="form-group"><label class="form-label">${icon('phone',13)} Téléphone passager</label><input id="editTel" type="tel" value="${esc(d.tel||'')}" class="form-input"></div><div class="form-group"><label class="form-label">${icon('plane',13)} Vol / train</label><input id="editVol" type="text" value="${esc(d.vol||'')}" class="form-input"></div>`:''}
+        <div class="form-group" style="grid-column:1/-1;order:2;"><label class="form-label">Commentaire</label><textarea id="editComment" class="form-input" style="min-height:60px;resize:vertical;">${d.comment||''}</textarea></div>
 
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-            <div class="form-group"><label class="form-label">Prix (€)</label><input id="detailPrix" type="text" inputmode="decimal" value="${d.prix?d.prix.toLocaleString('fr-FR',{minimumFractionDigits:2,maximumFractionDigits:2}):(d.pris==='Annulé'?'0,00':'')}" placeholder="0,00" class="form-input" style="text-align:right;font-weight:600;"></div>
+        <div style="display:contents;">
             <div class="form-group"><label class="form-label">Paiement</label><select id="editPaie" class="form-select"><option ${d.paie==='CB'?'selected':''}>CB</option><option ${d.paie==='Facturation'?'selected':''}>Facturation</option></select></div>
         </div>
 
-        <button id="saveEdit" class="btn-primary" style="width:100%;padding:12px;margin-top:4px;">${icon('save',14)} Enregistrer les modifications</button>
-    </details>`;
+        </div>
+        ${ficheInfos(d,{extras:true})}
+        <button id="saveEdit" style="display:none;"></button>
+    </div>`;
 
     const inner=`
     ${m?`<div style="background:var(--side);padding:calc(16px + env(safe-area-inset-top,0px)) 20px 20px;">
@@ -3161,15 +3203,12 @@ function renderDetail(d,m){
     <button data-back-detail class="back-btn-dark" style="margin-bottom:18px;">← Retour à la liste</button>
     <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px;">${avatar(d.demandeur,48)}<div><div style="font-family:var(--ft);font-weight:650;letter-spacing:-.01em;font-size:19px;">${typeIcon} ${d.desc}</div><div style="color:#8b93a1;font-size:12px;">${demHtml(d,{role:true})}${d.pourQui?' · Pour '+esc(d.pourQui):''}</div></div></div>`}
 
-    <div style="display:flex;gap:8px;margin-bottom:16px;align-items:center;flex-wrap:wrap;">${catPill(d)} ${typeTag(d.type)}</div>
-
-    ${ficheInfos(d)}
+    ${isAdmin()?'':ficheInfos(d)}
     ${ficheActions(d)}
     ${ficheBonHtml(d)}
     <div style="height:14px"></div>
+    ${isAdmin()?editForm:''}
     ${suiviBlock(d)}
-
-    ${editForm}
 
     ${state.confirmDelete===d.id?`
     <div style="background:#fef2f2;border:1.5px solid #fecaca;border-radius:8px;padding:14px 16px;margin-bottom:10px;">
@@ -3184,7 +3223,7 @@ function renderDetail(d,m){
     ${m?'</div>':''}`;
 
     if(m) return `<div class="detail-view">${inner}</div>${state.toast?`<div class="toast">${state.toast}</div>`:''}${mobileNavHtml()}`;
-    return `<div style="max-width:960px;margin:0 auto;padding:24px 32px 48px;">${inner}</div>`;
+    return `<div style="padding:4px 0 48px;">${inner}</div>`;
 }
 
 
@@ -5912,13 +5951,14 @@ function renderSettings(){
     </div>`;
     const nav=m
         ? `<div style="display:flex;gap:6px;overflow-x:auto;margin:0 -14px 16px;padding:0 14px 4px;scrollbar-width:none;">
-            ${TABS.map(([k,ic,l])=>`<button data-settings-tab="${k}" style="display:flex;align-items:center;gap:6px;flex-shrink:0;padding:8px 14px;border-radius:8px;border:1px solid ${k===cur[0]?'var(--accent)':'var(--border)'};background:${k===cur[0]?'var(--accent)':'#fff'};color:${k===cur[0]?'#fff':'var(--ink)'};font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;">${icon(ic,14)} ${l}</button>`).join('')}
+            ${TABS.map(([k,ic,l])=>`<button data-settings-tab="${k}" style="display:flex;align-items:center;gap:6px;flex-shrink:0;padding:8px 14px;border-radius:8px;border:1px solid ${k===cur[0]?'var(--accent)':'var(--border)'};background:${k===cur[0]?'var(--accent)':'#fff'};color:${k===cur[0]?'#fff':'var(--ink)'};font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;">${icon(ic,14)} ${l}</button>`).join('')}${outilsHtml(true)}
         </div>`
         : `<div style="background:#fff;border:1px solid var(--border);border-radius:8px;padding:8px;position:sticky;top:16px;">
             ${TABS.map(([k,ic,l,sub])=>`<button data-settings-tab="${k}" style="display:flex;align-items:center;gap:11px;width:100%;text-align:left;padding:10px 12px;border:none;border-radius:12px;cursor:pointer;background:${k===cur[0]?'var(--border-light,#f3f4f6)':'transparent'};margin-bottom:2px;">
                 <span style="width:30px;height:30px;border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0;background:${k===cur[0]?'var(--accent)':'#f3f4f6'};color:${k===cur[0]?'#fff':'var(--ink-soft)'};">${icon(ic,15)}</span>
                 <span style="min-width:0;"><span style="display:block;font-size:14px;font-weight:600;color:var(--ink);">${l}</span><span style="display:block;font-size:11px;color:#8b93a1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${sub}</span></span>
             </button>`).join('')}
+            ${outilsHtml(false)}
         </div>`;
 
     return `<div>
@@ -6115,7 +6155,7 @@ function initAutocomplete(){
 ══════════════════════════════════════ */
 function attachEvents(){
     // Nav
-    document.querySelectorAll('[data-back-home]').forEach(el=>el.onclick=()=>setState({vue:"select",detail:null,authed:false,fabOpen:false,adminTab:"dashboard"}));
+    document.querySelectorAll('[data-back-home]').forEach(el=>el.onclick=()=>setState({vue:"select",detail:null,authed:false,fabOpen:false,adminTab:"suivi"}));
 
     // Cellules éditables façon tableur (Statut, Prix) dans les tableaux admin
     document.querySelectorAll('[data-inline-edit]').forEach(el=>{
@@ -6147,8 +6187,7 @@ function attachEvents(){
     document.getElementById('saveEdit')?.addEventListener('click', async()=>{
         const d=state.detail;
         if(!d) return;
-        const raw=(document.getElementById('detailPrix')?.value||'').replace(/\s/g,'').replace(',','.');
-        const prix=parseFloat(raw)||0;
+        const prix=+d.prix||0; // le prix se saisit dans la carte « Prix »
         const updates={
             desc:  document.getElementById('editDesc')?.value||d.desc,
             date:  document.getElementById('editDate')?.value||d.date,
@@ -6167,13 +6206,19 @@ function attachEvents(){
             depart:document.getElementById('editDe')?.value||d.depart||'',
             arrivee:document.getElementById('editVers')?.value||d.arrivee||'',
             nb:    document.getElementById('editNb')?.value||d.nb||1,
+            ...(document.getElementById('editTel')?{tel:document.getElementById('editTel').value}:{}),
+            ...(document.getElementById('editVol')?{vol:document.getElementById('editVol').value}:{}),
         };
+        // Seuls les champs réellement modifiés sont enregistrés (évite de réécrire les autres)
+        const dirty=window._feDirty||new Set(); window._feDirty=new Set();
+        Object.keys(updates).forEach(k=>{ if(!dirty.has(k)) delete updates[k]; });
         const updated={...d,...updates};
         const LBL={desc:'description',date:'date',dateDepart:'date de départ',heure:'heure',pourQui:'pour qui',comment:'commentaire',prix:'prix',paie:'paiement',lieu:'lieu',presta:'prestataire',depart:'départ',arrivee:'arrivée',nb:'nb'};
         const changes=Object.keys(updates).filter(k=>String(d[k]??'')!==String(updates[k]??'')).map(k=>k==='prix'?`prix ${$m(d.prix)} → ${$m(updates.prix)}`:LBL[k]||k);
+        if(!changes.length) return;
         state.data=state.data.map(c=>c.id===d.id?updated:c);
         state.detail=updated;
-        showToast('✓ Modifications sauvegardées');
+        showToast('✓ Enregistré');
         render();
         if(changes.length) logAction('Modification', updated, changes.join(', '));
         await dbUpdate(d.id, updates);
