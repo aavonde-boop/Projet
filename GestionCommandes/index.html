@@ -5803,8 +5803,6 @@ function renderSettings(){
         ['emails','mail','Emails',`${['alerte','confirmation','copie','annulation'].filter(mailsOn).length} type${['alerte','confirmation','copie','annulation'].filter(mailsOn).length>1?'s':''} activé${['alerte','confirmation','copie','annulation'].filter(mailsOn).length>1?'s':''}`],
         ['securite','lock','Sécurité',state.secCheck?(state.secCheck.ok?'Protections actives':'À installer'):'Vérifier les protections'],
         ['recurrents','calendar','Demandes récurrentes',`${((state.rec&&state.rec.regles)||[]).filter(r=>r.actif).length} active(s)`],
-        ['apparence','sliders','Apparence','Nom, logo, couleurs'],
-        ['donnees','grid','Données & RGPD','Corbeille, conservation, droits'],
     ];
     const cur=TABS.find(t=>t[0]===tab)||TABS[0];
     let body='';
