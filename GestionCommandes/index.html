@@ -596,7 +596,10 @@
         .rgp{ background:#fff; color:#1f2937; border-radius:14px; width:min(760px,100%); padding:26px 28px; font-size:13.5px; line-height:1.6; box-shadow:0 20px 50px rgba(0,0,0,.25); position:relative; }
         .rgp h2{ font:650 20px var(--ft); margin:0 0 4px; color:var(--ink); } .rgp h3{ font:650 14px var(--fb); margin:18px 0 4px; color:var(--ink); } .rgp ul{ margin:4px 0; padding-left:20px; } .rgp p{ margin:4px 0; }
         .rg-x{ position:absolute; top:14px; right:14px; width:34px; height:34px; border-radius:8px; border:1px solid var(--border); background:#fff; cursor:pointer; display:flex; align-items:center; justify-content:center; }
-        .rg-foot{ text-align:center; padding:18px 12px 26px; } .rg-foot button{ background:none; border:none; color:#8b93a1; font-size:12px; cursor:pointer; text-decoration:underline; }
+        .rg-foot{ text-align:center; padding:18px 12px 26px; }
+        .lg-liens{ text-align:center; font-size:12px; color:#8b93a1; } .lg-liens button{ background:none; border:none; padding:0; color:inherit; font:inherit; cursor:pointer; text-decoration:underline; }
+        .lg-side{ padding:6px 10px 2px; } .lg-side .lg-liens{ font-size:11px; color:#64748b; }
+        .lg-ong{ border:none; background:transparent; color:#334155; border-radius:999px; padding:7px 14px; font-weight:700; font-size:13px; cursor:pointer; } .lg-ong.on{ background:var(--accent); color:#fff; }
         .rg-tab{ width:100%; border-collapse:collapse; font-size:12.5px; } .rg-tab td,.rg-tab th{ border-bottom:1px solid var(--border); padding:6px 8px; text-align:left; vertical-align:top; } .rg-tab th{ color:#6b7280; font-weight:600; }
         .lu-bg{ position:fixed; inset:0; background:rgba(2,6,23,.75); display:flex; align-items:center; justify-content:center; z-index:99999; } .lu{ background:#fff; color:#0f172a; border-radius:16px; padding:26px; width:min(380px,92vw); text-align:center; } .lu b{ display:block; font-size:18px; margin:6px 0; } .lu p{ font-size:13px; color:#64748b; margin:0 0 14px; } .lu-err{ color:#b91c1c; font-size:13px; margin-top:8px; }
         .sec-l{ display:flex; gap:12px; align-items:flex-start; padding:10px 0; border-bottom:1px solid #f1f5f9; } .sec-l > span{ width:24px; height:24px; border-radius:50%; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:12px; background:#e5e7eb; color:#64748b; }
@@ -1853,7 +1856,7 @@ function render(){
     else if(state.loginScreen || (settings.loginObligatoire && !AUTH)) html=renderLogin();
     else if(state.trackMode) html=renderTrackCode(m);
     else html=renderHome(m);
-    if(state.vue!=='admin'&&!state.express&&state.authMode!=='reset'&&!state.loginScreen&&!(settings.loginObligatoire&&!AUTH)) html+=`<div class="rg-foot"><button data-rgpd>Données personnelles</button></div>`;
+    if(state.vue!=='admin'&&!state.express&&state.authMode!=='reset'&&!state.loginScreen&&!(settings.loginObligatoire&&!AUTH)) html+=`<div class="rg-foot">${legalLiens()}</div>`;
     if(state.rgpd) html+=rgpdHtml();
     if(state.loadErr) html+=`<div style="position:fixed;top:0;left:0;right:0;z-index:10000;background:#b91c1c;color:#fff;padding:10px 16px;display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap;font-size:14px;font-weight:600;box-shadow:0 4px 14px rgba(0,0,0,.2);">${icon('alert',16)} Connexion à la base impossible : les demandes ne peuvent pas être affichées ni enregistrées pour l’instant. <button onclick="location.reload()" style="background:#fff;color:#b91c1c;border:none;border-radius:8px;padding:6px 14px;font-weight:700;cursor:pointer;">Réessayer</button></div>`;
     // Garder le focus et le curseur dans le champ en cours de saisie (barres de recherche…)
@@ -2261,6 +2264,7 @@ function renderLogin(){
             <div style="font-family:var(--ft);font-weight:650;letter-spacing:-.01em;font-size:24px;margin-bottom:6px;">${titre}</div>
             <div style="color:#8b93a1;margin-bottom:20px;font-size:14px;">${sous}</div>
             ${err}${info}${corps}${sortie}
+            ${legalLiens('margin-top:18px;font-size:11px;')}
         </div>
     </div>`;
 }
@@ -2343,6 +2347,7 @@ function renderAdminView(m){
                 ${item('stats','chart','Statistiques')}</div>
         </div>
         <div style="padding:6px 10px;border-top:1px solid rgba(255,255,255,.06);"><button data-live-open class="side-it" title="Écran live (plein écran, pour un PC ou une TV)">${icon('dashboard',17)}<span class="side-lbl">Écran live</span></button>${item('settings','sliders','Réglages')}</div>
+        <div class="side-lbl lg-side">${legalLiens()}</div>
         <div class="side-user">
             <span class="side-av">${esc(init||'AD')}</span>
             <div class="side-lbl" style="min-width:0;flex:1;"><b>${esc(nom)}</b><span>${esc(monRole())}</span></div>
@@ -3035,6 +3040,7 @@ function mobileNavHtml(){
             <button data-saisie-nouvelle style="display:flex;align-items:center;gap:12px;width:100%;background:none;border:none;padding:14px 8px;font-size:15px;font-weight:600;color:var(--accent);cursor:pointer;border-bottom:1px solid #f0f1f4;">${icon('plus',18)} Saisir une demande</button>
             <button data-back-home style="display:flex;align-items:center;gap:12px;width:100%;background:none;border:none;padding:14px 8px;font-size:15px;font-weight:600;color:var(--ink);cursor:pointer;border-bottom:1px solid #f0f1f4;">${icon('home',18)} Page de demande</button>
             <button data-admin-logout style="display:flex;align-items:center;gap:12px;width:100%;background:none;border:none;padding:14px 8px;font-size:15px;font-weight:600;color:#b91c1c;cursor:pointer;">${icon('logout',18)} Se déconnecter</button>
+            ${legalLiens('padding-top:10px;')}
         </div></div>`:''}`;
 }
 
@@ -4166,32 +4172,115 @@ function rgpdReglagesHtml(secHead){
         </div>`):''}
     </div>`;
 }
+/* ══════════ Mentions légales et politique de confidentialité ══════════
+   Deux onglets dans la même fenêtre. Textes par défaut générés depuis Réglages › Données & RGPD ;
+   l'administrateur peut les modifier (enregistrés dans les réglages « marque », aucune table à créer). */
+const LEGAL_MAJ_DEFAUT='2026-11-18';
+function legalCfg(){ return Object.assign({},(settings.marque||{}).legal||{}); }
+function legalDefaut(cle){
+    const C=rgpdCfg(), soc=C.entreprise||'Alliance Automotive Group France', nom=marqueNom();
+    const contact=C.contact||'le responsable de site (administrateur de l’application)';
+    if(cle==='mentions') return `## Application
+« ${nom} » est une application interne, réservée aux personnes autorisées, utilisée pour organiser les repas, taxis, coursiers, hôtels et commandes de fournitures du site.
+
+## Éditeur
+${soc} — [forme juridique et capital]
+[Adresse du siège]
+RCS [ville et numéro]
+Responsable de l’application : [Prénom NOM], [fonction]
+Directeur de la publication : [Prénom NOM]
+
+## Hébergement
+Page de l’application : GitHub Pages — GitHub, Inc., 88 Colin P. Kelly Jr. Street, San Francisco, CA 94107, États-Unis (github.com).
+Base de données : Supabase, Inc. (supabase.com) — région d’hébergement : [à vérifier dans Supabase → Project Settings → General].
+Envoi des e-mails et invitations d’agenda : Brevo (brevo.com) et EmailJS (emailjs.com).
+
+## Accès
+L’accès est strictement réservé aux comptes autorisés. Tout accès ou tentative d’accès non autorisé est interdit et peut être poursuivi (article 323-1 du Code pénal).
+
+## Contact
+conformite.france@allianceautomotive.fr`;
+    return `## Responsable du traitement
+${soc}, pour l’organisation interne de ses services. Contact : ${contact}.${C.dpo?`\nDélégué à la protection des données : ${C.dpo}.`:''}
+
+## Finalités
+Organiser les repas, taxis, coursiers, hôtels et commandes demandés pour la direction, en suivre l’avancement et les facturer.
+
+## Données traitées
+- Assistantes et administrateurs : nom, e-mail professionnel, dates de connexion (180 derniers jours), actions effectuées (journal).
+- Personnes concernées par une demande : nom, et selon la prestation : lieu, adresses de départ et d’arrivée, numéro de vol, téléphone, nombre de personnes, commentaires.
+Merci de n’indiquer que le nécessaire : pour un repas, écrivez « végétarien » ou « sans gluten » sans en préciser la raison (santé, religion…).
+
+## Base légale
+L’intérêt légitime de ${soc} à organiser ses services (article 6.1.f du RGPD).
+
+## Destinataires
+- Les administrateurs de l’application ; chaque assistante voit ses propres demandes.
+- Le prestataire choisi, pour les seules informations nécessaires à la prestation.
+Les données ne sont ni vendues ni transmises à des tiers à des fins commerciales.
+
+## Durée de conservation
+${+C.ans?`${C.ans} an${C.ans>1?'s':''} après la date de la prestation. Ensuite, les noms et coordonnées sont effacés ; seuls restent le type, la date, le prestataire et le prix, pour la comptabilité.`:'Le temps nécessaire à l’organisation et à la comptabilité des prestations.'} Les demandes supprimées restent ${TRASH_DAYS} jours dans la corbeille.
+
+## Prestataires et transferts
+Supabase (base de données), Brevo (e-mails et invitations d’agenda), EmailJS (e-mails de confirmation), GitHub Pages (hébergement de l’application, sans les données). Certains de ces prestataires peuvent être situés hors de l’Union européenne : [préciser les garanties, par exemple clauses contractuelles types].
+
+## Sécurité
+Accès par compte et mot de passe, échanges chiffrés (HTTPS), règles d’accès par personne, sauvegardes régulières.
+
+## Cookies
+Aucun cookie publicitaire ni mesure d’audience. L’application garde seulement sur votre appareil votre connexion et vos préférences d’affichage.
+
+## Vos droits
+Vous pouvez demander à accéder à vos données, les corriger, les effacer, vous opposer à leur utilisation ou en limiter l’usage, en écrivant à ${contact}. Si vous estimez que vos droits ne sont pas respectés, vous pouvez saisir la CNIL (cnil.fr).`;
+}
+function legalTexte(cle){ const L=legalCfg()[cle]; return (L&&String(L.texte||'').trim())?L:{texte:legalDefaut(cle),maj:LEGAL_MAJ_DEFAUT,defaut:true}; }
+function legalMd(s){
+    const out=[]; let ul=null;
+    String(s||'').replace(/\r/g,'').split('\n').forEach(l=>{ const x=l.trim();
+        if(/^- /.test(x)){ (ul=ul||[]).push(`<li>${esc(x.slice(2))}</li>`); return; }
+        if(ul){ out.push(`<ul>${ul.join('')}</ul>`); ul=null; }
+        if(!x) return;
+        out.push(/^## /.test(x)?`<h3>${esc(x.slice(3))}</h3>`:`<p>${esc(x).replace(/\[([^\]]+)\]/g,'<mark style="background:#fef3c7;border-radius:4px;padding:0 3px;">[$1]</mark>')}</p>`); });
+    if(ul) out.push(`<ul>${ul.join('')}</ul>`);
+    return out.join('');
+}
+async function legalSauver(cle,texte){
+    const M={...(settings.marque||{})}; const L={...(M.legal||{})};
+    if(texte==null) delete L[cle]; else L[cle]={texte,maj:new Date().toISOString(),par:adminName()};
+    M.legal=L; settings.marque=M;
+    try{ localStorage.setItem('settings_marque',JSON.stringify(M)); }catch(e){}
+    await paramSet('marque',M);
+}
+function legalLiens(style){ return `<div class="lg-liens" style="${style||''}"><button data-rgpd="mentions">Mentions légales</button> · <button data-rgpd="confidentialite">Confidentialité</button></div>`; }
 function rgpdHtml(){
-    const C=rgpdCfg(), soc=C.entreprise?esc(C.entreprise):'l’entreprise', nom=esc(marqueNom());
-    const contact=C.contact?esc(C.contact):'le responsable de site (administrateur de l’application)';
-    return `<div class="rg-bg" data-rgpd-fond><div class="rgp" role="dialog" aria-label="Données personnelles"><button class="rg-x" data-rgpd-x title="Fermer">${icon('x',16)}</button>
-        <h2>Données personnelles</h2><div style="color:#6b7280;">Comment « ${nom} » utilise vos informations</div>
-        <h3>Qui est responsable ?</h3><p>${soc}, pour l’organisation interne de ses services. Contact : ${contact}.${C.dpo?` Délégué à la protection des données : ${esc(C.dpo)}.`:''}</p>
-        <h3>À quoi servent vos données ?</h3><p>À organiser les repas, taxis, coursiers, hôtels et commandes demandés pour la direction, à en suivre l’avancement et à les facturer.</p>
-        <h3>Quelles données ?</h3><ul>
-            <li>Assistantes et administrateurs : nom, email professionnel, dates de connexion (180 derniers jours), actions effectuées (journal).</li>
-            <li>Personnes concernées par une demande : nom, et selon la prestation : lieu, adresses de départ et d’arrivée, numéro de vol, téléphone, nombre de personnes, commentaires.</li></ul>
-        <p style="background:#f8fafc;border-radius:8px;padding:8px 10px;margin-top:6px;">Merci de n’indiquer que le nécessaire : pour un repas, écrivez « végétarien » ou « sans gluten » sans en préciser la raison (santé, religion…).</p>
-        <h3>Sur quelle base ?</h3><p>L’intérêt légitime de ${soc} à organiser ses services (article 6.1.f du RGPD).</p>
-        <h3>Qui peut les voir ?</h3><ul>
-            <li>Les administrateurs de l’application ; chaque assistante voit ses propres demandes.</li>
-            <li>Le prestataire choisi, pour les seules informations nécessaires à la prestation.</li>
-            <li>Nos sous-traitants techniques : Supabase (base de données), Brevo (emails et invitations d’agenda), EmailJS (emails de confirmation), GitHub Pages (hébergement de l’application, sans les données).</li></ul>
-        <h3>Combien de temps ?</h3><p>${+C.ans?`${C.ans} an${C.ans>1?'s':''} après la date de la prestation. Ensuite, les noms et coordonnées sont effacés ; seuls restent le type, la date, le prestataire et le prix, pour la comptabilité.`:'Le temps nécessaire à l’organisation et à la comptabilité des prestations.'} Les demandes supprimées restent ${TRASH_DAYS} jours dans la corbeille.</p>
-        <h3>Vos droits</h3><p>Vous pouvez demander à accéder à vos données, les corriger, les effacer, vous opposer à leur utilisation ou en limiter l’usage, en écrivant à ${contact}. Si vous estimez que vos droits ne sont pas respectés, vous pouvez saisir la CNIL (cnil.fr).</p>
-        <h3>Cookies</h3><p>Aucun cookie publicitaire ni mesure d’audience. L’application garde seulement sur votre appareil votre connexion et vos préférences d’affichage.</p>
-        <h3>Sécurité</h3><p>Accès par compte et mot de passe, échanges chiffrés (HTTPS), règles d’accès par personne, sauvegardes régulières.</p>
-        <div style="text-align:right;margin-top:16px;"><button class="btn-primary" data-rgpd-x style="padding:10px 20px;">Fermer</button></div>
+    const cle=state.rgpd==='mentions'?'mentions':'confidentialite', T=legalTexte(cle), nom=esc(marqueNom());
+    const titre=cle==='mentions'?'Mentions légales':'Politique de confidentialité';
+    const admin=state.vue==='admin'&&state.authed&&isAdmin(), ed=admin&&state.legalEdit;
+    const ong=(k,l)=>`<button data-rgpd="${k}" class="lg-ong ${cle===k?'on':''}">${l}</button>`;
+    const d=new Date(T.maj||LEGAL_MAJ_DEFAUT), majTxt=isNaN(d)?'':d.toLocaleDateString('fr-FR',{day:'numeric',month:'long',year:'numeric'});
+    return `<div class="rg-bg" data-rgpd-fond><div class="rgp" role="dialog" aria-label="${titre}"><button class="rg-x" data-rgpd-x title="Fermer">${icon('x',16)}</button>
+        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin:-6px 34px 12px 0;">${ong('mentions','Mentions légales')}${ong('confidentialite','Confidentialité')}<span style="flex:1"></span>${admin&&!ed?`<button data-legal-edit class="btn-sm">${icon('edit',13)} Modifier</button>`:''}</div>
+        <h2>${titre}</h2><div style="color:#6b7280;">« ${nom} »</div>
+        ${ed?`<p style="font-size:12px;color:#6b7280;margin:10px 0 6px;">« ## » en début de ligne = titre, « - » = liste. Les textes entre [crochets] sont à compléter.</p>
+            <textarea id="legalTxt" style="width:100%;min-height:52vh;box-sizing:border-box;border:1px solid var(--border);border-radius:10px;padding:12px;font:13px/1.5 ui-monospace,Menlo,Consolas,monospace;">${esc(state.legalDraft!=null?state.legalDraft:T.texte)}</textarea>
+            <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;"><button data-legal-save class="btn-primary" style="padding:9px 16px;">${icon('save',14)} Enregistrer</button><button data-legal-cancel class="btn-sm">Annuler</button><span style="flex:1"></span>${T.defaut?'':`<button data-legal-reset class="btn-sm" title="Revenir au texte proposé par l’application">Texte d’origine</button>`}</div>`
+          :`${legalMd(T.texte)}
+        <p style="color:#8b93a1;font-size:12px;margin-top:18px;">Dernière mise à jour : ${majTxt}</p>
+        <div style="text-align:right;margin-top:12px;"><button class="btn-primary" data-rgpd-x style="padding:10px 20px;">Fermer</button></div>`}
     </div></div>`;
 }
 document.addEventListener('click',e=>{
-    if(e.target.closest('[data-rgpd]')){ setState({rgpd:true}); return; }
-    if(e.target.closest('[data-rgpd-x]')||(e.target.matches&&e.target.matches('[data-rgpd-fond]'))){ setState({rgpd:false}); return; }
+    const _rg=e.target.closest('[data-rgpd]'); if(_rg){ setState({rgpd:_rg.getAttribute('data-rgpd')||'confidentialite',legalEdit:false,legalDraft:null}); return; }
+    if(e.target.closest('[data-rgpd-x]')||(e.target.matches&&e.target.matches('[data-rgpd-fond]')&&!state.legalEdit)){ setState({rgpd:false,legalEdit:false,legalDraft:null}); return; }
+    if(e.target.closest('[data-legal-edit]')){ setState({legalEdit:true,legalDraft:null}); return; }
+    if(e.target.closest('[data-legal-cancel]')){ setState({legalEdit:false,legalDraft:null}); return; }
+    if(e.target.closest('[data-legal-save]')||e.target.closest('[data-legal-reset]')){
+        const cle=state.rgpd==='mentions'?'mentions':'confidentialite', reset=!!e.target.closest('[data-legal-reset]');
+        if(reset&&!confirm('Revenir au texte proposé par l’application ? Vos modifications de ce texte seront perdues.')) return;
+        const v=reset?null:(document.getElementById('legalTxt')?.value||'');
+        legalSauver(cle,reset||!v.trim()?null:v).then(()=>{ setState({legalEdit:false,legalDraft:null}); showToast(reset?'Texte d’origine rétabli':'✓ Texte enregistré'); logAction('Réglages',[{id:null,desc:cle==='mentions'?'Mentions légales':'Confidentialité'}],reset?'texte d’origine':'texte modifié'); }).catch(err=>showToast(`${icon('alert',13)} Non enregistré : ${esc(err&&err.message||'connexion impossible')}`));
+        return; }
     const b=e.target.closest('[data-rg]'); if(!b) return; const a=b.getAttribute('data-rg'), v=id=>(document.getElementById(id)||{}).value||'';
     if(a==='infos') rgpdEnregistrer({entreprise:v('rgEnt').trim(),contact:v('rgCon').trim(),dpo:v('rgDpo').trim()}).then(()=>showToast('✓ Informations RGPD enregistrées')).catch(err=>showToast(`${icon('alert',13)} ${esc(err.message)}`));
     else if(a==='ans'){ const ans=+v('rgAns'); if(!ans){ rgpdEnregistrer({ans:0}).then(()=>setState({rgPurgeApercu:null})).then(()=>showToast('Conservation sans limite')); return; }
@@ -4205,7 +4294,8 @@ document.addEventListener('click',e=>{
     else if(a==='anon-non') setState({rgConfirm:false});
     else if(a==='anon-ok') rgpdAnonymiser();
 });
-document.addEventListener('keydown',e=>{ if(e.key==='Escape'&&state.rgpd) setState({rgpd:false}); if(e.key==='Enter'&&e.target&&e.target.id==='rgPers') rgpdChercher(e.target.value); });
+document.addEventListener('input',e=>{ if(e.target&&e.target.id==='legalTxt') state.legalDraft=e.target.value; });
+document.addEventListener('keydown',e=>{ if(e.key==='Escape'&&state.rgpd&&!state.legalEdit) setState({rgpd:false}); if(e.key==='Enter'&&e.target&&e.target.id==='rgPers') rgpdChercher(e.target.value); });
 async function telechargerSauvegarde(){
     if(!isAdmin()) return; await sbPret();
     try{
