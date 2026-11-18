@@ -613,6 +613,7 @@
         .fi-com{ grid-column:1/-1; background:#fffbeb; border-radius:8px; padding:10px 12px; } .fi-com div{ font-size:14px; color:#4b3b0a; line-height:1.45; }
         .fi-ct{ grid-column:1/-1; display:flex; gap:8px; flex-wrap:wrap; }
         @media(max-width:520px){ .fi{ grid-template-columns:1fr 1fr; padding:14px; gap:12px 14px; } .fi-f.big{ grid-column:1/-1; } .fi-f b{ font-size:14px; } }
+        @media(max-width:900px){ .qr-g{ grid-template-columns:1fr 1fr !important; } }
         .bon{ margin-top:12px; border:1px solid var(--border); border-radius:12px; background:#fff; padding:16px 18px; } .bon h4{ margin:0 0 10px; font:650 15px var(--fb); display:flex; align-items:center; gap:8px; }
         .bon-f{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; background:#f8fafc; border:1px dashed #cbd5e1; border-radius:10px; padding:10px 12px; font-size:13px; }
         .bon-to{ display:flex; flex-wrap:wrap; gap:8px; margin:12px 0 8px; } .bon-to label{ display:inline-flex; align-items:center; gap:6px; border:1px solid var(--border); border-radius:999px; padding:5px 12px; font-size:13px; cursor:pointer; }
@@ -2927,6 +2928,43 @@ function ficheActions(d){
     }
     return actions?`<div class="fa">${actions}</div>`:'';
 }
+/* Saisie rapide d'une commande de fournitures, directement dans la Base des demandes */
+function saisieRapideHtml(){
+    const Q=state.qr||{}, moi=userName()||'';
+    const dems=[...new Set([moi,...(settings.assistantes||[])].filter(Boolean))];
+    const four=settings.prestatairesCommande||[];
+    return `<div class="qr" style="background:#fff;border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin:0 0 12px;">
+        <div style="font-size:12px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;display:flex;align-items:center;gap:6px;">${icon('plus',13)} Ajouter une commande</div>
+        <div style="display:grid;grid-template-columns:150px minmax(150px,1fr) minmax(200px,2fr) minmax(150px,1fr) 110px auto;gap:8px;align-items:center;" class="qr-g">
+            <input id="qrDate" type="date" class="form-input" value="${esc(Q.date||today())}" title="Date">
+            <input id="qrPresta" class="form-input" list="qrFour" placeholder="Fournisseur" value="${esc(Q.presta||'')}"><datalist id="qrFour">${four.map(x=>`<option value="${esc(x)}">`).join('')}</datalist>
+            <input id="qrDesc" class="form-input" placeholder="Ce qui est commandé (ex. ramettes A4 ×10)" value="${esc(Q.desc||'')}">
+            <select id="qrDem" class="form-input" title="Demandeur">${dems.map(n=>`<option value="${esc(n)}" ${(Q.dem||moi)===n?'selected':''}>${esc(personne(n).nom||n)}</option>`).join('')}</select>
+            <input id="qrPrix" class="form-input" inputmode="decimal" placeholder="Prix €" value="${esc(Q.prix||'')}" style="text-align:right;">
+            <button class="fa-b p" data-qr-ajout style="white-space:nowrap;">${icon('check',14)} Ajouter</button>
+        </div>
+        <div style="font-size:11.5px;color:#8b93a1;margin-top:6px;">Entrée pour valider · ajoutée directement, déjà prise en charge, sans email · le prix peut être saisi plus tard.</div>
+    </div>`;
+}
+async function saisieRapideAjout(){
+    const g=id=>(document.getElementById(id)?.value||'').trim();
+    const Q={date:g('qrDate')||today(),presta:g('qrPresta'),desc:g('qrDesc'),dem:g('qrDem')||userName(),prix:g('qrPrix')};
+    state.qr=Q;
+    if(!Q.desc){ showToast(`${icon('alert',13)} Indiquez ce qui est commandé`); document.getElementById('qrDesc')?.focus(); return; }
+    if(!Q.presta){ showToast(`${icon('alert',13)} Indiquez le fournisseur`); document.getElementById('qrPresta')?.focus(); return; }
+    const prix=parseFloat(String(Q.prix).replace(/\s/g,'').replace(',','.').replace('€',''))||0;
+    const it={id:Date.now(),code:genCode('commande'),pris:'OUI',demandeur:Q.dem,pourQui:'',date:Q.date,dateDepart:'',desc:Q.desc,lieu:'',heure:'',presta:Q.presta,prix,paie:'',nb:'',comment:'',type:'commande',depart:'',arrivee:'',vol:'',yooz:YOOZ_MAP[Q.presta]||'',tel:''};
+    let saved; try{ saved=await dbInsert(it); }catch(e){ showToast(`${icon('alert',13)} Commande NON enregistrée : ${esc(e.message||'connexion impossible')}`); return; }
+    state.data=[saved,...state.data.filter(c=>c.id!==it.id&&c.id!==saved.id)];
+    try{ logAction('Création',saved,'saisie rapide'); }catch(_){}
+    setSuivi([saved.id],()=>({direct:new Date().toISOString(),par:null}));
+    state.qr={date:Q.date,dem:Q.dem}; // on garde la date et le demandeur pour enchaîner
+    showToast(`✓ Commande ajoutée · ${esc(saved.code||'')}`); render();
+    setTimeout(()=>document.getElementById('qrPresta')?.focus(),50);
+}
+document.addEventListener('click',e=>{ if(e.target.closest('[data-qr-ajout]')) saisieRapideAjout(); });
+document.addEventListener('keydown',e=>{ if(e.key==='Enter'&&e.target&&/^qr(Date|Presta|Desc|Dem|Prix)$/.test(e.target.id)){ e.preventDefault(); saisieRapideAjout(); } });
+document.addEventListener('input',e=>{ const id=e.target&&e.target.id; const k={qrDate:'date',qrPresta:'presta',qrDesc:'desc',qrDem:'dem',qrPrix:'prix'}[id]; if(k){ state.qr=state.qr||{}; state.qr[k]=e.target.value; } });
 /* Bon de réservation d'hôtel : PDF de l'hôtel gardé dans Supabase (stockage « bons ») et envoyé par Brevo (fonction « envoi-bon ») */
 function bonDestinataires(d){
     const L=[], add=(nom,em)=>{ if(em&&!L.some(x=>x.em.toLowerCase()===em.toLowerCase())) L.push({nom,em}); };
@@ -5564,7 +5602,7 @@ function renderActivite(m){
         const TI={tout:'Toutes les demandes',repas:'Repas',taxis:'Taxis',coursiers:'Coursiers',commandes:'Fournitures',hotels:'Hôtels'}[tab]||'Toutes les demandes';
         const IC={tout:'grid',repas:'utensils',taxis:'car',coursiers:'send',commandes:'box',hotels:'bed'}[tab]||'grid';
         if(TY) state.data=state.data.filter(c=>TY.includes(c.type||'repas'));
-        body=renderHistorique(m,{titre:TI,ic:IC});
+        body=renderHistorique(m,{titre:TI,ic:IC,rapide:tab==='commandes'});
     }
     } finally { state.data=_full; }
     // Sur desktop, les icônes de sous-onglets sont déjà dans la barre du haut (voir renderAdminView) :
@@ -5968,6 +6006,7 @@ function renderHistorique(m,opt={}){
         
     </div>
 
+    ${opt.rapide?saisieRapideHtml():''}
     <!-- Tableau moderne -->
     <div style="background:#fff;border-radius:8px;border:1px solid #e4e7ec;overflow:hidden;box-shadow:0 1px 2px rgba(0,0,0,0.04);">
         <div style="overflow:auto;max-height:max(340px, calc(100vh - 290px));">
@@ -6265,7 +6304,7 @@ function renderSaisieDirecte(m){
     const head=`<div class="page-head" style="margin-bottom:14px;"><div><h1>Saisie directe${T&&!f.sent?` · ${T.titre}`:''}</h1><p>${icon('check',13)} Ajoutée au suivi, déjà validée · <b>aucun email envoyé</b></p></div>
         <div class="page-actions">${T&&!f.sent?`<button class="btn-sm" data-nf="back">${icon('arrow',14)} Changer de type</button><button class="btn-sm" data-email-open>${icon('mail',14)} Remplir depuis un email</button>`:''}<button class="btn-sm" data-saisie-close>${icon('x',14)} Fermer</button></div></div>`;
     if(!f.type&&!f.sent) return `<div>${head}<div class="sd-choix">${NF_CHOIX().map(c=>`<button class="sd-type" data-saisie-type="${c.k}" style="--c:${c.col};--b:${c.t1};"><span class="sd-ic">${icon(c.ic,22)}</span><b>${c.titre}</b><span>${c.desc}</span></button>`).join('')}
-        <button class="sd-type" data-saisie-type="commande" style="--c:#475569;--b:#f1f5f9;"><span class="sd-ic">${icon('box',22)}</span><b>Commande</b><span>Fournitures et achats (Lyreco, etc.).</span></button></div>${renderEmailModal()}</div>`;
+        </div>${renderEmailModal()}</div>`;
     return `<div class="sd-wrap">${head}
         ${f.fromEmail&&f.fromEmail.length&&!f.sent?`<div class="nf-email" style="margin-bottom:14px;">${icon('mail',16)} <span><b>Rempli depuis l’email</b> : ${f.fromEmail.join(', ')}. Vérifiez puis complétez.</span><button data-nf="emailok">OK</button></div>`:''}
         ${renderInlineForm(m)}${renderEmailModal()}</div>`;
