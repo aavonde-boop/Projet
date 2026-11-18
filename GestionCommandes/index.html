@@ -2310,7 +2310,7 @@ function renderAdminView(m){
     const attente=state.data.filter(c=>c.pris==="En attente"||c.pris==="En cours");
     if(state.detail) return renderDetail(state.detail,m);
 
-    const activiteSubTabs=[['tout','grid','Toutes'],['reservations','utensils','Repas, taxis, coursiers'],['commandes','box','Fournitures'],['hotels','bed','Hôtels'],['historique','wallet','Dépenses & prix'],['journal','edit','Journal'],['corbeille','trash','Corbeille']].map(([k,ic,label])=>{
+    const activiteSubTabs=[['tout','grid','Toutes'],['reservations','utensils','Repas, taxis, coursiers'],['commandes','box','Fournitures'],['hotels','bed','Hôtels'],['journal','edit','Journal'],['corbeille','trash','Corbeille']].map(([k,ic,label])=>{
         const active=(state.activiteTab||'tout')===k;
         return `<button data-activite-tab="${k}" class="subtab ${active?'on':''}">${icon(ic,15)} ${label}</button>`;
     }).join('');
@@ -2694,7 +2694,10 @@ function suiviCat(c){
     const s=suiviOf(c), passe=prestationPassee(c);
     if((c.pris==='En attente'||(c.pris==='En cours'&&estRecurrent(c)))&&!s.accuse&&!s.cmd&&!passe) return 'nouvelle';
     if(!passe) return 'prise';
-    return (+c.prix>0)?'fin':'prix';
+    if(+c.prix>0&&!suiviOf(c).prixEst) return 'fin';
+    // Prix estimé automatiquement : à confirmer pour les prestations récentes (30 jours), sinon on le garde
+    if(+c.prix>0){ const d=parseDate(c.date); return d&&(Date.now()-d.getTime())<30*864e5?'prix':'fin'; }
+    return 'prix';
 }
 const SUIVI_CATS=[
     ['nouvelle','Nouvelles','En attente de prise en charge','#2563eb'],
@@ -3256,7 +3259,7 @@ function renderDashboard(total,attente,m){ return renderDash4(m);
         </div>
         ${m?'':`<div class="page-actions">
             <button class="btn-sm" data-print-day="${todayK}">${icon('download',14)} Feuille du jour</button>
-            <button class="btn-sm" data-nav='{"adminTab":"activite","activiteTab":"historique"}'>${icon('wallet',14)} Dépenses & prix</button>
+            <button class="btn-sm" data-nav='{"adminTab":"activite","activiteTab":"tout","histPrix":true,"histPage":0}'>${icon('wallet',14)} Prix à saisir</button>
         </div>`}
     </div>
     <div class="kpis">
@@ -4218,14 +4221,14 @@ document.addEventListener('click',e=>{ const b=e.target.closest('[data-stk]'); i
         state.adminForm={dem,pourQui:[],pourQuiAutre:'',vol:'',date:today(),dateDepart:'',heure:'12h00',lieu:'',de:'',vers:'',presta:p,desc:L.map(i=>i.nom).join(', '),nb:'1',com:'',step:1};
         setState({saisieType:'commande',saisieDirecte:false,fabOpen:false}); }
 });
-function prixASaisir(){ const t0=new Date(); t0.setHours(0,0,0,0); return (state.data||[]).filter(c=>c.pris==='OUI'&&!(+c.prix>0)&&(etape(c)==='fait'||((parseDate(c.date)||t0)<t0))); }
+function prixASaisir(){ return (state.data||[]).filter(c=>suiviCat(c)==='prix'); }
 function anomalies(){
     const out=[], now=new Date(), t0=new Date(); t0.setHours(0,0,0,0);
     const actives=state.data.filter(c=>c.pris!=='Annulé');
     const _vh=pkAlertes(); if(_vh.length) out.push({niv:_vh.some(x=>x.j<0)?3:2,ic:'car',titre:`${_vh.length} échéance${_vh.length>1?'s':''} véhicule${_vh.length>1?'s':''}`,detail:_vh.slice(0,3).map(x=>`${x.v.plaque} : ${x.l.toLowerCase()} ${x.j<0?'dépassée':'dans '+x.j+' j'}`).join(' · '),nav:{adminTab:'parking',pkTab:'vehicules'}});
     const _bp=pkBornesPanne(); if(_bp.length) out.push({niv:1,ic:'car',titre:`${_bp.length} borne${_bp.length>1?'s':''} électrique${_bp.length>1?'s':''} en panne`,detail:_bp.map(pkLib).join(', '),nav:{adminTab:'parking',pkTab:'places',pkF:'bornes'}});
     const _st=[]; if(_st.length) out.push({niv:_st.some(x=>x.st==='vide')?2:1,ic:'box',titre:`${_st.length} article${_st.length>1?'s':''} à commander`,detail:_st.map(x=>x.nom+(x.st==='vide'?' (vide)':'')).join(', '),nav:{adminTab:'stock'}});
-    const _sp=prixASaisir(); if(_sp.length) out.push({niv:1,ic:'wallet',titre:`${_sp.length} prix à saisir`,detail:'Commandes faites sans montant : à compléter à réception de la facture',c:_sp[0],nav:{adminTab:'activite',activiteTab:'historique',histPrix:true,histPage:0}});
+    const _sp=prixASaisir(); if(_sp.length) out.push({niv:1,ic:'wallet',titre:`${_sp.length} prix à saisir`,detail:'Commandes faites sans montant : à compléter à réception de la facture',c:_sp[0],nav:{adminTab:'activite',activiteTab:'tout',histPrix:true,histPage:0}});
     const futur=actives.filter(c=>{ const d=parseDate(c.date); return d&&d>=t0; });
     const norm=s=>String(s||'').trim().toUpperCase();
     // Doublons
@@ -5442,8 +5445,9 @@ function renderActiviteTout(m){
    codé (Réservations, Commandes, Historique + export Excel, Corbeille) mais
    qui n'étaient reliés à aucune navigation avant cette mise à jour. */
 function renderActivite(m){
+    if(state.activiteTab==='historique') state.activiteTab='tout';
     const tab=state.activiteTab||'tout';
-    const TABS=[['tout','grid','Toutes'],['reservations','utensils','Repas, taxis, coursiers'],['commandes','box','Fournitures'],['hotels','bed','Hôtels'],['historique','wallet','Dépenses & prix'],['journal','edit','Journal'],['corbeille','trash','Corbeille']];
+    const TABS=[['tout','grid','Toutes'],['reservations','utensils','Repas, taxis, coursiers'],['commandes','box','Fournitures'],['hotels','bed','Hôtels'],['journal','edit','Journal'],['corbeille','trash','Corbeille']];
     const subNav=`<div style="display:flex;gap:4px;flex-wrap:wrap;background:var(--border-light);padding:4px;border-radius:6px;width:fit-content;margin-bottom:10px;">
         ${TABS.map(([k,ic,l])=>`<button data-activite-tab="${k}" style="display:flex;align-items:center;gap:6px;padding:6px 13px;border:none;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;white-space:nowrap;background:${tab===k?'var(--white)':'transparent'};color:${tab===k?'var(--ink)':'var(--ink-soft)'};box-shadow:${tab===k?'0 1px 3px rgba(0,0,0,0.08)':'none'};transition:all 0.15s;">${icon(ic,14)} ${l}</button>`).join('')}
     </div>`;
@@ -5451,13 +5455,16 @@ function renderActivite(m){
     if(tab!=='corbeille'&&tab!=='journal') state.data=_full.filter(c=>histPasse(c,_hf));
     let body;
     try{
-    if(tab==='commandes') body=renderCommandes(m);
-    else if(tab==='hotels') body=renderHotels(m);
-    else if(tab==='historique') body=renderHistorique(m);
-    else if(tab==='corbeille') body=renderCorbeille(m);
+    if(tab==='corbeille') body=renderCorbeille(m);
     else if(tab==='journal') body=renderJournal(m);
-    else if(tab==='tout') body=renderActiviteTout(m);
-    else body=renderReservations(m);
+    else {
+        // Même tableau pour toutes les vues, filtré par type
+        const TY={tout:null,reservations:['repas','taxi','coursier'],commandes:['commande'],hotels:['hotel']}[tab]||null;
+        const TI={tout:'Toutes les demandes',reservations:'Repas, taxis, coursiers',commandes:'Fournitures',hotels:'Hôtels'}[tab]||'Toutes les demandes';
+        const IC={tout:'grid',reservations:'utensils',commandes:'box',hotels:'bed'}[tab]||'grid';
+        if(TY) state.data=state.data.filter(c=>TY.includes(c.type||'repas'));
+        body=renderHistorique(m,{titre:TI,ic:IC});
+    }
     } finally { state.data=_full; }
     // Sur desktop, les icônes de sous-onglets sont déjà dans la barre du haut (voir renderAdminView) :
     // pas besoin de les répéter ici. Sur mobile, il n'y a pas de barre du haut équivalente.
@@ -5813,7 +5820,7 @@ function renderCorbeille(m){
     </div>`;
 }
 
-function renderHistorique(m){
+function renderHistorique(m,opt={}){
     const typeIcon=t=>icon(t==='taxi'?'car':t==='coursier'?'send':t==='repas'?'utensils':t==='hotel'?'bed':'box',14);
     const typeLabel=t=>TYPE_LABEL[t]||'Commande';
     const typeBadge=t=>{
@@ -5837,8 +5844,10 @@ function renderHistorique(m){
             const db=parseDate(b.date)||new Date(0);
             return db-da;
         }
-        if(k==='prix') return (b.prix||0)-(a.prix||0);
-        return (a[k]||'').localeCompare(b[k]||'');
+        const parDate=()=>((parseDate(b.date)||new Date(0))-(parseDate(a.date)||new Date(0)));
+        if(k==='prix') return (b.prix||0)-(a.prix||0)||parDate();
+        if(k==='type'){ const O=['repas','taxi','coursier','hotel','commande']; const ia=O.indexOf(a.type||'repas'), ib=O.indexOf(b.type||'repas'); return ((ia<0?9:ia)-(ib<0?9:ib))||parDate(); }
+        return String(a[k]||'').localeCompare(String(b[k]||''),'fr',{sensitivity:'base'})||parDate();
     });
     const sorted=allSorted.slice(page*PAGE,(page+1)*PAGE);
     const totalPages=Math.ceil(allSorted.length/PAGE);
@@ -5847,8 +5856,8 @@ function renderHistorique(m){
     <!-- Header -->
     <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:10px;">
         <div>
-            <div style="font-family:var(--ft);font-weight:650;letter-spacing:-.01em;font-size:${m?'18px':'22px'};">${icon('wallet',m?16:19)} Dépenses & prix</div>
-            <div style="font-size:12px;color:#7f8c9b;margin-top:3px;">${allSorted.length} entrée${allSorted.length>1?'s':''}${state.histPrix?' sans prix':' au total'} · saisissez le prix à réception de la facture</div>
+            <div style="font-family:var(--ft);font-weight:650;letter-spacing:-.01em;font-size:${m?'18px':'22px'};">${icon(opt.ic||'grid',m?16:19)} ${esc(opt.titre||'Toutes les demandes')}</div>
+            <div style="font-size:12px;color:#7f8c9b;margin-top:3px;">${allSorted.length} demande${allSorted.length>1?'s':''}${state.histPrix?' dont le prix reste à saisir':''} · le prix se saisit directement dans la colonne Montant</div>
         </div>
         <div style="display:flex;gap:6px;flex-wrap:wrap;">
         <button data-nav='{"histPrix":${!state.histPrix},"histPage":0}' class="btn-sm ${state.histPrix?'pri':''}">${icon('wallet',14)} Prix à saisir · ${sansPrix.length}</button></div>
