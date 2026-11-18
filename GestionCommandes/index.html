@@ -1985,7 +1985,6 @@ function renderHome(m){
     if(!f.dem&&!f.invite&&!assistanteName()){ const last=lsGet('nf_dem'); if(last&&demandeursEquipe(isAdmin()).includes(last)) f.dem=last; }
     const prenom=AUTH?String(userName()||'').split(' ')[0]:'';
     const actions=`<div class="nf-acts">
-        <button class="pub-btn go-track" title="Suivre une demande">${icon('search',15)}${m?'':' Suivre une demande'}</button>
         ${AUTH?`<button data-admin-logout class="pub-btn" title="Se déconnecter (${esc(userName())})"><span class="nf-av">${esc($ini(userName()))}</span>${icon('logout',14)}</button>`
             :`<button data-login class="pub-btn light">${icon('user',15)}${m?'':' Se connecter'}</button>`}
         ${AUTH&&!isAdmin()?'':`<button data-action="admin" class="pub-btn" title="Administration">${icon('shield',15)}${m?'':' Admin'}${att>0&&isAdmin()?`<span class="nf-badge">${att}</span>`:''}</button>`}
@@ -2408,7 +2407,7 @@ function stageOf(c){
     if(j!==null&&j<0) return 'fait';          // prestations passées : historique
     return 'acommander';
 }
-function titreDe(c){ return c.type==='commande' ? (c.presta||c.desc||'Commande') : (c.desc||TYPE_LABEL[c.type]||'—'); }
+function titreDe(c){ return c.type==='commande' ? ([c.desc,c.presta].filter(Boolean).join(' · ')||'Commande') : (c.desc||TYPE_LABEL[c.type]||'—'); }
 function typeIc(t,s=14){ return icon(t==='taxi'?'car':t==='coursier'?'send':t==='repas'?'utensils':t==='hotel'?'bed':'box',s); }
 const CAT_STYLE={nouvelle:['Nouvelle','#1d4ed8','#eff6ff'],prise:['Prise en charge','#0f766e','#f0fdfa'],prix:['Prix à saisir','#b45309','#fffbeb'],fin:['Terminée','#475569','#f1f5f9'],annulee:['Annulée','#b91c1c','#fef2f2']};
 function catSt(c){ const [label,color,bg]=CAT_STYLE[suiviCat(c)]||CAT_STYLE.prise; return {label,court:label,color,bg}; }
@@ -2670,7 +2669,7 @@ function renderSuivi(m){
     const types=[['all','Tout'],['repas','Repas'],['taxi','Taxi'],['coursier','Coursier'],['hotel','Hôtel'],['commande','Commande']];
     const quand=c=>{ const j=daysLeft(c.date), d=parseDate(c.date); const jour=j===0?'Auj.':j===1?'Demain':d?`${d.getDate()} ${MONTHS[d.getMonth()+1].toLowerCase()}.`:'—'; return `<b class="${j===0?'sv-auj':''}">${jour}</b>${c.heure?`<small>${esc(c.heure)}</small>`:''}`; };
     const qui=c=>{ const n=String(c.pourQui||'').split(/[,;\n]+/).map(x=>x.trim()).filter(Boolean); return n.length?`${n[0].split(' ').length>1?n[0].split(' ')[0][0]+'. '+n[0].split(' ').slice(1).join(' '):n[0]}${n.length>1?' +'+(n.length-1):''}`:demNom(c); };
-    const titre=c=>{ const T={repas:(c.desc||'Repas'),taxi:'Taxi',coursier:'Coursier',hotel:'Hôtel',commande:'Commande'}[c.type]||'Demande'; const t0=String(T).toLowerCase(); return `${t0.charAt(0).toUpperCase()+t0.slice(1)} · ${esc(qui(c))}${estRecurrent(c)?' 🔁':''}`; };
+    const titre=c=>{ if(c.type==='commande') return `${esc(c.desc||'Commande')}${estRecurrent(c)?' 🔁':''}`; const T={repas:(c.desc||'Repas'),taxi:'Taxi',coursier:'Coursier',hotel:'Hôtel'}[c.type]||'Demande'; const t0=String(T).toLowerCase(); return `${t0.charAt(0).toUpperCase()+t0.slice(1)} · ${esc(qui(c))}${estRecurrent(c)?' 🔁':''}`; };
     const sous=c=>esc([c.type==='taxi'||c.type==='coursier'?[c.presta,[c.depart,c.arrivee].filter(Boolean).map(x=>String(x).split(/[,(]/)[0].trim()).join(' → ')].filter(Boolean).join(' · '):c.presta, c.type==='repas'?`${c.nb||1} pers.`:'', c.type==='hotel'&&c.lieu?c.lieu:''].filter(Boolean).join(' · ')||(c.lieu||''));
     const op=c=>`data-open-detail='${JSON.stringify(c).replace(/'/g,"&apos;")}'`;
     // Animation en cascade : seulement à l'ouverture de la page ou au changement de filtre
@@ -3247,7 +3246,7 @@ function renderDash4(m){
             [...nv,...px].slice(0,6).map(c=>ligne(c,`${dateCourte(c)}${c.heure?' · '+esc(c.heure):''}`)),'Aucune action en attente ✓','Ouvrir le suivi'); })()}
         ${carte('calendrier','calendar','#1d4ed8','Agenda · aujourd’hui',[kpi(auj.length,'prestations aujourd’hui'),kpi(dem.length,'demain')],
             auj.slice(0,6).map(c=>ligne(c,esc(c.heure||'—'))),'Rien de prévu aujourd’hui','Ouvrir l’agenda')}
-        ${carte('activite','grid','#475569','Base des demandes',[kpi(mois.length,'demandes ce mois'),kpi(prixASaisir().length,'prix à saisir',prixASaisir().length?'#d97706':''),kpi(annulM,'annulées ce mois')],
+        ${carte('activite','grid','#475569','Base des demandes',[kpi(mois.length,'demandes ce mois'),kpi(annulM,'annulées ce mois')],
             recents.map(c=>ligne(c,dateCourte(c))),'Aucune demande','Ouvrir la base')}
         ${carte('stats','chart','#15803d','Statistiques · ce mois',[kpi(eur(tM),'dépensés','#15803d'),kpi(delta===null?'—':`${delta>0?'+':''}${delta} %`,'vs mois dernier',delta>0?'#b91c1c':delta<0?'#15803d':''),kpi(top?esc(top[0]):'—','prestataire n°1')],
             tops.slice(0,6).map(([p,x])=>`<div class="d4-l" data-admin-tab="stats"><span class="d4-t">${esc(p)}</span><span class="d4-h" style="min-width:0;">${x.n} commande${x.n>1?'s':''}${x.e?' · '+eur(x.e):''}</span></div>`),`Aucune commande ce mois · ${eur(tP)} le mois dernier`,'Voir les statistiques')}
@@ -4357,10 +4356,6 @@ function prixASaisir(){ return (state.data||[]).filter(c=>suiviCat(c)==='prix'&&
 function anomalies(){
     const out=[], now=new Date(), t0=new Date(); t0.setHours(0,0,0,0);
     const actives=state.data.filter(c=>c.pris!=='Annulé');
-    const _vh=pkAlertes(); if(_vh.length) out.push({niv:_vh.some(x=>x.j<0)?3:2,ic:'car',titre:`${_vh.length} échéance${_vh.length>1?'s':''} véhicule${_vh.length>1?'s':''}`,detail:_vh.slice(0,3).map(x=>`${x.v.plaque} : ${x.l.toLowerCase()} ${x.j<0?'dépassée':'dans '+x.j+' j'}`).join(' · '),nav:{adminTab:'parking',pkTab:'vehicules'}});
-    const _bp=pkBornesPanne(); if(_bp.length) out.push({niv:1,ic:'car',titre:`${_bp.length} borne${_bp.length>1?'s':''} électrique${_bp.length>1?'s':''} en panne`,detail:_bp.map(pkLib).join(', '),nav:{adminTab:'parking',pkTab:'places',pkF:'bornes'}});
-    const _st=[]; if(_st.length) out.push({niv:_st.some(x=>x.st==='vide')?2:1,ic:'box',titre:`${_st.length} article${_st.length>1?'s':''} à commander`,detail:_st.map(x=>x.nom+(x.st==='vide'?' (vide)':'')).join(', '),nav:{adminTab:'stock'}});
-    const _sp=prixASaisir(); if(_sp.length) out.push({niv:1,ic:'wallet',titre:`${_sp.length} prix à saisir`,detail:'Commandes faites sans montant : à compléter à réception de la facture',c:_sp[0],nav:{adminTab:'activite',activiteTab:'tout',histPrix:true,histPage:0}});
     const futur=actives.filter(c=>{ const d=parseDate(c.date); return d&&d>=t0; });
     const norm=s=>String(s||'').trim().toUpperCase();
     // Doublons
@@ -4373,6 +4368,8 @@ function anomalies(){
         else if(j===0||(j===1&&now.getHours()>=16)) out.push({niv:3,ic:'box',titre:j===0?'Pas commandé, c’est aujourd’hui':'Pas encore commandé pour demain',detail:`${titreDe(c)} · ${c.heure||''} · ${c.presta||'prestataire ?'} · ${demNom(c)}`,c}); });
     // En attente trop longtemps
     // (« En attente depuis plus de 24 h » retiré des notifications à la demande d'Arnaud)
+    // Hôtel pris en charge sans bon de réservation envoyé, 3 jours avant l'arrivée
+    futur.filter(c=>c.type==='hotel'&&suiviCat(c)==='prise'&&!(suiviOf(c)||{}).bonEnvoi).forEach(c=>{ const j=Math.round((parseDate(c.date)-t0)/864e5); if(j<=3) out.push({niv:j<=1?3:2,ic:'bed',titre:'Bon d’hôtel à envoyer',detail:`${titreDe(c)} · arrivée ${j===0?'aujourd’hui':j===1?'demain':dateCourte(c)} · ${c.presta||'hôtel ?'} · pour ${c.pourQui||demNom(c)}`,c}); });
     // Taxi gare / aéroport sans n° de vol
     futur.filter(c=>c.type==='taxi'&&!c.vol&&/(a[ée]roport|orly|cdg|roissy|beauvais|gare)/i.test(`${c.depart} ${c.arrivee}`)).forEach(c=>out.push({niv:1,ic:'plane',titre:'N° de vol ou de train manquant',detail:`${titreDe(c)} · ${dateCourte(c)} ${c.heure||''}`,c}));
     // Informations manquantes
@@ -5834,17 +5831,11 @@ function renderSettings(){
         </ul>
     </div>
     <div class="settings-section">
-        ${secHead("dashboard","Vue express et écran live","Une vue « widget » à épingler sur l’écran d’accueil de l’iPhone, et un écran animé pour un PC ou une TV.")}
-        <div style="display:flex;gap:8px;flex-wrap:wrap;">
-            <a href="express.html" target="_blank" class="btn-sm" style="text-decoration:none;padding:9px 14px;">${icon('phone',14)} Installer la vue express (iPhone)</a>
-            <button data-live-open class="btn-sm" style="padding:9px 14px;">${icon('dashboard',14)} Ouvrir l’écran live</button>
-        </div>
+        ${secHead("phone","Vue express (iPhone)","Une vue « widget » à épingler sur l’écran d’accueil de l’iPhone.")}
+        <a href="express.html" target="_blank" class="btn-sm" style="text-decoration:none;padding:9px 14px;">${icon('phone',14)} Installer la vue express</a>
+    </div>
         <div style="font-size:12px;color:#8b93a1;margin-top:8px;">Écran live sur une TV : ouvrez l’adresse de l’appli suivie de <b>#live</b> et connectez-vous une fois.</div>
     </div>
-    ${isStandalone()?'':`<div class="settings-section">
-        ${secHead("download","Installer l’appli sur cet appareil","Elle s’ouvre alors dans sa propre fenêtre, comme un logiciel.")}
-        ${_installPrompt?`<button id="installAppBtn" class="btn-primary" style="width:100%;padding:12px;">Installer maintenant</button>`:`<div style="font-size:13px;color:#4b5563;line-height:1.5;">${/Edg\//.test(navigator.userAgent)?'Dans Edge : menu <b>…</b> › <b>Applications</b> › <b>« Installer ce site en tant qu’application »</b>.':'Dans Chrome : icône <b>⊕</b> à droite de la barre d’adresse, ou menu <b>⋮</b> › <b>Caster, enregistrer et partager</b> › <b>Installer</b>.'}</div>`}
-    </div>`}
 `;
     else if(cur[0]==='equipe') body=`
     ${equipeReglagesHtml(secHead)}
