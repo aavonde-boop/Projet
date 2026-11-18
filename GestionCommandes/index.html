@@ -617,7 +617,7 @@
         .bon{ margin-top:12px; border:1px solid var(--border); border-radius:12px; background:#fff; padding:16px 18px; } .bon h4{ margin:0 0 10px; font:650 15px var(--fb); display:flex; align-items:center; gap:8px; }
         .bon-f{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; background:#f8fafc; border:1px dashed #cbd5e1; border-radius:10px; padding:10px 12px; font-size:13px; }
         .bon-to{ display:flex; flex-wrap:wrap; gap:8px; margin:12px 0 8px; } .bon-to label{ display:inline-flex; align-items:center; gap:6px; border:1px solid var(--border); border-radius:999px; padding:5px 12px; font-size:13px; cursor:pointer; }
-        .bon-ok{ font-size:12px; color:#047857; margin-top:8px; }
+        .bon-f.sur{ background:#eff6ff; border-color:#2563eb; border-style:solid; } .bon-ok{ font-size:12px; color:#047857; margin-top:8px; }
         .fa{ display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; margin-top:12px; }
         .fa-row{ display:grid; grid-template-columns:26px minmax(0,1fr); grid-template-rows:auto 1fr; column-gap:10px; row-gap:12px; padding:12px; border:1px solid var(--border); border-radius:10px; background:#fff; min-width:0; }
         .fa-row .fa-r{ grid-column:1 / -1; align-self:end; display:flex; flex-wrap:wrap; gap:8px; }
@@ -2978,9 +2978,9 @@ function ficheBonHtml(d){
     const fd=x=>new Date(x).toLocaleString('fr-FR',{dateStyle:'short',timeStyle:'short'}), ko=n=>n>1048576?(n/1048576).toFixed(1)+' Mo':Math.max(1,Math.round(n/1024))+' Ko';
     const D=bonDestinataires(d);
     return `<div class="bon"><h4>${icon('bed',16)} Bon de réservation</h4>
-        <div class="bon-f">${B?`${icon('clipboard',15)} <b>${esc(B.nom)}</b> <span style="color:#8b93a1;">${ko(B.taille||0)} · déposé le ${fd(B.at)}</span>
+        <div class="bon-f" data-bon-zone="${d.id}">${B?`${icon('clipboard',15)} <b>${esc(B.nom)}</b> <span style="color:#8b93a1;">${ko(B.taille||0)} · déposé le ${fd(B.at)}</span>
             <button class="btn-sm" data-bon-voir="${d.id}" style="margin-left:auto;">Voir</button><label class="btn-sm" style="cursor:pointer;">Remplacer<input type="file" data-bon-file="${d.id}" accept="application/pdf,image/png,image/jpeg" style="display:none"></label>`
-            :`${icon('download',15)} <span>Déposez ici le bon reçu de l’hôtel (PDF ou photo, 10 Mo max.)</span><label class="btn-sm pri" style="cursor:pointer;margin-left:auto;">Choisir le fichier<input type="file" data-bon-file="${d.id}" accept="application/pdf,image/png,image/jpeg" style="display:none"></label>`}</div>
+            :`${icon('download',15)} <span><b>Glissez ici la pièce jointe</b> depuis l’email de l’hôtel, ou collez-la (Ctrl+V) · PDF ou photo, 10 Mo max.</span><label class="btn-sm pri" style="cursor:pointer;margin-left:auto;">Choisir le fichier<input type="file" data-bon-file="${d.id}" accept="application/pdf,image/png,image/jpeg" style="display:none"></label>`}</div>
         ${state.bonCharge===d.id?`<div style="font-size:12px;color:#6b7280;margin-top:8px;">Envoi en cours…</div>`:''}
         <div class="bon-to">${D.map(x=>`<label><input type="checkbox" data-bon-to="${esc(x.em)}" ${F.off[x.em]?'':'checked'}> ${esc(x.nom)} <span style="color:#8b93a1;">${esc(x.em)}</span></label>`).join('')||'<span style="font-size:12px;color:#8b93a1;">Aucune adresse connue pour le demandeur ou le voyageur : saisissez-la ci-dessous.</span>'}</div>
         <input id="bonAutre" class="form-input" placeholder="Autre(s) adresse(s), séparées par des virgules" value="${esc(F.autre)}">
@@ -2995,6 +2995,10 @@ document.addEventListener('change',async e=>{
     const cb=e.target.closest&&e.target.closest('[data-bon-to]'); if(cb&&state.detail){ bonForm(state.detail.id).off[cb.getAttribute('data-bon-to')]=!cb.checked; return; }
     const inp=e.target.closest&&e.target.closest('[data-bon-file]'); if(!inp) return;
     const fl=inp.files&&inp.files[0]; const c=state.data.find(x=>String(x.id)===inp.getAttribute('data-bon-file')); if(!fl||!c) return;
+    bonDeposer(c,fl);
+});
+async function bonDeposer(c,fl){
+    if(!/pdf|png|jpe?g/i.test((fl.type||'')+' '+(fl.name||''))){ showToast(`${icon('alert',13)} Format non accepté : PDF, PNG ou JPG`); return; }
     if(fl.size>10485760){ showToast(`${icon('alert',13)} Fichier trop lourd (10 Mo maximum)`); return; }
     state.bonCharge=c.id; render();
     try{ await sbPret();
@@ -3007,7 +3011,16 @@ document.addEventListener('change',async e=>{
         showToast(`✓ Bon de réservation enregistré`);
     }catch(err){ showToast(`${icon('alert',13)} Dépôt impossible : ${esc(err.message)}`); }
     state.bonCharge=null; render();
-});
+}
+// Glisser-déposer depuis Outlook / l'explorateur, ou coller (Ctrl+V) un fichier, sur le cadre du bon
+document.addEventListener('dragover',e=>{ const z=e.target.closest&&e.target.closest('[data-bon-zone]'); if(!z) return; e.preventDefault(); z.classList.add('sur'); });
+document.addEventListener('dragleave',e=>{ const z=e.target.closest&&e.target.closest('[data-bon-zone]'); if(z) z.classList.remove('sur'); });
+document.addEventListener('drop',e=>{ const z=e.target.closest&&e.target.closest('[data-bon-zone]'); if(!z) return; e.preventDefault(); z.classList.remove('sur');
+    const fl=e.dataTransfer&&e.dataTransfer.files&&e.dataTransfer.files[0]; const c=state.data.find(x=>String(x.id)===z.getAttribute('data-bon-zone'));
+    if(!fl){ showToast(`${icon('alert',13)} Aucun fichier reçu : enregistrez la pièce jointe puis glissez-la, ou utilisez « Choisir le fichier »`); return; }
+    if(c) bonDeposer(c,fl); });
+document.addEventListener('paste',e=>{ const z=document.querySelector('[data-bon-zone]'); if(!z||!state.detail) return; const fl=[...(e.clipboardData&&e.clipboardData.files||[])][0]; if(!fl) return;
+    e.preventDefault(); const c=state.data.find(x=>String(x.id)===z.getAttribute('data-bon-zone')); if(c) bonDeposer(c,fl); });
 async function bonFichier(c){ const B=(suiviOf(c)||{}).bon; if(!B) throw new Error('aucun bon déposé'); await sbPret();
     const r=await fetch(`${SB_URL}/storage/v1/object/bons/${B.path}`,{headers:sbH()}); if(!r.ok) throw new Error('fichier introuvable ('+r.status+')'); return {B,blob:await r.blob()}; }
 document.addEventListener('click',async e=>{
