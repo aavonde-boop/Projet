@@ -1705,6 +1705,17 @@ async function emptyTrash() {
 // Aussi pour les demandes saisies par Julia / Arnaud à la place d'une assistante ; jamais pour leurs propres demandes
 function peutAccuser(c){ const s=suiviOf(c)||{}; if(s.accuse||!mailsOn('confirmation')) return false; const r=personne(c.demandeur).role; if(r==='responsable'||r==='polyvalente') return false; if(r==='invite') return !!s.email; return !!emailDemandeur(c); }
 function emailDemandeur(c){ const E=settings.emails||{}; if(E[c.demandeur]) return E[c.demandeur]; const nom=personne(c.demandeur).nom; const k=Object.keys(E).find(x=>_pn(x)===_pn(c.demandeur)||personne(x).nom===nom); return k?E[k]:''; }
+/* Email de suivi à l'assistante pour une demande saisie par l'administration à sa place */
+document.addEventListener('change',e=>{ const id=e.target&&e.target.id; if(id==='formCopyMail') state.form.copyMail=e.target.checked; if(id==='formMailSuivi') state.form.mailSuivi=e.target.checked; });
+function mailSuiviPossible(dem){ if(!dem||!mailsOn('confirmation')) return false; const r=personne(dem).role; if(['responsable','polyvalente','invite'].includes(r)) return false; return !!emailDemandeur({demandeur:dem}); }
+async function envoyerSuivi(c){
+    const to=emailDemandeur(c); if(!to){ showToast(`${icon('alert',13)} Pas d’email pour ${esc(demNom(c))} (Réglages › Équipe)`); return false; }
+    state.toast=''; await sendConfirmationEmail(c,{to,kind:'accuse'});
+    if(/Erreur envoi/.test(state.toast||'')) return false;
+    setSuivi([c.id],()=>({accuse:new Date().toISOString(),accuseBy:userName()}));
+    try{ logAction('Email de suivi envoyé',[c],to); }catch(e){}
+    showToast(`${icon('mail',13)} Email de suivi envoyé à ${esc(demNom(c))}`); return true;
+}
 function accuserReception(c){
     const inv=personne(c.demandeur).role==='invite', em=(suiviOf(c)||{}).email;
     if(inv&&!em){ showToast(`${icon('alert',13)} Invité sans email : impossible d’accuser réception`); return; }
@@ -2235,7 +2246,7 @@ function renderInlineForm(m){
     }
     const secDet=sec(detIc,detTitre,det);
     const secPlus=sec(T==='repas'?'pin':'message',T==='repas'?'Livraison':'Précisions',(T==='repas'?lieuRepas+`<div style="height:16px"></div>`:'')+lbl('Commentaire','optionnel')+`<textarea id="formCom" class="form-input nf-in" style="min-height:70px;resize:vertical;" placeholder="Allergies, consignes, informations utiles…">${esc(f.com||'')}</textarea>`
-        +(isAdmin()?`<div class="nf-hint" style="margin-top:10px;">${icon('check',13)} Vous êtes administrateur : la commande est ajoutée directement, déjà validée, sans email.</div>`:f.invite||!mailsOn('copie')?'':`<label class="nf-check"><input type="checkbox" id="formCopyMail" class="nf-in" ${f.copyMail?'checked':''}><span><b>Recevoir une copie par email</b><span>Un récapitulatif de la demande vous sera envoyé.</span></span></label>`));
+        +(isAdmin()?`<div class="nf-hint" style="margin-top:10px;">${icon('check',13)} Vous êtes administrateur : la commande est ajoutée directement, déjà validée${mailSuiviPossible(f.dem)?' · l’email de suivi à '+esc(personne(f.dem).nom||f.dem)+' vous sera proposé à la dernière étape':', sans email'}.</div>`:f.invite||!mailsOn('copie')?'':`<label class="nf-check"><input type="checkbox" id="formCopyMail" class="nf-in" ${f.copyMail?'checked':''}><span><b>Recevoir une copie par email</b><span>Un récapitulatif de la demande vous sera envoyé.</span></span></label>`));
 
     /* Parcours en étapes : une partie à la fois, bouton « Suivant » */
     const E=nfEtapes(f), ei=Math.min(Math.max(0,f.etape||0),E.length-1), ek=E[ei].k, fin=ei===E.length-1;
@@ -2244,7 +2255,8 @@ function renderInlineForm(m){
     const ligneEtape=(lab,k)=>{ const tp=f.type; if(/^(Demandeur|Pour|Participants)$/.test(lab)) return 'qui'; if(/^(Date|Heure|Nuits)$/.test(lab)||(tp==='hotel'&&/^(Arrivée|Départ)$/.test(lab))) return 'quand'; if(tp==='repas'&&lab==='Lieu') return 'plus'; return 'det'; };
     const lignes=[...nfSummaryRows(f),...(T==='hotel'?[]:[['Commentaire',f.com||'—']])];
     const secVerif=sec('check',isAdmin()?'Vérifier et ajouter':'Vérifier et envoyer',`<div class="nf-verif">${lignes.map(([a,b])=>{ const k=a==='Commentaire'?'plus':ligneEtape(a); return `<button type="button" class="nf-vl" data-nf="etape" data-v="${etapeDe(k)}"><span>${esc(a)}</span><b class="${b==='—'?'vide':''}">${esc(b)}</b><em>Modifier</em></button>`; }).join('')}</div>
-        ${errs.length?`<div class="nf-warn" style="margin-top:12px;">${icon('alert',14)} <span>Il manque : ${esc(errs.map(x=>x[1]).join(' · '))}</span></div>`:`<div class="nf-ok-note">${icon('check',14)} ${isAdmin()?'Elle sera ajoutée au suivi, déjà prise en charge. Aucun email ne sera envoyé.':state.form.invite&&!state.form.inviteMail?'Indiquez votre email pour recevoir la confirmation.':'Votre code de suivi s’affiche tout de suite, puis vous recevez un email dès que la demande est prise en charge.'}</div>`}`);
+        ${isAdmin()&&state.saisieDirecte&&mailSuiviPossible(f.dem)?`<label class="nf-check" style="margin-top:12px;"><input type="checkbox" id="formMailSuivi" ${f.mailSuivi!==false?'checked':''}> <span style="display:block;">Envoyer à ${esc(personne(f.dem).nom||f.dem)} un email de suivi (code et récapitulatif)</span></label>`:''}
+        ${errs.length?`<div class="nf-warn" style="margin-top:12px;">${icon('alert',14)} <span>Il manque : ${esc(errs.map(x=>x[1]).join(' · '))}</span></div>`:`<div class="nf-ok-note">${icon('check',14)} ${isAdmin()?(state.saisieDirecte&&mailSuiviPossible(f.dem)?'Elle sera ajoutée au suivi, déjà prise en charge.':'Elle sera ajoutée au suivi, déjà prise en charge. Aucun email ne sera envoyé.'):state.form.invite&&!state.form.inviteMail?'Indiquez votre email pour recevoir la confirmation.':'Votre code de suivi s’affiche tout de suite, puis vous recevez un email dès que la demande est prise en charge.'}</div>`}`);
     const nfDir=window._nfDir||''; window._nfDir='';
     const corps={qui:secQui,quand:secQuand,det:secDet,plus:secPlus,ok:secVerif}[ek].replace('<section class="nf-card"',`<section class="nf-card ${nfDir?'nf-sl-'+nfDir:''}"`);
     const prog=`<div class="nf-prog">${E.map((x,n)=>` <button type="button" class="nf-pg ${n<ei?'fait':n===ei?'cur':''} ${n===ei&&nfDir==='next'?'fill':''}" ${n<ei?`data-nf="etape" data-v="${n}"`:'disabled'}><i></i><span>${n<ei?icon('check',12)+' ':''}${n+1}. ${esc(x.t)}</span></button>`).join('')}</div>`;
@@ -2928,15 +2940,29 @@ function ficheInfos(d){
     if(T==='repas'||T==='commande') f(T==='repas'?'Type de repas':'Ce qui est commandé',esc(d.desc||''));
     f('Téléphone',d.tel?`<a href="tel:${esc(d.tel)}">${esc(d.tel)}</a>`:'');
     f('Vol / train',esc(d.vol||''));
-    f('Demandé par',demHtml(d));
+    if(!isAdmin()) f('Demandé par',demHtml(d));
     f('Code',d.code?`<span style="font-family:monospace;">${esc(d.code)}</span>`:'');
     if(+d.prix>0) f('Prix',`${d.prix.toLocaleString('fr-FR',{minimumFractionDigits:2,maximumFractionDigits:2})} €${d.paie?' · '+esc(d.paie):''}`);
     const kc=suiviCat(d), editP=T==='repas'&&(kc==='nouvelle'||kc==='prise');
     const partEd=editP?`<div class="fi-pa"><span>Participants${estRecurrent(d)?' du jour':''}</span><div><input id="fiPart" class="form-input" value="${esc(d.pourQui||'')}" placeholder="Noms séparés par des virgules"><button class="fa-b p" data-fi-part="${d.id}">Enregistrer</button></div><small>Le nombre de personnes se met à jour tout seul.</small></div>`:'';
     const com=d.comment?`<div class="fi-com"><span>Commentaire</span><div>${esc(d.comment).replace(/\n/g,'<br>')}</div></div>`:'';
     const ct=pContactHtml(d,{grand:true});
-    return `<div class="fi">${F.join('')}${partEd}${com}${ct?`<div class="fi-ct">${ct}</div>`:''}</div>`;
+    let demEd='';
+    if(isAdmin()){ const L=[...new Set([d.demandeur,userName(),...(settings.assistantes||[])].filter(Boolean))];
+        demEd=`<div class="fi-pa"><span>Demandé par</span><div style="flex-wrap:wrap;"><select id="fiDem" class="form-input" style="max-width:260px;">${L.map(n=>`<option value="${esc(n)}" ${n===d.demandeur?'selected':''}>${esc(personne(n).nom||n)}</option>`).join('')}</select><button class="fa-b p" data-fi-dem="${d.id}">Attribuer</button>${mailSuiviPossible(d.demandeur)?`<button class="fa-b" data-fi-mail="${d.id}">${icon('mail',13)} ${s.accuse?'Renvoyer':'Envoyer'} le suivi par email</button>`:''}</div></div>`; }
+    return `<div class="fi">${F.join('')}${demEd}${partEd}${com}${ct?`<div class="fi-ct">${ct}</div>`:''}</div>`;
 }
+document.addEventListener('click',async e=>{ const b=e.target.closest('[data-fi-dem]'); if(!b) return;
+    const c=state.data.find(x=>String(x.id)===b.getAttribute('data-fi-dem')); if(!c) return;
+    const v=document.getElementById('fiDem')?.value||''; if(!v||v===c.demandeur){ showToast('Demandeur inchangé'); return; }
+    const patch={demandeur:v}; state.data=state.data.map(x=>x.id===c.id?{...x,...patch}:x); if(state.detail&&state.detail.id===c.id) state.detail={...state.detail,...patch};
+    await dbUpdate(c.id,patch); logAction('Modification',{...c,...patch},`demandeur : ${demNom(c)} → ${personne(v).nom||v}`);
+    showToast(`✓ Attribuée à ${esc(personne(v).nom||v)}${mailSuiviPossible(v)?' · vous pouvez lui envoyer le suivi par email':''}`); render();
+});
+document.addEventListener('click',async e=>{ const b=e.target.closest('[data-fi-mail]'); if(!b) return;
+    const c=state.data.find(x=>String(x.id)===b.getAttribute('data-fi-mail')); if(!c) return;
+    b.disabled=true; await envoyerSuivi(c); render();
+});
 
 document.addEventListener('click',async e=>{ const b=e.target.closest('[data-agenda-resync]'); if(!b||!isAdmin()) return;
     if(!confirm('Remettre l’agenda à jour ?\n\nLes rappels des demandes à venir vont être renvoyés au nouveau format, et ceux des saisies directes et des récurrents retirés. Vous allez recevoir une série de mails, une seule fois.')) return;
@@ -6860,7 +6886,7 @@ function attachEvents(){
         f.participants=document.getElementById('formParticipants')?.value||'';
         f.vol=document.getElementById('formVol')?.value||'';
         f.tel=document.getElementById('formTel')?.value||'';
-        f.copyMail=document.getElementById('formCopyMail')?.checked||false;
+        { const cm=document.getElementById('formCopyMail'); if(cm) f.copyMail=cm.checked; }
         if(f.type==='repas'){f.desc=document.getElementById('formDesc')?.value||'';f.lieu=document.getElementById('formLieu')?.value||'';f.nb=document.getElementById('formNb')?.value||'1';f.presta=document.getElementById('formPresta')?.value||'';}
         else if(f.type==='hotel'){f.desc=document.getElementById('formDesc')?.value||'';f.lieu=document.getElementById('formLieu')?.value||'';f.nb=document.getElementById('formNb')?.value||'1';f.presta=document.getElementById('formPresta')?.value||'';}
         else{f.de=document.getElementById('formDe')?.value||'';f.vers=document.getElementById('formVers')?.value||'';f.presta=document.getElementById('formPresta')?.value||'';}
@@ -6910,7 +6936,9 @@ function attachEvents(){
             showToast(`${icon('alert',13)} Demande NON enregistrée : ${esc(e.message||'connexion impossible')}. Vos informations sont conservées, réessayez.`); return; }
         if(saved.id!==newItem.id){state.data=state.data.map(c=>c.id===newItem.id?saved:c);}
         if(!ADM){ try{ logAction('Nouvelle demande', saved.id?saved:newItem); }catch(e){} }
-        if(ADM){ try{ logAction('Ajoutée directement (admin)',newItem); }catch(e){} setSuivi([saved.id||newItem.id],()=>({direct:new Date().toISOString(),par:personne(newItem.demandeur).role==='invite'?userName():null})); return; } // Julia / Arnaud : ajout direct, pas d'email
+        if(ADM){ try{ logAction('Ajoutée directement (admin)',newItem); }catch(e){} setSuivi([saved.id||newItem.id],()=>({direct:new Date().toISOString(),par:personne(newItem.demandeur).role==='invite'?userName():null}));
+            if(f.mailSuivi!==false&&mailSuiviPossible(newItem.demandeur)) envoyerSuivi(saved.id?saved:newItem);
+            return; } // Julia / Arnaud : ajout direct, pas d'email
         // Fallback localStorage si Supabase pas encore chargé
         const adminEmailsSafe = (settings.adminEmails||[]).filter(Boolean).length
             ? settings.adminEmails
