@@ -1739,9 +1739,12 @@ async function applyStatus(ids, status, { silent = false, noMail = false } = {})
     state.data = state.data.map(c => changed.includes(c.id) ? { ...c, pris: status } : c);
     if (state.detail && changed.includes(state.detail.id)) state.detail = { ...state.detail, pris: status };
     const items = state.data.filter(c => changed.includes(c.id));
+    // Une demande annulée vaut 0 € (les emails partent avec la demande telle qu'elle était)
+    const zero = status === 'Annulé';
+    if (zero) { state.data = state.data.map(c => changed.includes(c.id) ? { ...c, prix: 0 } : c); if (state.detail && changed.includes(state.detail.id)) state.detail = { ...state.detail, prix: 0 }; }
     logAction('Statut', items, c => `${ST[before[c.id]]?.label || before[c.id]} → ${ST[status]?.label || status}`);
     render();
-    for (const id of changed) await dbUpdate(id, { pris: status });
+    for (const id of changed) await dbUpdate(id, zero ? { pris: status, prix: 0 } : { pris: status });
     for (const c of items) {
         if (noMail) continue;
         const inv = personne(c.demandeur).role==='invite', em = (suiviOf(c)||{}).email;
@@ -1862,8 +1865,6 @@ function render(){
     if(state.vue==='admin'&&state.authed) lsSet('last_admin_tab', state.adminTab||'dashboard');
     state.authed = isAdmin();
     if(AUTH&&!state.loading) trackConnexion();
-    if(AUTH&&!state.loading&&isAdmin()&&!window._prixEst&&lsGet('prix_estimes_v1')!=='1'&&(state.data||[]).length){ window._prixEst=true; setTimeout(async()=>{ const L=estimerPrixRepas(); lsSet('prix_estimes_v1','1'); if(L.length){ await appliquerEstimations(L,{silent:true}); showToast(`✓ ${L.length} prix de repas estimés (≈) · voir Dépenses & prix`); } },800); }
-    if(AUTH&&!state.loading&&isAdmin()&&!window._prixEstT&&lsGet('prix_estimes_taxi_v1')!=='1'&&(state.data||[]).length){ window._prixEstT=true; setTimeout(async()=>{ const L=estimerPrixTaxis(); lsSet('prix_estimes_taxi_v1','1'); if(L.length){ await appliquerEstimations(L,{silent:true}); showToast(`✓ ${L.length} prix de taxi estimés (≈) · voir Dépenses & prix`); } },2500); }
     if(AUTH&&!state.loading&&isAdmin()&&!window._eqMig&&!(settings.equipe&&settings.equipe.v>=3)){ window._eqMig=true; setTimeout(()=>migrerEquipe().then(()=>render()).catch(e=>console.error('Équipe',e)),0); }
     if(state.authMode==='reset') html=renderLogin();
     else if(state.vue==="admin") html=state.authed?(state.live?renderLive()+liveUnlockHtml():renderAdminView(m)):(AUTH?renderPasAdmin():renderLogin());
@@ -2609,19 +2610,7 @@ function prestationPassee(c){
     return Date.now()>hp.getTime()+((c.type==='taxi'||c.type==='coursier')?30:60)*60000;
 }
 /* Prix proposé pour une demande sans prix, d'après les commandes déjà payées */
-function prixSuggere(c){
-    const n=s=>sansAccent(String(s||'')).toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
-    const ref=(state.data||[]).filter(x=>x.type===c.type&&x.pris!=='Annulé'&&+x.prix>0&&!suiviOf(x).prixEst&&x.id!==c.id);
-    const moy=(f,parPers)=>{ const L=ref.filter(f); if(!L.length) return null; if(!parPers) return L.reduce((a,x)=>a+(+x.prix),0)/L.length; const k=L.reduce((a,x)=>a+Math.max(1,parseInt(x.nb)||1),0); return L.reduce((a,x)=>a+(+x.prix),0)/k; };
-    if(c.type==='repas'){ const nb=Math.max(1,parseInt(c.nb)||1), kd=x=>n(x.desc), kp=x=>n(x.presta);
-        for(const [f,base] of [[x=>kp(x)===kp(c)&&kd(x)===kd(c),'même restaurant, même repas'],[x=>kp(x)===kp(c),'même restaurant'],[x=>kd(x)===kd(c),'même type de repas'],[()=>true,'moyenne des repas']]){ const pp=moy(f,true); if(pp!=null) return {prix:Math.round(pp*nb),base:`${base} · ${Math.round(pp)} €/pers.`}; }
-        return null; }
-    if(c.type==='taxi'){ const lieu=s=>{ const x=n(s); return /orly/.test(x)?'orly':/(cdg|roissy|charles de gaulle)/.test(x)?'cdg':/beauvais/.test(x)?'beauvais':/gare de lyon/.test(x)?'gare de lyon':/gare du nord/.test(x)?'gare du nord':/montparnasse/.test(x)?'montparnasse':/lazare/.test(x)?'saint lazare':/gare de l est/.test(x)?'gare de l est':x.split(' ').slice(-2).join(' '); };
-        const traj=x=>[lieu(x.depart),lieu(x.arrivee)].sort().join('|');
-        for(const [f,base] of [[x=>traj(x)===traj(c),'même trajet'],[x=>lieu(x.arrivee)===lieu(c.arrivee)||lieu(x.depart)===lieu(c.arrivee),'même destination'],[x=>n(x.presta)===n(c.presta),'même compagnie'],[()=>true,'moyenne des taxis']]){ const p=moy(f); if(p!=null) return {prix:Math.round(p),base}; }
-        return null; }
-    const p=moy(x=>n(x.presta)===n(c.presta)); return p!=null?{prix:Math.round(p),base:'même prestataire'}:null;
-}
+
 function suiviCat(c){
     if(c.pris==='Annulé') return 'annulee';
     const s=suiviOf(c), passe=prestationPassee(c);
@@ -2697,7 +2686,7 @@ function renderSuivi(m){
     const col=([k,lbl,sub,coul],i)=>{ const Lk=L[k];
         const thx=k==='nouvelle'?'<th></th>':k==='prix'?'<th>Prix</th>':k==='fin'?'<th style="text-align:right">Prix</th>':'';
         let rows=k==='nouvelle'?Lk.map(c=>ligne(c,`<button class="sv-b" data-suivi-act="pec" data-id="${c.id}">Bien reçu ✓</button>`,k))
-            :k==='prix'?Lk.map(c=>{ const e=prixSuggere(c); return ligne(c,`<button class="sv-b" data-prix-fiche="${c.id}" style="--c:#d97706;">${icon('wallet',12)} Saisir le prix</button>${e?`<small class="sv-est">estimé ${String(e.prix).replace('.',',')} € · ${esc(e.base)}</small>`:''}`,k); })
+            :k==='prix'?Lk.map(c=>ligne(c,`<button class="sv-b" data-prix-fiche="${c.id}" style="--c:#d97706;">${icon('wallet',12)} Saisir le prix</button>`,k))
             :k==='fin'?Lk.slice(0,8).map(c=>ligne(c,`<span class="sv-eur">${$m(+c.prix||0)}</span>`,k))
             :Lk.map(c=>ligne(c,undefined,k));
         const fin=k==='fin'?`<button class="sv-lk" data-nav='{"adminTab":"activite"}'>Base des demandes →</button>`:k==='prise'&&recCaches?`<div class="sv-note">🔁 + ${recCaches} repas récurrent${recCaches>1?'s':''} les jours suivants</div>`:'';
@@ -2835,7 +2824,7 @@ function ficheActions(d){
         const l1=pec?ligne(1,'Prise en charge',s.cmd?`Le ${fd(s.cmd)}${s.cmdBy&&s.cmdBy!=='Admin'?' par '+esc(s.cmdBy):''}${s.accuse?' · accusé envoyé':''}`:(s.accuse?`Accusé envoyé le ${fd(s.accuse)}`:'Saisie directe'),'',true)
             : ligne(1,'Prise en charge',peutAccuser(d)?`${esc(demNom(d))} reçoit l’accusé de réception`:'Aucun email (saisie directe ou pas d’email)',B('pec','Bien reçu ✓','g'),false);
         const pv=+d.prix>0?d.prix.toLocaleString('fr-FR',{minimumFractionDigits:2,maximumFractionDigits:2}):'';
-        const l2=ligne(2,'Prix',pv?`${pv} €${d.paie?' · '+esc(d.paie):''} · demande ${cat==='fin'?'clôturée':'à clôturer après la prestation'}`:'Obligatoire pour clôturer la demande',`<span class="fa-px"><input id="fichePrix" type="text" inputmode="decimal" value="${pv||(()=>{ const e=prixSuggere(d); return e?String(e.prix):''; })()}" placeholder="0,00"> €</span>${B('prix','Enregistrer','p')}${!pv&&prixSuggere(d)?`<small style="display:block;width:100%;font-size:11px;color:#b45309;">Montant estimé (${esc(prixSuggere(d).base)}) : corrigez avec la facture.</small>`:''}`,!!pv);
+        const l2=ligne(2,'Prix',pv?`${pv} €${d.paie?' · '+esc(d.paie):''} · demande ${cat==='fin'?'clôturée':'à clôturer après la prestation'}`:'Obligatoire pour clôturer la demande',`<span class="fa-px"><input id="fichePrix" type="text" inputmode="decimal" value="${pv||''}" placeholder="0,00"> €</span>${B('prix','Enregistrer','p')}`,!!pv);
         actions=l1+l2;
     }
     return actions?`<div class="fa">${actions}</div>`:'';
@@ -3478,59 +3467,12 @@ function regimesTxt(f){ const r=f.regimes||{}; const p=REGIMES.filter(k=>r[k]>0)
 ══════════════════════════════════════ */
 /* Prix approximatifs des repas passés sans prix (prix moyen par personne constaté) */
 const PRIX_EST_BUTOIR='2026-10-22'; // estimation unique : uniquement les repas d’avant cette date
-function estimerPrixRepas(){
-    const t0=parseDate(PRIX_EST_BUTOIR);
-    const D=(state.data||[]).filter(c=>c.type==='repas'&&c.pris!=='Annulé');
-    const ref=D.filter(c=>+c.prix>0&&!suiviOf(c).prixEst);
-    const nb=c=>Math.max(1,parseInt(c.nb)||1), kd=c=>sansAccent(String(c.desc||'')).toLowerCase().replace(/[^a-z]+/g,' ').trim(), kp=c=>String(c.presta||'').trim().toLowerCase();
-    const moy=f=>{ const L=ref.filter(f); const n=L.reduce((a,c)=>a+nb(c),0); return n?L.reduce((a,c)=>a+(+c.prix),0)/n:null; };
-    const cache={}; const m=(k,f)=>k in cache?cache[k]:(cache[k]=moy(f));
-    return D.filter(c=>(c.pris==='OUI'||c.pris==='Reçu')&&!(+c.prix>0)&&!suiviOf(c).prixReel&&!suiviOf(c).prixEstRetire&&(parseDate(c.date)||t0)<t0&&!(c.createdAt&&new Date(c.createdAt)>=t0)).map(c=>{
-        let pp=m('pd|'+kp(c)+'|'+kd(c),x=>kp(x)===kp(c)&&kd(x)===kd(c)), base='même restaurant, même repas';
-        if(pp==null){ pp=m('d|'+kd(c),x=>kd(x)===kd(c)); base='même type de repas'; }
-        if(pp==null){ pp=m('p|'+kp(c),x=>kp(x)===kp(c)); base='même restaurant'; }
-        if(pp==null){ pp=m('all',()=>true); base='moyenne de tous les repas'; }
-        if(pp==null){ pp=15; base='forfait 15 € par personne'; }
-        return {c,prix:Math.round(pp*nb(c)),base,pp};
-    });
-}
+
 /* Même chose pour les taxis passés sans prix : moyenne du même trajet, sinon même destination, sinon même compagnie, sinon moyenne des taxis */
-function estimerPrixTaxis(){
-    const t0=parseDate(PRIX_EST_BUTOIR);
-    const D=(state.data||[]).filter(c=>c.type==='taxi'&&c.pris!=='Annulé');
-    const ref=D.filter(c=>+c.prix>0&&!suiviOf(c).prixEst);
-    const n=s=>sansAccent(String(s||'')).toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
-    const lieu=s=>{ const x=n(s); return /orly/.test(x)?'orly':/(cdg|roissy|charles de gaulle)/.test(x)?'cdg':/beauvais/.test(x)?'beauvais':/gare de lyon/.test(x)?'gare de lyon':/gare du nord/.test(x)?'gare du nord':/montparnasse/.test(x)?'montparnasse':/(saint|st) lazare/.test(x)?'saint lazare':/gare de l est/.test(x)?'gare de l est':x; };
-    const traj=c=>[lieu(c.depart),lieu(c.arrivee)].sort().join(' <> '), dest=c=>{ const a=lieu(c.arrivee), d=lieu(c.depart); return /orly|cdg|beauvais|gare|montparnasse|lazare/.test(a)?a:/orly|cdg|beauvais|gare|montparnasse|lazare/.test(d)?d:a; };
-    const moy=f=>{ const L=ref.filter(f); return L.length?L.reduce((a,c)=>a+(+c.prix),0)/L.length:null; };
-    const cache={}; const m=(k,f)=>k in cache?cache[k]:(cache[k]=moy(f));
-    return D.filter(c=>(c.pris==='OUI'||c.pris==='Reçu')&&!(+c.prix>0)&&!suiviOf(c).prixReel&&!suiviOf(c).prixEstRetire&&(parseDate(c.date)||t0)<t0&&!(c.createdAt&&new Date(c.createdAt)>=t0)).map(c=>{
-        let p=m('t|'+traj(c),x=>traj(x)===traj(c)), base='même trajet';
-        if(p==null){ p=m('d|'+dest(c),x=>dest(x)===dest(c)); base='même destination'; }
-        if(p==null){ p=m('p|'+n(c.presta),x=>n(x.presta)===n(c.presta)); base='même compagnie'; }
-        if(p==null){ p=m('all',()=>true); base='moyenne des taxis'; }
-        if(p==null){ p=50; base='forfait 50 €'; }
-        return {c,prix:Math.round(p),base};
-    });
-}
-async function appliquerEstimations(L,{silent=false}={}){
-    if(!L.length) return 0;
-    const ids=L.map(x=>x.c.id), P=Object.fromEntries(L.map(x=>[x.c.id,x.prix]));
-    state.data=state.data.map(c=>c.id in P?{...c,prix:P[c.id]}:c);
-    setSuivi(ids,()=>({prixEst:1}));
-    try{ logAction('Prix estimé',L.map(x=>({...x.c,prix:x.prix,_base:x.base})),x=>`≈ ${$m(x.prix)} (${x._base||'moyenne constatée'})`); }catch(e){}
-    if(!silent) showToast(`✓ ${L.length} prix estimés`);
-    for(const x of L){ try{ await dbUpdate(x.c.id,{prix:x.prix}); }catch(e){ console.error('Prix estimé',e); } }
-    return L.length;
-}
-async function retirerEstimations(){
-    const L=(state.data||[]).filter(c=>suiviOf(c).prixEst); if(!L.length) return;
-    if(!confirm(`Remettre à zéro les ${L.length} prix estimés ? Ils repasseront dans « Prix à saisir ».`)) return;
-    const ids=L.map(c=>c.id); state.data=state.data.map(c=>ids.includes(c.id)?{...c,prix:0}:c); setSuivi(ids,()=>({prixEst:null,prixEstRetire:1}));
-    showToast(`${L.length} estimations retirées`); for(const c of L){ try{ await dbUpdate(c.id,{prix:0}); }catch(e){} }
-}
+
+
+
 /* Commandes faites (ou passées) sans prix : à compléter à réception de la facture */
-document.addEventListener('click',e=>{ if(e.target.closest('[data-prix-estimer]')){ const L=estimerPrixRepas(); if(L.length&&confirm(`Mettre un prix approximatif sur ${L.length} repas passés sans prix ?\n\nCalcul : prix moyen par personne constaté (même restaurant et même repas si possible) × nombre de personnes. Total ≈ ${$m(L.reduce((a,x)=>a+x.prix,0))}.`)) appliquerEstimations(L); } else if(e.target.closest('[data-prix-retirer]')) retirerEstimations(); });
 /* ══ STOCK (simple : OK / Bientôt vide / Vide) ══ */
 const STOCK_DEF=[['Capsules café','Nespresso'],['Thé','Kusmi Tea'],['Papier A4','Lyreco'],['Sucre',''],['Gobelets',''],['Essuie-tout','']];
 const STOCK_ST=[['ok','OK','#166534','#dcfce7'],['bas','Bientôt vide','#92400e','#fef3c7'],['vide','Vide','#b91c1c','#fee2e2']];
@@ -4225,6 +4167,12 @@ document.addEventListener('click',e=>{ const b=e.target.closest('[data-stk]'); i
         state.adminForm={dem,pourQui:[],pourQuiAutre:'',vol:'',date:today(),dateDepart:'',heure:'12h00',lieu:'',de:'',vers:'',presta:p,desc:L.map(i=>i.nom).join(', '),nb:'1',com:'',step:1};
         setState({saisieType:'commande',saisieDirecte:false,fabOpen:false}); }
 });
+async function annuleesAZero(){
+    if(!isAdmin()||state.loadErr) return; const L=(state.data||[]).filter(c=>c.pris==='Annulé'&&+c.prix>0); if(!L.length) return;
+    const ids=L.map(c=>c.id); state.data=state.data.map(c=>ids.includes(c.id)?{...c,prix:0}:c);
+    for(const id of ids){ try{ await dbUpdate(id,{prix:0}); }catch(e){ console.error('Annulée à 0 €',e); } }
+    render();
+}
 function prixASaisir(){ return (state.data||[]).filter(c=>suiviCat(c)==='prix'&&!recPlusTard(c)); }
 function anomalies(){
     const out=[], now=new Date(), t0=new Date(); t0.setHours(0,0,0,0);
@@ -6738,7 +6686,7 @@ if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.
 // ── Nouvelle version en ligne : bandeau cliquable « Actualiser » (comme Gestion Collaborateurs) ──
 // VERSION_PAGE doit rester identique au CACHE de sw.js : les deux sont changés à chaque mise en ligne.
 (function(){
-    const VERSION_PAGE='commandes-v135'; let affiche=false, dernier=0;
+    const VERSION_PAGE='commandes-v136'; let affiche=false, dernier=0;
     function montrer(){ if(affiche) return; affiche=true;
         const b=document.createElement('button'); b.type='button'; b.id='maj-dispo';
         b.innerHTML='<span style="font-size:16px">🔄</span><span>Nouvelle version de l’appli</span><b style="background:#fff;color:var(--accent,#2c5f85);border-radius:999px;padding:4px 12px">Actualiser</b>';
@@ -6795,6 +6743,7 @@ if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.
         if(!state.loadErr){
         setTimeout(()=>genRecurrences(true),1500);
         setTimeout(()=>datesEnIso().catch(e=>console.error('dates',e)),7000);
+        setTimeout(()=>annuleesAZero().catch(e=>console.error('annulées',e)),8000);
         setTimeout(()=>renommerPresta('Kusme Tea','Kusmi Tea').then(()=>renommerPresta('Evergreen','Occidental Paris Levallois')).catch(e=>console.error('renommage',e)),5000);
         setTimeout(()=>purgeAnciennes().then(n=>{ if(n){ showToast(`✓ RGPD : ${n} ancienne(s) demande(s) anonymisée(s)`); } }).catch(e=>console.error('RGPD',e)),6000);
         }
