@@ -6735,6 +6735,28 @@ if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.
     if (document.readyState === 'complete') _swReg(); else window.addEventListener('load', _swReg);
 }
 
+// ── Nouvelle version en ligne : bandeau cliquable « Actualiser » (comme Gestion Collaborateurs) ──
+// VERSION_PAGE doit rester identique au CACHE de sw.js : les deux sont changés à chaque mise en ligne.
+(function(){
+    const VERSION_PAGE='commandes-v135'; let affiche=false, dernier=0;
+    function montrer(){ if(affiche) return; affiche=true;
+        const b=document.createElement('button'); b.type='button'; b.id='maj-dispo';
+        b.innerHTML='<span style="font-size:16px">🔄</span><span>Nouvelle version de l’appli</span><b style="background:#fff;color:var(--accent,#2c5f85);border-radius:999px;padding:4px 12px">Actualiser</b>';
+        b.setAttribute('style','position:fixed;left:50%;top:calc(12px + env(safe-area-inset-top,0px));transform:translateX(-50%);z-index:99999;display:flex;align-items:center;gap:10px;background:var(--accent,#2c5f85);color:#fff;border:none;border-radius:999px;padding:8px 8px 8px 16px;font:600 13px/1.2 Inter,system-ui,sans-serif;box-shadow:0 10px 30px rgba(15,23,42,.3);cursor:pointer;white-space:nowrap');
+        b.onclick=function(){ b.querySelector('b').textContent='…';
+            const fin=function(){ location.reload(); };
+            try{ if(navigator.serviceWorker&&navigator.serviceWorker.getRegistration) navigator.serviceWorker.getRegistration().then(function(r){ if(r) return r.update(); }).then(fin,fin); else fin(); }catch(e){ fin(); }
+            setTimeout(fin,2500); };
+        document.body.appendChild(b); }
+    function verifier(){ const t=Date.now(); if(affiche||t-dernier<60000||location.protocol==='file:') return; dernier=t;
+        fetch('sw.js?_='+t,{cache:'no-store'}).then(function(r){ return r.ok?r.text():''; }).then(function(x){
+            const m=x&&x.match(/CACHE\s*=\s*'([^']+)'/); if(m&&m[1]!==VERSION_PAGE) montrer(); }).catch(function(){}); }
+    setInterval(verifier,3*60000);
+    document.addEventListener('visibilitychange',function(){ if(!document.hidden) verifier(); });
+    window.addEventListener('focus',verifier);
+    setTimeout(verifier,15000);
+})();
+
 // ── INIT : chargement depuis Supabase ──
 (async () => {
     authLoad();
