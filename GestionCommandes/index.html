@@ -2356,7 +2356,7 @@ function renderAdminView(m){
         <div class="side-brand">${logoHtml(16)}<div class="side-lbl"><b>${esc(marqueNom())}</b><span>Administration</span></div></div>
         <div class="side-scroll">
             <div class="side-grp" style="padding-top:12px;">
-                ${item('suivi','clipboard','Suivi')}${item('calendrier','calendar','Agenda')}${item('activite','grid','Base des demandes')}${item('stats','chart','Statistiques')}${meOk()?`<div class="perso">${item('me-memo','edit','Mémo perso')}</div>`:''}</div>
+                ${item('suivi','clipboard','Suivi')}${item('calendrier','calendar','Agenda')}${item('activite','grid','Base des demandes')}${item('stats','chart','Statistiques')}${item('parking','car','Parking & véhicules')}${meOk()?`<div class="perso">${item('me-memo','edit','Mémo perso')}</div>`:''}</div>
             ${meOk()?`<div class="side-grp perso"><h6 class="side-lbl">Bâtiment ${icon('lock',10)}</h6>${item('me-bat','tool','Signalements')}${item('me-stat','check','Actions et stats')}</div>`:''}
         </div>
         <div style="padding:6px 10px;border-top:1px solid rgba(255,255,255,.06);"><button data-admin-tab="settings" class="side-it ${['settings','journal','corbeille'].includes(state.adminTab)&&!state.saisieDirecte?'on':''}" title="Réglages">${icon('sliders',17)}<span class="side-lbl">Réglages</span></button></div>
@@ -3020,11 +3020,11 @@ function mobileNavHtml(){
             <span class="nav-icon">${icon(ic,18)}</span><span>${label}</span><span class="nav-dot"></span>
             ${tab==='suivi'&&n?`<span style="position:absolute;top:2px;left:calc(50% + 6px);background:#ef4444;color:#fff;border-radius:10px;min-width:16px;height:16px;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0 4px;">${n}</span>`:''}
         </button>`).join('')}
-        <button class="mobile-nav-btn ${(['settings','journal','corbeille'].includes(state.adminTab)||String(state.adminTab).startsWith('me'))&&!state.detail?'active':''}" data-nav='{"moreOpen":true}'><span class="nav-icon">${icon('menu',18)}</span><span>Plus</span><span class="nav-dot"></span></button>
+        <button class="mobile-nav-btn ${(['settings','journal','corbeille','parking'].includes(state.adminTab)||String(state.adminTab).startsWith('me'))&&!state.detail?'active':''}" data-nav='{"moreOpen":true}'><span class="nav-icon">${icon('menu',18)}</span><span>Plus</span><span class="nav-dot"></span></button>
     </div></nav>
     ${state.moreOpen?`<div data-nav='{"moreOpen":false}' style="position:fixed;inset:0;background:rgba(15,23,42,.35);z-index:9500;display:flex;align-items:flex-end;">
         <div style="background:#fff;width:100%;border-radius:20px 20px 0 0;padding:14px 14px calc(14px + env(safe-area-inset-bottom,0px));">
-            ${[...(meOk()?[["me-memo","edit","Mémo perso"],["me-bat","tool","Signalements du bâtiment"],["me-stat","check","Actions et stats"]]:[]),["settings","sliders","Réglages"],["journal","edit","Journal"],["corbeille","trash","Corbeille"]].map(([t,ic,l])=>`<button data-admin-tab="${t}" style="display:flex;align-items:center;gap:12px;width:100%;background:none;border:none;padding:14px 8px;font-size:15px;font-weight:600;color:var(--ink);cursor:pointer;border-bottom:1px solid #f0f1f4;">${icon(ic,18)} ${l}</button>`).join('')}
+            ${[...(meOk()?[["me-memo","edit","Mémo perso"],["me-bat","tool","Signalements du bâtiment"],["me-stat","check","Actions et stats"]]:[]),["parking","car","Parking & véhicules"],["settings","sliders","Réglages"],["journal","edit","Journal"],["corbeille","trash","Corbeille"]].map(([t,ic,l])=>`<button data-admin-tab="${t}" style="display:flex;align-items:center;gap:12px;width:100%;background:none;border:none;padding:14px 8px;font-size:15px;font-weight:600;color:var(--ink);cursor:pointer;border-bottom:1px solid #f0f1f4;">${icon(ic,18)} ${l}</button>`).join('')}
             <button data-back-home style="display:flex;align-items:center;gap:12px;width:100%;background:none;border:none;padding:14px 8px;font-size:15px;font-weight:600;color:var(--ink);cursor:pointer;border-bottom:1px solid #f0f1f4;">${icon('home',18)} Page de demande</button>
             <button data-admin-logout style="display:flex;align-items:center;gap:12px;width:100%;background:none;border:none;padding:14px 8px;font-size:15px;font-weight:600;color:#b91c1c;cursor:pointer;">${icon('logout',18)} Se déconnecter</button>
             ${legalLiens('padding-top:10px;')}
@@ -4189,6 +4189,8 @@ function anomalies(){
         else if(j===0||(j===1&&now.getHours()>=16)) out.push({niv:3,ic:'box',titre:j===0?'Pas commandé, c’est aujourd’hui':'Pas encore commandé pour demain',detail:`${titreDe(c)} · ${c.heure||''} · ${c.presta||'prestataire ?'} · ${demNom(c)}`,c}); });
     // En attente trop longtemps
     // (« En attente depuis plus de 24 h » retiré des notifications à la demande d'Arnaud)
+    const _vh=pkAlertes(); if(_vh.length) out.push({niv:_vh.some(x=>x.j<0)?3:2,ic:'car',titre:`${_vh.length} échéance${_vh.length>1?'s':''} véhicule${_vh.length>1?'s':''}`,detail:_vh.slice(0,3).map(x=>`${x.v.plaque} : ${x.l.toLowerCase()} ${x.j<0?'dépassée':'dans '+x.j+' j'}`).join(' · '),nav:{adminTab:'parking',pkTab:'vehicules'}});
+    const _bp=pkBornesPanne(); if(_bp.length) out.push({niv:1,ic:'car',titre:`${_bp.length} borne${_bp.length>1?'s':''} électrique${_bp.length>1?'s':''} en panne`,detail:_bp.map(pkLib).join(', '),nav:{adminTab:'parking',pkTab:'places',pkF:'bornes'}});
     // Hôtel pris en charge sans bon de réservation envoyé, 3 jours avant l'arrivée
     futur.filter(c=>c.type==='hotel'&&suiviCat(c)==='prise'&&!(suiviOf(c)||{}).bonEnvoi).forEach(c=>{ const j=Math.round((parseDate(c.date)-t0)/864e5); if(j<=3) out.push({niv:j<=1?3:2,ic:'bed',titre:'Bon d’hôtel à envoyer',detail:`${titreDe(c)} · arrivée ${j===0?'aujourd’hui':j===1?'demain':dateCourte(c)} · ${c.presta||'hôtel ?'} · pour ${c.pourQui||demNom(c)}`,c}); });
     // Taxi gare / aéroport sans n° de vol
@@ -6686,7 +6688,7 @@ if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.
 // ── Nouvelle version en ligne : bandeau cliquable « Actualiser » (comme Gestion Collaborateurs) ──
 // VERSION_PAGE doit rester identique au CACHE de sw.js : les deux sont changés à chaque mise en ligne.
 (function(){
-    const VERSION_PAGE='commandes-v136'; let affiche=false, dernier=0;
+    const VERSION_PAGE='commandes-v137'; let affiche=false, dernier=0;
     function montrer(){ if(affiche) return; affiche=true;
         const b=document.createElement('button'); b.type='button'; b.id='maj-dispo';
         b.innerHTML='<span style="font-size:16px">🔄</span><span>Nouvelle version de l’appli</span><b style="background:#fff;color:var(--accent,#2c5f85);border-radius:999px;padding:4px 12px">Actualiser</b>';
