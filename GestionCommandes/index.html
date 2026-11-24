@@ -597,6 +597,7 @@
         .rgp h2{ font:650 20px var(--ft); margin:0 0 4px; color:var(--ink); } .rgp h3{ font:650 14px var(--fb); margin:18px 0 4px; color:var(--ink); } .rgp ul{ margin:4px 0; padding-left:20px; } .rgp p{ margin:4px 0; }
         .rg-x{ position:absolute; top:14px; right:14px; width:34px; height:34px; border-radius:8px; border:1px solid var(--border); background:#fff; cursor:pointer; display:flex; align-items:center; justify-content:center; }
         .rg-foot{ text-align:center; padding:18px 12px 26px; }
+        .side-inst{ color:#93c5fd !important; } .side-inst:hover{ color:#fff !important; }
         .fi-edit{ background:#fff; border:1px solid var(--border); border-radius:8px; padding:16px; margin-bottom:14px; }
         .fi-edit-h{ display:flex; justify-content:space-between; align-items:baseline; gap:8px; flex-wrap:wrap; margin-bottom:10px; } .fi-edit-h b{ font-size:13px; color:var(--ink); } .fi-edit-h span{ font-size:11.5px; color:#8b93a1; }
         .fi-edit-g{ display:grid; grid-template-columns:repeat(auto-fill,minmax(230px,1fr)); gap:0 14px; }
@@ -1937,6 +1938,10 @@ function renderTrackCode(m){
 let _installPrompt = null;
 window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); _installPrompt = e; render(); });
 window.addEventListener('appinstalled', () => { _installPrompt = null; lsSet('install_hint_off', '1'); render(); });
+document.addEventListener('click', async e => { if (!e.target.closest || !e.target.closest('[data-installer-app]')) return;
+    if (!_installPrompt) { showToast('Utilisez le menu du navigateur ⋮ › « Installer la page en tant qu’application »'); return; }
+    try { _installPrompt.prompt(); const r = await _installPrompt.userChoice; if (r && r.outcome === 'accepted') showToast('✓ Application installée'); } catch(err) {}
+    _installPrompt = null; render(); });
 const isStandalone = () => window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
 const isIOS = () => /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 function installHintHtml(){
@@ -2359,7 +2364,7 @@ function renderAdminView(m){
                 ${item('suivi','clipboard','Suivi')}${item('calendrier','calendar','Agenda')}${item('activite','grid','Base des demandes')}${item('stats','chart','Statistiques')}${item('parking','car','Parking & véhicules')}${meOk()?`<div class="perso">${item('me-memo','edit','Mémo perso')}</div>`:''}</div>
             ${meOk()?`<div class="side-grp perso"><h6 class="side-lbl">Bâtiment ${icon('lock',10)}</h6>${item('me-bat','tool','Signalements')}${item('me-stat','check','Actions et stats')}</div>`:''}
         </div>
-        <div style="padding:6px 10px;border-top:1px solid rgba(255,255,255,.06);"><button data-admin-tab="settings" class="side-it ${['settings','journal','corbeille'].includes(state.adminTab)&&!state.saisieDirecte?'on':''}" title="Réglages">${icon('sliders',17)}<span class="side-lbl">Réglages</span></button></div>
+        <div style="padding:6px 10px;border-top:1px solid rgba(255,255,255,.06);">${!isStandalone()&&_installPrompt?`<button data-installer-app class="side-it side-inst" title="Installer l’application sur cet ordinateur">${icon('download',17)}<span class="side-lbl">Installer l’application</span></button>`:''}<button data-admin-tab="settings" class="side-it ${['settings','journal','corbeille'].includes(state.adminTab)&&!state.saisieDirecte?'on':''}" title="Réglages">${icon('sliders',17)}<span class="side-lbl">Réglages</span></button></div>
         <div class="side-lbl lg-side">${legalLiens()}</div>
         <div class="side-user">
             <span class="side-av">${esc(init||'AD')}</span>
@@ -3027,6 +3032,7 @@ function mobileNavHtml(){
             ${[...(meOk()?[["me-memo","edit","Mémo perso"],["me-bat","tool","Signalements du bâtiment"],["me-stat","check","Actions et stats"]]:[]),["parking","car","Parking & véhicules"],["settings","sliders","Réglages"],["journal","edit","Journal"],["corbeille","trash","Corbeille"]].map(([t,ic,l])=>`<button data-admin-tab="${t}" style="display:flex;align-items:center;gap:12px;width:100%;background:none;border:none;padding:14px 8px;font-size:15px;font-weight:600;color:var(--ink);cursor:pointer;border-bottom:1px solid #f0f1f4;">${icon(ic,18)} ${l}</button>`).join('')}
             <button data-back-home style="display:flex;align-items:center;gap:12px;width:100%;background:none;border:none;padding:14px 8px;font-size:15px;font-weight:600;color:var(--ink);cursor:pointer;border-bottom:1px solid #f0f1f4;">${icon('home',18)} Page de demande</button>
             <button data-admin-logout style="display:flex;align-items:center;gap:12px;width:100%;background:none;border:none;padding:14px 8px;font-size:15px;font-weight:600;color:#b91c1c;cursor:pointer;">${icon('logout',18)} Se déconnecter</button>
+            ${!isStandalone()&&_installPrompt?`<button data-installer-app style="display:flex;align-items:center;gap:12px;width:100%;background:none;border:none;padding:14px 8px;font-size:15px;font-weight:600;color:var(--accent);cursor:pointer;">${icon('download',18)} Installer l’application</button>`:''}
             ${legalLiens('padding-top:10px;')}
         </div></div>`:''}`;
 }
@@ -6688,7 +6694,7 @@ if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.
 // ── Nouvelle version en ligne : bandeau cliquable « Actualiser » (comme Gestion Collaborateurs) ──
 // VERSION_PAGE doit rester identique au CACHE de sw.js : les deux sont changés à chaque mise en ligne.
 (function(){
-    const VERSION_PAGE='commandes-v137'; let affiche=false, dernier=0;
+    const VERSION_PAGE='commandes-v138'; let affiche=false, dernier=0;
     function montrer(){ if(affiche) return; affiche=true;
         const b=document.createElement('button'); b.type='button'; b.id='maj-dispo';
         b.innerHTML='<span style="font-size:16px">🔄</span><span>Nouvelle version de l’appli</span><b style="background:#fff;color:var(--accent,#2c5f85);border-radius:999px;padding:4px 12px">Actualiser</b>';
